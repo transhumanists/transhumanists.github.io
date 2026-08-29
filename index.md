@@ -248,56 +248,99 @@ description: "Tracking milestones across biotech, AGI, quantum, energy, cyber, s
 /* API-cascade feed: pulls latest release & repo events from neohiro network */
 (function() {
   'use strict';
-  if (document.getElementById('neohiro-feed') === null) return;
+  var feed = document.getElementById('neohiro-feed');
+  if (feed === null) return;
+  var status = document.getElementById('neohiro-feed-status');
+  if (status === null) return;
 
   var REPOS = [
-    { owner: 'neohiro', name: 'windows',            label: '🛡️  windows (hardening)' },
-    { owner: 'neohiro', name: 'neohiro.github.io',  label: '👽  neohiro.github.io' },
+    { owner: 'neohiro', name: 'windows',                 label: '🛡️  windows (hardening)' },
+    { owner: 'neohiro', name: 'neohiro.github.io',       label: '👽  neohiro.github.io' },
     { owner: 'neohiro', name: 'openstageisland.github.io', label: '🎤  openstageisland' },
-    { owner: 'neohiro', name: 'frenzypenguin-media', label: '🐧  frenzypenguin-media' }
+    { owner: 'neohiro', name: 'frenzypenguin-media',     label: '🐧  frenzypenguin-media' }
   ];
-  var feed = document.getElementById('neohiro-feed');
-  var status = document.getElementById('neohiro-feed-status');
+  var FETCH_TIMEOUT_MS = 8000;
+  var MAX_ITEMS = 8;
+
   var items = [];
   var done = 0;
+  var failed = 0;
 
   function render() {
     done++;
     if (done < REPOS.length) return;
     if (items.length === 0) {
-      feed.innerHTML = '<li class="feed-item feed-empty">No recent activity. Sources may be rate-limited.</li>';
+      feed.innerHTML = '';
+      var li = document.createElement('li');
+      li.className = 'feed-item feed-empty';
+      li.textContent = failed === REPOS.length
+        ? 'No activity available. Sources are unreachable or rate-limited.'
+        : 'No recent activity yet.';
+      feed.appendChild(li);
+      status.textContent = 'Cascade failed for ' + failed + ' of ' + REPOS.length + ' sources.';
       return;
     }
-    items.sort(function(a, b) {
-      return new Date(b.date) - new Date(a.date);
-    });
-    var top = items.slice(0, 8);
-    feed.innerHTML = top.map(function(it) {
-      return '<li class="feed-item">' +
-        '<span class="feed-icon" aria-hidden="true">' + it.icon + '</span>' +
-        '<span class="feed-label">' + it.label + '</span>' +
-        '<a class="feed-title" href="' + it.url + '" target="_blank" rel="noopener">' + escapeHTML(it.title) + '</a>' +
-        '<span class="feed-date">' + formatDate(it.date) + '</span>' +
-      '</li>';
-    }).join('');
-    status.textContent = 'Showing ' + top.length + ' most recent. Cascade refreshed ' + new Date().toLocaleTimeString();
-  }
+    items.sort(function(a, b) { return new Date(b.date) - new Date(a.date); });
+    var top = items.slice(0, MAX_ITEMS);
+    feed.innerHTML = '';
+    for (var i = 0; i < top.length; i++) {
+      var it = top[i];
+      var li2 = document.createElement('li');
+      li2.className = 'feed-item';
 
-  function escapeHTML(s) {
-    var d = document.createElement('div');
-    d.textContent = s;
-    return d.innerHTML;
+      var icon = document.createElement('span');
+      icon.className = 'feed-icon';
+      icon.setAttribute('aria-hidden', 'true');
+      icon.textContent = it.icon;
+
+      var label = document.createElement('span');
+      label.className = 'feed-label';
+      label.textContent = it.label;
+
+      var link = document.createElement('a');
+      link.className = 'feed-title';
+      link.href = it.url;
+      link.target = '_blank';
+      link.rel = 'noopener noreferrer';
+      link.textContent = it.title;
+
+      var date = document.createElement('span');
+      date.className = 'feed-date';
+      date.textContent = formatDate(it.date);
+
+      li2.appendChild(icon);
+      li2.appendChild(label);
+      li2.appendChild(link);
+      li2.appendChild(date);
+      feed.appendChild(li2);
+    }
+    var stamp = new Date();
+    status.textContent = 'Showing ' + top.length + ' most recent. ' +
+      'Cascade refreshed ' + stamp.toLocaleTimeString() +
+      (failed > 0 ? ' (' + failed + ' source(s) failed)' : '');
   }
 
   function formatDate(s) {
+    if (!s) return '—';
     var d = new Date(s);
-    if (isNaN(d)) return s;
+    if (isNaN(d.getTime())) return '—';
     return d.toISOString().slice(0, 10);
   }
 
+  function fetchWithTimeout(url, opts) {
+    var controller = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+    if (controller) opts.signal = controller.signal;
+    var promise = fetch(url, opts);
+    var timer = setTimeout(function() { if (controller) controller.abort(); }, FETCH_TIMEOUT_MS);
+    return promise.finally(function() { clearTimeout(timer); });
+  }
+
   REPOS.forEach(function(r) {
-    var url = 'https://api.github.com/repos/' + r.owner + '/' + r.name + '/releases/latest';
-    fetch(url, { headers: { 'Accept': 'application/vnd.github+json' } })
+    var opts = { headers: { 'Accept': 'application/vnd.github+json' }, cache: 'no-store' };
+    var releaseUrl = 'https://api.github.com/repos/' + r.owner + '/' + r.name + '/releases/latest';
+    var commitUrl  = 'https://api.github.com/repos/' + r.owner + '/' + r.name + '/commits?per_page=1';
+
+    fetchWithTimeout(releaseUrl, opts)
       .then(function(res) {
         if (!res.ok) throw new Error('HTTP ' + res.status);
         return res.json();
@@ -307,29 +350,35 @@ description: "Tracking milestones across biotech, AGI, quantum, energy, cyber, s
           items.push({
             label: r.label,
             icon: '🚀',
-            title: rel.name || rel.tag_name,
+            title: (rel.name || rel.tag_name).toString().slice(0, 120),
             url: rel.html_url,
             date: rel.published_at || rel.created_at
           });
         }
       })
       .catch(function() {
-        var url2 = 'https://api.github.com/repos/' + r.owner + '/' + r.name + '/commits?per_page=1';
-        return fetch(url2, { headers: { 'Accept': 'application/vnd.github+json' } })
-          .then(function(r2) { if (!r2.ok) throw new Error('HTTP ' + r2.status); return r2.json(); })
+        return fetchWithTimeout(commitUrl, opts)
+          .then(function(r2) {
+            if (!r2.ok) throw new Error('HTTP ' + r2.status);
+            return r2.json();
+          })
           .then(function(commits) {
-            if (commits && commits[0]) {
+            if (commits && commits[0] && commits[0].commit) {
+              var firstLine = (commits[0].commit.message || '').split('\n')[0];
               items.push({
                 label: r.label,
                 icon: '🛠️',
-                title: commits[0].commit.message.split('\n')[0].slice(0, 80),
+                title: firstLine.toString().slice(0, 120),
                 url: commits[0].html_url,
-                date: commits[0].commit.author.date
+                date: commits[0].commit.author && commits[0].commit.author.date
               });
             }
           });
       })
-      .finally(render);
+      .catch(function() {
+        failed++;
+      })
+      .then(render);
   });
 })();
 </script>
