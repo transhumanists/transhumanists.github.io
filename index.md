@@ -254,21 +254,25 @@ description: "Tracking milestones across biotech, AGI, quantum, energy, cyber, s
   if (status === null) return;
 
   var REPOS = [
-    { owner: 'neohiro', name: 'windows',                 label: '🛡️  windows (hardening)' },
-    { owner: 'neohiro', name: 'neohiro.github.io',       label: '👽  neohiro.github.io' },
-    { owner: 'neohiro', name: 'openstageisland.github.io', label: '🎤  openstageisland' },
-    { owner: 'neohiro', name: 'frenzypenguin-media',     label: '🐧  frenzypenguin-media' }
+    { owner: 'neohiro', name: 'windows',                    label: '\u{1F6E1}\u{FE0F}  windows (hardening)' },
+    { owner: 'neohiro', name: 'neohiro.github.io',          label: '\u{1F47D}  neohiro.github.io' },
+    { owner: 'neohiro', name: 'openstageisland.github.io',  label: '\u{1F3A4}  openstageisland' },
+    { owner: 'neohiro', name: 'frenzypenguin-media',        label: '\u{1F427}  frenzypenguin-media' }
   ];
   var FETCH_TIMEOUT_MS = 8000;
   var MAX_ITEMS = 8;
 
   var items = [];
-  var done = 0;
+  var settled = 0;
   var failed = 0;
 
-  function render() {
-    done++;
-    if (done < REPOS.length) return;
+  function renderIfDone() {
+    settled++;
+    if (settled < REPOS.length) return;
+    finalize();
+  }
+
+  function finalize() {
     if (items.length === 0) {
       feed.innerHTML = '';
       var li = document.createElement('li');
@@ -284,35 +288,7 @@ description: "Tracking milestones across biotech, AGI, quantum, energy, cyber, s
     var top = items.slice(0, MAX_ITEMS);
     feed.innerHTML = '';
     for (var i = 0; i < top.length; i++) {
-      var it = top[i];
-      var li2 = document.createElement('li');
-      li2.className = 'feed-item';
-
-      var icon = document.createElement('span');
-      icon.className = 'feed-icon';
-      icon.setAttribute('aria-hidden', 'true');
-      icon.textContent = it.icon;
-
-      var label = document.createElement('span');
-      label.className = 'feed-label';
-      label.textContent = it.label;
-
-      var link = document.createElement('a');
-      link.className = 'feed-title';
-      link.href = it.url;
-      link.target = '_blank';
-      link.rel = 'noopener noreferrer';
-      link.textContent = it.title;
-
-      var date = document.createElement('span');
-      date.className = 'feed-date';
-      date.textContent = formatDate(it.date);
-
-      li2.appendChild(icon);
-      li2.appendChild(label);
-      li2.appendChild(link);
-      li2.appendChild(date);
-      feed.appendChild(li2);
+      feed.appendChild(buildRow(top[i]));
     }
     var stamp = new Date();
     status.textContent = 'Showing ' + top.length + ' most recent. ' +
@@ -320,27 +296,59 @@ description: "Tracking milestones across biotech, AGI, quantum, energy, cyber, s
       (failed > 0 ? ' (' + failed + ' source(s) failed)' : '');
   }
 
+  function buildRow(it) {
+    var li = document.createElement('li');
+    li.className = 'feed-item';
+
+    var icon = document.createElement('span');
+    icon.className = 'feed-icon';
+    icon.setAttribute('aria-hidden', 'true');
+    icon.textContent = it.icon;
+
+    var label = document.createElement('span');
+    label.className = 'feed-label';
+    label.textContent = it.label;
+
+    var link = document.createElement('a');
+    link.className = 'feed-title';
+    link.href = it.url;
+    link.target = '_blank';
+    link.rel = 'noopener noreferrer';
+    link.referrerPolicy = 'no-referrer';
+    link.textContent = it.title;
+
+    var date = document.createElement('span');
+    date.className = 'feed-date';
+    date.textContent = formatDate(it.date);
+
+    li.appendChild(icon);
+    li.appendChild(label);
+    li.appendChild(link);
+    li.appendChild(date);
+    return li;
+  }
+
   function formatDate(s) {
-    if (!s) return '—';
+    if (!s) return '\u2014';
     var d = new Date(s);
-    if (isNaN(d.getTime())) return '—';
+    if (isNaN(d.getTime())) return '\u2014';
     return d.toISOString().slice(0, 10);
   }
 
-  function fetchWithTimeout(url, opts) {
+  function fetchWithTimeout(url) {
     var controller = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+    var opts = {
+      headers: { 'Accept': 'application/vnd.github+json' },
+      cache: 'no-store'
+    };
     if (controller) opts.signal = controller.signal;
     var promise = fetch(url, opts);
     var timer = setTimeout(function() { if (controller) controller.abort(); }, FETCH_TIMEOUT_MS);
     return promise.finally(function() { clearTimeout(timer); });
   }
 
-  REPOS.forEach(function(r) {
-    var opts = { headers: { 'Accept': 'application/vnd.github+json' }, cache: 'no-store' };
-    var releaseUrl = 'https://api.github.com/repos/' + r.owner + '/' + r.name + '/releases/latest';
-    var commitUrl  = 'https://api.github.com/repos/' + r.owner + '/' + r.name + '/commits?per_page=1';
-
-    fetchWithTimeout(releaseUrl, opts)
+  function tryRelease(r) {
+    return fetchWithTimeout('https://api.github.com/repos/' + r.owner + '/' + r.name + '/releases/latest')
       .then(function(res) {
         if (!res.ok) throw new Error('HTTP ' + res.status);
         return res.json();
@@ -349,36 +357,41 @@ description: "Tracking milestones across biotech, AGI, quantum, energy, cyber, s
         if (rel && rel.tag_name) {
           items.push({
             label: r.label,
-            icon: '🚀',
+            icon: '\u{1F680}',
             title: (rel.name || rel.tag_name).toString().slice(0, 120),
             url: rel.html_url,
             date: rel.published_at || rel.created_at
           });
         }
+      });
+  }
+
+  function tryCommit(r) {
+    return fetchWithTimeout('https://api.github.com/repos/' + r.owner + '/' + r.name + '/commits?per_page=1')
+      .then(function(res) {
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        return res.json();
       })
-      .catch(function() {
-        return fetchWithTimeout(commitUrl, opts)
-          .then(function(r2) {
-            if (!r2.ok) throw new Error('HTTP ' + r2.status);
-            return r2.json();
-          })
-          .then(function(commits) {
-            if (commits && commits[0] && commits[0].commit) {
-              var firstLine = (commits[0].commit.message || '').split('\n')[0];
-              items.push({
-                label: r.label,
-                icon: '🛠️',
-                title: firstLine.toString().slice(0, 120),
-                url: commits[0].html_url,
-                date: commits[0].commit.author && commits[0].commit.author.date
-              });
-            }
+      .then(function(commits) {
+        var c = commits && commits[0];
+        if (c && c.commit) {
+          var firstLine = (c.commit.message || '').split('\n')[0];
+          items.push({
+            label: r.label,
+            icon: '\u{1F6E0}',
+            title: firstLine.toString().slice(0, 120),
+            url: c.html_url,
+            date: c.commit.author && c.commit.author.date
           });
-      })
-      .catch(function() {
-        failed++;
-      })
-      .then(render);
+        }
+      });
+  }
+
+  REPOS.forEach(function(r) {
+    tryRelease(r)
+      .catch(function() { return tryCommit(r); })
+      .catch(function() { failed++; })
+      .then(renderIfDone);
   });
 })();
 </script>
