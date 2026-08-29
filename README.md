@@ -53,3 +53,11 @@ All SVGs across the transhumanists, [FrenzyPenguin Media](https://github.com/fre
 ---
 
 *Made with ♥ by [FrenzyPenguin Media](https://frenzypenguin-media.github.io) — a [neohiro](https://github.com/neohiro) project.*
+
+---
+
+## 🔗 Related & Sponsorship
+
+- 💖 [Sponsor neohiro on GitHub](https://github.com/sponsors/neohiro) — cover API + hosting costs
+- 🌐 [neohiro.github.io](https://neohiro.github.io/) — main site
+- 🎬 [FrenzyPenguin Media](https://frenzypenguin-media.github.io/) — video deep-dives
