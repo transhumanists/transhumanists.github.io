@@ -489,6 +489,58 @@ body {
 }
 @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
 
+.network-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+.network-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 20px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  border-left: 4px solid var(--accent);
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+.network-card:hover { transform: translateY(-3px); border-color: var(--accent); }
+.network-card-icon { font-size: 1.6rem; line-height: 1; }
+.network-card h3 { margin: 0; font-size: 1rem; color: var(--fg); }
+.network-card p { margin: 0; font-size: 0.82rem; color: var(--fg-muted); }
+
+.feed-panel {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px 24px;
+}
+.feed-panel h3 { margin: 0 0 4px; font-size: 1rem; color: var(--fg); }
+.feed-subtitle { margin: 0 0 16px; font-size: 0.82rem; color: var(--fg-muted); }
+
+.feed-list { list-style: none; padding: 0; margin: 0; }
+.feed-item {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.875rem;
+  flex-wrap: wrap;
+}
+.feed-item:last-child { border-bottom: none; }
+.feed-icon { flex-shrink: 0; }
+.feed-label { flex-shrink: 0; color: var(--fg-muted); font-size: 0.8rem; min-width: 160px; }
+.feed-title { flex: 1; color: var(--fg); text-decoration: none; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.feed-title:hover { color: var(--accent); }
+.feed-date { flex-shrink: 0; color: var(--fg-subtle); font-size: 0.78rem; font-family: var(--font-mono); }
+.feed-loading { color: var(--fg-muted); font-style: italic; }
+.feed-empty { color: var(--fg-subtle); font-style: italic; }
+.feed-status { margin: 8px 0 0; font-size: 0.78rem; color: var(--fg-subtle); font-family: var(--font-mono); }
+
 /* RESPONSIVE */
 @media (max-width: 768px) {
   .container { padding: 0 16px; }

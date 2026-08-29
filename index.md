@@ -201,3 +201,135 @@ description: "Tracking milestones across biotech, AGI, quantum, energy, cyber, s
 <!-- SCRIPTS -->
 <script src="{{ '/assets/js/worldmap.js' | relative_url }}"></script>
 <script src="{{ '/assets/js/dashboard.js' | relative_url }}"></script>
+
+<!-- NETWORK CROSS-LINKS -->
+<section class="section section-alt" id="network">
+  <div class="container">
+    <header class="section-header">
+      <h2>neohiro Network</h2>
+      <p class="section-subtitle">Sister sites that share data with this dashboard</p>
+    </header>
+
+    <div class="network-grid">
+      <a class="network-card" href="https://neohiro.github.io/" rel="noopener" style="text-decoration: none; color: inherit;">
+        <div class="network-card-icon" aria-hidden="true">👽</div>
+        <h3>neohiro</h3>
+        <p>Security hardening &amp; privacy tools for Windows and Linux</p>
+      </a>
+      <a class="network-card" href="https://neohiro.github.io/openstageisland.github.io/" rel="noopener" style="text-decoration: none; color: inherit;">
+        <div class="network-card-icon" aria-hidden="true">🎤</div>
+        <h3>Open Stage Island</h3>
+        <p>Free 24/7 open-air music stage in Second Life &mdash; no booking, no fee</p>
+      </a>
+      <a class="network-card" href="https://neohiro.github.io/frenzypenguin-media/" rel="noopener" style="text-decoration: none; color: inherit;">
+        <div class="network-card-icon" aria-hidden="true">🐧</div>
+        <h3>FrenzyPenguin Media</h3>
+        <p>Indie media &amp; creative studio behind all of this</p>
+      </a>
+      <a class="network-card" href="https://neohiro.github.io/links-secret/?to=github" rel="noopener" style="text-decoration: none; color: inherit;">
+        <div class="network-card-icon" aria-hidden="true">🔗</div>
+        <h3>links-secret</h3>
+        <p>Whitelisted redirect service for promotional deep-links</p>
+      </a>
+    </div>
+
+    <div class="feed-panel" aria-labelledby="feed-heading">
+      <h3 id="feed-heading">📡 neohiro Network Activity Feed</h3>
+      <p class="feed-subtitle">Latest releases &amp; activity from the neohiro network &mdash; cascaded live from GitHub</p>
+      <ul class="feed-list" id="neohiro-feed" aria-live="polite">
+        <li class="feed-item feed-loading">Loading latest activity&hellip;</li>
+      </ul>
+      <p class="feed-status" id="neohiro-feed-status" aria-live="polite"></p>
+    </div>
+  </div>
+</section>
+
+<script>
+/* API-cascade feed: pulls latest release & repo events from neohiro network */
+(function() {
+  'use strict';
+  if (document.getElementById('neohiro-feed') === null) return;
+
+  var REPOS = [
+    { owner: 'neohiro', name: 'windows',            label: '🛡️  windows (hardening)' },
+    { owner: 'neohiro', name: 'neohiro.github.io',  label: '👽  neohiro.github.io' },
+    { owner: 'neohiro', name: 'openstageisland.github.io', label: '🎤  openstageisland' },
+    { owner: 'neohiro', name: 'frenzypenguin-media', label: '🐧  frenzypenguin-media' }
+  ];
+  var feed = document.getElementById('neohiro-feed');
+  var status = document.getElementById('neohiro-feed-status');
+  var items = [];
+  var done = 0;
+
+  function render() {
+    done++;
+    if (done < REPOS.length) return;
+    if (items.length === 0) {
+      feed.innerHTML = '<li class="feed-item feed-empty">No recent activity. Sources may be rate-limited.</li>';
+      return;
+    }
+    items.sort(function(a, b) {
+      return new Date(b.date) - new Date(a.date);
+    });
+    var top = items.slice(0, 8);
+    feed.innerHTML = top.map(function(it) {
+      return '<li class="feed-item">' +
+        '<span class="feed-icon" aria-hidden="true">' + it.icon + '</span>' +
+        '<span class="feed-label">' + it.label + '</span>' +
+        '<a class="feed-title" href="' + it.url + '" target="_blank" rel="noopener">' + escapeHTML(it.title) + '</a>' +
+        '<span class="feed-date">' + formatDate(it.date) + '</span>' +
+      '</li>';
+    }).join('');
+    status.textContent = 'Showing ' + top.length + ' most recent. Cascade refreshed ' + new Date().toLocaleTimeString();
+  }
+
+  function escapeHTML(s) {
+    var d = document.createElement('div');
+    d.textContent = s;
+    return d.innerHTML;
+  }
+
+  function formatDate(s) {
+    var d = new Date(s);
+    if (isNaN(d)) return s;
+    return d.toISOString().slice(0, 10);
+  }
+
+  REPOS.forEach(function(r) {
+    var url = 'https://api.github.com/repos/' + r.owner + '/' + r.name + '/releases/latest';
+    fetch(url, { headers: { 'Accept': 'application/vnd.github+json' } })
+      .then(function(res) {
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        return res.json();
+      })
+      .then(function(rel) {
+        if (rel && rel.tag_name) {
+          items.push({
+            label: r.label,
+            icon: '🚀',
+            title: rel.name || rel.tag_name,
+            url: rel.html_url,
+            date: rel.published_at || rel.created_at
+          });
+        }
+      })
+      .catch(function() {
+        var url2 = 'https://api.github.com/repos/' + r.owner + '/' + r.name + '/commits?per_page=1';
+        return fetch(url2, { headers: { 'Accept': 'application/vnd.github+json' } })
+          .then(function(r2) { if (!r2.ok) throw new Error('HTTP ' + r2.status); return r2.json(); })
+          .then(function(commits) {
+            if (commits && commits[0]) {
+              items.push({
+                label: r.label,
+                icon: '🛠️',
+                title: commits[0].commit.message.split('\n')[0].slice(0, 80),
+                url: commits[0].html_url,
+                date: commits[0].commit.author.date
+              });
+            }
+          });
+      })
+      .finally(render);
+  });
+})();
+</script>
