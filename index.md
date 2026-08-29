@@ -284,11 +284,25 @@ description: "Tracking milestones across biotech, AGI, quantum, energy, cyber, s
       status.textContent = 'Cascade failed for ' + failed + ' of ' + REPOS.length + ' sources.';
       return;
     }
-    items.sort(function(a, b) { return new Date(b.date) - new Date(a.date); });
-    var top = items.slice(0, MAX_ITEMS);
+    var dated = [];
+    for (var i = 0; i < items.length; i++) {
+      var ms = Date.parse(items[i].date);
+      if (isFinite(ms)) dated.push({ item: items[i], ms: ms });
+    }
+    if (dated.length === 0) {
+      feed.innerHTML = '';
+      var li2 = document.createElement('li');
+      li2.className = 'feed-item feed-empty';
+      li2.textContent = 'No datable activity available.';
+      feed.appendChild(li2);
+      status.textContent = 'Cascade completed but no items had parseable dates.';
+      return;
+    }
+    dated.sort(function(a, b) { return b.ms - a.ms; });
+    var top = dated.slice(0, MAX_ITEMS);
     feed.innerHTML = '';
-    for (var i = 0; i < top.length; i++) {
-      feed.appendChild(buildRow(top[i]));
+    for (var j = 0; j < top.length; j++) {
+      feed.appendChild(buildRow(top[j].item));
     }
     var stamp = new Date();
     status.textContent = 'Showing ' + top.length + ' most recent. ' +
@@ -311,7 +325,10 @@ description: "Tracking milestones across biotech, AGI, quantum, energy, cyber, s
 
     var link = document.createElement('a');
     link.className = 'feed-title';
-    link.href = it.url;
+    var href = (it.url || '').trim();
+    var proto = /^https?:\/\//i;
+    link.href = proto.test(href) ? href : '#';
+    link.setAttribute('aria-label', (it.title || '').trim() + ' \u2014 ' + (it.label || '').trim());
     link.target = '_blank';
     link.rel = 'noopener noreferrer';
     link.referrerPolicy = 'no-referrer';
