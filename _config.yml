@@ -1,0 +1,55 @@
+title: transhumanists
+description: "Human Progress Dashboard — tracking breakthroughs in biotech, AGI, quantum, energy, cyber, space & defense"
+url: "https://transhumanists.github.io"
+baseurl: ""
+github_username: transhumanists
+github_repo: transhumanists.github.io
+
+plugins:
+  - jekyll-feed
+  - jekyll-seo-tag
+  - jekyll-sitemap
+
+markdown: kramdown
+kramdown:
+  input: GFM
+  syntax_highlighter: rouge
+
+collections:
+  milestones:
+    output: true
+    permalink: /milestones/:name/
+  metrics:
+    output: true
+    permalink: /metrics/:name/
+
+defaults:
+  - scope:
+      path: ""
+      type: "milestones"
+    values:
+      layout: "milestone"
+  - scope:
+      path: ""
+      type: "metrics"
+    values:
+      layout: "metric"
+
+exclude:
+  - Gemfile
+  - Gemfile.lock
+  - node_modules
+  - vendor
+  - .github
+  - README.md
+  - LICENSE
+  - scripts
+  - "*.ps1"
+  - "*.sh"
+  - scrapers/
+  - llm/
+  - self_healer/
+  - social/
+  - github/
+  - webhooks/
+  - requirements.txt
