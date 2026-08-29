@@ -69,46 +69,95 @@
     if (!grid) return;
     const data = await fetchJSON('/data/milestones.json');
     const items = (data && data.recent) || SAMPLE_MILESTONES;
-    grid.innerHTML = items.slice(0, 8).map(m => `
-      <a href="${m.url || '/milestones/' + m.category.toLowerCase().replace(/[^a-z]/g, '') + '/'}" class="milestone-card" style="text-decoration: none; color: inherit;">
-        <div class="milestone-card-header">
-          <div class="milestone-card-icon" aria-hidden="true">${m.icon || '📌'}</div>
-          <span class="milestone-card-category">${m.category}</span>
-        </div>
-        <h3>${m.title}</h3>
-        <div class="milestone-card-value" data-counter="${m.value}">${m.value}</div>
-        <div class="milestone-card-unit">${m.unit || ''}</div>
-        <div class="milestone-card-meta">
-          <span>${m.source || '—'}</span>
-          <span>·</span>
-          <span>${m.date || ''}</span>
-        </div>
-        ${m.is_new ? '<span class="milestone-card-new" title="New this week"></span>' : ''}
-      </a>
-    `).join('');
+    grid.innerHTML = '';
+    items.slice(0, 8).forEach(function(m) {
+      var a = document.createElement('a');
+      a.className = 'milestone-card';
+      a.style.cssText = 'text-decoration: none; color: inherit;';
+      a.href = (m.url || '/milestones/' + (m.category || '').toLowerCase().replace(/[^a-z]/g, '') + '/');
+      a.setAttribute('aria-label', (m.title || '').trim());
 
-    // Trigger counter animation
-    grid.querySelectorAll('[data-counter]').forEach(el => {
-      el.textContent = '0';
-      const target = parseFloat(el.dataset.counter);
-      if (!isNaN(target)) {
-        const io = new IntersectionObserver(entries => {
-          entries.forEach(en => {
-            if (!en.isIntersecting) return;
-            const duration = 1500;
-            const start = performance.now();
-            const tick = (now) => {
-              const t = Math.min((now - start) / duration, 1);
-              const eased = 1 - Math.pow(1 - t, 3);
-              el.textContent = target * eased;
-              if (t < 1) requestAnimationFrame(tick);
-            };
-            requestAnimationFrame(tick);
-            io.unobserve(el);
-          });
-        }, { threshold: 0.3 });
-        io.observe(el);
+      var header = document.createElement('div');
+      header.className = 'milestone-card-header';
+
+      var icon = document.createElement('div');
+      icon.className = 'milestone-card-icon';
+      icon.setAttribute('aria-hidden', 'true');
+      icon.textContent = m.icon || '\u{1F4CC}';
+
+      var cat = document.createElement('span');
+      cat.className = 'milestone-card-category';
+      cat.textContent = m.category || '';
+
+      header.appendChild(icon);
+      header.appendChild(cat);
+
+      var titleEl = document.createElement('h3');
+      titleEl.textContent = m.title || '';
+
+      var valueEl = document.createElement('div');
+      valueEl.className = 'milestone-card-value';
+      valueEl.dataset.counter = m.value || '0';
+      valueEl.textContent = m.value || '0';
+
+      var unitEl = document.createElement('div');
+      unitEl.className = 'milestone-card-unit';
+      unitEl.textContent = m.unit || '';
+
+      var meta = document.createElement('div');
+      meta.className = 'milestone-card-meta';
+
+      var src = document.createElement('span');
+      src.textContent = m.source || '\u2014';
+
+      var dot = document.createElement('span');
+      dot.textContent = '\u00B7';
+
+      var date = document.createElement('span');
+      date.textContent = m.date || '';
+
+      meta.appendChild(src);
+      meta.appendChild(dot);
+      meta.appendChild(date);
+
+      a.appendChild(header);
+      a.appendChild(titleEl);
+      a.appendChild(valueEl);
+      a.appendChild(unitEl);
+      a.appendChild(meta);
+
+      if (m.is_new) {
+        var badge = document.createElement('span');
+        badge.className = 'milestone-card-new';
+        badge.title = 'New this week';
+        a.appendChild(badge);
       }
+
+      grid.appendChild(a);
+    });
+
+    // Trigger counter animation (same pattern as main.js for consistency)
+    grid.querySelectorAll('[data-counter]').forEach(function(el) {
+      el.textContent = '0';
+      var target = parseFloat(el.dataset.counter);
+      if (isNaN(target)) return;
+      var io = new IntersectionObserver(function(entries) {
+        entries.forEach(function(en) {
+          if (!en.isIntersecting) return;
+          var duration = 1500;
+          var start = performance.now();
+          var tick = function(now) {
+            var t = Math.min((now - start) / duration, 1);
+            var eased = 1 - Math.pow(1 - t, 3);
+            var val = target * eased;
+            el.textContent = Number.isInteger(target) ? Math.round(val) : val.toFixed(1);
+            if (t < 1) requestAnimationFrame(tick);
+          };
+          requestAnimationFrame(tick);
+          io.unobserve(el);
+        });
+      }, { threshold: 0.3 });
+      io.observe(el);
     });
   }
 

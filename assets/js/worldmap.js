@@ -276,8 +276,8 @@
   // ---- Init ----
   function load() {
     // Try to load scraped events, fallback to sample
-    if (window.TRANSGUMANISTS_CONFIG && window.TRANSGUMANISTS_CONFIG.eventsUrl) {
-      fetch(window.TRANSGUMANISTS_CONFIG.eventsUrl)
+    if (window.TRANSHUMANISTS_CONFIG && window.TRANSHUMANISTS_CONFIG.eventsUrl) {
+      fetch(window.TRANSHUMANISTS_CONFIG.eventsUrl)
         .then(r => r.json())
         .then(d => state.events = d)
         .catch(() => state.events = SAMPLE_EVENTS);
