@@ -59,8 +59,7 @@ All SVGs across the transhumanists, [FrenzyPenguin Media](https://github.com/fre
 ## 🔗 Related & Sponsorship
 
 <div align="center">
-  <a href="http://www.freevisitorcounters.com">Free Counter</a>
-  <script type="text/javascript" src="https://www.freevisitorcounters.com/en/home/counter/1631176/t/1"></script>
+  <script type="text/javascript" src="https://www.freevisitorcounters.com/en/home/counter/1631176/t/1" defer></script>
 </div>
 
 - 💖 [Sponsor neohiro on GitHub](https://github.com/sponsors/neohiro) — cover API + hosting costs

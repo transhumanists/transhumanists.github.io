@@ -131,7 +131,7 @@ description: "Tracking milestones across biotech, AGI, quantum, energy, cyber, s
         <p style="font-size: 0.85rem; color: var(--fg-muted);">Range, radius, fleet movements, contracts, defense intelligence, NATO/CIA/MI6/Mossad</p>
       </a>
 
-      <a href="{{ '/milestones/all/' | relative_url }}" class="milestone-card" style="text-decoration: none; color: inherit; background: var(--accent-dim); border-color: var(--accent);">
+      <a href="{{ '/milestones/' | relative_url }}" class="milestone-card" style="text-decoration: none; color: inherit; background: var(--accent-dim); border-color: var(--accent);">
         <div class="milestone-card-header">
           <div class="milestone-card-icon" aria-hidden="true">📊</div>
           <span class="milestone-card-category">All</span>
