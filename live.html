@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>transhumanists / Live Data</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root { --bg: #080a0e; --surface: #0f1318; --border: #1a2030; --fg: #eceff1; --fg-muted: #667788; --accent: #7c4dff; --green: #00cc88; --blue: #00aaff; --magenta: #ff0066; }
+    body { background: var(--bg); color: var(--fg); font-family: system-ui, -apple-system, sans-serif; min-height: 100vh; }
+  </style>
+  <link rel="stylesheet" href="assets/css/neohiro-widgets.css">
+</head>
+<body>
+  <div class="nhw-root">
+    <h1>transhumanists / Live Data</h1>
+    <p class="nhw-subtitle">Tracking human progress — breakthroughs in biotech, AGI, quantum, energy, cyber, space & defense. All widgets auto-refresh during your visit.</p>
+
+    <!-- ── Health Strip ──────────────────────────────────────────────── -->
+    <div class="nhw-section">
+      <div class="nhw-section-header">
+        <h2 class="nhw-section-title">Network Health</h2>
+        <span class="nhw-section-badge" style="background: var(--green); color: #000;">LIVE</span>
+      </div>
+      <div id="nhw-health-strip"></div>
+    </div>
+
+    <!-- ── Stat Cards ──────────────────────────────────────────────── -->
+    <div class="nhw-section">
+      <div class="nhw-section-header">
+        <h2 class="nhw-section-title">Key Metrics</h2>
+      </div>
+      <div class="nhw-stat-grid" id="nhw-stat-grid"></div>
+    </div>
+
+    <!-- ── Social Media ──────────────────────────────────────────────── -->
+    <div class="nhw-section">
+      <div id="nhw-social"></div>
+    </div>
+
+    <!-- ── Visitor Counters ─────────────────────────────────────────── -->
+    <div class="nhw-section">
+      <div class="nhw-section-header">
+        <h2 class="nhw-section-title">Visitor Counters</h2>
+      </div>
+      <div class="nhw-stat-grid" id="nhw-counters"></div>
+    </div>
+
+    <!-- ── Milestones ──────────────────────────────────────────────── -->
+    <div class="nhw-section">
+      <div id="nhw-milestones"></div>
+    </div>
+
+    <!-- ── Activity Feed ────────────────────────────────────────────── -->
+    <div class="nhw-section">
+      <div id="nhw-activity"></div>
+    </div>
+
+    <!-- ── Sparklines ──────────────────────────────────────────────── -->
+    <div class="nhw-section">
+      <div class="nhw-section-header">
+        <h2 class="nhw-section-title">Live Sparklines</h2>
+      </div>
+      <div class="nhw-stat-grid">
+        <div class="nhw-stat-card">
+          <div class="nhw-stat-label">Health Score</div>
+          <canvas id="nhw-spark-health" class="nhw-sparkline"></canvas>
+        </div>
+        <div class="nhw-stat-card">
+          <div class="nhw-stat-label">Milestone Velocity</div>
+          <canvas id="nhw-spark-velocity" class="nhw-sparkline"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Clock ────────────────────────────────────────────────────── -->
+    <div class="nhw-section" style="text-align: center;">
+      <div class="nhw-clock" id="nhw-clock">--:--:--</div>
+      <div class="nhw-stat-sub" style="margin-top: 8px;">Local time (auto-updates)</div>
+    </div>
+  </div>
+
+  <script src="assets/js/neohiro-widgets.js"></script>
+  <script>
+    (function () {
+      'use strict';
+
+      NeohiroWidgets.init({
+        heartbeatBase: 'https://neohiro.github.io/heartbeats',
+        apiBase: '',
+        pollInterval: 60000,
+        healthInterval: 30000,
+        sparkInterval: 10000,
+      });
+
+      /* Health strip */
+      NeohiroWidgets.loadHealthStrip('nhw-health-strip', 'https://neohiro.github.io/api/health');
+
+      /* Stat cards */
+      var grid = document.getElementById('nhw-stat-grid');
+      NeohiroWidgets.renderStatCard(grid, { id: 'nhw-stat-exit', label: 'Exit Nodes', value: '—', sub: 'Tailscale exit nodes' });
+      NeohiroWidgets.renderStatCard(grid, { id: 'nhw-stat-peers', label: 'Tailnet Peers', value: '—', sub: 'Connected devices' });
+      NeohiroWidgets.renderStatCard(grid, { id: 'nhw-stat-subnets', label: 'Subnets', value: '—', sub: 'Advertised routes' });
+      NeohiroWidgets.renderStatCard(grid, { id: 'nhw-stat-repos', label: 'Public Repos', value: '—', sub: 'neohiro org' });
+
+      fetch('https://neohiro.github.io/api/health', { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; }).then(function (d) {
+        if (!d) return;
+        NeohiroWidgets.updateStatValue('nhw-stat-exit', d.exit_nodes || 0, { format: NeohiroWidgets.fmtCount });
+        NeohiroWidgets.updateStatValue('nhw-stat-peers', d.peers || 0, { format: NeohiroWidgets.fmtCount });
+        NeohiroWidgets.updateStatValue('nhw-stat-subnets', d.subnets || 0, { format: NeohiroWidgets.fmtCount });
+      }).catch(function () {});
+
+      fetch('https://api.github.com/users/neohiro/repos?per_page=100', { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : []; }).then(function (data) {
+        if (Array.isArray(data)) NeohiroWidgets.updateStatValue('nhw-stat-repos', data.length, { format: NeohiroWidgets.fmtCount });
+      }).catch(function () {});
+
+      /* Social counters */
+      NeohiroWidgets.loadSocialCounters('nhw-social', 'https://neohiro.github.io/api/social-counters', { interval: 900000 });
+
+      /* Visitor counters */
+      var countersEl = document.getElementById('nhw-counters');
+      NeohiroWidgets.loadVisitorCounter('1631176', NeohiroWidgets.renderStatCard(countersEl, { id: 'nhw-c-trans', label: 'transhumanists.github.io', sub: 'Counter #1631176' }).id, { pollMs: 300000 });
+      NeohiroWidgets.loadVisitorCounter('1631173', NeohiroWidgets.renderStatCard(countersEl, { id: 'nhw-c-neohiro', label: 'neohiro.github.io', sub: 'Counter #1631173' }).id, { pollMs: 300000 });
+
+      /* Milestones */
+      NeohiroWidgets.loadMilestones('nhw-milestones', '/data/milestones.json', { title: 'Frontier Milestones', limit: 12, interval: 300000 });
+
+      /* Activity feed */
+      NeohiroWidgets.loadActivityFeed('nhw-activity', [
+        'transhumanists/transhumanists.github.io', 'transhumanists/milestones', 'transhumanists/apis',
+      ], { title: 'transhumanists Activity', limit: 10, interval: 300000 });
+
+      /* Sparklines */
+      NeohiroWidgets.startSparkline('nhw-spark-health', 'https://neohiro.github.io/api/health', { color: '#00cc88', fill: true, interval: 30000, maxPoints: 30 });
+
+      /* Clock */
+      function tickClock() {
+        var el = document.getElementById('nhw-clock');
+        if (!el) return;
+        var d = new Date();
+        el.textContent = ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2) + ':' + ('0' + d.getSeconds()).slice(-2);
+      }
+      tickClock();
+      setInterval(tickClock, 1000);
+    })();
+  </script>
+</body>
+</html>
