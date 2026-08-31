@@ -1,0 +1,26 @@
+{# heartbeat-status.html — a tiny badge that shows "Heart is alive".
+
+   Reads _data/heartbeat.yml (published every cycle by Heart).
+   Falls back to a neutral "no data" badge if missing. #}
+
+{%- assign h = site.data.heartbeat -%}
+{%- if h and h.last_run -%}
+  {%- assign age_min = h.age_minutes | default: 0 -%}
+  {%- if age_min < 5 -%}
+    {%- assign color = 'brightgreen' -%}
+    {%- assign label = 'heart: alive' -%}
+  {%- elsif age_min < 30 -%}
+    {%- assign color = 'green' -%}
+    {%- assign label = 'heart: ok' -%}
+  {%- elsif age_min < 120 -%}
+    {%- assign color = 'yellow' -%}
+    {%- assign label = 'heart: slow' -%}
+  {%- else -%}
+    {%- assign color = 'red' -%}
+    {%- assign label = 'heart: stale' -%}
+  {%- endif -%}
+<img src="https://img.shields.io/badge/{{ label | url_encode }}-{{ color }}?style=flat-square" alt="{{ label }}" loading="lazy">
+<small>last run {{ h.last_run | date: '%Y-%m-%d %H:%M UTC' }} · mode {{ h.mode | default: 'unknown' }}</small>
+{%- else -%}
+<img src="https://img.shields.io/badge/heart-no_data-lightgrey?style=flat-square" alt="heart: no data" loading="lazy">
+{%- endif -%}
