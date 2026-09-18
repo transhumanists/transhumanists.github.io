@@ -7,6 +7,11 @@ description: "Tracking milestones across biotech, AGI, quantum, energy, cyber, s
 <div class="hero" id="home">
   <div class="container">
     <div class="hero-content">
+      <img class="hero-avatar"
+           src="https://github.com/transhumanists.png"
+           alt="transhumanists avatar"
+           width="92" height="92"
+           fetchpriority="high">
       <div class="hero-badges" aria-label="Categories">
         <span class="badge badge-fpm">FrenzyPenguin Media</span>
         <span class="badge badge-milestone">7 categories · 50+ subcategories</span>
