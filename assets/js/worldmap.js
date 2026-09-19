@@ -18,7 +18,6 @@
     dpr: window.devicePixelRatio || 1,
     transform: { scale: 1, tx: 0, ty: 0 },
     isDragging: false,
-
     hoveredEvent: null,
     events: [],
     showTerminator: true
@@ -60,17 +59,6 @@
     const x = (lon + 180) / 360 * state.width;
     const y = (90 - lat) / 180 * state.height;
     return { x: x * state.transform.scale + state.transform.tx, y: y * state.transform.scale + state.transform.ty };
-  }
-
-  // ---- XSS-safe helper ----
-  function escapeHtml(text) {
-    if (text === null || text === undefined) return '';
-    return String(text)
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#39;');
   }
 
   // ---- Sample data (fallback) ----
