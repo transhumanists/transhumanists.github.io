@@ -34,7 +34,7 @@
 
   function createSkeletonCard(className) {
     const card = createEl('div', className);
-    ['long', 'medium', 'value', 'short'].forEach(type => {
+    ['long', 'medium', 'short'].forEach(type => {
       const line = createEl('div', `skeleton-line ${type}`);
       card.appendChild(line);
     });
@@ -320,7 +320,8 @@
 
     const data = await getMilestonesData();
     if (!data || !data.categories) {
-      grid.innerHTML = '<p style="color: var(--fg-muted); text-align: center; padding: 40px;">No milestone data available</p>';
+      grid.replaceChildren(createEl('p', '', 'No milestone data available'));
+      grid.firstElementChild.style.cssText = 'color: var(--fg-muted); text-align: center; padding: 40px; width: 100%;';
       return;
     }
 

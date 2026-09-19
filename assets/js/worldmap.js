@@ -527,7 +527,7 @@
   }
 
   function cleanup() {
-    if (animationFrameId) cancelAnimationFrame(animationFrameId);
+    if (animationFrameId) { cancelAnimationFrame(animationFrameId); animationFrameId = null; }
     if (terminatorInterval) clearInterval(terminatorInterval);
     if (eventsAbortController) eventsAbortController.abort();
     if (resizeTimeout) clearTimeout(resizeTimeout);
