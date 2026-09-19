@@ -18,7 +18,7 @@
     dpr: window.devicePixelRatio || 1,
     transform: { scale: 1, tx: 0, ty: 0 },
     isDragging: false,
-    dragStart: { x: 0, y: 0 },
+
     hoveredEvent: null,
     events: [],
     showTerminator: true
@@ -194,7 +194,7 @@
       ctx.fill();
       ctx.shadowBlur = 0;
 
-      ctx.font = '10px var(--font-mono)';
+      ctx.font = '10px ui-monospace, SFMono-Regular, monospace';
       ctx.fillStyle = '#ffd740';
       ctx.textAlign = 'center';
       ctx.fillText('☀', sunPos.x, sunPos.y + 16);

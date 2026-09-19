@@ -368,7 +368,7 @@ description: "Tracking milestones across biotech, AGI, quantum, energy, cyber, s
 
   function finalize() {
     if (items.length === 0) {
-      feed.innerHTML = '';
+      feed.replaceChildren();
       var li = document.createElement('li');
       li.className = 'feed-item feed-empty';
       li.textContent = failed === REPOS.length
@@ -384,7 +384,7 @@ description: "Tracking milestones across biotech, AGI, quantum, energy, cyber, s
       if (isFinite(ms)) dated.push({ item: items[i], ms: ms });
     }
     if (dated.length === 0) {
-      feed.innerHTML = '';
+      feed.replaceChildren();
       var li2 = document.createElement('li');
       li2.className = 'feed-item feed-empty';
       li2.textContent = 'No datable activity available.';
@@ -394,7 +394,7 @@ description: "Tracking milestones across biotech, AGI, quantum, energy, cyber, s
     }
     dated.sort(function(a, b) { return b.ms - a.ms; });
     var top = dated.slice(0, MAX_ITEMS);
-    feed.innerHTML = '';
+    feed.replaceChildren();
     for (var j = 0; j < top.length; j++) {
       feed.appendChild(buildRow(top[j].item));
     }

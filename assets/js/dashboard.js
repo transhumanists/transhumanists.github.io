@@ -24,17 +24,7 @@
     { title: 'Drone swarm coordinated', category: 'Defense', value: '1000', unit: 'UAVs', source: 'CSA', date: '2026-08-17', icon: '🌍' }
   ];
 
-  // ---- XSS-safe helpers ----
-  function escapeHtml(text) {
-    if (text === null || text === undefined) return '';
-    return String(text)
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#39;');
-  }
-
+  // ---- DOM helpers ----
   function createEl(tag, className, content) {
     const el = document.createElement(tag);
     if (className) el.className = className;
