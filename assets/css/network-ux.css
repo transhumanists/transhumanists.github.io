@@ -343,35 +343,43 @@ body > .ambient-orb {
   .prev-btn .prev-host { display: none; }
 }
 
-/* ── AI Assistant input bar (hero-centered) ────────────────────────── */
+/* ── AI Assistant input bar (hero, screenwide, expandable) ───────────────── */
 .ai-bar {
-  margin: 32px auto 0;
-  max-width: 1120px;
+  width: 100%;
+  max-width: none;
+  margin: 24px 0 0;
+  padding: 0 16px;
   pointer-events: none;
-  display: flex;
-  justify-content: center;
+  box-sizing: border-box;
 }
 .ai-bar__inner {
   pointer-events: auto;
   width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
   position: relative;
 }
 .ai-bar__form {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 10px 12px 10px 18px;
+  padding: 10px 16px;
   background: var(--bg-elevated, #161e26);
   border: 1px solid var(--border, #1f2a36);
   border-radius: 999px;
-  box-shadow: 0 10px 40px rgba(0,0,0,0.5), 0 0 0 1px var(--accent-dim, rgba(124,77,255,0.2));
-  transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.4), 0 0 0 1px var(--accent-dim, rgba(124,77,255,0.15));
+  transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s, background 0.2s, padding 0.2s;
   backdrop-filter: blur(12px);
+  min-height: 56px;
 }
-.ai-bar__form:focus-within {
+.ai-bar__form:focus-within,
+.ai-bar__form.has-content {
   border-color: var(--accent, #7c4dff);
-  box-shadow: 0 14px 50px rgba(0,0,0,0.55), 0 0 0 2px var(--accent, #7c4dff), 0 0 24px var(--accent-dim, rgba(124,77,255,0.2));
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5), 0 0 0 2px var(--accent, #7c4dff), 0 0 20px var(--accent-dim, rgba(124,77,255,0.2));
   transform: translateY(-1px);
+  background: var(--bg-card, #111820);
+  padding-left: 20px;
+  padding-right: 20px;
 }
 .ai-bar__icon {
   flex-shrink: 0;
@@ -391,12 +399,9 @@ body > .ambient-orb {
   line-height: 1.4;
   padding: 4px 0;
   caret-color: var(--accent, #7c4dff);
+  min-width: 0;
 }
 .ai-bar__input:focus-visible {
-  /* Show a 2px ring on the surrounding .ai-bar__form on keyboard focus
-     (the input itself has outline:none so it doesn't double up). The
-     focus-within on .ai-bar__form already highlights the border, but
-     some screen readers need a visible ring for keyboard nav. */
   outline: 2px solid var(--accent, #7c4dff);
   outline-offset: 4px;
   border-radius: 4px;
@@ -416,6 +421,7 @@ body > .ambient-orb {
   border-radius: 999px;
   cursor: pointer;
   transition: transform 0.15s, box-shadow 0.2s, opacity 0.2s;
+  flex-shrink: 0;
 }
 .ai-bar__send:hover {
   transform: translateY(-1px);

@@ -1,5 +1,6 @@
 /* Interactive world map — projection + event plotting
  * No external dependencies. Equirectangular projection with smooth pan/zoom.
+ * Includes day/night terminator overlay (sun position).
  */
 (function() {
   'use strict';
@@ -20,7 +21,8 @@
     dragStart: { x: 0, y: 0 },
     hoveredEvent: null,
     events: [],
-    countries: []
+    countries: [],
+    showTerminator: true
   };
 
   // ---- Sample data (replaced by data/scraped-events.json at build time) ----
@@ -83,6 +85,127 @@
     return { lon, lat };
   }
 
+  // ---- Terminator (Day/Night boundary) ----
+  function getSunPosition() {
+    const now = new Date();
+    const year = now.getUTCFullYear();
+    const month = now.getUTCMonth() + 1;
+    const day = now.getUTCDate();
+    const hour = now.getUTCHours() + now.getUTCMinutes() / 60 + now.getUTCSeconds() / 3600;
+
+    // Approximate solar declination and equation of time
+    const dayOfYear = Math.floor((Date.UTC(year, month - 1, day) - Date.UTC(year, 0, 0)) / 86400000);
+    const declination = -23.44 * Math.cos((2 * Math.PI / 365) * (dayOfYear + 10)) * Math.PI / 180; // radians
+    const equationOfTime = 9.87 * Math.sin(2 * Math.PI * (dayOfYear - 81) / 365) - 7.53 * Math.cos(Math.PI * (dayOfYear - 81) / 184) - 1.5 * Math.sin(Math.PI * (dayOfYear - 81) / 184); // minutes
+    const solarTime = hour + equationOfTime / 60;
+    const hourAngle = (solarTime - 12) * 15 * Math.PI / 180; // radians
+
+    // Sub-solar point (where sun is directly overhead)
+    const subSolarLat = declination;
+    const subSolarLon = -hourAngle * 180 / Math.PI;
+
+    return { lat: subSolarLat, lon: subSolarLon };
+  }
+
+  function drawTerminator() {
+    if (!state.showTerminator) return;
+
+    const sun = getSunPosition();
+    const w = state.width;
+    const h = state.height;
+
+    // Draw night side as a semi-transparent overlay
+    // The terminator is a great circle - we approximate with a cosine curve
+    const points = [];
+    const samples = 180; // one point per degree of latitude
+
+    for (let i = 0; i <= samples; i++) {
+      const lat = 90 - (i / samples) * 180; // 90 to -90
+      const latRad = lat * Math.PI / 180;
+      const declRad = sun.lat;
+
+      // Calculate longitude of terminator at this latitude
+      // cos(hourAngle) = -tan(lat) * tan(declination)
+      const cosHourAngle = -Math.tan(latRad) * Math.tan(declRad);
+
+      let lon;
+      if (cosHourAngle >= 1) {
+        // 24-hour daylight (polar day)
+        lon = sun.lon;
+      } else if (cosHourAngle <= -1) {
+        // 24-hour night (polar night)
+        lon = sun.lon + 180;
+      } else {
+        const hourAngle = Math.acos(Math.max(-1, Math.min(1, cosHourAngle)));
+        lon = sun.lon + (hourAngle * 180 / Math.PI);
+      }
+
+      // Normalize longitude to -180..180
+      while (lon > 180) lon -= 360;
+      while (lon < -180) lon += 360;
+
+      const p = project(lon, lat);
+      points.push(p);
+    }
+
+    // Draw night side (the side away from the sun)
+    // We'll create a polygon covering the night side
+    ctx.save();
+    ctx.globalCompositeOperation = 'source-over';
+
+    // Night gradient overlay
+    const nightGrad = ctx.createLinearGradient(0, 0, w, 0);
+    nightGrad.addColorStop(0, 'rgba(6, 11, 20, 0.35)');
+    nightGrad.addColorStop(0.5, 'rgba(6, 11, 20, 0.15)');
+    nightGrad.addColorStop(1, 'rgba(6, 11, 20, 0.35)');
+
+    // Draw night side polygon
+    ctx.beginPath();
+    // Start from top-left, trace terminator, go to bottom-left
+    ctx.moveTo(0, 0);
+    for (let i = 0; i < points.length; i++) {
+      // Only draw the night side (left of terminator in our coordinate system)
+      // The night side is west of the sub-solar point
+      const p = points[i];
+      ctx.lineTo(p.x, p.y);
+    }
+    ctx.lineTo(0, h);
+    ctx.closePath();
+    ctx.fillStyle = 'rgba(6, 11, 20, 0.4)';
+    ctx.fill();
+
+    // Draw terminator line (the edge of day/night)
+    ctx.beginPath();
+    for (let i = 0; i < points.length; i++) {
+      const p = points[i];
+      if (i === 0) ctx.moveTo(p.x, p.y);
+      else ctx.lineTo(p.x, p.y);
+    }
+    ctx.strokeStyle = 'rgba(255, 215, 64, 0.6)'; // golden terminator
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([8, 4]);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Draw sub-solar point (sun marker)
+    const sunPos = project(sun.lon, sun.lat);
+    ctx.beginPath();
+    ctx.arc(sunPos.x, sunPos.y, 8, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(255, 215, 64, 0.9)';
+    ctx.shadowColor = '#ffd740';
+    ctx.shadowBlur = 12;
+    ctx.fill();
+    ctx.shadowBlur = 0;
+
+    // Sun label
+    ctx.font = '10px var(--font-mono)';
+    ctx.fillStyle = '#ffd740';
+    ctx.textAlign = 'center';
+    ctx.fillText('☀', sunPos.x, sunPos.y + 16);
+
+    ctx.restore();
+  }
+
   // ---- Resize ----
   function resize() {
     const rect = canvas.getBoundingClientRect();
@@ -141,6 +264,9 @@
       ctx.fill();
       ctx.stroke();
     });
+
+    // Day/Night Terminator
+    drawTerminator();
 
     // Events
     state.events.forEach(ev => drawEvent(ev));
@@ -273,6 +399,11 @@
     requestAnimationFrame(loop);
   }
 
+  // Update terminator position every minute (sun moves)
+  setInterval(() => {
+    if (state.showTerminator && state.events.length) draw();
+  }, 60000);
+
   // ---- Init ----
   function load() {
     // Try to load scraped events, fallback to sample
@@ -295,6 +426,28 @@
     if (active) active.textContent = '12';
     if (conflicts) conflicts.textContent = '3';
     if (fleets) fleets.textContent = '7';
+
+    // Terminator toggle
+    const terminatorToggle = document.getElementById('terminator-toggle');
+    const terminatorIcon = document.getElementById('terminator-icon');
+    const terminatorLabel = document.getElementById('terminator-label');
+    if (terminatorToggle) {
+      terminatorToggle.addEventListener('click', () => {
+        state.showTerminator = !state.showTerminator;
+        terminatorToggle.setAttribute('aria-pressed', state.showTerminator);
+        if (terminatorIcon) terminatorIcon.textContent = state.showTerminator ? '☀' : '☾';
+        if (terminatorLabel) terminatorLabel.textContent = state.showTerminator ? 'Day/Night' : 'Day/Night (off)';
+        draw();
+      });
+      terminatorToggle.addEventListener('mouseenter', () => {
+        terminatorToggle.style.borderColor = 'var(--accent)';
+        terminatorToggle.style.background = 'var(--accent-dim)';
+      });
+      terminatorToggle.addEventListener('mouseleave', () => {
+        terminatorToggle.style.borderColor = 'var(--border)';
+        terminatorToggle.style.background = 'none';
+      });
+    }
   }
 
   // Defer load to allow other DOM stuff

@@ -827,18 +827,17 @@ function renderSafeHtml(html) {
       </div>
     `;
 
-    // Insert into hero-content if present (hero middle), otherwise fall back to body
-    const heroContent = document.querySelector('.hero-content');
-    if (heroContent) {
-      heroContent.appendChild(wrap);
+    // Insert into hero, above the milestones-catalog (live signal) section
+    const catalogSection = document.querySelector('#milestones-catalog');
+    if (catalogSection) {
+      catalogSection.parentNode.insertBefore(wrap, catalogSection);
     } else {
-      document.body.appendChild(wrap);
-    }
-
-    // Add bottom padding so the bar doesn't cover content (idempotent)
-    if (!document.documentElement.style.getPropertyValue('--ai-bar-pad')) {
-      document.documentElement.style.setProperty('--ai-bar-pad', '110px');
-      document.documentElement.style.paddingBottom = 'var(--ai-bar-pad)';
+      const heroContent = document.querySelector('.hero-content');
+      if (heroContent) {
+        heroContent.appendChild(wrap);
+      } else {
+        document.body.appendChild(wrap);
+      }
     }
 
     const form = document.getElementById('ai-bar__form');
@@ -847,12 +846,13 @@ function renderSafeHtml(html) {
     form.addEventListener('submit', onAsk);
     // Live char counter: shows how much is left so users self-correct
     // before hitting the 600-char cap and getting a silent truncation.
-    function updateCounter() {
-      var n = input.value.length;
-      counter.textContent = n + ' / 600';
-      counter.classList.toggle('ai-bar__counter--near', n >= 540);
-      counter.classList.toggle('ai-bar__counter--over', n > 600);
-    }
+function updateCounter() {
+        var n = input.value.length;
+        counter.textContent = n + ' / 600';
+        counter.classList.toggle('ai-bar__counter--near', n >= 540);
+        counter.classList.toggle('ai-bar__counter--over', n > 600);
+        form.classList.toggle('has-content', n > 0);
+      }
     input.addEventListener('input', updateCounter);
     updateCounter();
     // Cute dynamic cursor: shift placeholder text on focus/blur
@@ -920,6 +920,7 @@ function renderSafeHtml(html) {
     showConversationModal();
     appendConvMessage('user', q);
     input.value = '';
+    form.classList.remove('has-content');
     // Reset char counter (stale after programmatic clear; updateCounter()
     // lives in mountAssistantBar's closure so we write directly).
     var ctr = document.getElementById('ai-bar__counter');
