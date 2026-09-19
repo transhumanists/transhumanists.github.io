@@ -62,14 +62,6 @@
     return { x: x * state.transform.scale + state.transform.tx, y: y * state.transform.scale + state.transform.ty };
   }
 
-  function unproject(px, py) {
-    const x = (px - state.transform.tx) / state.transform.scale;
-    const y = (py - state.transform.ty) / state.transform.scale;
-    const lon = x / state.width * 360 - 180;
-    const lat = 90 - y / state.height * 180;
-    return { lon, lat };
-  }
-
   // ---- XSS-safe helper ----
   function escapeHtml(text) {
     if (text === null || text === undefined) return '';
@@ -211,15 +203,20 @@
     ctx.restore();
   }
 
-  // ---- Resize ----
-  function resize() {
-    const rect = canvas.getBoundingClientRect();
-    state.width = rect.width;
-    state.height = rect.height;
-    canvas.width = state.width * state.dpr;
-    canvas.height = state.height * state.dpr;
-    ctx.setTransform(state.dpr, 0, 0, state.dpr, 0, 0);
-    draw();
+  // ---- Resize (debounced) ----
+  let resizeTimeout = null;
+  function scheduleResize() {
+    if (resizeTimeout) clearTimeout(resizeTimeout);
+    resizeTimeout = setTimeout(() => {
+      const rect = canvas.getBoundingClientRect();
+      state.width = rect.width;
+      state.height = rect.height;
+      canvas.width = state.width * state.dpr;
+      canvas.height = state.height * state.dpr;
+      ctx.setTransform(state.dpr, 0, 0, state.dpr, 0, 0);
+      draw();
+      resizeTimeout = null;
+    }, 50);
   }
 
   // ---- Draw ----
@@ -363,15 +360,29 @@
   }, { passive: false });
 
   // ---- Tooltip ----
+  function createTooltipElement(ev) {
+    const color = CATEGORY_COLORS[ev.category] || '#00d4ff';
+    const wrapper = document.createElement('div');
+    const cat = document.createElement('div');
+    cat.className = 'tt-category';
+    cat.style.color = color;
+    cat.textContent = ev.category;
+    const title = document.createElement('div');
+    title.className = 'tt-title';
+    title.textContent = ev.title;
+    const value = document.createElement('div');
+    value.className = 'tt-value';
+    value.textContent = ev.value;
+    const meta = document.createElement('div');
+    meta.style.cssText = 'color: var(--fg-subtle); font-size: 0.7rem; margin-top: 4px;';
+    meta.textContent = `${ev.source} · ${ev.date}`;
+    wrapper.append(cat, title, value, meta);
+    return wrapper;
+  }
+
   function showTooltip(ev, x, y) {
     if (!tooltip) return;
-    const color = CATEGORY_COLORS[ev.category] || '#00d4ff';
-    tooltip.innerHTML = `
-      <div class="tt-category" style="color: ${escapeHtml(color)};">${escapeHtml(ev.category)}</div>
-      <div class="tt-title">${escapeHtml(ev.title)}</div>
-      <div class="tt-value">${escapeHtml(ev.value)}</div>
-      <div style="color: var(--fg-subtle); font-size: 0.7rem; margin-top: 4px;">${escapeHtml(ev.source)} &middot; ${escapeHtml(ev.date)}</div>
-    `;
+    tooltip.replaceChildren(createTooltipElement(ev));
     tooltip.classList.add('visible');
     moveTooltip(x, y);
   }
@@ -484,7 +495,7 @@
     await loadEvents();
     updateStatsDisplay();
     resize();
-    window.addEventListener('resize', resize);
+    window.addEventListener('resize', scheduleResize);
     animationFrameId = requestAnimationFrame(loop);
     startTerminatorInterval();
 
@@ -514,7 +525,8 @@
     if (animationFrameId) cancelAnimationFrame(animationFrameId);
     if (terminatorInterval) clearInterval(terminatorInterval);
     if (eventsAbortController) eventsAbortController.abort();
-    window.removeEventListener('resize', resize);
+    if (resizeTimeout) clearTimeout(resizeTimeout);
+    window.removeEventListener('resize', scheduleResize);
   }
 
   window.addEventListener('beforeunload', cleanup);

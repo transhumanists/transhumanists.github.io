@@ -42,6 +42,15 @@
     return el;
   }
 
+  function createSkeletonCard(className) {
+    const card = createEl('div', className);
+    ['long', 'medium', 'value', 'short'].forEach(type => {
+      const line = createEl('div', `skeleton-line ${type}`);
+      card.appendChild(line);
+    });
+    return card;
+  }
+
   // ---- Counter animation utility ----
   function animateCounter(el, target, options = {}) {
     const { duration = 1200, threshold = 0.2, integer = true } = options;
@@ -64,16 +73,6 @@
     io.observe(el);
     registerObserver(io);
     return io;
-  }
-
-  async function fetchJSON(url) {
-    try {
-      const r = await fetch(url, { cache: 'no-store' });
-      if (!r.ok) throw new Error(r.status);
-      return await r.json();
-    } catch (e) {
-      return null;
-    }
   }
 
   // ---- Shared milestone data cache ----
@@ -101,8 +100,6 @@
       if (idx >= 0) fetchAbortControllers.splice(idx, 1);
     }
   }
-
-  // ---- Shared milestone data cache ----
   async function getMilestonesData() {
     if (milestonesCache) return milestonesCache;
     if (!milestonesCachePromise) {
@@ -126,8 +123,8 @@
     if (!bars || !labels) return;
 
     // Show skeleton while loading
-    bars.innerHTML = Array.from({ length: 30 }, () => '<div class="chart-bar skeleton" style="height: 20px;"></div>').join('');
-    labels.innerHTML = Array.from({ length: 30 }, (_, i) => `<div class="chart-label">${i % 5 === 0 ? 'MM-DD' : ''}</div>`).join('');
+    bars.replaceChildren(...Array.from({ length: 30 }, () => createEl('div', 'chart-bar skeleton', '')));
+    labels.replaceChildren(...Array.from({ length: 30 }, (_, i) => createEl('div', 'chart-label', i % 5 === 0 ? 'MM-DD' : '')));
 
     const data = await fetchJSON('/data/activity.json');
     const series = (data && data.days) || generateSampleActivity();
@@ -171,14 +168,7 @@
     if (!grid) return;
 
     // Show skeleton cards while loading
-    grid.innerHTML = Array.from({ length: 8 }, () => `
-      <div class="milestone-card skeleton-card">
-        <div class="skeleton-line long"></div>
-        <div class="skeleton-line medium"></div>
-        <div class="skeleton-value"></div>
-        <div class="skeleton-line short"></div>
-      </div>
-    `).join('');
+    grid.replaceChildren(...Array.from({ length: 8 }, () => createSkeletonCard('milestone-card skeleton-card')));
 
     const data = await fetchJSON('/data/milestones.json');
     const items = (data && data.recent) || SAMPLE_MILESTONES;
@@ -330,14 +320,7 @@
     if (!grid) return;
 
     // Show skeleton cards while loading
-    grid.innerHTML = Array.from({ length: 12 }, () => `
-      <div class="catalog-card skeleton-card">
-        <div class="skeleton-line long"></div>
-        <div class="skeleton-line medium"></div>
-        <div class="skeleton-value"></div>
-        <div class="skeleton-line short"></div>
-      </div>
-    `).join('');
+    grid.replaceChildren(...Array.from({ length: 12 }, () => createSkeletonCard('catalog-card skeleton-card')));
 
     const data = await getMilestonesData();
     if (!data || !data.categories) {
@@ -472,9 +455,13 @@
     // Initial render
     render('all');
 
-    // Filter handler
+    // Filter handler (debounced)
     if (filter) {
-      filter.addEventListener('change', e => render(e.target.value));
+      let filterTimeout = null;
+      filter.addEventListener('change', e => {
+        if (filterTimeout) clearTimeout(filterTimeout);
+        filterTimeout = setTimeout(() => render(e.target.value), 100);
+      });
     }
   }
 
