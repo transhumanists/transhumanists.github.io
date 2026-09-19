@@ -101,11 +101,6 @@
     return milestonesCachePromise;
   }
 
-  function invalidateMilestonesCache() {
-    milestonesCache = null;
-    milestonesCachePromise = null;
-  }
-
   // Activity chart (30-day bars)
   async function loadActivity() {
     const bars = document.getElementById('activity-bars');
@@ -163,7 +158,7 @@
     // Show skeleton cards while loading
     grid.replaceChildren(...Array.from({ length: 8 }, () => createSkeletonCard('milestone-card skeleton-card')));
 
-    const data = await fetchJSON('/data/milestones.json');
+    const data = await getMilestonesData();
     const items = (data && data.recent) || SAMPLE_MILESTONES;
     const frag = document.createDocumentFragment();
     items.slice(0, 8).forEach(function(m) {
@@ -424,7 +419,6 @@
 
         if (m.is_new) {
           const badge = createEl('span', 'milestone-card-new');
-          badge.style.cssText = 'position:absolute;top:12px;right:12px;width:8px;height:8px;border-radius:50%;background:var(--orange);animation:pulse 2s infinite;';
           badge.title = 'New this week';
           card.appendChild(badge);
         }
