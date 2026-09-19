@@ -18,7 +18,6 @@
     dpr: window.devicePixelRatio || 1,
     transform: { scale: 1, tx: 0, ty: 0 },
     isDragging: false,
-    dragStart: { x: 0, y: 0 },
     hoveredEvent: null,
     events: [],
     showTerminator: true
@@ -62,17 +61,6 @@
     return { x: x * state.transform.scale + state.transform.tx, y: y * state.transform.scale + state.transform.ty };
   }
 
-  // ---- XSS-safe helper ----
-  function escapeHtml(text) {
-    if (text === null || text === undefined) return '';
-    return String(text)
-      .replace(/&/g, '&')
-      .replace(/</g, '<')
-      .replace(/>/g, '>')
-      .replace(/"/g, '"')
-      .replace(/'/g, '&apos;');
-  }
-
   // ---- Sample data (fallback) ----
   const SAMPLE_EVENTS = [
     { lat: 37.7749, lon: -122.4194, title: 'CRISPR Cas-13b phase-3 trial cleared', category: 'Biotechnology', value: '50 patients', source: 'Stanford', date: '2026-08-25' },
@@ -100,7 +88,7 @@
     const startOfYear = Date.UTC(year, 0, 1);
     const dayOfYear = Math.floor((Date.UTC(year, month, day) - startOfYear) / 86400000);
 
-    const declination = -23.44 * Math.cos((2 * Math.PI / 365) * (dayOfYear + 10)) * Math.PI / 180;
+    const declination = -23.44 * Math.cos((2 * Math.PI / 365) * (dayOfYear + 10));
     const B = (360 / 365) * (dayOfYear - 81) * Math.PI / 180;
     const equationOfTime = 9.87 * Math.sin(2 * B) - 7.53 * Math.cos(B) - 1.5 * Math.sin(B);
     const solarTime = hour + equationOfTime / 60;
@@ -125,7 +113,7 @@
     for (let i = 0; i <= samples; i++) {
       const lat = 90 - (i / samples) * 180;
       const latRad = lat * Math.PI / 180;
-      const declRad = sun.lat;
+      const declRad = sun.lat * Math.PI / 180;
 
       const cosHourAngle = -Math.tan(latRad) * Math.tan(declRad);
 
@@ -194,7 +182,7 @@
       ctx.fill();
       ctx.shadowBlur = 0;
 
-      ctx.font = '10px var(--font-mono)';
+      ctx.font = '10px ui-monospace, SFMono-Regular, monospace';
       ctx.fillStyle = '#ffd740';
       ctx.textAlign = 'center';
       ctx.fillText('☀', sunPos.x, sunPos.y + 16);
@@ -203,17 +191,26 @@
     ctx.restore();
   }
 
-  // ---- Resize (debounced) ----
+  // ---- Resize ----
   let resizeTimeout = null;
+  function applyResize() {
+    const rect = canvas.getBoundingClientRect();
+    state.width = rect.width;
+    state.height = rect.height;
+    canvas.width = state.width * state.dpr;
+    canvas.height = state.height * state.dpr;
+    ctx.setTransform(state.dpr, 0, 0, state.dpr, 0, 0);
+  }
+
+  function resize() {
+    applyResize();
+    draw();
+  }
+
   function scheduleResize() {
     if (resizeTimeout) clearTimeout(resizeTimeout);
     resizeTimeout = setTimeout(() => {
-      const rect = canvas.getBoundingClientRect();
-      state.width = rect.width;
-      state.height = rect.height;
-      canvas.width = state.width * state.dpr;
-      canvas.height = state.height * state.dpr;
-      ctx.setTransform(state.dpr, 0, 0, state.dpr, 0, 0);
+      applyResize();
       draw();
       resizeTimeout = null;
     }, 50);
@@ -471,7 +468,7 @@
 
   function loop() {
     if (document.hidden) {
-      animationFrameId = requestAnimationFrame(loop);
+      animationFrameId = null;
       return;
     }
     const now = Date.now();
@@ -480,6 +477,13 @@
       lastDrawTime = now;
     }
     animationFrameId = requestAnimationFrame(loop);
+  }
+
+  function onVisibilityChange() {
+    if (!document.hidden) {
+      if (!animationFrameId) animationFrameId = requestAnimationFrame(loop);
+      if (state.showTerminator && state.events.length) draw();
+    }
   }
 
   let terminatorInterval = null;
@@ -496,6 +500,7 @@
     updateStatsDisplay();
     resize();
     window.addEventListener('resize', scheduleResize);
+    document.addEventListener('visibilitychange', onVisibilityChange);
     animationFrameId = requestAnimationFrame(loop);
     startTerminatorInterval();
 
@@ -522,11 +527,12 @@
   }
 
   function cleanup() {
-    if (animationFrameId) cancelAnimationFrame(animationFrameId);
+    if (animationFrameId) { cancelAnimationFrame(animationFrameId); animationFrameId = null; }
     if (terminatorInterval) clearInterval(terminatorInterval);
     if (eventsAbortController) eventsAbortController.abort();
     if (resizeTimeout) clearTimeout(resizeTimeout);
     window.removeEventListener('resize', scheduleResize);
+    document.removeEventListener('visibilitychange', onVisibilityChange);
   }
 
   window.addEventListener('beforeunload', cleanup);
