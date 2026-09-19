@@ -130,19 +130,22 @@
     const series = (data && data.days) || generateSampleActivity();
     const max = Math.max(1, ...series.map(d => d.count));
 
-    bars.innerHTML = '';
-    labels.innerHTML = '';
+    const barsFrag = document.createDocumentFragment();
+    const labelsFrag = document.createDocumentFragment();
 
     series.forEach((d, i) => {
       const bar = createEl('div', 'chart-bar');
       bar.style.height = (4 + (d.count / max) * 116) + 'px';
       bar.title = `${d.date}: ${d.count} milestones`;
-      bars.appendChild(bar);
+      barsFrag.appendChild(bar);
 
       const lbl = createEl('div', 'chart-label');
       lbl.textContent = (i % 5 === 0 || i === series.length - 1) ? d.date.slice(5) : '';
-      labels.appendChild(lbl);
+      labelsFrag.appendChild(lbl);
     });
+
+    bars.replaceChildren(barsFrag);
+    labels.replaceChildren(labelsFrag);
 
     const ts = document.getElementById('activity-update-time');
     if (ts) ts.textContent = data && data.last_update ? '(updated ' + data.last_update + ')' : '(seed data)';
@@ -172,7 +175,7 @@
 
     const data = await fetchJSON('/data/milestones.json');
     const items = (data && data.recent) || SAMPLE_MILESTONES;
-    grid.innerHTML = '';
+    const frag = document.createDocumentFragment();
     items.slice(0, 8).forEach(function(m) {
       const a = createEl('a');
       a.className = 'milestone-card';
@@ -212,8 +215,10 @@
         a.appendChild(badge);
       }
 
-      grid.appendChild(a);
+      frag.appendChild(a);
     });
+
+    grid.replaceChildren(frag);
 
     grid.querySelectorAll('[data-counter]').forEach(el => {
       const target = parseFloat(el.dataset.counter);
@@ -244,7 +249,7 @@
       function renderMilestones() {
         if (!milestonesContainer || hasRendered) return;
         const config = CATEGORY_CONFIG[catKey] || { icon: '📌', color: '#00d4ff' };
-        milestonesContainer.innerHTML = '';
+        const frag = document.createDocumentFragment();
         (catData.milestones || []).forEach(m => {
           const item = createEl('div', 'category-milestone-item');
           item.style.cssText = 'animation: slideDown 0.3s ease;';
@@ -284,11 +289,12 @@
 
           item.appendChild(info);
           item.appendChild(valueDiv);
-          milestonesContainer.appendChild(item);
+          frag.appendChild(item);
 
           const target = parseFloat(valEl.dataset.counter);
           if (!isNaN(target)) animateCounter(valEl, target, { duration: 1000, threshold: 0.2, integer: Number.isInteger(target) });
         });
+        milestonesContainer.replaceChildren(frag);
         hasRendered = true;
       }
 
@@ -360,12 +366,13 @@
 
       if (countEl) countEl.textContent = `${filtered.length} milestone${filtered.length !== 1 ? 's' : ''}`;
 
-      grid.innerHTML = '';
       if (filtered.length === 0) {
-        grid.innerHTML = '<p style="color: var(--fg-muted); text-align: center; padding: 40px;">No milestones in this category</p>';
+        grid.replaceChildren(createEl('p', '', 'No milestones in this category'));
+        grid.firstElementChild.style.cssText = 'color: var(--fg-muted); text-align: center; padding: 40px; width: 100%;';
         return;
       }
 
+      const frag = document.createDocumentFragment();
       filtered.forEach(m => {
         const catConfig = CATEGORY_CONFIG[m.category_key] || { name: m.category_name, icon: '📌', color: '#00d4ff' };
 
@@ -442,7 +449,7 @@
           card.style.borderColor = 'var(--border)';
         });
 
-        grid.appendChild(card);
+        frag.appendChild(card);
 
         const target = parseFloat(valueEl.dataset.counter);
         if (!isNaN(target)) {
@@ -450,6 +457,8 @@
           activeObservers.push(io);
         }
       });
+
+      grid.replaceChildren(frag);
     }
 
     // Initial render

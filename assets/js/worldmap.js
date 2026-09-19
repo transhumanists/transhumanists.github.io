@@ -203,17 +203,26 @@
     ctx.restore();
   }
 
-  // ---- Resize (debounced) ----
+  // ---- Resize ----
   let resizeTimeout = null;
+  function applyResize() {
+    const rect = canvas.getBoundingClientRect();
+    state.width = rect.width;
+    state.height = rect.height;
+    canvas.width = state.width * state.dpr;
+    canvas.height = state.height * state.dpr;
+    ctx.setTransform(state.dpr, 0, 0, state.dpr, 0, 0);
+  }
+
+  function resize() {
+    applyResize();
+    draw();
+  }
+
   function scheduleResize() {
     if (resizeTimeout) clearTimeout(resizeTimeout);
     resizeTimeout = setTimeout(() => {
-      const rect = canvas.getBoundingClientRect();
-      state.width = rect.width;
-      state.height = rect.height;
-      canvas.width = state.width * state.dpr;
-      canvas.height = state.height * state.dpr;
-      ctx.setTransform(state.dpr, 0, 0, state.dpr, 0, 0);
+      applyResize();
       draw();
       resizeTimeout = null;
     }, 50);
@@ -471,7 +480,7 @@
 
   function loop() {
     if (document.hidden) {
-      animationFrameId = requestAnimationFrame(loop);
+      animationFrameId = null;
       return;
     }
     const now = Date.now();
@@ -480,6 +489,13 @@
       lastDrawTime = now;
     }
     animationFrameId = requestAnimationFrame(loop);
+  }
+
+  function onVisibilityChange() {
+    if (!document.hidden) {
+      if (!animationFrameId) animationFrameId = requestAnimationFrame(loop);
+      if (state.showTerminator && state.events.length) draw();
+    }
   }
 
   let terminatorInterval = null;
@@ -496,6 +512,7 @@
     updateStatsDisplay();
     resize();
     window.addEventListener('resize', scheduleResize);
+    document.addEventListener('visibilitychange', onVisibilityChange);
     animationFrameId = requestAnimationFrame(loop);
     startTerminatorInterval();
 
@@ -527,6 +544,7 @@
     if (eventsAbortController) eventsAbortController.abort();
     if (resizeTimeout) clearTimeout(resizeTimeout);
     window.removeEventListener('resize', scheduleResize);
+    document.removeEventListener('visibilitychange', onVisibilityChange);
   }
 
   window.addEventListener('beforeunload', cleanup);
