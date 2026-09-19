@@ -70,6 +70,18 @@ description: "Tracking milestones across biotech, AGI, quantum, energy, cyber, s
   </div>
 </section>
 
+<!-- RECENT HIGHLIGHTS -->
+<section class="section section-alt" id="recent-highlights">
+  <div class="container">
+    <header class="section-header">
+      <h2>Recent Highlights</h2>
+      <p class="section-subtitle">Latest breakthroughs across all categories</p>
+    </header>
+
+    <div class="milestones-grid" id="top-milestones"></div>
+  </div>
+</section>
+
 <!-- ALL MILESTONES CATALOGED -->
 <section class="section" id="milestones-catalog">
   <div class="container">

@@ -25,30 +25,24 @@
     showTerminator: true
   };
 
-  // ---- Sample data (replaced by data/scraped-events.json at build time) ----
-  const SAMPLE_EVENTS = [
-    { lat: 37.7749, lon: -122.4194, title: 'CRISPR Cas-13b phase-3 trial cleared', category: 'Biotechnology', value: '50 patients', source: 'Stanford', date: '2026-08-25' },
-    { lat: 47.3769, lon: 8.5417, title: 'ETH Zurich - 137 qubit entanglement', category: 'Quantum', value: '137 qubits', source: 'ETH Zurich', date: '2026-08-26' },
-    { lat: 35.6762, lon: 139.6503, title: 'JT-60SA sustained fusion: 100 MJ', category: 'Energy', value: '100 MJ', source: 'NIFS Japan', date: '2026-08-22' },
-    { lat: 51.5074, lon: -0.1278, title: 'GCHQ cyber threat advisory - 9.8 CVSS', category: 'Cybersecurity', value: 'CVSS 9.8', source: 'NCSC UK', date: '2026-08-24' },
-    { lat: 28.5728, lon: -80.6490, title: 'SpaceX Starship: 156t to LEO', category: 'Spaceflight', value: '156 tonnes', source: 'SpaceX', date: '2026-08-23' },
-    { lat: 50.4501, lon: 30.5234, title: 'NATO exercise - 12,000 troops', category: 'Defense', value: '12k troops', source: 'NATO', date: '2026-08-21' },
-    { lat: 39.9042, lon: 116.4074, title: 'Beijing hypersonic test: Mach 13', category: 'Defense', value: 'Mach 13', source: 'PLASSF', date: '2026-08-20' },
-    { lat: 31.9686, lon: 35.5064, title: 'Mossad joint cyber op with NSA', category: 'Cybersecurity', value: 'Tier-1', source: 'Mossad', date: '2026-08-27' },
-    { lat: 52.5200, lon: 13.4050, title: 'Wendelstein 7-X - 6 min plasma record', category: 'Energy', value: '6 min', source: 'IPP', date: '2026-08-19' },
-    { lat: 32.0853, lon: 34.7818, title: 'Tel Aviv biotech: in-vivo organoid', category: 'Biotechnology', value: 'patent-pending', source: 'Tel Aviv U', date: '2026-08-28' },
-    { lat: -33.8688, lon: 151.2093, title: 'CSIRO solar cell: 33.2% efficiency', category: 'Energy', value: '33.2%', source: 'CSIRO', date: '2026-08-18' },
-    { lat: 1.3521, lon: 103.8198, title: 'ST Engineering drone swarm test', category: 'Defense', value: '1000 UAVs', source: 'CSA', date: '2026-08-17' }
-  ];
-
   const CATEGORY_COLORS = {
     'Biotechnology': '#00e676',
-    'Tech': '#448aff',
+    'Computing & AGI': '#448aff',
     'Quantum': '#b388ff',
     'Energy': '#ffd740',
     'Cybersecurity': '#ff5252',
-    'Spaceflight': '#00d4ff',
+    'Spaceflight & Aeronautics': '#00d4ff',
     'Defense': '#ff9100'
+  };
+
+  const CATEGORY_STAT_MAP = {
+    'Biotechnology': { statId: 'map-stat-active', label: 'breakthroughs this week' },
+    'Cybersecurity': { statId: 'map-stat-conflicts', label: 'active conflict zones' },
+    'Defense': { statId: 'map-stat-fleets', label: 'fleet movements tracked' },
+    'Energy': { statId: 'map-stat-active', label: 'breakthroughs this week' },
+    'Spaceflight & Aeronautics': { statId: 'map-stat-fleets', label: 'fleet movements tracked' },
+    'Quantum': { statId: 'map-stat-active', label: 'breakthroughs this week' },
+    'Computing & AGI': { statId: 'map-stat-active', label: 'breakthroughs this week' }
   };
 
   // ---- Country outlines (simplified continent path) ----
@@ -78,7 +72,7 @@
   }
 
   // ---- XSS-safe helper ----
-  function escapeHtml(text) {
+function escapeHtml(text) {
     if (text === null || text === undefined) return '';
     return String(text)
       .replace(/&/g, '&')
@@ -96,19 +90,15 @@
     const day = now.getUTCDate();
     const hour = now.getUTCHours() + now.getUTCMinutes() / 60 + now.getUTCSeconds() / 3600;
 
-    // Day of year (0-365)
     const startOfYear = Date.UTC(year, 0, 1);
     const dayOfYear = Math.floor((Date.UTC(year, month, day) - startOfYear) / 86400000);
 
-    // Solar declination (radians) - more accurate formula
     const declination = -23.44 * Math.cos((2 * Math.PI / 365) * (dayOfYear + 10)) * Math.PI / 180;
-    // Equation of time (minutes)
     const B = (360 / 365) * (dayOfYear - 81) * Math.PI / 180;
     const equationOfTime = 9.87 * Math.sin(2 * B) - 7.53 * Math.cos(B) - 1.5 * Math.sin(B);
     const solarTime = hour + equationOfTime / 60;
     const hourAngle = (solarTime - 12) * 15 * Math.PI / 180;
 
-    // Sub-solar point (where sun is directly overhead)
     const subSolarLat = declination;
     const subSolarLon = -hourAngle * 180 / Math.PI;
 
@@ -121,10 +111,7 @@
     const sun = getSunPosition();
     const w = state.width;
     const h = state.height;
-    const sunX = (sun.lon + 180) / 360 * w;
-    const sunY = (90 - sun.lat) / 180 * h;
 
-    // Calculate terminator points for each latitude
     const points = [];
     const samples = 180;
 
@@ -133,22 +120,18 @@
       const latRad = lat * Math.PI / 180;
       const declRad = sun.lat;
 
-      // cos(hourAngle) = -tan(lat) * tan(declination)
       const cosHourAngle = -Math.tan(latRad) * Math.tan(declRad);
 
       let lon;
       if (cosHourAngle >= 1) {
-        // Polar day - sun above horizon all day
-        lon = sun.lon - 180; // night side is opposite
+        lon = sun.lon - 180;
       } else if (cosHourAngle <= -1) {
-        // Polar night - sun below horizon all day
-        lon = sun.lon; // night side is same as sun longitude
+        lon = sun.lon;
       } else {
         const hourAngle = Math.acos(Math.max(-1, Math.min(1, cosHourAngle)));
         lon = sun.lon + (hourAngle * 180 / Math.PI);
       }
 
-      // Normalize longitude to -180..180
       while (lon > 180) lon -= 360;
       while (lon < -180) lon += 360;
 
@@ -159,30 +142,19 @@
     ctx.save();
     ctx.globalCompositeOperation = 'source-over';
 
-    // Determine which side of the terminator is night
-    // Night is the hemisphere centered on the anti-solar point (sun.lon + 180, -sun.lat)
-    // We'll draw the night polygon by walking the terminator and connecting to the appropriate map edge
-
-    // Draw night side as a filled polygon
-    ctx.beginPath();
-    // Start at top-left corner of canvas
-    ctx.moveTo(0, 0);
-
-    // Determine if sun is on left or right half of map
     const sunLonNorm = ((sun.lon + 180) % 360 + 360) % 360 - 180;
     const sunOnLeft = sunLonNorm < 0;
 
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+
     if (sunOnLeft) {
-      // Sun on left side, night is on right
-      // Go right along top edge, then down right edge, then trace terminator right-to-left
       ctx.lineTo(w, 0);
       ctx.lineTo(w, h);
       for (let i = points.length - 1; i >= 0; i--) {
         ctx.lineTo(points[i].x, points[i].y);
       }
     } else {
-      // Sun on right side, night is on left
-      // Trace terminator left-to-right, then down left edge
       for (let i = 0; i < points.length; i++) {
         ctx.lineTo(points[i].x, points[i].y);
       }
@@ -193,7 +165,6 @@
     ctx.fillStyle = 'rgba(6, 11, 20, 0.4)';
     ctx.fill();
 
-    // Draw terminator line
     ctx.beginPath();
     for (let i = 0; i < points.length; i++) {
       const p = points[i];
@@ -206,7 +177,6 @@
     ctx.stroke();
     ctx.setLineDash([]);
 
-    // Draw sub-solar point (sun marker) - only if on screen
     const sunPos = project(sun.lon, sun.lat);
     if (sunPos.x >= -50 && sunPos.x <= w + 50 && sunPos.y >= -50 && sunPos.y <= h + 50) {
       ctx.beginPath();
@@ -242,14 +212,12 @@
     const w = state.width;
     const h = state.height;
 
-    // Background gradient
     const grad = ctx.createLinearGradient(0, 0, 0, h);
     grad.addColorStop(0, '#0a1424');
     grad.addColorStop(1, '#060b14');
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, w, h);
 
-    // Grid (lat/lon)
     ctx.strokeStyle = 'rgba(0, 212, 255, 0.05)';
     ctx.lineWidth = 1;
     for (let lon = -180; lon <= 180; lon += 30) {
@@ -269,7 +237,6 @@
       ctx.stroke();
     }
 
-    // Continents
     ctx.fillStyle = 'rgba(0, 212, 255, 0.08)';
     ctx.strokeStyle = 'rgba(0, 212, 255, 0.3)';
     ctx.lineWidth = 0.5;
@@ -285,10 +252,8 @@
       ctx.stroke();
     });
 
-    // Day/Night Terminator
     drawTerminator();
 
-    // Events
     state.events.forEach(ev => drawEvent(ev));
   }
 
@@ -298,19 +263,16 @@
     const pulse = 0.5 + 0.5 * Math.sin((Date.now() / 1000 + ev.lon) * 2);
     const r = 4 + pulse * 2;
 
-    // Outer ring (pulse)
     ctx.beginPath();
     ctx.arc(p.x, p.y, r * 2, 0, Math.PI * 2);
     ctx.fillStyle = color + '20';
     ctx.fill();
 
-    // Core
     ctx.beginPath();
     ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
     ctx.fillStyle = color;
     ctx.fill();
 
-    // Highlight if hovered
     if (state.hoveredEvent === ev) {
       ctx.beginPath();
       ctx.arc(p.x, p.y, r + 4, 0, Math.PI * 2);
@@ -391,7 +353,7 @@
       <div class="tt-category" style="color: ${escapeHtml(color)};">${escapeHtml(ev.category)}</div>
       <div class="tt-title">${escapeHtml(ev.title)}</div>
       <div class="tt-value">${escapeHtml(ev.value)}</div>
-      <div style="color: var(--fg-subtle); font-size: 0.7rem; margin-top: 4px;">${escapeHtml(ev.source)} · ${escapeHtml(ev.date)}</div>
+      <div style="color: var(--fg-subtle); font-size: 0.7rem; margin-top: 4px;">${escapeHtml(ev.source)} &middot; ${escapeHtml(ev.date)}</div>
     `;
     tooltip.classList.add('visible');
     moveTooltip(x, y);
@@ -412,9 +374,74 @@
     if (tooltip) tooltip.classList.remove('visible');
   }
 
+  // ---- Stats computation ----
+  function computeStats() {
+    const counts = { breakthroughs: 0, conflicts: 0, fleets: 0 };
+    state.events.forEach(ev => {
+      const statMap = CATEGORY_STAT_MAP[ev.category];
+      if (!statMap) return;
+      if (statMap.statId === 'map-stat-active') counts.breakthroughs++;
+      else if (statMap.statId === 'map-stat-conflicts') counts.conflicts++;
+      else if (statMap.statId === 'map-stat-fleets') counts.fleets++;
+    });
+    return counts;
+  }
+
+  function updateStatsDisplay() {
+    const stats = computeStats();
+    const active = document.getElementById('map-stat-active');
+    const conflicts = document.getElementById('map-stat-conflicts');
+    const fleets = document.getElementById('map-stat-fleets');
+    if (active) active.textContent = stats.breakthroughs;
+    if (conflicts) conflicts.textContent = stats.conflicts;
+    if (fleets) fleets.textContent = stats.fleets;
+  }
+
+  // ---- Data loading ----
+  async function loadEvents() {
+    const eventsUrl = '/data/events.json';
+    try {
+      const r = await fetch(eventsUrl, { cache: 'no-store' });
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      const data = await r.json();
+      if (data && Array.isArray(data.events)) {
+        state.events = data.events.map(e => ({
+          lat: e.geolocation?.lat,
+          lon: e.geolocation?.lon,
+          title: e.title,
+          category: e.category,
+          value: e.value,
+          source: e.source,
+          date: e.date
+        })).filter(e => typeof e.lat === 'number' && typeof e.lon === 'number');
+      } else {
+        state.events = [];
+      }
+    } catch (err) {
+      console.warn('[worldmap] Failed to load events.json, using sample data:', err);
+      state.events = SAMPLE_EVENTS;
+    }
+  }
+
+  // ---- Sample data (fallback) ----
+  const SAMPLE_EVENTS = [
+    { lat: 37.7749, lon: -122.4194, title: 'CRISPR Cas-13b phase-3 trial cleared', category: 'Biotechnology', value: '50 patients', source: 'Stanford', date: '2026-08-25' },
+    { lat: 47.3769, lon: 8.5417, title: 'ETH Zurich - 137 qubit entanglement', category: 'Quantum', value: '137 qubits', source: 'ETH Zurich', date: '2026-08-26' },
+    { lat: 35.6762, lon: 139.6503, title: 'JT-60SA sustained fusion: 100 MJ', category: 'Energy', value: '100 MJ', source: 'NIFS Japan', date: '2026-08-22' },
+    { lat: 51.5074, lon: -0.1278, title: 'GCHQ cyber threat advisory - 9.8 CVSS', category: 'Cybersecurity', value: 'CVSS 9.8', source: 'NCSC UK', date: '2026-08-24' },
+    { lat: 28.5728, lon: -80.6490, title: 'SpaceX Starship: 156t to LEO', category: 'Spaceflight & Aeronautics', value: '156 tonnes', source: 'SpaceX', date: '2026-08-23' },
+    { lat: 50.4501, lon: 30.5234, title: 'NATO exercise - 12,000 troops', category: 'Defense', value: '12k troops', source: 'NATO', date: '2026-08-21' },
+    { lat: 39.9042, lon: 116.4074, title: 'Beijing hypersonic test: Mach 13', category: 'Defense', value: 'Mach 13', source: 'PLASSF', date: '2026-08-20' },
+    { lat: 31.9686, lon: 35.5064, title: 'Mossad joint cyber op with NSA', category: 'Cybersecurity', value: 'Tier-1', source: 'Mossad', date: '2026-08-27' },
+    { lat: 52.5200, lon: 13.4050, title: 'Wendelstein 7-X - 6 min plasma record', category: 'Energy', value: '6 min', source: 'IPP', date: '2026-08-19' },
+    { lat: 32.0853, lon: 34.7818, title: 'Tel Aviv biotech: in-vivo organoid', category: 'Biotechnology', value: 'patent-pending', source: 'Tel Aviv U', date: '2026-08-28' },
+    { lat: -33.8688, lon: 151.2093, title: 'CSIRO solar cell: 33.2% efficiency', category: 'Energy', value: '33.2%', source: 'CSIRO', date: '2026-08-18' },
+    { lat: 1.3521, lon: 103.8198, title: 'ST Engineering drone swarm test', category: 'Defense', value: '1000 UAVs', source: 'CSA', date: '2026-08-17' }
+  ];
+
   // ---- Animation loop ----
   let lastDrawTime = 0;
-  const DRAW_INTERVAL = 100; // ms - limit redraws for pulsing events
+  const DRAW_INTERVAL = 100;
 
   function loop() {
     const now = Date.now();
@@ -425,7 +452,6 @@
     requestAnimationFrame(loop);
   }
 
-  // Update terminator position every minute (sun moves)
   let terminatorInterval = null;
   function startTerminatorInterval() {
     if (terminatorInterval) clearInterval(terminatorInterval);
@@ -435,26 +461,13 @@
   }
 
   // ---- Init ----
-  function load() {
-    if (window.TRANSHUMANISTS_CONFIG && window.TRANSHUMANISTS_CONFIG.eventsUrl) {
-      fetch(window.TRANSHUMANISTS_CONFIG.eventsUrl)
-        .then(r => r.json())
-        .then(d => state.events = d)
-        .catch(() => state.events = SAMPLE_EVENTS);
-    } else {
-      state.events = SAMPLE_EVENTS;
-    }
+  async function load() {
+    await loadEvents();
+    updateStatsDisplay();
     resize();
     window.addEventListener('resize', resize);
     requestAnimationFrame(loop);
     startTerminatorInterval();
-
-    const active = document.getElementById('map-stat-active');
-    const conflicts = document.getElementById('map-stat-conflicts');
-    const fleets = document.getElementById('map-stat-fleets');
-    if (active) active.textContent = '12';
-    if (conflicts) conflicts.textContent = '3';
-    if (fleets) fleets.textContent = '7';
 
     const terminatorToggle = document.getElementById('terminator-toggle');
     const terminatorIcon = document.getElementById('terminator-icon');
@@ -478,7 +491,6 @@
     }
   }
 
-  // Cleanup on page unload
   window.addEventListener('beforeunload', () => {
     if (terminatorInterval) clearInterval(terminatorInterval);
     window.removeEventListener('resize', resize);

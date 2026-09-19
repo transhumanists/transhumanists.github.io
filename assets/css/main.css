@@ -612,6 +612,29 @@ body {
 }
 @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
 
+/* Skeleton cards for loading states */
+.skeleton-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  animation: shimmer 1.5s infinite;
+}
+.skeleton-card .skeleton-line {
+  height: 1rem;
+  border-radius: 4px;
+  margin-bottom: 8px;
+}
+.skeleton-card .skeleton-line.short { width: 60%; }
+.skeleton-card .skeleton-line.medium { width: 80%; }
+.skeleton-card .skeleton-line.long { width: 100%; }
+.skeleton-card .skeleton-value {
+  height: 2rem;
+  width: 80px;
+  border-radius: 4px;
+  margin-top: 12px;
+}
+
 .network-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));

@@ -84,6 +84,10 @@
     const labels = document.getElementById('activity-labels');
     if (!bars || !labels) return;
 
+    // Show skeleton while loading
+    bars.innerHTML = Array.from({ length: 30 }, () => '<div class="chart-bar skeleton" style="height: 20px;"></div>').join('');
+    labels.innerHTML = Array.from({ length: 30 }, (_, i) => `<div class="chart-label">${i % 5 === 0 ? 'MM-DD' : ''}</div>`).join('');
+
     const data = await fetchJSON('/data/activity.json');
     const series = (data && data.days) || generateSampleActivity();
     const max = Math.max(1, ...series.map(d => d.count));
@@ -124,6 +128,17 @@
   async function loadTopMilestones() {
     const grid = document.getElementById('top-milestones');
     if (!grid) return;
+
+    // Show skeleton cards while loading
+    grid.innerHTML = Array.from({ length: 8 }, () => `
+      <div class="milestone-card skeleton-card">
+        <div class="skeleton-line long"></div>
+        <div class="skeleton-line medium"></div>
+        <div class="skeleton-value"></div>
+        <div class="skeleton-line short"></div>
+      </div>
+    `).join('');
+
     const data = await fetchJSON('/data/milestones.json');
     const items = (data && data.recent) || SAMPLE_MILESTONES;
     grid.innerHTML = '';
@@ -277,6 +292,16 @@
     const filter = document.getElementById('catalog-category-filter');
     const countEl = document.getElementById('catalog-count');
     if (!grid) return;
+
+    // Show skeleton cards while loading
+    grid.innerHTML = Array.from({ length: 12 }, () => `
+      <div class="catalog-card skeleton-card">
+        <div class="skeleton-line long"></div>
+        <div class="skeleton-line medium"></div>
+        <div class="skeleton-value"></div>
+        <div class="skeleton-line short"></div>
+      </div>
+    `).join('');
 
     const data = await getMilestonesData();
     if (!data || !data.categories) {
