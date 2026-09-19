@@ -7,6 +7,11 @@ description: "Tracking milestones across biotech, AGI, quantum, energy, cyber, s
 <div class="hero" id="home">
   <div class="container">
     <div class="hero-content">
+      <img class="hero-avatar"
+           src="https://github.com/transhumanists.png"
+           alt="transhumanists avatar"
+           width="92" height="92"
+           fetchpriority="high">
       <div class="hero-badges" aria-label="Categories">
         <span class="badge badge-fpm">FrenzyPenguin Media</span>
         <span class="badge badge-milestone">7 categories · 50+ subcategories</span>
@@ -53,9 +58,42 @@ description: "Tracking milestones across biotech, AGI, quantum, energy, cyber, s
           <span id="map-stat-fleets">—</span>
           <span>fleet movements tracked</span>
         </div>
+        <div class="map-stat map-control" style="margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border);">
+          <button id="terminator-toggle" class="map-control-btn" aria-pressed="true" style="background: none; border: 1px solid var(--border); color: var(--fg); padding: 4px 10px; border-radius: var(--radius-sm); font-size: 0.7rem; font-family: var(--font-mono); cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.2s ease;">
+            <span id="terminator-icon">☀</span>
+            <span id="terminator-label">Day/Night</span>
+          </button>
+        </div>
       </div>
       <div class="map-tooltip" id="map-tooltip" role="tooltip"></div>
     </div>
+  </div>
+</section>
+
+<!-- ALL MILESTONES CATALOGED -->
+<section class="section" id="milestones-catalog">
+  <div class="container">
+    <header class="section-header">
+      <h2>All Milestones Cataloged</h2>
+      <p class="section-subtitle">Every tracked breakthrough with its primary metric and category — live from the database</p>
+    </header>
+
+    <div class="catalog-controls">
+      <label for="catalog-category-filter" style="font-size: 0.85rem; color: var(--fg-muted);">Filter:</label>
+      <select id="catalog-category-filter" style="padding: 6px 12px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--bg-card); color: var(--fg); font-family: var(--font-ui); font-size: 0.85rem;">
+        <option value="all">All Categories</option>
+        <option value="biotechnology">Biotechnology</option>
+        <option value="computing_agi">Computing & AGI</option>
+        <option value="quantum">Quantum Physics</option>
+        <option value="energy">Renewable Energy</option>
+        <option value="cybersecurity">Cybersecurity</option>
+        <option value="spaceflight">Spaceflight & Aeronautics</option>
+        <option value="defense">Military & Defense</option>
+      </select>
+      <span id="catalog-count" style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--fg-subtle); margin-left: 16px;"></span>
+    </div>
+
+    <div class="catalog-grid" id="catalog-grid" style="margin-top: 24px;"></div>
   </div>
 </section>
 
@@ -64,72 +102,121 @@ description: "Tracking milestones across biotech, AGI, quantum, energy, cyber, s
   <div class="container">
     <header class="section-header">
       <h2>Milestone Categories</h2>
-      <p class="section-subtitle">The 7 verticals that drive human progress</p>
+      <p class="section-subtitle">The 7 verticals that drive human progress — click to expand</p>
     </header>
 
     <div class="milestones-grid">
-      <a href="{{ '/milestones/biotechnology/' | relative_url }}" class="milestone-card" style="text-decoration: none; color: inherit;">
+      <button class="milestone-card category-toggle" data-category="biotechnology" aria-expanded="false" style="text-decoration: none; color: inherit; width: 100%; text-align: left; background: none; border: 1px solid var(--border); cursor: pointer;">
         <div class="milestone-card-header">
           <div class="milestone-card-icon" aria-hidden="true">🧬</div>
           <span class="milestone-card-category">Bio</span>
         </div>
         <h3>Biotechnology</h3>
         <p style="font-size: 0.85rem; color: var(--fg-muted);">Microscopy, macroscopy, medical exploration, human implants, gene editing, longevity, synthetic biology</p>
-      </a>
+        <div class="category-expand-indicator" style="margin-top: 12px; font-size: 0.7rem; color: var(--fg-subtle); display: flex; align-items: center; gap: 6px;">
+          <span>5 milestones</span>
+          <svg class="expand-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="transition: transform 0.2s ease; margin-left: auto;">
+            <path d="M6 9l6 6 6-6"/>
+          </svg>
+        </div>
+        <div class="category-milestones" style="display: none; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border); animation: slideDown 0.3s ease;"></div>
+      </button>
 
-      <a href="{{ '/milestones/computing-agi/' | relative_url }}" class="milestone-card" style="text-decoration: none; color: inherit;">
+      <button class="milestone-card category-toggle" data-category="computing_agi" aria-expanded="false" style="text-decoration: none; color: inherit; width: 100%; text-align: left; background: none; border: 1px solid var(--border); cursor: pointer;">
         <div class="milestone-card-header">
           <div class="milestone-card-icon" aria-hidden="true">🧠</div>
           <span class="milestone-card-category">Tech</span>
         </div>
         <h3>Computing & AGI</h3>
         <p style="font-size: 0.85rem; color: var(--fg-muted);">Frontier model benchmarks, agentic capabilities, GPU efficiency, time-to-train</p>
-      </a>
+        <div class="category-expand-indicator" style="margin-top: 12px; font-size: 0.7rem; color: var(--fg-subtle); display: flex; align-items: center; gap: 6px;">
+          <span>5 milestones</span>
+          <svg class="expand-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="transition: transform 0.2s ease; margin-left: auto;">
+            <path d="M6 9l6 6 6-6"/>
+          </svg>
+        </div>
+        <div class="category-milestones" style="display: none; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border); animation: slideDown 0.3s ease;"></div>
+      </button>
 
-      <a href="{{ '/milestones/quantum/' | relative_url }}" class="milestone-card" style="text-decoration: none; color: inherit;">
+      <button class="milestone-card category-toggle" data-category="quantum" aria-expanded="false" style="text-decoration: none; color: inherit; width: 100%; text-align: left; background: none; border: 1px solid var(--border); cursor: pointer;">
         <div class="milestone-card-header">
           <div class="milestone-card-icon" aria-hidden="true">⚛️</div>
           <span class="milestone-card-category">Quantum</span>
         </div>
         <h3>Quantum Physics</h3>
         <p style="font-size: 0.85rem; color: var(--fg-muted);">Qubit counts, error correction, time crystals, supremacy benchmarks</p>
-      </a>
+        <div class="category-expand-indicator" style="margin-top: 12px; font-size: 0.7rem; color: var(--fg-subtle); display: flex; align-items: center; gap: 6px;">
+          <span>5 milestones</span>
+          <svg class="expand-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="transition: transform 0.2s ease; margin-left: auto;">
+            <path d="M6 9l6 6 6-6"/>
+          </svg>
+        </div>
+        <div class="category-milestones" style="display: none; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border); animation: slideDown 0.3s ease;"></div>
+      </button>
 
-      <a href="{{ '/milestones/energy/' | relative_url }}" class="milestone-card" style="text-decoration: none; color: inherit;">
+      <button class="milestone-card category-toggle" data-category="energy" aria-expanded="false" style="text-decoration: none; color: inherit; width: 100%; text-align: left; background: none; border: 1px solid var(--border); cursor: pointer;">
         <div class="milestone-card-header">
           <div class="milestone-card-icon" aria-hidden="true">⚡</div>
           <span class="milestone-card-category">Energy</span>
         </div>
         <h3>Renewable Energy</h3>
         <p style="font-size: 0.85rem; color: var(--fg-muted);">Fusion records, photovoltaic efficiency, battery density, capacity factors</p>
-      </a>
+        <div class="category-expand-indicator" style="margin-top: 12px; font-size: 0.7rem; color: var(--fg-subtle); display: flex; align-items: center; gap: 6px;">
+          <span>5 milestones</span>
+          <svg class="expand-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="transition: transform 0.2s ease; margin-left: auto;">
+            <path d="M6 9l6 6 6-6"/>
+          </svg>
+        </div>
+        <div class="category-milestones" style="display: none; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border); animation: slideDown 0.3s ease;"></div>
+      </button>
 
-      <a href="{{ '/milestones/cybersecurity/' | relative_url }}" class="milestone-card" style="text-decoration: none; color: inherit;">
+      <button class="milestone-card category-toggle" data-category="cybersecurity" aria-expanded="false" style="text-decoration: none; color: inherit; width: 100%; text-align: left; background: none; border: 1px solid var(--border); cursor: pointer;">
         <div class="milestone-card-header">
           <div class="milestone-card-icon" aria-hidden="true">🛡️</div>
           <span class="milestone-card-category">Cyber</span>
         </div>
         <h3>Cybersecurity</h3>
         <p style="font-size: 0.85rem; color: var(--fg-muted);">CVSS records, mitigations, exploit chains, encryption standards</p>
-      </a>
+        <div class="category-expand-indicator" style="margin-top: 12px; font-size: 0.7rem; color: var(--fg-subtle); display: flex; align-items: center; gap: 6px;">
+          <span>3 milestones</span>
+          <svg class="expand-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="transition: transform 0.2s ease; margin-left: auto;">
+            <path d="M6 9l6 6 6-6"/>
+          </svg>
+        </div>
+        <div class="category-milestones" style="display: none; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border); animation: slideDown 0.3s ease;"></div>
+      </button>
 
-      <a href="{{ '/milestones/spaceflight/' | relative_url }}" class="milestone-card" style="text-decoration: none; color: inherit;">
+      <button class="milestone-card category-toggle" data-category="spaceflight" aria-expanded="false" style="text-decoration: none; color: inherit; width: 100%; text-align: left; background: none; border: 1px solid var(--border); cursor: pointer;">
         <div class="milestone-card-header">
           <div class="milestone-card-icon" aria-hidden="true">🚀</div>
           <span class="milestone-card-category">Space</span>
         </div>
         <h3>Spaceflight & Aeronautics</h3>
         <p style="font-size: 0.85rem; color: var(--fg-muted);">Landing records, payload to orbit, hypersonic tests, deep-space missions</p>
-      </a>
+        <div class="category-expand-indicator" style="margin-top: 12px; font-size: 0.7rem; color: var(--fg-subtle); display: flex; align-items: center; gap: 6px;">
+          <span>4 milestones</span>
+          <svg class="expand-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="transition: transform 0.2s ease; margin-left: auto;">
+            <path d="M6 9l6 6 6-6"/>
+          </svg>
+        </div>
+        <div class="category-milestones" style="display: none; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border); animation: slideDown 0.3s ease;"></div>
+      </button>
 
-      <a href="{{ '/milestones/defense/' | relative_url }}" class="milestone-card" style="text-decoration: none; color: inherit;">
+      <button class="milestone-card category-toggle" data-category="defense" aria-expanded="false" style="text-decoration: none; color: inherit; width: 100%; text-align: left; background: none; border: 1px solid var(--border); cursor: pointer;">
         <div class="milestone-card-header">
           <div class="milestone-card-icon" aria-hidden="true">🌍</div>
           <span class="milestone-card-category">Defense</span>
         </div>
         <h3>Military & Defense</h3>
         <p style="font-size: 0.85rem; color: var(--fg-muted);">Range, radius, fleet movements, contracts, defense intelligence, NATO/CIA/MI6/Mossad</p>
-      </a>
+        <div class="category-expand-indicator" style="margin-top: 12px; font-size: 0.7rem; color: var(--fg-subtle); display: flex; align-items: center; gap: 6px;">
+          <span>5 milestones</span>
+          <svg class="expand-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="transition: transform 0.2s ease; margin-left: auto;">
+            <path d="M6 9l6 6 6-6"/>
+          </svg>
+        </div>
+        <div class="category-milestones" style="display: none; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border); animation: slideDown 0.3s ease;"></div>
+      </button>
 
       <a href="{{ '/milestones/' | relative_url }}" class="milestone-card" style="text-decoration: none; color: inherit; background: var(--accent-dim); border-color: var(--accent);">
         <div class="milestone-card-header">
@@ -210,11 +297,11 @@ description: "Tracking milestones across biotech, AGI, quantum, energy, cyber, s
       <p class="section-subtitle">Sister sites that share data with this dashboard</p>
     </header>
 
-    <div class="network-grid">
+<div class="network-grid">
       <a class="network-card" href="https://neohiro.github.io/" rel="noopener" style="text-decoration: none; color: inherit;">
         <div class="network-card-icon" aria-hidden="true">👽</div>
         <h3>neohiro</h3>
-        <p>Security hardening &amp; privacy tools for Windows and Linux</p>
+        <p>Security hardening & privacy tools for Windows and Linux</p>
       </a>
       <a class="network-card" href="https://neohiro.github.io/openstageisland.github.io/" rel="noopener" style="text-decoration: none; color: inherit;">
         <div class="network-card-icon" aria-hidden="true">🎤</div>
@@ -224,12 +311,7 @@ description: "Tracking milestones across biotech, AGI, quantum, energy, cyber, s
       <a class="network-card" href="https://neohiro.github.io/frenzypenguin-media/" rel="noopener" style="text-decoration: none; color: inherit;">
         <div class="network-card-icon" aria-hidden="true">🐧</div>
         <h3>FrenzyPenguin Media</h3>
-        <p>Indie media &amp; creative studio behind all of this</p>
-      </a>
-      <a class="network-card" href="https://neohiro.github.io/links-secret/?to=github" rel="noopener" style="text-decoration: none; color: inherit;">
-        <div class="network-card-icon" aria-hidden="true">🔗</div>
-        <h3>links-secret</h3>
-        <p>Whitelisted redirect service for promotional deep-links</p>
+        <p>Indie media & creative studio behind all of this</p>
       </a>
     </div>
 

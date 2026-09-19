@@ -192,16 +192,19 @@ body {
 
 #world-map {
   height: 520px;
+  min-height: 520px;
   border-radius: var(--radius);
   border: 1px solid var(--border);
-  overflow: hidden;
+  overflow: visible;
   position: relative;
   background: var(--bg-card);
+  margin-bottom: 24px;
 }
 #world-map-canvas {
   width: 100%;
   height: 100%;
   cursor: crosshair;
+  display: block;
 }
 .map-overlay {
   position: absolute;
@@ -214,6 +217,7 @@ body {
   padding: 10px 14px;
   font-size: 0.8rem;
   font-family: var(--font-mono);
+  z-index: 5;
 }
 .map-overlay .map-stat {
   display: flex;
@@ -234,12 +238,43 @@ body {
   pointer-events: none;
   opacity: 0;
   transition: opacity 150ms;
-  z-index: 10;
+  z-index: 20;
 }
 .map-tooltip.visible { opacity: 1; }
 .map-tooltip .tt-title { font-weight: 700; color: var(--accent); margin-bottom: 4px; }
 .map-tooltip .tt-category { font-family: var(--font-mono); font-size: 0.7rem; color: var(--fg-subtle); text-transform: uppercase; letter-spacing: 0.06em; }
 .map-tooltip .tt-value { color: var(--green); font-family: var(--font-mono); font-weight: 700; }
+
+/* MILESTONES CATALOG */
+.catalog-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+.catalog-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  gap: 16px;
+}
+.catalog-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  position: relative;
+}
+.catalog-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow);
+}
+.catalog-card .milestone-card-new {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+}
 
 /* MILESTONE CARDS GRID */
 .milestones-grid {
@@ -334,6 +369,94 @@ body {
 @keyframes pulse {
   0%, 100% { opacity: 1; transform: scale(1); }
   50% { opacity: 0.5; transform: scale(1.4); }
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* EXPANDABLE CATEGORY CARDS */
+.milestone-card.category-toggle {
+  overflow: visible;
+}
+.milestone-card.category-toggle[aria-expanded="true"] .expand-arrow {
+  transform: rotate(180deg);
+}
+.milestone-card.category-toggle .category-milestones {
+  overflow: hidden;
+}
+.milestone-card.category-toggle .category-milestones[style*="display: block"],
+.milestone-card.category-toggle .category-milestones:not([style*="display: none"]) {
+  display: block !important;
+}
+.category-milestone-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  margin-bottom: 8px;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+.category-milestone-item:hover {
+  border-color: var(--accent);
+  background: var(--accent-dim);
+}
+.category-milestone-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.category-milestone-info .icon {
+  font-size: 1.1rem;
+}
+.category-milestone-details {
+  min-width: 0;
+}
+.category-milestone-title {
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--fg);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.category-milestone-meta {
+  font-size: 0.65rem;
+  color: var(--fg-subtle);
+  margin-top: 2px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.category-milestone-value {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+.category-milestone-value .value {
+  font-family: var(--font-mono);
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--green);
+}
+.category-milestone-value .unit {
+  font-size: 0.65rem;
+  color: var(--fg-muted);
+}
+.category-milestone-new-badge {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--orange);
+  animation: pulse 2s infinite;
+  flex-shrink: 0;
 }
 
 /* METRIC TABLES */
