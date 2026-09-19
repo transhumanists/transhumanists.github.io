@@ -83,7 +83,7 @@ jobs:
               tmp.replace(path)
 
           def run_cmd(cmd, cwd=None):
-              result = subprocess.run(cmd, shell=True, capture_output=True, text=True, cwd=cwd)
+              result = subprocess.run(cmd, shell=False, capture_output=True, text=True, cwd=cwd)
               return result.returncode, result.stdout, result.stderr
 
           def fetch_milestones_from_source():
@@ -91,11 +91,19 @@ jobs:
               print(f"Fetching from {MILESTONES_REPO}...")
               try:
                   import urllib.request
+                  # Validate repo format to prevent injection
+                  if not MILESTONES_REPO.replace('/', '').replace('-', '').replace('_', '').isalnum():
+                      print("::error::Invalid MILESTONES_REPO format")
+                      return None
                   url = f"https://raw.githubusercontent.com/{MILESTONES_REPO}/{BRANCH}/data/milestones.json"
-                  with urllib.request.urlopen(url, timeout=15) as resp:
+                  req = urllib.request.Request(url, headers={'User-Agent': 'milestone-check/1.0'})
+                  with urllib.request.urlopen(req, timeout=15) as resp:
                       return json.loads(resp.read().decode("utf-8"))
-              except Exception as e:
+              except urllib.error.URLError as e:
                   print(f"::warning::Could not fetch from source: {e}")
+                  return None
+              except json.JSONDecodeError as e:
+                  print(f"::error::Invalid JSON from source: {e}")
                   return None
 
           def validate_milestones(data):
@@ -110,6 +118,16 @@ jobs:
                       for field in required:
                           if field not in m:
                               return False, f"Milestone {m.get('id', 'unknown')} missing {field}"
+                      # Validate geolocation
+                      geo = m.get("geolocation", {})
+                      if not isinstance(geo, dict) or "lat" not in geo or "lon" not in geo:
+                          return False, f"Milestone {m.get('id', 'unknown')} missing valid geolocation"
+                      try:
+                          lat, lon = float(geo["lat"]), float(geo["lon"])
+                          if not (-90 <= lat <= 90) or not (-180 <= lon <= 180):
+                              return False, f"Milestone {m.get('id', 'unknown')} geolocation out of bounds"
+                      except (ValueError, TypeError):
+                          return False, f"Milestone {m.get('id', 'unknown')} geolocation not numeric"
               return True, "OK"
 
           def generate_activity_from_milestones(data):
@@ -126,7 +144,7 @@ jobs:
                           d = datetime.fromisoformat(m["date"]).date()
                           if today - timedelta(days=30) <= d <= today:
                               counts[d.isoformat()] += 1
-                      except:
+                      except Exception:
                           pass
 
               days = []

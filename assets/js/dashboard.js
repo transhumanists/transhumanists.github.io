@@ -12,6 +12,47 @@
     defense: { name: 'Military & Defense', icon: '🌍', color: '#ff9100' }
   };
 
+  // ---- XSS-safe helpers ----
+  function escapeHtml(text) {
+    if (text === null || text === undefined) return '';
+    return String(text)
+      .replace(/&/g, '&')
+      .replace(/</g, '<')
+      .replace(/>/g, '>')
+      .replace(/"/g, '"')
+      .replace(/'/g, '&apos;');
+  }
+
+  function createEl(tag, className, content) {
+    const el = document.createElement(tag);
+    if (className) el.className = className;
+    if (content !== undefined) el.textContent = content;
+    return el;
+  }
+
+  // ---- Counter animation utility ----
+  function animateCounter(el, target, options = {}) {
+    const { duration = 1200, threshold = 0.2, integer = true } = options;
+    el.textContent = '0';
+    const io = new IntersectionObserver(entries => {
+      entries.forEach(en => {
+        if (!en.isIntersecting) return;
+        const start = performance.now();
+        const tick = now => {
+          const t = Math.min((now - start) / duration, 1);
+          const eased = 1 - Math.pow(1 - t, 3);
+          const val = target * eased;
+          el.textContent = integer ? Math.round(val) : val.toFixed(1);
+          if (t < 1) requestAnimationFrame(tick);
+        };
+        requestAnimationFrame(tick);
+        io.unobserve(el);
+      });
+    }, { threshold });
+    io.observe(el);
+    return io;
+  }
+
   async function fetchJSON(url) {
     try {
       const r = await fetch(url, { cache: 'no-store' });
@@ -20,6 +61,21 @@
     } catch (e) {
       return null;
     }
+  }
+
+  // ---- Shared milestone data cache ----
+  let milestonesCache = null;
+  let milestonesCachePromise = null;
+
+  async function getMilestonesData() {
+    if (milestonesCache) return milestonesCache;
+    if (!milestonesCachePromise) {
+      milestonesCachePromise = fetchJSON('/data/milestones.json').then(data => {
+        milestonesCache = data;
+        return data;
+      });
+    }
+    return milestonesCachePromise;
   }
 
   // Activity chart (30-day bars)
@@ -36,23 +92,14 @@
     labels.innerHTML = '';
 
     series.forEach((d, i) => {
-      const bar = document.createElement('div');
-      bar.className = 'chart-bar';
+      const bar = createEl('div', 'chart-bar');
       bar.style.height = (4 + (d.count / max) * 116) + 'px';
       bar.title = `${d.date}: ${d.count} milestones`;
       bars.appendChild(bar);
 
-      if (i % 5 === 0 || i === series.length - 1) {
-        const lbl = document.createElement('div');
-        lbl.className = 'chart-label';
-        lbl.textContent = d.date.slice(5);
-        labels.appendChild(lbl);
-      } else {
-        const lbl = document.createElement('div');
-        lbl.className = 'chart-label';
-        lbl.textContent = '';
-        labels.appendChild(lbl);
-      }
+      const lbl = createEl('div', 'chart-label');
+      lbl.textContent = (i % 5 === 0 || i === series.length - 1) ? d.date.slice(5) : '';
+      labels.appendChild(lbl);
     });
 
     const ts = document.getElementById('activity-update-time');
@@ -81,51 +128,28 @@
     const items = (data && data.recent) || SAMPLE_MILESTONES;
     grid.innerHTML = '';
     items.slice(0, 8).forEach(function(m) {
-      var a = document.createElement('a');
+      const a = createEl('a');
       a.className = 'milestone-card';
       a.style.cssText = 'text-decoration: none; color: inherit;';
       a.href = (m.url || '/milestones/' + (m.category || '').toLowerCase().replace(/[^a-z]/g, '') + '/');
       a.setAttribute('aria-label', (m.title || '').trim());
 
-      var header = document.createElement('div');
-      header.className = 'milestone-card-header';
-
-      var icon = document.createElement('div');
-      icon.className = 'milestone-card-icon';
+      const header = createEl('div', 'milestone-card-header');
+      const icon = createEl('div', 'milestone-card-icon', m.icon || '\u{1F4CC}');
       icon.setAttribute('aria-hidden', 'true');
-      icon.textContent = m.icon || '\u{1F4CC}';
-
-      var cat = document.createElement('span');
-      cat.className = 'milestone-card-category';
-      cat.textContent = m.category || '';
-
+      const cat = createEl('span', 'milestone-card-category', m.category || '');
       header.appendChild(icon);
       header.appendChild(cat);
 
-      var titleEl = document.createElement('h3');
-      titleEl.textContent = m.title || '';
-
-      var valueEl = document.createElement('div');
-      valueEl.className = 'milestone-card-value';
+      const titleEl = createEl('h3', '', m.title || '');
+      const valueEl = createEl('div', 'milestone-card-value', m.value || '0');
       valueEl.dataset.counter = m.value || '0';
-      valueEl.textContent = m.value || '0';
+      const unitEl = createEl('div', 'milestone-card-unit', m.unit || '');
 
-      var unitEl = document.createElement('div');
-      unitEl.className = 'milestone-card-unit';
-      unitEl.textContent = m.unit || '';
-
-      var meta = document.createElement('div');
-      meta.className = 'milestone-card-meta';
-
-      var src = document.createElement('span');
-      src.textContent = m.source || '\u2014';
-
-      var dot = document.createElement('span');
-      dot.textContent = '\u00B7';
-
-      var date = document.createElement('span');
-      date.textContent = m.date || '';
-
+      const meta = createEl('div', 'milestone-card-meta');
+      const src = createEl('span', '', m.source || '\u2014');
+      const dot = createEl('span', '', '\u00B7');
+      const date = createEl('span', '', m.date || '');
       meta.appendChild(src);
       meta.appendChild(dot);
       meta.appendChild(date);
@@ -137,8 +161,7 @@
       a.appendChild(meta);
 
       if (m.is_new) {
-        var badge = document.createElement('span');
-        badge.className = 'milestone-card-new';
+        const badge = createEl('span', 'milestone-card-new');
         badge.title = 'New this week';
         a.appendChild(badge);
       }
@@ -146,28 +169,9 @@
       grid.appendChild(a);
     });
 
-    // Trigger counter animation (same pattern as main.js for consistency)
-    grid.querySelectorAll('[data-counter]').forEach(function(el) {
-      el.textContent = '0';
-      var target = parseFloat(el.dataset.counter);
-      if (isNaN(target)) return;
-      var io = new IntersectionObserver(function(entries) {
-        entries.forEach(function(en) {
-          if (!en.isIntersecting) return;
-          var duration = 1500;
-          var start = performance.now();
-          var tick = function(now) {
-            var t = Math.min((now - start) / duration, 1);
-            var eased = 1 - Math.pow(1 - t, 3);
-            var val = target * eased;
-            el.textContent = Number.isInteger(target) ? Math.round(val) : val.toFixed(1);
-            if (t < 1) requestAnimationFrame(tick);
-          };
-          requestAnimationFrame(tick);
-          io.unobserve(el);
-        });
-      }, { threshold: 0.3 });
-      io.observe(el);
+    grid.querySelectorAll('[data-counter]').forEach(el => {
+      const target = parseFloat(el.dataset.counter);
+      if (!isNaN(target)) animateCounter(el, target, { duration: 1500, threshold: 0.3, integer: Number.isInteger(target) });
     });
   }
 
@@ -178,7 +182,7 @@
     { title: 'Top CVSS score', category: 'Cybersecurity', value: '9.8', unit: 'CRITICAL', source: 'NCSC', date: '2026-08-24', icon: '🛡️', is_new: true },
     { title: 'Starship payload to LEO', category: 'Spaceflight', value: '156', unit: 'tonnes', source: 'SpaceX', date: '2026-08-23', icon: '🚀' },
     { title: 'Hypersonic glide vehicle', category: 'Defense', value: '13', unit: 'Mach', source: 'PLASSF', date: '2026-08-20', icon: '🌍', is_new: true },
-    { title: 'GPT-6 MMLU', category: 'Tech', value: '94.7', unit: '%', source: 'OpenAI', date: '2026-08-19', icon: '🧠' },
+    { title: 'GPT-6 MMLU', category: 'Computing & AGI', value: '94.7', unit: '%', source: 'OpenAI', date: '2026-08-19', icon: '🧠' },
     { title: 'Drone swarm coordinated', category: 'Defense', value: '1000', unit: 'UAVs', source: 'CSA', date: '2026-08-17', icon: '🌍' }
   ];
 
@@ -187,7 +191,7 @@
     const toggles = document.querySelectorAll('.category-toggle');
     if (!toggles.length) return;
 
-    const data = await fetchJSON('/data/milestones.json');
+    const data = await getMilestonesData();
     if (!data || !data.categories) return;
 
     toggles.forEach(btn => {
@@ -200,61 +204,60 @@
       const countSpan = btn.querySelector('.category-expand-indicator span');
       if (countSpan) countSpan.textContent = `${catData.milestones.length} milestone${catData.milestones.length !== 1 ? 's' : ''}`;
 
+      let hasRendered = false;
+
       function renderMilestones() {
-        if (!milestonesContainer) return;
+        if (!milestonesContainer || hasRendered) return;
         const config = CATEGORY_CONFIG[catKey] || { icon: '📌', color: '#00d4ff' };
         milestonesContainer.innerHTML = '';
         (catData.milestones || []).forEach(m => {
-          const item = document.createElement('div');
-          item.className = 'category-milestone-item';
+          const item = createEl('div', 'category-milestone-item');
           item.style.cssText = 'animation: slideDown 0.3s ease;';
-          const isNew = m.is_new ? '<span class="category-milestone-new-badge" title="New this week"></span>' : '';
-          item.innerHTML = `
-            ${isNew}
-            <div class="category-milestone-info">
-              <span class="icon">${config.icon}</span>
-              <div class="category-milestone-details">
-                <div class="category-milestone-title">${m.title}</div>
-                <div class="category-milestone-meta">
-                  <span>${m.source}</span> · <span>${m.date}</span>
-                  ${m.geolocation ? `<span>· 📍 ${m.geolocation.lat.toFixed(2)}, ${m.geolocation.lon.toFixed(2)}</span>` : ''}
-                </div>
-              </div>
-            </div>
-            <div class="category-milestone-value">
-              <span class="value" data-counter="${m.value}">${m.value}</span>
-              <span class="unit">${m.unit}</span>
-            </div>
-          `;
+
+          const info = createEl('div', 'category-milestone-info');
+          const iconSpan = createEl('span', 'icon', config.icon);
+          const details = createEl('div', 'category-milestone-details');
+          const title = createEl('div', 'category-milestone-title', m.title);
+          const meta = createEl('div', 'category-milestone-meta');
+          meta.innerHTML = `<span>${escapeHtml(m.source)}</span> · <span>${escapeHtml(m.date)}</span>`;
+          if (m.geolocation && typeof m.geolocation.lat === 'number' && typeof m.geolocation.lon === 'number') {
+            meta.innerHTML += ` · <span>📍 ${m.geolocation.lat.toFixed(2)}, ${m.geolocation.lon.toFixed(2)}</span>`;
+          }
+          details.appendChild(title);
+          details.appendChild(meta);
+          info.appendChild(iconSpan);
+          info.appendChild(details);
+
+          const valueDiv = createEl('div', 'category-milestone-value');
+          const valEl = createEl('span', 'value', m.value);
+          valEl.dataset.counter = m.value;
+          const unitEl = createEl('span', 'unit', m.unit);
+          valueDiv.appendChild(valEl);
+          valueDiv.appendChild(unitEl);
+
+          if (m.is_new) {
+            const badge = createEl('span', 'category-milestone-new-badge');
+            badge.title = 'New this week';
+            item.appendChild(badge);
+          }
+
+          item.appendChild(info);
+          item.appendChild(valueDiv);
           milestonesContainer.appendChild(item);
 
-          // Counter animation
-          const valEl = item.querySelector('[data-counter]');
-          if (valEl) {
-            valEl.textContent = '0';
-            const target = parseFloat(valEl.dataset.counter);
-            if (!isNaN(target)) {
-              const io = new IntersectionObserver(entries => {
-                entries.forEach(en => {
-                  if (!en.isIntersecting) return;
-                  const duration = 1000;
-                  const start = performance.now();
-                  const tick = now => {
-                    const t = Math.min((now - start) / duration, 1);
-                    const eased = 1 - Math.pow(1 - t, 3);
-                    const val = target * eased;
-                    valEl.textContent = Number.isInteger(target) ? Math.round(val) : val.toFixed(1);
-                    if (t < 1) requestAnimationFrame(tick);
-                  };
-                  requestAnimationFrame(tick);
-                  io.unobserve(valEl);
-                });
-              }, { threshold: 0.2 });
-              io.observe(valEl);
-            }
-          }
+          const target = parseFloat(valEl.dataset.counter);
+          if (!isNaN(target)) animateCounter(valEl, target, { duration: 1000, threshold: 0.2, integer: Number.isInteger(target) });
         });
+        hasRendered = true;
       }
+
+      // Keyboard accessibility
+      btn.addEventListener('keydown', e => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          btn.click();
+        }
+      });
 
       btn.addEventListener('click', () => {
         const expanded = btn.getAttribute('aria-expanded') === 'true';
@@ -275,7 +278,7 @@
     const countEl = document.getElementById('catalog-count');
     if (!grid) return;
 
-    const data = await fetchJSON('/data/milestones.json');
+    const data = await getMilestonesData();
     if (!data || !data.categories) {
       grid.innerHTML = '<p style="color: var(--fg-muted); text-align: center; padding: 40px;">No milestone data available</p>';
       return;
@@ -298,7 +301,15 @@
     // Sort by date descending (newest first)
     allMilestones.sort((a, b) => new Date(b.date) - new Date(a.date));
 
+    let activeObservers = [];
+
+    function clearObservers() {
+      activeObservers.forEach(io => io.disconnect());
+      activeObservers = [];
+    }
+
     function render(filterKey) {
+      clearObservers();
       const filtered = filterKey === 'all'
         ? allMilestones
         : allMilestones.filter(m => m.category_key === filterKey);
@@ -314,8 +325,7 @@
       filtered.forEach(m => {
         const catConfig = CATEGORY_CONFIG[m.category_key] || { name: m.category_name, icon: '📌', color: '#00d4ff' };
 
-        const card = document.createElement('div');
-        card.className = 'catalog-card';
+        const card = createEl('div', 'catalog-card');
         card.style.cssText = `
           background: var(--bg-card);
           border: 1px solid var(--border);
@@ -325,30 +335,51 @@
           transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
         `;
 
-        const isNew = m.is_new ? '<span class="milestone-card-new" style="position:absolute;top:12px;right:12px;width:8px;height:8px;border-radius:50%;background:var(--orange);animation:pulse 2s infinite;" title="New this week"></span>' : '';
+        const header = createEl('div');
+        header.style.cssText = 'display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:8px;';
 
-        card.innerHTML = `
-          ${isNew}
-          <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:8px;">
-            <div style="display:flex;align-items:center;gap:10px;">
-              <span style="font-size:1.3rem;">${catConfig.icon}</span>
-              <div>
-                <div style="font-family:var(--font-mono);font-size:0.6rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:${catConfig.color};">${catConfig.name}</div>
-                <h4 style="font-size:0.95rem;font-weight:600;color:var(--fg);margin-top:2px;">${m.title}</h4>
-              </div>
-            </div>
-            <div style="text-align:right;flex-shrink:0;">
-              <div class="milestone-card-value" data-counter="${m.value}" style="font-family:var(--font-mono);font-size:1.3rem;font-weight:700;color:${catConfig.color};">${m.value}</div>
-              <div class="milestone-card-unit" style="font-size:0.75rem;color:var(--fg-muted);">${m.unit}</div>
-            </div>
-          </div>
-          <div style="font-size:0.7rem;color:var(--fg-subtle);display:flex;gap:12px;flex-wrap:wrap;">
-            <span>${m.source}</span>
-            <span>·</span>
-            <span>${m.date}</span>
-            ${m.geolocation ? `<span>· 📍 ${m.geolocation.lat.toFixed(2)}, ${m.geolocation.lon.toFixed(2)}</span>` : ''}
-          </div>
-        `;
+        const left = createEl('div');
+        left.style.cssText = 'display:flex;align-items:center;gap:10px;';
+        const icon = createEl('span', '', catConfig.icon);
+        icon.style.fontSize = '1.3rem';
+        const catInfo = createEl('div');
+        const catName = createEl('div', '', catConfig.name);
+        catName.style.cssText = 'font-family:var(--font-mono);font-size:0.6rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:' + catConfig.color + ';';
+        const title = createEl('h4', '', m.title);
+        title.style.cssText = 'font-size:0.95rem;font-weight:600;color:var(--fg);margin-top:2px;';
+        catInfo.appendChild(catName);
+        catInfo.appendChild(title);
+        left.appendChild(icon);
+        left.appendChild(catInfo);
+
+        const right = createEl('div');
+        right.style.cssText = 'text-align:right;flex-shrink:0;';
+        const valueEl = createEl('div', 'milestone-card-value', m.value);
+        valueEl.style.cssText = 'font-family:var(--font-mono);font-size:1.3rem;font-weight:700;color:' + catConfig.color + ';';
+        valueEl.dataset.counter = m.value;
+        const unitEl = createEl('div', 'milestone-card-unit', m.unit);
+        unitEl.style.cssText = 'font-size:0.75rem;color:var(--fg-muted);';
+        right.appendChild(valueEl);
+        right.appendChild(unitEl);
+
+        header.appendChild(left);
+        header.appendChild(right);
+        card.appendChild(header);
+
+        const meta = createEl('div');
+        meta.style.cssText = 'font-size:0.7rem;color:var(--fg-subtle);display:flex;gap:12px;flex-wrap:wrap;';
+        meta.innerHTML = `<span>${escapeHtml(m.source)}</span> · <span>${escapeHtml(m.date)}</span>`;
+        if (m.geolocation && typeof m.geolocation.lat === 'number' && typeof m.geolocation.lon === 'number') {
+          meta.innerHTML += `<span>· 📍 ${m.geolocation.lat.toFixed(2)}, ${m.geolocation.lon.toFixed(2)}</span>`;
+        }
+        card.appendChild(meta);
+
+        if (m.is_new) {
+          const badge = createEl('span', 'milestone-card-new');
+          badge.style.cssText = 'position:absolute;top:12px;right:12px;width:8px;height:8px;border-radius:50%;background:var(--orange);animation:pulse 2s infinite;';
+          badge.title = 'New this week';
+          card.appendChild(badge);
+        }
 
         card.addEventListener('mouseenter', () => {
           card.style.transform = 'translateY(-2px)';
@@ -362,30 +393,12 @@
         });
 
         grid.appendChild(card);
-      });
 
-      // Trigger counter animations
-      grid.querySelectorAll('[data-counter]').forEach(el => {
-        el.textContent = '0';
-        const target = parseFloat(el.dataset.counter);
-        if (isNaN(target)) return;
-        const io = new IntersectionObserver(entries => {
-          entries.forEach(en => {
-            if (!en.isIntersecting) return;
-            const duration = 1200;
-            const start = performance.now();
-            const tick = now => {
-              const t = Math.min((now - start) / duration, 1);
-              const eased = 1 - Math.pow(1 - t, 3);
-              const val = target * eased;
-              el.textContent = Number.isInteger(target) ? Math.round(val) : val.toFixed(1);
-              if (t < 1) requestAnimationFrame(tick);
-            };
-            requestAnimationFrame(tick);
-            io.unobserve(el);
-          });
-        }, { threshold: 0.2 });
-        io.observe(el);
+        const target = parseFloat(valueEl.dataset.counter);
+        if (!isNaN(target)) {
+          const io = animateCounter(valueEl, target, { duration: 1200, threshold: 0.2, integer: Number.isInteger(target) });
+          activeObservers.push(io);
+        }
       });
     }
 

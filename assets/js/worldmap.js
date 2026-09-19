@@ -52,21 +52,13 @@
   };
 
   // ---- Country outlines (simplified continent path) ----
-  // Real production would load topojson. This is a stylized silhouette.
   const CONTINENTS = [
-    // North America
     [[ -170, 70], [-150, 70], [-95, 60], [-80, 50], [-65, 25], [-80, 15], [-95, 18], [-105, 30], [-118, 35], [-125, 45], [-130, 55], [-165, 60]],
-    // South America
     [[ -80, 12], [-60, 5], [-50, -5], [-35, -10], [-40, -25], [-55, -35], [-70, -55], [-80, -45], [-82, -20], [-80, 0]],
-    // Europe
     [[ -10, 60], [5, 65], [30, 70], [40, 60], [30, 45], [15, 38], [0, 40], [-10, 50]],
-    // Africa
     [[ -15, 35], [10, 35], [30, 30], [40, 15], [50, -10], [40, -30], [20, -35], [10, -25], [0, -10], [-10, 10], [-15, 25]],
-    // Asia
     [[ 40, 60], [80, 70], [120, 70], [140, 55], [130, 35], [110, 25], [95, 15], [75, 25], [55, 35], [45, 45]],
-    // Australia
     [[ 115, -12], [140, -12], [152, -20], [148, -38], [120, -35], [115, -22]],
-    // Antarctica (faint)
     [[ -180, -65], [180, -65], [180, -85], [-180, -85]]
   ];
 
@@ -85,20 +77,36 @@
     return { lon, lat };
   }
 
+  // ---- XSS-safe helper ----
+  function escapeHtml(text) {
+    if (text === null || text === undefined) return '';
+    return String(text)
+      .replace(/&/g, '&')
+      .replace(/</g, '<')
+      .replace(/>/g, '>')
+      .replace(/"/g, '"')
+      .replace(/'/g, '&apos;');
+  }
+
   // ---- Terminator (Day/Night boundary) ----
   function getSunPosition() {
     const now = new Date();
     const year = now.getUTCFullYear();
-    const month = now.getUTCMonth() + 1;
+    const month = now.getUTCMonth();
     const day = now.getUTCDate();
     const hour = now.getUTCHours() + now.getUTCMinutes() / 60 + now.getUTCSeconds() / 3600;
 
-    // Approximate solar declination and equation of time
-    const dayOfYear = Math.floor((Date.UTC(year, month - 1, day) - Date.UTC(year, 0, 0)) / 86400000);
-    const declination = -23.44 * Math.cos((2 * Math.PI / 365) * (dayOfYear + 10)) * Math.PI / 180; // radians
-    const equationOfTime = 9.87 * Math.sin(2 * Math.PI * (dayOfYear - 81) / 365) - 7.53 * Math.cos(Math.PI * (dayOfYear - 81) / 184) - 1.5 * Math.sin(Math.PI * (dayOfYear - 81) / 184); // minutes
+    // Day of year (0-365)
+    const startOfYear = Date.UTC(year, 0, 1);
+    const dayOfYear = Math.floor((Date.UTC(year, month, day) - startOfYear) / 86400000);
+
+    // Solar declination (radians) - more accurate formula
+    const declination = -23.44 * Math.cos((2 * Math.PI / 365) * (dayOfYear + 10)) * Math.PI / 180;
+    // Equation of time (minutes)
+    const B = (360 / 365) * (dayOfYear - 81) * Math.PI / 180;
+    const equationOfTime = 9.87 * Math.sin(2 * B) - 7.53 * Math.cos(B) - 1.5 * Math.sin(B);
     const solarTime = hour + equationOfTime / 60;
-    const hourAngle = (solarTime - 12) * 15 * Math.PI / 180; // radians
+    const hourAngle = (solarTime - 12) * 15 * Math.PI / 180;
 
     // Sub-solar point (where sun is directly overhead)
     const subSolarLat = declination;
@@ -113,28 +121,28 @@
     const sun = getSunPosition();
     const w = state.width;
     const h = state.height;
+    const sunX = (sun.lon + 180) / 360 * w;
+    const sunY = (90 - sun.lat) / 180 * h;
 
-    // Draw night side as a semi-transparent overlay
-    // The terminator is a great circle - we approximate with a cosine curve
+    // Calculate terminator points for each latitude
     const points = [];
-    const samples = 180; // one point per degree of latitude
+    const samples = 180;
 
     for (let i = 0; i <= samples; i++) {
-      const lat = 90 - (i / samples) * 180; // 90 to -90
+      const lat = 90 - (i / samples) * 180;
       const latRad = lat * Math.PI / 180;
       const declRad = sun.lat;
 
-      // Calculate longitude of terminator at this latitude
       // cos(hourAngle) = -tan(lat) * tan(declination)
       const cosHourAngle = -Math.tan(latRad) * Math.tan(declRad);
 
       let lon;
       if (cosHourAngle >= 1) {
-        // 24-hour daylight (polar day)
-        lon = sun.lon;
+        // Polar day - sun above horizon all day
+        lon = sun.lon - 180; // night side is opposite
       } else if (cosHourAngle <= -1) {
-        // 24-hour night (polar night)
-        lon = sun.lon + 180;
+        // Polar night - sun below horizon all day
+        lon = sun.lon; // night side is same as sun longitude
       } else {
         const hourAngle = Math.acos(Math.max(-1, Math.min(1, cosHourAngle)));
         lon = sun.lon + (hourAngle * 180 / Math.PI);
@@ -148,60 +156,72 @@
       points.push(p);
     }
 
-    // Draw night side (the side away from the sun)
-    // We'll create a polygon covering the night side
     ctx.save();
     ctx.globalCompositeOperation = 'source-over';
 
-    // Night gradient overlay
-    const nightGrad = ctx.createLinearGradient(0, 0, w, 0);
-    nightGrad.addColorStop(0, 'rgba(6, 11, 20, 0.35)');
-    nightGrad.addColorStop(0.5, 'rgba(6, 11, 20, 0.15)');
-    nightGrad.addColorStop(1, 'rgba(6, 11, 20, 0.35)');
+    // Determine which side of the terminator is night
+    // Night is the hemisphere centered on the anti-solar point (sun.lon + 180, -sun.lat)
+    // We'll draw the night polygon by walking the terminator and connecting to the appropriate map edge
 
-    // Draw night side polygon
+    // Draw night side as a filled polygon
     ctx.beginPath();
-    // Start from top-left, trace terminator, go to bottom-left
+    // Start at top-left corner of canvas
     ctx.moveTo(0, 0);
-    for (let i = 0; i < points.length; i++) {
-      // Only draw the night side (left of terminator in our coordinate system)
-      // The night side is west of the sub-solar point
-      const p = points[i];
-      ctx.lineTo(p.x, p.y);
+
+    // Determine if sun is on left or right half of map
+    const sunLonNorm = ((sun.lon + 180) % 360 + 360) % 360 - 180;
+    const sunOnLeft = sunLonNorm < 0;
+
+    if (sunOnLeft) {
+      // Sun on left side, night is on right
+      // Go right along top edge, then down right edge, then trace terminator right-to-left
+      ctx.lineTo(w, 0);
+      ctx.lineTo(w, h);
+      for (let i = points.length - 1; i >= 0; i--) {
+        ctx.lineTo(points[i].x, points[i].y);
+      }
+    } else {
+      // Sun on right side, night is on left
+      // Trace terminator left-to-right, then down left edge
+      for (let i = 0; i < points.length; i++) {
+        ctx.lineTo(points[i].x, points[i].y);
+      }
+      ctx.lineTo(0, h);
     }
-    ctx.lineTo(0, h);
+
     ctx.closePath();
     ctx.fillStyle = 'rgba(6, 11, 20, 0.4)';
     ctx.fill();
 
-    // Draw terminator line (the edge of day/night)
+    // Draw terminator line
     ctx.beginPath();
     for (let i = 0; i < points.length; i++) {
       const p = points[i];
       if (i === 0) ctx.moveTo(p.x, p.y);
       else ctx.lineTo(p.x, p.y);
     }
-    ctx.strokeStyle = 'rgba(255, 215, 64, 0.6)'; // golden terminator
+    ctx.strokeStyle = 'rgba(255, 215, 64, 0.6)';
     ctx.lineWidth = 1.5;
     ctx.setLineDash([8, 4]);
     ctx.stroke();
     ctx.setLineDash([]);
 
-    // Draw sub-solar point (sun marker)
+    // Draw sub-solar point (sun marker) - only if on screen
     const sunPos = project(sun.lon, sun.lat);
-    ctx.beginPath();
-    ctx.arc(sunPos.x, sunPos.y, 8, 0, Math.PI * 2);
-    ctx.fillStyle = 'rgba(255, 215, 64, 0.9)';
-    ctx.shadowColor = '#ffd740';
-    ctx.shadowBlur = 12;
-    ctx.fill();
-    ctx.shadowBlur = 0;
+    if (sunPos.x >= -50 && sunPos.x <= w + 50 && sunPos.y >= -50 && sunPos.y <= h + 50) {
+      ctx.beginPath();
+      ctx.arc(sunPos.x, sunPos.y, 8, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(255, 215, 64, 0.9)';
+      ctx.shadowColor = '#ffd740';
+      ctx.shadowBlur = 12;
+      ctx.fill();
+      ctx.shadowBlur = 0;
 
-    // Sun label
-    ctx.font = '10px var(--font-mono)';
-    ctx.fillStyle = '#ffd740';
-    ctx.textAlign = 'center';
-    ctx.fillText('☀', sunPos.x, sunPos.y + 16);
+      ctx.font = '10px var(--font-mono)';
+      ctx.fillStyle = '#ffd740';
+      ctx.textAlign = 'center';
+      ctx.fillText('☀', sunPos.x, sunPos.y + 16);
+    }
 
     ctx.restore();
   }
@@ -355,7 +375,6 @@
     const delta = e.deltaY < 0 ? 1.1 : 0.9;
     const newScale = state.transform.scale * delta;
 
-    // Zoom toward cursor
     const wx = (x - state.transform.tx) / state.transform.scale;
     const wy = (y - state.transform.ty) / state.transform.scale;
     state.transform.scale = Math.max(0.5, Math.min(8, newScale));
@@ -369,10 +388,10 @@
     if (!tooltip) return;
     const color = CATEGORY_COLORS[ev.category] || '#00d4ff';
     tooltip.innerHTML = `
-      <div class="tt-category" style="color: ${color};">${ev.category}</div>
-      <div class="tt-title">${ev.title}</div>
-      <div class="tt-value">${ev.value}</div>
-      <div style="color: var(--fg-subtle); font-size: 0.7rem; margin-top: 4px;">${ev.source} · ${ev.date}</div>
+      <div class="tt-category" style="color: ${escapeHtml(color)};">${escapeHtml(ev.category)}</div>
+      <div class="tt-title">${escapeHtml(ev.title)}</div>
+      <div class="tt-value">${escapeHtml(ev.value)}</div>
+      <div style="color: var(--fg-subtle); font-size: 0.7rem; margin-top: 4px;">${escapeHtml(ev.source)} · ${escapeHtml(ev.date)}</div>
     `;
     tooltip.classList.add('visible');
     moveTooltip(x, y);
@@ -394,19 +413,29 @@
   }
 
   // ---- Animation loop ----
+  let lastDrawTime = 0;
+  const DRAW_INTERVAL = 100; // ms - limit redraws for pulsing events
+
   function loop() {
-    if (state.events.length) draw();
+    const now = Date.now();
+    if (state.events.length && now - lastDrawTime >= DRAW_INTERVAL) {
+      draw();
+      lastDrawTime = now;
+    }
     requestAnimationFrame(loop);
   }
 
   // Update terminator position every minute (sun moves)
-  setInterval(() => {
-    if (state.showTerminator && state.events.length) draw();
-  }, 60000);
+  let terminatorInterval = null;
+  function startTerminatorInterval() {
+    if (terminatorInterval) clearInterval(terminatorInterval);
+    terminatorInterval = setInterval(() => {
+      if (state.showTerminator && state.events.length) draw();
+    }, 60000);
+  }
 
   // ---- Init ----
   function load() {
-    // Try to load scraped events, fallback to sample
     if (window.TRANSHUMANISTS_CONFIG && window.TRANSHUMANISTS_CONFIG.eventsUrl) {
       fetch(window.TRANSHUMANISTS_CONFIG.eventsUrl)
         .then(r => r.json())
@@ -418,8 +447,8 @@
     resize();
     window.addEventListener('resize', resize);
     requestAnimationFrame(loop);
+    startTerminatorInterval();
 
-    // Update overlay stats
     const active = document.getElementById('map-stat-active');
     const conflicts = document.getElementById('map-stat-conflicts');
     const fleets = document.getElementById('map-stat-fleets');
@@ -427,7 +456,6 @@
     if (conflicts) conflicts.textContent = '3';
     if (fleets) fleets.textContent = '7';
 
-    // Terminator toggle
     const terminatorToggle = document.getElementById('terminator-toggle');
     const terminatorIcon = document.getElementById('terminator-icon');
     const terminatorLabel = document.getElementById('terminator-label');
@@ -450,7 +478,12 @@
     }
   }
 
-  // Defer load to allow other DOM stuff
+  // Cleanup on page unload
+  window.addEventListener('beforeunload', () => {
+    if (terminatorInterval) clearInterval(terminatorInterval);
+    window.removeEventListener('resize', resize);
+  });
+
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', load);
   } else {
