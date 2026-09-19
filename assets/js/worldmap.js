@@ -66,11 +66,11 @@
   function escapeHtml(text) {
     if (text === null || text === undefined) return '';
     return String(text)
-      .replace(/&/g, '&')
-      .replace(/</g, '<')
-      .replace(/>/g, '>')
-      .replace(/"/g, '"')
-      .replace(/'/g, '&apos;');
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
   }
 
   // ---- Sample data (fallback) ----
@@ -100,7 +100,7 @@
     const startOfYear = Date.UTC(year, 0, 1);
     const dayOfYear = Math.floor((Date.UTC(year, month, day) - startOfYear) / 86400000);
 
-    const declination = -23.44 * Math.cos((2 * Math.PI / 365) * (dayOfYear + 10)) * Math.PI / 180;
+    const declination = -23.44 * Math.cos((2 * Math.PI / 365) * (dayOfYear + 10));
     const B = (360 / 365) * (dayOfYear - 81) * Math.PI / 180;
     const equationOfTime = 9.87 * Math.sin(2 * B) - 7.53 * Math.cos(B) - 1.5 * Math.sin(B);
     const solarTime = hour + equationOfTime / 60;
@@ -125,7 +125,7 @@
     for (let i = 0; i <= samples; i++) {
       const lat = 90 - (i / samples) * 180;
       const latRad = lat * Math.PI / 180;
-      const declRad = sun.lat;
+      const declRad = sun.lat * Math.PI / 180;
 
       const cosHourAngle = -Math.tan(latRad) * Math.tan(declRad);
 

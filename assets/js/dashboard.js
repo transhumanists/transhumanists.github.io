@@ -28,11 +28,11 @@
   function escapeHtml(text) {
     if (text === null || text === undefined) return '';
     return String(text)
-      .replace(/&/g, '&')
-      .replace(/</g, '<')
-      .replace(/>/g, '>')
-      .replace(/"/g, '"')
-      .replace(/'/g, '&apos;');
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
   }
 
   function createEl(tag, className, content) {
@@ -93,7 +93,7 @@
       if (!r.ok) throw new Error(r.status);
       return await r.json();
     } catch (e) {
-      if (e.name === 'AbortError') throw e;
+      if (e.name === 'AbortError') return null;
       return null;
     } finally {
       const idx = fetchAbortControllers.indexOf(ac);

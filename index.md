@@ -33,7 +33,7 @@ description: "Tracking milestones across biotech, AGI, quantum, energy, cyber, s
 </div>
 
 <!-- WORLD MAP -->
-<section class="section" id="world-map">
+<section class="section">
   <div class="container">
     <header class="section-header">
       <h2>Global Activity Map</h2>

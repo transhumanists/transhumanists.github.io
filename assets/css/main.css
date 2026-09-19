@@ -628,13 +628,6 @@ body {
 .skeleton-card .skeleton-line.short { width: 60%; }
 .skeleton-card .skeleton-line.medium { width: 80%; }
 .skeleton-card .skeleton-line.long { width: 100%; }
-.skeleton-card .skeleton-value {
-  height: 2rem;
-  width: 80px;
-  border-radius: 4px;
-  margin-top: 12px;
-}
-
 .network-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
