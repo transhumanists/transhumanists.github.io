@@ -12,6 +12,18 @@
     defense: { name: 'Military & Defense', icon: '🌍', color: '#ff9100' }
   };
 
+  // ---- Sample data (fallback) ----
+  const SAMPLE_MILESTONES = [
+    { title: 'CRISPR Cas-13b FDA phase-3', category: 'Biotechnology', value: '50', unit: 'patients treated', source: 'Stanford', date: '2026-08-25', icon: '🧬', is_new: true },
+    { title: 'Qubits entangled', category: 'Quantum', value: '137', unit: 'qubits', source: 'ETH Zurich', date: '2026-08-26', icon: '⚛️', is_new: true },
+    { title: 'JT-60SA fusion yield', category: 'Energy', value: '100', unit: 'MJ sustained', source: 'NIFS', date: '2026-08-22', icon: '⚡' },
+    { title: 'Top CVSS score', category: 'Cybersecurity', value: '9.8', unit: 'CRITICAL', source: 'NCSC', date: '2026-08-24', icon: '🛡️', is_new: true },
+    { title: 'Starship payload to LEO', category: 'Spaceflight', value: '156', unit: 'tonnes', source: 'SpaceX', date: '2026-08-23', icon: '🚀' },
+    { title: 'Hypersonic glide vehicle', category: 'Defense', value: '13', unit: 'Mach', source: 'PLASSF', date: '2026-08-20', icon: '🌍', is_new: true },
+    { title: 'GPT-6 MMLU', category: 'Computing & AGI', value: '94.7', unit: '%', source: 'OpenAI', date: '2026-08-19', icon: '🧠' },
+    { title: 'Drone swarm coordinated', category: 'Defense', value: '1000', unit: 'UAVs', source: 'CSA', date: '2026-08-17', icon: '🌍' }
+  ];
+
   // ---- XSS-safe helpers ----
   function escapeHtml(text) {
     if (text === null || text === undefined) return '';
@@ -50,6 +62,7 @@
       });
     }, { threshold });
     io.observe(el);
+    registerObserver(io);
     return io;
   }
 
@@ -66,7 +79,30 @@
   // ---- Shared milestone data cache ----
   let milestonesCache = null;
   let milestonesCachePromise = null;
+  let fetchAbortControllers = [];
 
+  function abortAllFetches() {
+    fetchAbortControllers.forEach(ac => ac.abort());
+    fetchAbortControllers = [];
+  }
+
+  async function fetchJSON(url) {
+    const ac = new AbortController();
+    fetchAbortControllers.push(ac);
+    try {
+      const r = await fetch(url, { cache: 'no-store', signal: ac.signal });
+      if (!r.ok) throw new Error(r.status);
+      return await r.json();
+    } catch (e) {
+      if (e.name === 'AbortError') throw e;
+      return null;
+    } finally {
+      const idx = fetchAbortControllers.indexOf(ac);
+      if (idx >= 0) fetchAbortControllers.splice(idx, 1);
+    }
+  }
+
+  // ---- Shared milestone data cache ----
   async function getMilestonesData() {
     if (milestonesCache) return milestonesCache;
     if (!milestonesCachePromise) {
@@ -76,6 +112,11 @@
       });
     }
     return milestonesCachePromise;
+  }
+
+  function invalidateMilestonesCache() {
+    milestonesCache = null;
+    milestonesCachePromise = null;
   }
 
   // Activity chart (30-day bars)
@@ -190,17 +231,6 @@
     });
   }
 
-  const SAMPLE_MILESTONES = [
-    { title: 'CRISPR Cas-13b FDA phase-3', category: 'Biotechnology', value: '50', unit: 'patients treated', source: 'Stanford', date: '2026-08-25', icon: '🧬', is_new: true },
-    { title: 'Qubits entangled', category: 'Quantum', value: '137', unit: 'qubits', source: 'ETH Zurich', date: '2026-08-26', icon: '⚛️', is_new: true },
-    { title: 'JT-60SA fusion yield', category: 'Energy', value: '100', unit: 'MJ sustained', source: 'NIFS', date: '2026-08-22', icon: '⚡' },
-    { title: 'Top CVSS score', category: 'Cybersecurity', value: '9.8', unit: 'CRITICAL', source: 'NCSC', date: '2026-08-24', icon: '🛡️', is_new: true },
-    { title: 'Starship payload to LEO', category: 'Spaceflight', value: '156', unit: 'tonnes', source: 'SpaceX', date: '2026-08-23', icon: '🚀' },
-    { title: 'Hypersonic glide vehicle', category: 'Defense', value: '13', unit: 'Mach', source: 'PLASSF', date: '2026-08-20', icon: '🌍', is_new: true },
-    { title: 'GPT-6 MMLU', category: 'Computing & AGI', value: '94.7', unit: '%', source: 'OpenAI', date: '2026-08-19', icon: '🧠' },
-    { title: 'Drone swarm coordinated', category: 'Defense', value: '1000', unit: 'UAVs', source: 'CSA', date: '2026-08-17', icon: '🌍' }
-  ];
-
   // Category Toggle — expandable milestone lists
   async function initCategoryToggles() {
     const toggles = document.querySelectorAll('.category-toggle');
@@ -234,9 +264,15 @@
           const details = createEl('div', 'category-milestone-details');
           const title = createEl('div', 'category-milestone-title', m.title);
           const meta = createEl('div', 'category-milestone-meta');
-          meta.innerHTML = `<span>${escapeHtml(m.source)}</span> · <span>${escapeHtml(m.date)}</span>`;
+          const sourceSpan = createEl('span', '', m.source);
+          const dotSpan = createEl('span', '', ' · ');
+          const dateSpan = createEl('span', '', m.date);
+          meta.appendChild(sourceSpan);
+          meta.appendChild(dotSpan);
+          meta.appendChild(dateSpan);
           if (m.geolocation && typeof m.geolocation.lat === 'number' && typeof m.geolocation.lon === 'number') {
-            meta.innerHTML += ` · <span>📍 ${m.geolocation.lat.toFixed(2)}, ${m.geolocation.lon.toFixed(2)}</span>`;
+            const geoSpan = createEl('span', '', ` · 📍 ${m.geolocation.lat.toFixed(2)}, ${m.geolocation.lon.toFixed(2)}`);
+            meta.appendChild(geoSpan);
           }
           details.appendChild(title);
           details.appendChild(meta);
@@ -393,9 +429,15 @@
 
         const meta = createEl('div');
         meta.style.cssText = 'font-size:0.7rem;color:var(--fg-subtle);display:flex;gap:12px;flex-wrap:wrap;';
-        meta.innerHTML = `<span>${escapeHtml(m.source)}</span> · <span>${escapeHtml(m.date)}</span>`;
+        const sourceSpan = createEl('span', '', m.source);
+        const dotSpan = createEl('span', '', ' · ');
+        const dateSpan = createEl('span', '', m.date);
+        meta.appendChild(sourceSpan);
+        meta.appendChild(dotSpan);
+        meta.appendChild(dateSpan);
         if (m.geolocation && typeof m.geolocation.lat === 'number' && typeof m.geolocation.lon === 'number') {
-          meta.innerHTML += `<span>· 📍 ${m.geolocation.lat.toFixed(2)}, ${m.geolocation.lon.toFixed(2)}</span>`;
+          const geoSpan = createEl('span', '', ` · 📍 ${m.geolocation.lat.toFixed(2)}, ${m.geolocation.lon.toFixed(2)}`);
+          meta.appendChild(geoSpan);
         }
         card.appendChild(meta);
 
@@ -435,6 +477,22 @@
       filter.addEventListener('change', e => render(e.target.value));
     }
   }
+
+  // ---- Cleanup ----
+  let allObservers = [];
+
+  function registerObserver(io) {
+    if (io) allObservers.push(io);
+  }
+
+  function cleanup() {
+    allObservers.forEach(io => io.disconnect());
+    allObservers = [];
+    abortAllFetches();
+  }
+
+  window.addEventListener('beforeunload', cleanup);
+  window.addEventListener('pagehide', cleanup);
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {

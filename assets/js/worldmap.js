@@ -21,7 +21,6 @@
     dragStart: { x: 0, y: 0 },
     hoveredEvent: null,
     events: [],
-    countries: [],
     showTerminator: true
   };
 
@@ -72,7 +71,7 @@
   }
 
   // ---- XSS-safe helper ----
-function escapeHtml(text) {
+  function escapeHtml(text) {
     if (text === null || text === undefined) return '';
     return String(text)
       .replace(/&/g, '&')
@@ -81,6 +80,22 @@ function escapeHtml(text) {
       .replace(/"/g, '"')
       .replace(/'/g, '&apos;');
   }
+
+  // ---- Sample data (fallback) ----
+  const SAMPLE_EVENTS = [
+    { lat: 37.7749, lon: -122.4194, title: 'CRISPR Cas-13b phase-3 trial cleared', category: 'Biotechnology', value: '50 patients', source: 'Stanford', date: '2026-08-25' },
+    { lat: 47.3769, lon: 8.5417, title: 'ETH Zurich - 137 qubit entanglement', category: 'Quantum', value: '137 qubits', source: 'ETH Zurich', date: '2026-08-26' },
+    { lat: 35.6762, lon: 139.6503, title: 'JT-60SA sustained fusion: 100 MJ', category: 'Energy', value: '100 MJ', source: 'NIFS Japan', date: '2026-08-22' },
+    { lat: 51.5074, lon: -0.1278, title: 'GCHQ cyber threat advisory - 9.8 CVSS', category: 'Cybersecurity', value: 'CVSS 9.8', source: 'NCSC UK', date: '2026-08-24' },
+    { lat: 28.5728, lon: -80.6490, title: 'SpaceX Starship: 156t to LEO', category: 'Spaceflight & Aeronautics', value: '156 tonnes', source: 'SpaceX', date: '2026-08-23' },
+    { lat: 50.4501, lon: 30.5234, title: 'NATO exercise - 12,000 troops', category: 'Defense', value: '12k troops', source: 'NATO', date: '2026-08-21' },
+    { lat: 39.9042, lon: 116.4074, title: 'Beijing hypersonic test: Mach 13', category: 'Defense', value: 'Mach 13', source: 'PLASSF', date: '2026-08-20' },
+    { lat: 31.9686, lon: 35.5064, title: 'Mossad joint cyber op with NSA', category: 'Cybersecurity', value: 'Tier-1', source: 'Mossad', date: '2026-08-27' },
+    { lat: 52.5200, lon: 13.4050, title: 'Wendelstein 7-X - 6 min plasma record', category: 'Energy', value: '6 min', source: 'IPP', date: '2026-08-19' },
+    { lat: 32.0853, lon: 34.7818, title: 'Tel Aviv biotech: in-vivo organoid', category: 'Biotechnology', value: 'patent-pending', source: 'Tel Aviv U', date: '2026-08-28' },
+    { lat: -33.8688, lon: 151.2093, title: 'CSIRO solar cell: 33.2% efficiency', category: 'Energy', value: '33.2%', source: 'CSIRO', date: '2026-08-18' },
+    { lat: 1.3521, lon: 103.8198, title: 'ST Engineering drone swarm test', category: 'Defense', value: '1000 UAVs', source: 'CSA', date: '2026-08-17' }
+  ];
 
   // ---- Terminator (Day/Night boundary) ----
   function getSunPosition() {
@@ -284,12 +299,14 @@ function escapeHtml(text) {
 
   // ---- Hit-test ----
   function findEvent(px, py) {
+    const hitRadius = 10 / state.transform.scale;
+    const hitRadiusSq = hitRadius * hitRadius;
     for (let i = state.events.length - 1; i >= 0; i--) {
       const ev = state.events[i];
       const p = project(ev.lon, ev.lat);
       const dx = p.x - px;
       const dy = p.y - py;
-      if (dx * dx + dy * dy < 100) return ev;
+      if (dx * dx + dy * dy < hitRadiusSq) return ev;
     }
     return null;
   }
@@ -398,65 +415,67 @@ function escapeHtml(text) {
   }
 
   // ---- Data loading ----
+  let eventsAbortController = null;
+
   async function loadEvents() {
+    if (eventsAbortController) eventsAbortController.abort();
+    eventsAbortController = new AbortController();
+
     const eventsUrl = '/data/events.json';
     try {
-      const r = await fetch(eventsUrl, { cache: 'no-store' });
+      const r = await fetch(eventsUrl, { cache: 'no-store', signal: eventsAbortController.signal });
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
       const data = await r.json();
       if (data && Array.isArray(data.events)) {
-        state.events = data.events.map(e => ({
-          lat: e.geolocation?.lat,
-          lon: e.geolocation?.lon,
-          title: e.title,
-          category: e.category,
-          value: e.value,
-          source: e.source,
-          date: e.date
-        })).filter(e => typeof e.lat === 'number' && typeof e.lon === 'number');
+        state.events = data.events
+          .map(e => ({
+            lat: e.geolocation?.lat,
+            lon: e.geolocation?.lon,
+            title: e.title ?? 'Untitled',
+            category: e.category ?? 'Unknown',
+            value: e.value ?? '',
+            source: e.source ?? 'Unknown',
+            date: e.date ?? ''
+          }))
+          .filter(e =>
+            typeof e.lat === 'number' &&
+            typeof e.lon === 'number' &&
+            typeof e.title === 'string' &&
+            typeof e.category === 'string'
+          );
       } else {
         state.events = [];
       }
     } catch (err) {
+      if (err.name === 'AbortError') return;
       console.warn('[worldmap] Failed to load events.json, using sample data:', err);
       state.events = SAMPLE_EVENTS;
     }
   }
 
-  // ---- Sample data (fallback) ----
-  const SAMPLE_EVENTS = [
-    { lat: 37.7749, lon: -122.4194, title: 'CRISPR Cas-13b phase-3 trial cleared', category: 'Biotechnology', value: '50 patients', source: 'Stanford', date: '2026-08-25' },
-    { lat: 47.3769, lon: 8.5417, title: 'ETH Zurich - 137 qubit entanglement', category: 'Quantum', value: '137 qubits', source: 'ETH Zurich', date: '2026-08-26' },
-    { lat: 35.6762, lon: 139.6503, title: 'JT-60SA sustained fusion: 100 MJ', category: 'Energy', value: '100 MJ', source: 'NIFS Japan', date: '2026-08-22' },
-    { lat: 51.5074, lon: -0.1278, title: 'GCHQ cyber threat advisory - 9.8 CVSS', category: 'Cybersecurity', value: 'CVSS 9.8', source: 'NCSC UK', date: '2026-08-24' },
-    { lat: 28.5728, lon: -80.6490, title: 'SpaceX Starship: 156t to LEO', category: 'Spaceflight & Aeronautics', value: '156 tonnes', source: 'SpaceX', date: '2026-08-23' },
-    { lat: 50.4501, lon: 30.5234, title: 'NATO exercise - 12,000 troops', category: 'Defense', value: '12k troops', source: 'NATO', date: '2026-08-21' },
-    { lat: 39.9042, lon: 116.4074, title: 'Beijing hypersonic test: Mach 13', category: 'Defense', value: 'Mach 13', source: 'PLASSF', date: '2026-08-20' },
-    { lat: 31.9686, lon: 35.5064, title: 'Mossad joint cyber op with NSA', category: 'Cybersecurity', value: 'Tier-1', source: 'Mossad', date: '2026-08-27' },
-    { lat: 52.5200, lon: 13.4050, title: 'Wendelstein 7-X - 6 min plasma record', category: 'Energy', value: '6 min', source: 'IPP', date: '2026-08-19' },
-    { lat: 32.0853, lon: 34.7818, title: 'Tel Aviv biotech: in-vivo organoid', category: 'Biotechnology', value: 'patent-pending', source: 'Tel Aviv U', date: '2026-08-28' },
-    { lat: -33.8688, lon: 151.2093, title: 'CSIRO solar cell: 33.2% efficiency', category: 'Energy', value: '33.2%', source: 'CSIRO', date: '2026-08-18' },
-    { lat: 1.3521, lon: 103.8198, title: 'ST Engineering drone swarm test', category: 'Defense', value: '1000 UAVs', source: 'CSA', date: '2026-08-17' }
-  ];
-
   // ---- Animation loop ----
   let lastDrawTime = 0;
+  let animationFrameId = null;
   const DRAW_INTERVAL = 100;
 
   function loop() {
+    if (document.hidden) {
+      animationFrameId = requestAnimationFrame(loop);
+      return;
+    }
     const now = Date.now();
     if (state.events.length && now - lastDrawTime >= DRAW_INTERVAL) {
       draw();
       lastDrawTime = now;
     }
-    requestAnimationFrame(loop);
+    animationFrameId = requestAnimationFrame(loop);
   }
 
   let terminatorInterval = null;
   function startTerminatorInterval() {
     if (terminatorInterval) clearInterval(terminatorInterval);
     terminatorInterval = setInterval(() => {
-      if (state.showTerminator && state.events.length) draw();
+      if (!document.hidden && state.showTerminator && state.events.length) draw();
     }, 60000);
   }
 
@@ -466,7 +485,7 @@ function escapeHtml(text) {
     updateStatsDisplay();
     resize();
     window.addEventListener('resize', resize);
-    requestAnimationFrame(loop);
+    animationFrameId = requestAnimationFrame(loop);
     startTerminatorInterval();
 
     const terminatorToggle = document.getElementById('terminator-toggle');
@@ -491,10 +510,15 @@ function escapeHtml(text) {
     }
   }
 
-  window.addEventListener('beforeunload', () => {
+  function cleanup() {
+    if (animationFrameId) cancelAnimationFrame(animationFrameId);
     if (terminatorInterval) clearInterval(terminatorInterval);
+    if (eventsAbortController) eventsAbortController.abort();
     window.removeEventListener('resize', resize);
-  });
+  }
+
+  window.addEventListener('beforeunload', cleanup);
+  window.addEventListener('pagehide', cleanup);
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', load);
