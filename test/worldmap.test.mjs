@@ -82,10 +82,20 @@ function makeCanvas() {
 }
 
 function makeCtx() {
-  const ctx = { listeners: [] };
+  const ctx = {
+    listeners: [],
+    counters: { fills: 0, strokes: 0, lineTos: 0, arcs: 0, moves: 0 },
+    resetCounters() { for (const k in this.counters) this.counters[k] = 0; },
+  };
   ctx.createLinearGradient = () => ({ addColorStop() {} });
   for (const m of ['fillRect', 'beginPath', 'moveTo', 'lineTo', 'stroke', 'fill', 'closePath', 'setLineDash', 'arc', 'fillText', 'save', 'restore', 'setTransform']) {
-    ctx[m] = () => {};
+    ctx[m] = () => {
+      if (m === 'fill') ctx.counters.fills++;
+      else if (m === 'stroke') ctx.counters.strokes++;
+      else if (m === 'lineTo') ctx.counters.lineTos++;
+      else if (m === 'moveTo') ctx.counters.moves++;
+      else if (m === 'arc') ctx.counters.arcs++;
+    };
   }
   return ctx;
 }
@@ -323,6 +333,24 @@ test('tooltip canonicalizes legacy category names', () => {
     expect(api.isPlottable(api.normalizeEvent({ geolocation: { lat: 1 }, title: 'T', category: 'X' }))).toBe(false);           // missing lon
     expect(api.isPlottable(api.normalizeEvent({ title: 42, geolocation: { lat: 1, lon: 2 } }))).toBe(false);                  // non-string title falls through
     expect(api.isPlottable(api.normalizeEvent({ geolocation: { lat: 0, lon: 0 }, title: '', category: 'X' }))).toBe(true);    // numeric 0 and '' are valid
+    // NaN/Infinity pass a typeof 'number' check but break geometry; reject them
+    // and coordinates outside the valid ranges.
+    expect(api.isPlottable(api.normalizeEvent({ geolocation: { lat: Number.NaN, lon: 0 }, title: 'T', category: 'X' }))).toBe(false);
+    expect(api.isPlottable(api.normalizeEvent({ geolocation: { lat: 0, lon: Infinity }, title: 'T', category: 'X' }))).toBe(false);
+    expect(api.isPlottable(api.normalizeEvent({ geolocation: { lat: 120, lon: 0 }, title: 'T', category: 'X' }))).toBe(false);  // lat > 90
+    expect(api.isPlottable(api.normalizeEvent({ geolocation: { lat: 0, lon: 190 }, title: 'T', category: 'X' }))).toBe(false);  // lon > 180
+    expect(api.isPlottable(api.normalizeEvent({ geolocation: { lat: 90, lon: -180 }, title: 'T', category: 'X' }))).toBe(true); // boundary values are valid
+  });
+
+  test('a redraw renders the full scene (background, terminator, dots)', () => {
+    ctx.resetCounters();
+    registeredEls['reset-view'].fire('click', {});
+    expect(ctx.counters.fills).toBeGreaterThan(0);
+    expect(ctx.counters.strokes).toBeGreaterThan(0);
+    // Graticule (17 segments) + continents + both terminator boundary lines.
+    expect(ctx.counters.lineTos).toBeGreaterThan(20);
+    // Each of the 8 payload events draws a glow arc + a dot arc.
+    expect(ctx.counters.arcs).toBeGreaterThanOrEqual(16);
   });
 
   test('zoom clamps to [0.5, 8] and keyboard 0 resets the view', () => {
