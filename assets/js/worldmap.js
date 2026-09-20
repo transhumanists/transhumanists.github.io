@@ -441,7 +441,7 @@
   canvas.addEventListener('mousedown', () => {
     state.isDragging = true;
     canvas.style.cursor = 'grabbing';
-    hideTooltip();
+    dismissTooltip();
   });
 
   window.addEventListener('mouseup', () => {
@@ -463,6 +463,7 @@
     state.transform.scale = newScale;
     state.transform.tx = x - wx * state.transform.scale;
     state.transform.ty = y - wy * state.transform.scale;
+    dismissTooltip();
     draw();
   }
 
@@ -470,6 +471,7 @@
     state.transform.scale = 1;
     state.transform.tx = 0;
     state.transform.ty = 0;
+    dismissTooltip();
     draw();
   }
 
@@ -505,6 +507,7 @@
     }
     if (handled) {
       e.preventDefault();
+      dismissTooltip();
       draw();
     }
   });
@@ -549,6 +552,21 @@
     return wrapper;
   }
 
+  function moveTooltip(x, y) {
+    if (!tooltip) return;
+    const offset = TOOLTIP_OFFSET;
+    // Clamp against the tooltip's real size when measurable (works even for
+    // taller tooltips that include a value or source link).
+    const tw = tooltip.offsetWidth || TOOLTIP_WIDTH;
+    const th = tooltip.offsetHeight || TOOLTIP_HEIGHT;
+    let tx = x + offset;
+    let ty = y + offset;
+    if (tx + tw > state.width) tx = x - tw - offset;
+    if (ty + th > state.height) ty = y - th - offset;
+    tooltip.style.left = tx + 'px';
+    tooltip.style.top = ty + 'px';
+  }
+
   function showTooltip(ev, x, y) {
     if (!tooltip) return;
     tooltip.replaceChildren(createTooltipElement(ev));
@@ -556,19 +574,16 @@
     moveTooltip(x, y);
   }
 
-  function moveTooltip(x, y) {
-    if (!tooltip) return;
-    const offset = TOOLTIP_OFFSET;
-    let tx = x + offset;
-    let ty = y + offset;
-    if (tx + TOOLTIP_WIDTH > state.width) tx = x - TOOLTIP_WIDTH - offset;
-    if (ty + TOOLTIP_HEIGHT > state.height) ty = y - TOOLTIP_HEIGHT - offset;
-    tooltip.style.left = tx + 'px';
-    tooltip.style.top = ty + 'px';
-  }
-
   function hideTooltip() {
     if (tooltip) tooltip.classList.remove('visible');
+  }
+
+  // Remove the tooltip AND forget which event it pointed at. Forgetting is what
+  // lets the next mousemove re-open it cleanly after a pan/zoom/drag moved the
+  // dots underneath the pointer.
+  function dismissTooltip() {
+    state.hoveredEvent = null;
+    hideTooltip();
   }
 
   // ---- Stats computation ----

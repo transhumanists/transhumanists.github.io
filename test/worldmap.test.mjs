@@ -41,6 +41,8 @@ function makeEl() {
     className: '',
     listeners: {},
     classList: makeClassList(),
+    offsetWidth: 0,
+    offsetHeight: 0,
     setAttribute(k, v) { this.attrs[k] = String(v); },
     getAttribute(k) { return this.attrs[k]; },
     hasAttribute(k) { return k in this.attrs; },
@@ -99,6 +101,8 @@ const windowObj = {
 };
 
 const tooltip = makeEl();
+tooltip.offsetWidth = 150;
+tooltip.offsetHeight = 200;
 const canvas = makeCanvas();
 const ctx = makeCtx();
 canvas.getContext = () => ctx;
@@ -248,6 +252,44 @@ test('tooltip canonicalizes legacy category names', () => {
     for (const key of ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', '+', '-', '0']) {
       canvas.fire('keydown', { key, target: canvas, preventDefault() {} });
     }
+  });
+
+  test('tooltip clamps to the map edges using its measured size', () => {
+    // Renewable Energy event at lon 151.21 / lat -33.87 → (736, 358) on the 800x520
+    // stub, near both the right and bottom edges. With measured 150x200 the tooltip
+    // must flip to the left of the cursor (574px) and above it (146px) instead of
+    // overflowing the map.
+    registeredEls['reset-view'].fire('click', {});
+    canvas.fire('mousemove', { clientX: 736, clientY: 358, movementX: 0, movementY: 0 });
+    expect(tooltip.classList.contains('visible')).toBe(true);
+    expect(tooltip.style.left).toBe('574px');
+    expect(tooltip.style.top).toBe('146px');
+  });
+
+  test('zoom dismisses a stale tooltip and hover re-opens it', () => {
+    registeredEls['reset-view'].fire('click', {});
+    // London Cyber event at (400, 111); zoom anchored at (400, 260) relocates it
+    // to screen (400, 260), so the old tooltip position would be stale.
+    canvas.fire('mousemove', { clientX: 400, clientY: 111, movementX: 0, movementY: 0 });
+    expect(tooltip.classList.contains('visible')).toBe(true);
+    canvas.fire('dblclick', { clientX: 400, clientY: 260 });
+    expect(tooltip.classList.contains('visible')).toBe(false);
+    // A fresh hover over the relocated dot must re-open the tooltip.
+    canvas.fire('mousemove', { clientX: 400, clientY: 260, movementX: 0, movementY: 0 });
+    expect(tooltip.classList.contains('visible')).toBe(true);
+  });
+
+  test('drag clears hover state so a re-hover after drag re-opens', () => {
+    registeredEls['reset-view'].fire('click', {});
+    canvas.fire('mousemove', { clientX: 400, clientY: 111, movementX: 0, movementY: 0 });
+    expect(tooltip.classList.contains('visible')).toBe(true);
+    canvas.fire('mousedown', {});
+    expect(tooltip.classList.contains('visible')).toBe(false);
+    windowObj.fire('mouseup', {});
+    // Pointing at the same dot again after the drag must re-open (previously the
+    // stale hoveredEvent made the second hover only nudge the hidden tooltip).
+    canvas.fire('mousemove', { clientX: 400, clientY: 111, movementX: 0, movementY: 0 });
+    expect(tooltip.classList.contains('visible')).toBe(true);
   });
 
   test('internal invariants: every legend/stat key has a color', () => {
