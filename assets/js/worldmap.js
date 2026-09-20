@@ -8,8 +8,10 @@
   const canvas = document.getElementById('world-map-canvas');
   if (!canvas) return;
 
-  const tooltip = document.getElementById('map-tooltip');
   const ctx = canvas.getContext('2d');
+  if (!ctx) return;
+
+  const tooltip = document.getElementById('map-tooltip');
 
   // ---- Constants ----
   const TERMINATOR_SAMPLES = 180;
@@ -32,6 +34,7 @@
     transform: { scale: 1, tx: 0, ty: 0 },
     isDragging: false,
     hoveredEvent: null,
+    tooltipHover: false,
     events: [],
     showTerminator: true,
     // Cached terminator data
@@ -47,22 +50,48 @@
   const CATEGORY_COLORS = {
     'Biotechnology': '#00e676',
     'Computing & AGI': '#448aff',
-    'Quantum': '#b388ff',
-    'Energy': '#ffd740',
+    'Quantum Physics': '#b388ff',
+    'Renewable Energy': '#ffd740',
     'Cybersecurity': '#ff5252',
     'Spaceflight & Aeronautics': '#00d4ff',
-    'Defense': '#ff9100'
+    'Military & Defense': '#ff9100'
   };
 
   const CATEGORY_STAT_MAP = {
     'Biotechnology': { statId: 'map-stat-active', label: 'breakthroughs this week' },
     'Cybersecurity': { statId: 'map-stat-conflicts', label: 'active conflict zones' },
-    'Defense': { statId: 'map-stat-fleets', label: 'fleet movements tracked' },
-    'Energy': { statId: 'map-stat-active', label: 'breakthroughs this week' },
+    'Military & Defense': { statId: 'map-stat-fleets', label: 'fleet movements tracked' },
+    'Renewable Energy': { statId: 'map-stat-active', label: 'breakthroughs this week' },
     'Spaceflight & Aeronautics': { statId: 'map-stat-fleets', label: 'fleet movements tracked' },
-    'Quantum': { statId: 'map-stat-active', label: 'breakthroughs this week' },
+    'Quantum Physics': { statId: 'map-stat-active', label: 'breakthroughs this week' },
     'Computing & AGI': { statId: 'map-stat-active', label: 'breakthroughs this week' }
   };
+
+  // Map category names from any source (old short names or the canonical data names)
+  // to the canonical names used by events.json, so colors/stats/legend always align.
+  const CATEGORY_ALIASES = {
+    'Quantum': 'Quantum Physics',
+    'Energy': 'Renewable Energy',
+    'Defense': 'Military & Defense',
+    'Quantum Physics': 'Quantum Physics',
+    'Renewable Energy': 'Renewable Energy',
+    'Military & Defense': 'Military & Defense'
+  };
+
+  // Canonical category order used by the legend (color, label).
+  const CATEGORY_LEGEND = [
+    { key: 'Biotechnology', label: 'Biotechnology' },
+    { key: 'Computing & AGI', label: 'Computing & AGI' },
+    { key: 'Quantum Physics', label: 'Quantum Physics' },
+    { key: 'Renewable Energy', label: 'Renewable Energy' },
+    { key: 'Cybersecurity', label: 'Cybersecurity' },
+    { key: 'Spaceflight & Aeronautics', label: 'Spaceflight & Aeronautics' },
+    { key: 'Military & Defense', label: 'Military & Defense' }
+  ];
+
+  function canonicalCategory(cat) {
+    return CATEGORY_ALIASES[cat] || cat;
+  }
 
   // ---- Country outlines (simplified continent path) ----
   const CONTINENTS = [
@@ -347,7 +376,7 @@
 
   function drawEvent(ev) {
     const p = project(ev.lon, ev.lat);
-    const color = CATEGORY_COLORS[ev.category] || '#00d4ff';
+    const color = CATEGORY_COLORS[canonicalCategory(ev.category)] || '#00d4ff';
     const pulse = 0.5 + 0.5 * Math.sin((Date.now() / 1000 + ev.lon) * 2);
     const r = 4 + pulse * 2;
 
@@ -402,7 +431,7 @@
     if (hit !== state.hoveredEvent) {
       state.hoveredEvent = hit;
       if (hit) showTooltip(hit, e.clientX - rect.left, e.clientY - rect.top);
-      else hideTooltip();
+      else if (!state.tooltipHover) hideTooltip();
       draw();
     } else if (hit) {
       moveTooltip(e.clientX - rect.left, e.clientY - rect.top);
@@ -412,6 +441,7 @@
   canvas.addEventListener('mousedown', () => {
     state.isDragging = true;
     canvas.style.cursor = 'grabbing';
+    hideTooltip();
   });
 
   window.addEventListener('mouseup', () => {
@@ -419,27 +449,42 @@
     canvas.style.cursor = 'grab';
   });
 
+  // Double-click to zoom in around the cursor
+  canvas.addEventListener('dblclick', e => {
+    const rect = canvas.getBoundingClientRect();
+    zoomAt(e.clientX - rect.left, e.clientY - rect.top, 1.5);
+  });
+
+  // ---- Zoom helpers (used by controls, wheel, keyboard, double-click) ----
+  function zoomAt(x, y, factor) {
+    const newScale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, state.transform.scale * factor));
+    const wx = (x - state.transform.tx) / state.transform.scale;
+    const wy = (y - state.transform.ty) / state.transform.scale;
+    state.transform.scale = newScale;
+    state.transform.tx = x - wx * state.transform.scale;
+    state.transform.ty = y - wy * state.transform.scale;
+    draw();
+  }
+
+  function resetView() {
+    state.transform.scale = 1;
+    state.transform.tx = 0;
+    state.transform.ty = 0;
+    draw();
+  }
+
   canvas.addEventListener('wheel', e => {
     e.preventDefault();
     const rect = canvas.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
-    const delta = e.deltaY < 0 ? 1.1 : 0.9;
-    const newScale = state.transform.scale * delta;
-
-    const wx = (x - state.transform.tx) / state.transform.scale;
-    const wy = (y - state.transform.ty) / state.transform.scale;
-    state.transform.scale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, newScale));
-    state.transform.tx = x - wx * state.transform.scale;
-    state.transform.ty = y - wy * state.transform.scale;
-    draw();
+    zoomAt(x, y, e.deltaY < 0 ? ZOOM_FACTOR : 1 / ZOOM_FACTOR);
   }, { passive: false });
 
   // ---- Keyboard accessibility ----
   canvas.addEventListener('keydown', e => {
     if (e.target !== canvas && !canvas.contains(e.target)) return;
     const panStep = 50 / state.transform.scale;
-    const zoomStep = 1.2;
     let handled = true;
     switch (e.key) {
       case 'ArrowLeft': state.transform.tx += panStep; break;
@@ -448,10 +493,13 @@
       case 'ArrowDown': state.transform.ty -= panStep; break;
       case '+':
       case '=':
-        state.transform.scale = Math.min(MAX_SCALE, state.transform.scale * zoomStep);
+        zoomAt(state.width / 2, state.height / 2, 1.2);
         break;
       case '-':
-        state.transform.scale = Math.max(MIN_SCALE, state.transform.scale / zoomStep);
+        zoomAt(state.width / 2, state.height / 2, 1 / 1.2);
+        break;
+      case '0':
+        resetView();
         break;
       default: handled = false;
     }
@@ -468,22 +516,36 @@
 
   // ---- Tooltip ----
   function createTooltipElement(ev) {
-    const color = CATEGORY_COLORS[ev.category] || '#00d4ff';
+    const color = CATEGORY_COLORS[canonicalCategory(ev.category)] || '#00d4ff';
     const wrapper = document.createElement('div');
     const cat = document.createElement('div');
     cat.className = 'tt-category';
     cat.style.color = color;
-    cat.textContent = ev.category;
+    cat.textContent = canonicalCategory(ev.category);
     const title = document.createElement('div');
     title.className = 'tt-title';
     title.textContent = ev.title;
-    const value = document.createElement('div');
-    value.className = 'tt-value';
-    value.textContent = ev.value;
     const meta = document.createElement('div');
     meta.style.cssText = 'color: var(--fg-subtle); font-size: 0.7rem; margin-top: 4px;';
     meta.textContent = `${ev.source} · ${ev.date}`;
-    wrapper.append(cat, title, value, meta);
+    wrapper.append(cat, title, meta);
+
+    if (ev.value) {
+      const value = document.createElement('div');
+      value.className = 'tt-value';
+      value.textContent = ev.value;
+      wrapper.appendChild(value);
+    }
+
+    if (ev.url && /^https?:\/\//i.test(ev.url)) {
+      const link = document.createElement('a');
+      link.href = ev.url;
+      link.target = '_blank';
+      link.rel = 'noopener noreferrer';
+      link.className = 'tt-link';
+      link.textContent = 'View source ↗';
+      wrapper.appendChild(link);
+    }
     return wrapper;
   }
 
@@ -513,7 +575,7 @@
   function computeStats() {
     const counts = { breakthroughs: 0, conflicts: 0, fleets: 0 };
     state.events.forEach(ev => {
-      const statMap = CATEGORY_STAT_MAP[ev.category];
+      const statMap = CATEGORY_STAT_MAP[canonicalCategory(ev.category)];
       if (!statMap) return;
       if (statMap.statId === 'map-stat-active') counts.breakthroughs++;
       else if (statMap.statId === 'map-stat-conflicts') counts.conflicts++;
@@ -530,6 +592,77 @@
     if (active) active.textContent = stats.breakthroughs;
     if (conflicts) conflicts.textContent = stats.conflicts;
     if (fleets) fleets.textContent = stats.fleets;
+  }
+
+  // ---- Legend ----
+  function renderLegend() {
+    const mapEl = document.getElementById('world-map');
+    if (!mapEl) return;
+    let legendEl = document.getElementById('map-legend');
+    if (!legendEl) {
+      legendEl = document.createElement('div');
+      legendEl.id = 'map-legend';
+      legendEl.className = 'map-legend';
+      legendEl.setAttribute('role', 'list');
+      legendEl.setAttribute('aria-label', 'Milestone categories with event counts');
+      mapEl.appendChild(legendEl);
+    }
+
+    const counts = {};
+    let unknown = 0;
+    state.events.forEach(ev => {
+      const key = canonicalCategory(ev.category);
+      if (CATEGORY_COLORS[key]) counts[key] = (counts[key] || 0) + 1;
+      else unknown++;
+    });
+
+    const fragment = document.createDocumentFragment();
+    const title = document.createElement('div');
+    title.className = 'map-legend-title';
+    title.textContent = 'Categories · live';
+    fragment.appendChild(title);
+
+    CATEGORY_LEGEND.forEach(cat => {
+      const row = document.createElement('div');
+      row.className = 'map-legend-row';
+      row.setAttribute('role', 'listitem');
+      row.setAttribute('aria-label', `${cat.label}, ${counts[cat.key] || 0} events`);
+      const dot = document.createElement('span');
+      dot.className = 'map-legend-dot';
+      dot.style.background = CATEGORY_COLORS[cat.key];
+      dot.setAttribute('aria-hidden', 'true');
+      const label = document.createElement('span');
+      label.className = 'map-legend-label';
+      label.textContent = cat.label;
+      const count = document.createElement('span');
+      count.className = 'map-legend-count';
+      count.textContent = String(counts[cat.key] || 0);
+      count.setAttribute('aria-hidden', 'true');
+      row.append(dot, label, count);
+      fragment.appendChild(row);
+    });
+
+    if (unknown > 0) {
+      const row = document.createElement('div');
+      row.className = 'map-legend-row';
+      row.setAttribute('role', 'listitem');
+      row.setAttribute('aria-label', `Other, ${unknown} events`);
+      const dot = document.createElement('span');
+      dot.className = 'map-legend-dot';
+      dot.style.background = '#00d4ff';
+      dot.setAttribute('aria-hidden', 'true');
+      const label = document.createElement('span');
+      label.className = 'map-legend-label';
+      label.textContent = 'Other';
+      const count = document.createElement('span');
+      count.className = 'map-legend-count';
+      count.textContent = String(unknown);
+      count.setAttribute('aria-hidden', 'true');
+      row.append(dot, label, count);
+      fragment.appendChild(row);
+    }
+
+    legendEl.replaceChildren(fragment);
   }
 
   // ---- Data loading ----
@@ -553,6 +686,7 @@
             category: e.category ?? 'Unknown',
             value: e.value ?? '',
             source: e.source ?? 'Unknown',
+            url: e.url ?? '',
             date: e.date ?? ''
           }))
           .filter(e =>
@@ -608,11 +742,30 @@
   async function load() {
     await loadEvents();
     updateStatsDisplay();
+    renderLegend();
     resize();
     window.addEventListener('resize', scheduleResize);
     document.addEventListener('visibilitychange', onVisibilityChange);
     animationFrameId = requestAnimationFrame(loop);
     startTerminatorInterval();
+
+    // Keep tooltip open while the pointer is over it so the source link is clickable
+    if (tooltip) {
+      tooltip.addEventListener('mouseenter', () => { state.tooltipHover = true; });
+      tooltip.addEventListener('mouseleave', () => {
+        state.tooltipHover = false;
+        state.hoveredEvent = null;
+        hideTooltip();
+        draw();
+      });
+    }
+
+    const zoomIn = document.getElementById('zoom-in');
+    const zoomOut = document.getElementById('zoom-out');
+    const resetViewBtn = document.getElementById('reset-view');
+    if (zoomIn) zoomIn.addEventListener('click', () => zoomAt(state.width / 2, state.height / 2, 1.4));
+    if (zoomOut) zoomOut.addEventListener('click', () => zoomAt(state.width / 2, state.height / 2, 1 / 1.4));
+    if (resetViewBtn) resetViewBtn.addEventListener('click', resetView);
 
     const terminatorToggle = document.getElementById('terminator-toggle');
     const terminatorIcon = document.getElementById('terminator-icon');
@@ -625,14 +778,6 @@
         if (terminatorLabel) terminatorLabel.textContent = state.showTerminator ? 'Day/Night' : 'Day/Night (off)';
         draw();
       });
-      terminatorToggle.addEventListener('mouseenter', () => {
-        terminatorToggle.style.borderColor = 'var(--accent)';
-        terminatorToggle.style.background = 'var(--accent-dim)';
-      });
-      terminatorToggle.addEventListener('mouseleave', () => {
-        terminatorToggle.style.borderColor = 'var(--border)';
-        terminatorToggle.style.background = 'none';
-      });
     }
   }
 
@@ -643,6 +788,17 @@
     if (resizeTimeout) clearTimeout(resizeTimeout);
     window.removeEventListener('resize', scheduleResize);
     document.removeEventListener('visibilitychange', onVisibilityChange);
+  }
+
+  // ---- Test hook (inert in production; enabled only when the harness pre-sets the flag) ----
+  if (typeof window !== 'undefined' && window.__WORLDMAP_TEST__) {
+    window.__WORLDMAP_TEST__ = {
+      canonicalCategory,
+      CATEGORY_COLORS,
+      CATEGORY_STAT_MAP,
+      CATEGORY_LEGEND,
+      CATEGORY_ALIASES
+    };
   }
 
   window.addEventListener('beforeunload', cleanup);
