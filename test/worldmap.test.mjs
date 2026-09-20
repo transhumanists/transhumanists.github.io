@@ -303,6 +303,42 @@ test('tooltip canonicalizes legacy category names', () => {
     }
   });
 
+  test('normalizeEvent fills defaults and isPlottable filters unusable events', () => {
+    const api = windowObj.__WORLDMAP_TEST__;
+    const full = api.normalizeEvent({
+      title: 'T', category: 'X', value: 'v', source: 'S', url: 'https://a.b', date: '2026-01-01',
+      geolocation: { lat: 1, lon: 2 },
+    });
+    expect(full).toEqual({
+      lat: 1, lon: 2, title: 'T', category: 'X', value: 'v', source: 'S', url: 'https://a.b', date: '2026-01-01',
+    });
+    // Missing geolocation and optional fields get safe defaults.
+    const bare = api.normalizeEvent({ geolocation: {} });
+    expect(bare).toEqual({
+      lat: undefined, lon: undefined, title: 'Untitled', category: 'Unknown', value: '', source: 'Unknown', url: '', date: '',
+    });
+    expect(api.isPlottable(full)).toBe(true);
+    expect(api.isPlottable(bare)).toBe(false);                       // no coordinates
+    expect(api.isPlottable(api.normalizeEvent({ geolocation: { lat: '1', lon: 2 }, title: 'T', category: 'X' }))).toBe(false); // string lat
+    expect(api.isPlottable(api.normalizeEvent({ geolocation: { lat: 1 }, title: 'T', category: 'X' }))).toBe(false);           // missing lon
+    expect(api.isPlottable(api.normalizeEvent({ title: 42, geolocation: { lat: 1, lon: 2 } }))).toBe(false);                  // non-string title falls through
+    expect(api.isPlottable(api.normalizeEvent({ geolocation: { lat: 0, lon: 0 }, title: '', category: 'X' }))).toBe(true);    // numeric 0 and '' are valid
+  });
+
+  test('zoom clamps to [0.5, 8] and keyboard 0 resets the view', () => {
+    const api = windowObj.__WORLDMAP_TEST__;
+    registeredEls['reset-view'].fire('click', {});
+    expect(api.getView().scale).toBe(1);
+    for (let i = 0; i < 12; i++) registeredEls['zoom-in'].fire('click', {});
+    expect(api.getView().scale).toBe(8);                            // overflow clamps to MAX_SCALE
+    for (let i = 0; i < 12; i++) registeredEls['zoom-out'].fire('click', {});
+    expect(api.getView().scale).toBe(0.5);                          // underflow clamps to MIN_SCALE
+    canvas.fire('keydown', { key: '0', target: canvas, preventDefault() {} });
+    expect(api.getView().scale).toBe(1);
+    expect(api.getView().tx).toBe(0);
+    expect(api.getView().ty).toBe(0);
+  });
+
   test('canonicalCategory maps legacy short names to data names', () => {
     const api = windowObj.__WORLDMAP_TEST__;
     expect(api.canonicalCategory('Defense')).toBe('Military & Defense');
