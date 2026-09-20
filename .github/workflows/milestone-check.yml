@@ -44,7 +44,7 @@ jobs:
 
       - name: Run milestone checks
         env:
-          DRY_RUN: ${{ inputs.dry_run == true || 'false' }}
+          DRY_RUN: ${{ inputs.dry_run == 'true' }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           MILESTONES_REPO: "transhumanists/milestones"
           MILESTONES_BRANCH: "main"

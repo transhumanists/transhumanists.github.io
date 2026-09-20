@@ -24,6 +24,7 @@
   const TOOLTIP_OFFSET = 12;
 
   // ---- State ----
+  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const state = {
     width: 0,
     height: 0,
@@ -184,7 +185,7 @@
     ctx.globalCompositeOperation = 'source-over';
 
     // Determine which side is night for sunset terminator
-    const sunLonNorm = ((sun.lon + 180) % 360 + 360) % 360 - 180;
+    const sunLonNorm = normalizeLon(sun.lon);
     const sunOnLeft = sunLonNorm < 0;
 
     // ---- Night shading (sunset terminator) ----
@@ -250,7 +251,7 @@
     }
 
     // ---- Anti-sun (sunrise) marker ----
-    const antiSunLon = sun.lon > 0 ? sun.lon - 180 : sun.lon + 180;
+    const antiSunLon = normalizeLon(sun.lon + 180);
     const antiSunLat = -sun.lat;
     const antiSunPos = project(antiSunLon, antiSunLat);
     if (antiSunPos.x >= -50 && antiSunPos.x <= w + 50 && antiSunPos.y >= -50 && antiSunPos.y <= h + 50) {
@@ -371,7 +372,7 @@
 
   // ---- Hit-test ----
   function findEvent(px, py) {
-    const hitRadius = 10 / state.transform.scale;
+    const hitRadius = HIT_RADIUS_BASE / state.transform.scale;
     const hitRadiusSq = hitRadius * hitRadius;
     for (let i = state.events.length - 1; i >= 0; i--) {
       const ev = state.events[i];
@@ -428,11 +429,42 @@
 
     const wx = (x - state.transform.tx) / state.transform.scale;
     const wy = (y - state.transform.ty) / state.transform.scale;
-    state.transform.scale = Math.max(0.5, Math.min(8, newScale));
+    state.transform.scale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, newScale));
     state.transform.tx = x - wx * state.transform.scale;
     state.transform.ty = y - wy * state.transform.scale;
     draw();
   }, { passive: false });
+
+  // ---- Keyboard accessibility ----
+  canvas.addEventListener('keydown', e => {
+    if (e.target !== canvas && !canvas.contains(e.target)) return;
+    const panStep = 50 / state.transform.scale;
+    const zoomStep = 1.2;
+    let handled = true;
+    switch (e.key) {
+      case 'ArrowLeft': state.transform.tx += panStep; break;
+      case 'ArrowRight': state.transform.tx -= panStep; break;
+      case 'ArrowUp': state.transform.ty += panStep; break;
+      case 'ArrowDown': state.transform.ty -= panStep; break;
+      case '+':
+      case '=':
+        state.transform.scale = Math.min(MAX_SCALE, state.transform.scale * zoomStep);
+        break;
+      case '-':
+        state.transform.scale = Math.max(MIN_SCALE, state.transform.scale / zoomStep);
+        break;
+      default: handled = false;
+    }
+    if (handled) {
+      e.preventDefault();
+      draw();
+    }
+  });
+
+  // Make canvas focusable for keyboard interaction
+  canvas.setAttribute('tabindex', '0');
+  canvas.setAttribute('role', 'application');
+  canvas.setAttribute('aria-label', 'Interactive world map with transhumanist milestones');
 
   // ---- Tooltip ----
   function createTooltipElement(ev) {
@@ -464,11 +496,11 @@
 
   function moveTooltip(x, y) {
     if (!tooltip) return;
-    const offset = 12;
+    const offset = TOOLTIP_OFFSET;
     let tx = x + offset;
     let ty = y + offset;
-    if (tx + 260 > state.width) tx = x - 270;
-    if (ty + 100 > state.height) ty = y - 100;
+    if (tx + TOOLTIP_WIDTH > state.width) tx = x - TOOLTIP_WIDTH - offset;
+    if (ty + TOOLTIP_HEIGHT > state.height) ty = y - TOOLTIP_HEIGHT - offset;
     tooltip.style.left = tx + 'px';
     tooltip.style.top = ty + 'px';
   }
@@ -542,15 +574,14 @@
   // ---- Animation loop ----
   let lastDrawTime = 0;
   let animationFrameId = null;
-  const DRAW_INTERVAL = 100;
 
   function loop() {
-    if (document.hidden) {
+    if (document.hidden || prefersReducedMotion) {
       animationFrameId = null;
       return;
     }
     const now = Date.now();
-    if (state.events.length && now - lastDrawTime >= DRAW_INTERVAL) {
+    if (state.events.length && now - lastDrawTime >= DRAW_INTERVAL_MS) {
       draw();
       lastDrawTime = now;
     }
@@ -566,10 +597,11 @@
 
   let terminatorInterval = null;
   function startTerminatorInterval() {
+    if (prefersReducedMotion) return;
     if (terminatorInterval) clearInterval(terminatorInterval);
     terminatorInterval = setInterval(() => {
       if (!document.hidden && state.showTerminator && state.events.length) draw();
-    }, 60000);
+    }, TERMINATOR_UPDATE_MS);
   }
 
   // ---- Init ----
