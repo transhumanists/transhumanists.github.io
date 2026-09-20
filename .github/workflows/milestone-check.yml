@@ -233,7 +233,7 @@ jobs:
                       print(f"✓ Updated {ACTIVITY_FILE}")
                       print(f"✓ Updated {EVENTS_FILE}")
 
-# Commit changes
+                      # Commit changes
                       for cmd in [
                           "git config user.name 'github-actions[bot]'",
                           "git config user.email '41898282+github-actions[bot]@users.noreply.github.com'",
