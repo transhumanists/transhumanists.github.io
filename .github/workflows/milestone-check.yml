@@ -251,7 +251,8 @@ jobs:
                               print(f"::error::Commit failed: {err}")
                               return 1
                           # Push with force-with-lease (safe force push that fails if remote has new commits)
-                          # Retry once on rejection (concurrent update race)
+                          # Retry once on rejection (concurrent update race).
+                          # Note: Branch protection may require PR; push failure is non-fatal.
                           for push_attempt in range(2):
                               code, out, err = run_cmd("git push --force-with-lease")
                               if code == 0:
@@ -262,11 +263,9 @@ jobs:
                                       print("::warning::Push rejected, fetching and retrying with force-with-lease...")
                                       run_cmd("git fetch origin main")
                                   else:
-                                      print(f"::error::Push failed after retry: {err}")
-                                      return 1
+                                      print(f"::warning::Push failed after retry (branch protection may require PR): {err}")
                               else:
-                                  print(f"::error::Push failed: {err}")
-                                  return 1
+                                  print(f"::warning::Push failed (non-fatal): {err}")
                       else:
                           print("No changes to commit")
                   else:
