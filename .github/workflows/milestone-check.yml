@@ -250,20 +250,19 @@ jobs:
                           if code != 0:
                               print(f"::error::Commit failed: {err}")
                               return 1
-                          # Push with force-with-lease (safe force push that fails if remote has new commits)
+                          # Push directly to main (non-force; branch protection allows bot pushes).
                           # Retry once on rejection (concurrent update race).
-                          # Note: Branch protection may require PR; push failure is non-fatal.
                           for push_attempt in range(2):
-                              code, out, err = run_cmd("git push --force-with-lease")
+                              code, out, err = run_cmd("git push origin main")
                               if code == 0:
                                   print("✓ Committed and pushed")
                                   break
                               if "rejected" in err or "non-fast-forward" in err:
                                   if push_attempt == 0:
-                                      print("::warning::Push rejected, fetching and retrying with force-with-lease...")
+                                      print("::warning::Push rejected, fetching and retrying...")
                                       run_cmd("git fetch origin main")
                                   else:
-                                      print(f"::warning::Push failed after retry (branch protection may require PR): {err}")
+                                      print(f"::warning::Push failed after retry (non-fatal): {err}")
                               else:
                                   print(f"::warning::Push failed (non-fatal): {err}")
                       else:
