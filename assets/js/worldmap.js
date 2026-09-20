@@ -305,6 +305,9 @@
     const rect = canvas.getBoundingClientRect();
     state.width = rect.width;
     state.height = rect.height;
+    // Refresh DPR on every resize: the device scale can change (window moved to
+    // another monitor, OS display zoom) and that alone fires a resize event.
+    state.dpr = window.devicePixelRatio || 1;
     canvas.width = state.width * state.dpr;
     canvas.height = state.height * state.dpr;
     ctx.setTransform(state.dpr, 0, 0, state.dpr, 0, 0);
@@ -427,7 +430,7 @@
     }
 
     const hit = findEvent(x, y);
-    canvas.style.cursor = hit ? 'pointer' : (state.isDragging ? 'grabbing' : 'grab');
+    canvas.style.cursor = hit ? 'pointer' : 'grab';
     if (hit !== state.hoveredEvent) {
       state.hoveredEvent = hit;
       if (hit) showTooltip(hit, e.clientX - rect.left, e.clientY - rect.top);
@@ -683,6 +686,30 @@
   // ---- Data loading ----
   let eventsAbortController = null;
 
+  // Map a raw event.json entry to the internal shape, applying fallbacks for
+  // every optional field so downstream rendering never hits placeholders.
+  function normalizeEvent(e) {
+    return {
+      lat: e.geolocation?.lat,
+      lon: e.geolocation?.lon,
+      title: e.title ?? 'Untitled',
+      category: e.category ?? 'Unknown',
+      value: e.value ?? '',
+      source: e.source ?? 'Unknown',
+      url: e.url ?? '',
+      date: e.date ?? ''
+    };
+  }
+
+  // Events without usable numeric coordinates or string title/category are not
+  // renderable and must be dropped before drawing or stat/legend counting.
+  function isPlottable(ev) {
+    return typeof ev.lat === 'number' &&
+      typeof ev.lon === 'number' &&
+      typeof ev.title === 'string' &&
+      typeof ev.category === 'string';
+  }
+
   async function loadEvents() {
     if (eventsAbortController) eventsAbortController.abort();
     eventsAbortController = new AbortController();
@@ -693,23 +720,7 @@
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
       const data = await r.json();
       if (data && Array.isArray(data.events)) {
-        state.events = data.events
-          .map(e => ({
-            lat: e.geolocation?.lat,
-            lon: e.geolocation?.lon,
-            title: e.title ?? 'Untitled',
-            category: e.category ?? 'Unknown',
-            value: e.value ?? '',
-            source: e.source ?? 'Unknown',
-            url: e.url ?? '',
-            date: e.date ?? ''
-          }))
-          .filter(e =>
-            typeof e.lat === 'number' &&
-            typeof e.lon === 'number' &&
-            typeof e.title === 'string' &&
-            typeof e.category === 'string'
-          );
+        state.events = data.events.map(normalizeEvent).filter(isPlottable);
       } else {
         state.events = [];
       }
@@ -812,7 +823,10 @@
       CATEGORY_COLORS,
       CATEGORY_STAT_MAP,
       CATEGORY_LEGEND,
-      CATEGORY_ALIASES
+      CATEGORY_ALIASES,
+      normalizeEvent,
+      isPlottable,
+      getView: () => ({ ...state.transform })
     };
   }
 
