@@ -11,6 +11,28 @@ A live dashboard of scientific, technological, and strategic breakthroughs — s
 
 ---
 
+## Dashboard world map
+
+The front page renders a live equirectangular world map (`assets/js/worldmap.js`) with no external dependencies:
+
+- **Event dots** colored by category (`data/events.json`), with a day/night terminator overlay and sun position
+- **Clickable tooltips** — category, metric value, source, date, and a *View source* link to the original report
+- **Category legend** (`Categories · live`) with per-vertical event counts
+- **Interaction** — drag to pan, wheel/double-click/`+`/`-` to zoom, `0` to reset, and `+` / `−` / `⟲` buttons in the overlay
+- **Keyboard accessible** (arrow keys pan, `+`/`-` zoom, `0` reset)
+
+Legend colors, stat tiles and tooltips all resolve categories through a canonical alias map, so legacy names such as `Energy`, `Quantum` and `Defense` are treated as `Renewable Energy`, `Quantum Physics` and `Military & Defense`.
+
+**Tests** (no external deps, run with [Bun](https://bun.sh)):
+
+```sh
+bun test test/
+```
+
+GitHub Actions runs `bun test` and a static parse check on every push/PR to `main`.
+
+---
+
 ## The 7 Verticals We Track
 
 🧬 **Biotechnology** — gene editing, implants, microscopy, longevity, synthetic biology, neuroscience

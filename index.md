@@ -58,8 +58,11 @@ description: "Tracking milestones across biotech, AGI, quantum, energy, cyber, s
           <span id="map-stat-fleets">—</span>
           <span>fleet movements tracked</span>
         </div>
-        <div class="map-stat map-control" style="margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border);">
-          <button id="terminator-toggle" class="map-control-btn" aria-pressed="true" style="background: none; border: 1px solid var(--border); color: var(--fg); padding: 4px 10px; border-radius: var(--radius-sm); font-size: 0.7rem; font-family: var(--font-mono); cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.2s ease;">
+        <div class="map-controls">
+          <button id="zoom-in" class="map-control-btn" aria-label="Zoom in">+</button>
+          <button id="zoom-out" class="map-control-btn" aria-label="Zoom out">−</button>
+          <button id="reset-view" class="map-control-btn" aria-label="Reset map view">⟲</button>
+          <button id="terminator-toggle" class="map-control-btn" aria-pressed="true">
             <span id="terminator-icon">☀</span>
             <span id="terminator-label">Day/Night</span>
           </button>

@@ -1,0 +1,67 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'assets/js/**'
+      - 'assets/css/**'
+      - 'index.md'
+      - '_config.yml'
+      - 'test/**'
+      - '.github/workflows/ci.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'assets/js/**'
+      - 'assets/css/**'
+      - 'index.md'
+      - '_config.yml'
+      - 'test/**'
+      - '.github/workflows/ci.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  js-checks:
+    name: JS lint & unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Static parse check (worldmap.js)
+        run: bun build assets/js/worldmap.js --no-bundle --outdir /tmp/worldmap-check
+
+      - name: Unit & integration tests
+        run: bun test test/
+
+  jekyll-build:
+    name: Jekyll build (GitHub Pages)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Build with Jekyll
+        uses: actions/jekyll-build-pages@v1
+
+      - name: Check rendered map markup
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f _site/index.html
+          grep -q 'id="zoom-in"'       _site/index.html
+          grep -q 'id="zoom-out"'      _site/index.html
+          grep -q 'id="reset-view"'    _site/index.html
+          grep -q 'id="terminator-toggle"' _site/index.html
+          grep -q 'id="map-tooltip"'   _site/index.html
