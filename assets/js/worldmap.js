@@ -11,6 +11,18 @@
   const tooltip = document.getElementById('map-tooltip');
   const ctx = canvas.getContext('2d');
 
+  // ---- Constants ----
+  const TERMINATOR_SAMPLES = 180;
+  const TERMINATOR_UPDATE_MS = 60000;
+  const DRAW_INTERVAL_MS = 100;
+  const MIN_SCALE = 0.5;
+  const MAX_SCALE = 8;
+  const ZOOM_FACTOR = 1.1;
+  const HIT_RADIUS_BASE = 10;
+  const TOOLTIP_WIDTH = 260;
+  const TOOLTIP_HEIGHT = 100;
+  const TOOLTIP_OFFSET = 12;
+
   // ---- State ----
   const state = {
     width: 0,
@@ -20,7 +32,15 @@
     isDragging: false,
     hoveredEvent: null,
     events: [],
-    showTerminator: true
+    showTerminator: true,
+    // Cached terminator data
+    terminatorCache: {
+      sunLon: null,
+      sunLat: null,
+      sunsetPoints: null,
+      sunrisePoints: null,
+      computedAt: 0
+    }
   };
 
   const CATEGORY_COLORS = {
@@ -100,6 +120,56 @@
     return { lat: subSolarLat, lon: subSolarLon };
   }
 
+  function normalizeLon(lon) {
+    // Normalize longitude to [-180, 180) using modulo (faster than while loops)
+    return ((lon + 180) % 360 + 360) % 360 - 180;
+  }
+
+  function getTerminatorPoints(sunLat, sunLon, offsetLon = 0) {
+    const points = [];
+    const effLon = normalizeLon(sunLon + offsetLon);
+
+    for (let i = 0; i <= TERMINATOR_SAMPLES; i++) {
+      const lat = 90 - (i / TERMINATOR_SAMPLES) * 180;
+      const latRad = lat * Math.PI / 180;
+      const declRad = sunLat * Math.PI / 180;
+
+      const cosHourAngle = -Math.tan(latRad) * Math.tan(declRad);
+
+      let lon;
+      if (cosHourAngle >= 1) {
+        lon = effLon - 180;
+      } else if (cosHourAngle <= -1) {
+        lon = effLon;
+      } else {
+        const hourAngle = Math.acos(Math.max(-1, Math.min(1, cosHourAngle)));
+        lon = effLon + (hourAngle * 180 / Math.PI);
+      }
+
+      const p = project(normalizeLon(lon), lat);
+      points.push(p);
+    }
+    return points;
+  }
+
+  function getCachedTerminatorPoints(sunLat, sunLon) {
+    const now = Date.now();
+    const cache = state.terminatorCache;
+
+    // Recompute if sun position changed significantly (>0.01°) or cache expired (>1 min)
+    const sunMoved = Math.abs(cache.sunLon - sunLon) > 0.01 || Math.abs(cache.sunLat - sunLat) > 0.01;
+    const cacheExpired = now - cache.computedAt > TERMINATOR_UPDATE_MS;
+
+    if (!cache.sunsetPoints || sunMoved || cacheExpired) {
+      cache.sunsetPoints = getTerminatorPoints(sunLat, sunLon, 0);
+      cache.sunrisePoints = getTerminatorPoints(sunLat, sunLon, 180);
+      cache.sunLon = sunLon;
+      cache.sunLat = sunLat;
+      cache.computedAt = now;
+    }
+    return { sunsetPoints: cache.sunsetPoints, sunrisePoints: cache.sunrisePoints };
+  }
+
   function drawTerminator() {
     if (!state.showTerminator) return;
 
@@ -107,85 +177,93 @@
     const w = state.width;
     const h = state.height;
 
-    const points = [];
-    const samples = 180;
-
-    for (let i = 0; i <= samples; i++) {
-      const lat = 90 - (i / samples) * 180;
-      const latRad = lat * Math.PI / 180;
-      const declRad = sun.lat * Math.PI / 180;
-
-      const cosHourAngle = -Math.tan(latRad) * Math.tan(declRad);
-
-      let lon;
-      if (cosHourAngle >= 1) {
-        lon = sun.lon - 180;
-      } else if (cosHourAngle <= -1) {
-        lon = sun.lon;
-      } else {
-        const hourAngle = Math.acos(Math.max(-1, Math.min(1, cosHourAngle)));
-        lon = sun.lon + (hourAngle * 180 / Math.PI);
-      }
-
-      while (lon > 180) lon -= 360;
-      while (lon < -180) lon += 360;
-
-      const p = project(lon, lat);
-      points.push(p);
-    }
+    // Use cached terminator points (recomputes only when sun moves significantly or cache expires)
+    const { sunsetPoints, sunrisePoints } = getCachedTerminatorPoints(sun.lat, sun.lon);
 
     ctx.save();
     ctx.globalCompositeOperation = 'source-over';
 
+    // Determine which side is night for sunset terminator
     const sunLonNorm = ((sun.lon + 180) % 360 + 360) % 360 - 180;
     const sunOnLeft = sunLonNorm < 0;
 
+    // ---- Night shading (sunset terminator) ----
     ctx.beginPath();
     ctx.moveTo(0, 0);
 
     if (sunOnLeft) {
       ctx.lineTo(w, 0);
       ctx.lineTo(w, h);
-      for (let i = points.length - 1; i >= 0; i--) {
-        ctx.lineTo(points[i].x, points[i].y);
+      for (let i = sunsetPoints.length - 1; i >= 0; i--) {
+        ctx.lineTo(sunsetPoints[i].x, sunsetPoints[i].y);
       }
     } else {
-      for (let i = 0; i < points.length; i++) {
-        ctx.lineTo(points[i].x, points[i].y);
+      for (let i = 0; i < sunsetPoints.length; i++) {
+        ctx.lineTo(sunsetPoints[i].x, sunsetPoints[i].y);
       }
       ctx.lineTo(0, h);
     }
 
     ctx.closePath();
-    ctx.fillStyle = 'rgba(6, 11, 20, 0.4)';
+    ctx.fillStyle = 'rgba(6, 11, 20, 0.35)';
     ctx.fill();
 
+    // ---- Sunset line (day -> night): warm gold, solid ----
     ctx.beginPath();
-    for (let i = 0; i < points.length; i++) {
-      const p = points[i];
+    for (let i = 0; i < sunsetPoints.length; i++) {
+      const p = sunsetPoints[i];
       if (i === 0) ctx.moveTo(p.x, p.y);
       else ctx.lineTo(p.x, p.y);
     }
-    ctx.strokeStyle = 'rgba(255, 215, 64, 0.6)';
+    ctx.strokeStyle = 'rgba(255, 180, 0, 0.85)';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // ---- Sunrise line (night -> day): cool cyan, dashed ----
+    ctx.beginPath();
+    for (let i = 0; i < sunrisePoints.length; i++) {
+      const p = sunrisePoints[i];
+      if (i === 0) ctx.moveTo(p.x, p.y);
+      else ctx.lineTo(p.x, p.y);
+    }
+    ctx.strokeStyle = 'rgba(0, 212, 255, 0.6)';
     ctx.lineWidth = 1.5;
-    ctx.setLineDash([8, 4]);
+    ctx.setLineDash([10, 6]);
     ctx.stroke();
     ctx.setLineDash([]);
 
+    // ---- Sun position marker ----
     const sunPos = project(sun.lon, sun.lat);
     if (sunPos.x >= -50 && sunPos.x <= w + 50 && sunPos.y >= -50 && sunPos.y <= h + 50) {
       ctx.beginPath();
-      ctx.arc(sunPos.x, sunPos.y, 8, 0, Math.PI * 2);
-      ctx.fillStyle = 'rgba(255, 215, 64, 0.9)';
+      ctx.arc(sunPos.x, sunPos.y, 9, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(255, 215, 64, 0.95)';
       ctx.shadowColor = '#ffd740';
-      ctx.shadowBlur = 12;
+      ctx.shadowBlur = 14;
       ctx.fill();
       ctx.shadowBlur = 0;
 
-      ctx.font = '10px ui-monospace, SFMono-Regular, monospace';
+      ctx.font = '11px ui-monospace, SFMono-Regular, monospace';
       ctx.fillStyle = '#ffd740';
       ctx.textAlign = 'center';
-      ctx.fillText('☀', sunPos.x, sunPos.y + 16);
+      ctx.fillText('☀', sunPos.x, sunPos.y + 17);
+    }
+
+    // ---- Anti-sun (sunrise) marker ----
+    const antiSunLon = sun.lon > 0 ? sun.lon - 180 : sun.lon + 180;
+    const antiSunLat = -sun.lat;
+    const antiSunPos = project(antiSunLon, antiSunLat);
+    if (antiSunPos.x >= -50 && antiSunPos.x <= w + 50 && antiSunPos.y >= -50 && antiSunPos.y <= h + 50) {
+      ctx.beginPath();
+      ctx.arc(antiSunPos.x, antiSunPos.y, 7, 0, Math.PI * 2);
+      ctx.strokeStyle = 'rgba(0, 212, 255, 0.7)';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      ctx.font = '10px ui-monospace, SFMono-Regular, monospace';
+      ctx.fillStyle = '#00d4ff';
+      ctx.textAlign = 'center';
+      ctx.fillText('☽', antiSunPos.x, antiSunPos.y + 15);
     }
 
     ctx.restore();
