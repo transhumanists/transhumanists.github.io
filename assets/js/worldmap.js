@@ -37,12 +37,14 @@
     tooltipHover: false,
     events: [],
     showTerminator: true,
-    // Cached terminator data
+    // Cached terminator data (geo-space: sun angle barely moves, but the
+    // screen projection must be recomputed for every draw since pan/zoom
+    // changes the transform).
     terminatorCache: {
       sunLon: null,
       sunLat: null,
-      sunsetPoints: null,
-      sunrisePoints: null,
+      sunsetGeo: null,
+      sunriseGeo: null,
       computedAt: 0
     }
   };
@@ -155,9 +157,12 @@
     return ((lon + 180) % 360 + 360) % 360 - 180;
   }
 
-  function getTerminatorPoints(sunLat, sunLon, offsetLon = 0) {
-    const points = [];
+  // Geo-space terminator: for each sample latitude the boundary longitude at a
+  // given offset from the sub-solar point. Pure lon/lat data — independent of
+  // the current pan/zoom transform.
+  function buildTerminatorGeo(sunLat, sunLon, offsetLon) {
     const effLon = normalizeLon(sunLon + offsetLon);
+    const geo = new Array(TERMINATOR_SAMPLES + 1);
 
     for (let i = 0; i <= TERMINATOR_SAMPLES; i++) {
       const lat = 90 - (i / TERMINATOR_SAMPLES) * 180;
@@ -176,13 +181,12 @@
         lon = effLon + (hourAngle * 180 / Math.PI);
       }
 
-      const p = project(normalizeLon(lon), lat);
-      points.push(p);
+      geo[i] = { lon: normalizeLon(lon), lat };
     }
-    return points;
+    return geo;
   }
 
-  function getCachedTerminatorPoints(sunLat, sunLon) {
+  function getCachedTerminatorGeo(sunLat, sunLon) {
     const now = Date.now();
     const cache = state.terminatorCache;
 
@@ -190,14 +194,14 @@
     const sunMoved = Math.abs(cache.sunLon - sunLon) > 0.01 || Math.abs(cache.sunLat - sunLat) > 0.01;
     const cacheExpired = now - cache.computedAt > TERMINATOR_UPDATE_MS;
 
-    if (!cache.sunsetPoints || sunMoved || cacheExpired) {
-      cache.sunsetPoints = getTerminatorPoints(sunLat, sunLon, 0);
-      cache.sunrisePoints = getTerminatorPoints(sunLat, sunLon, 180);
+    if (!cache.sunsetGeo || sunMoved || cacheExpired) {
+      cache.sunsetGeo = buildTerminatorGeo(sunLat, sunLon, 0);
+      cache.sunriseGeo = buildTerminatorGeo(sunLat, sunLon, 180);
       cache.sunLon = sunLon;
       cache.sunLat = sunLat;
       cache.computedAt = now;
     }
-    return { sunsetPoints: cache.sunsetPoints, sunrisePoints: cache.sunrisePoints };
+    return { sunset: cache.sunsetGeo, sunrise: cache.sunriseGeo };
   }
 
   function drawTerminator() {
@@ -207,8 +211,9 @@
     const w = state.width;
     const h = state.height;
 
-    // Use cached terminator points (recomputes only when sun moves significantly or cache expires)
-    const { sunsetPoints, sunrisePoints } = getCachedTerminatorPoints(sun.lat, sun.lon);
+    // Geo-space terminator (cached by sun angle), projected to screen now so
+    // the boundary tracks every pan/zoom.
+    const { sunset, sunrise } = getCachedTerminatorGeo(sun.lat, sun.lon);
 
     ctx.save();
     ctx.globalCompositeOperation = 'source-over';
@@ -224,12 +229,14 @@
     if (sunOnLeft) {
       ctx.lineTo(w, 0);
       ctx.lineTo(w, h);
-      for (let i = sunsetPoints.length - 1; i >= 0; i--) {
-        ctx.lineTo(sunsetPoints[i].x, sunsetPoints[i].y);
+      for (let i = sunset.length - 1; i >= 0; i--) {
+        const p = project(sunset[i].lon, sunset[i].lat);
+        ctx.lineTo(p.x, p.y);
       }
     } else {
-      for (let i = 0; i < sunsetPoints.length; i++) {
-        ctx.lineTo(sunsetPoints[i].x, sunsetPoints[i].y);
+      for (let i = 0; i < sunset.length; i++) {
+        const p = project(sunset[i].lon, sunset[i].lat);
+        ctx.lineTo(p.x, p.y);
       }
       ctx.lineTo(0, h);
     }
@@ -240,8 +247,8 @@
 
     // ---- Sunset line (day -> night): warm gold, solid ----
     ctx.beginPath();
-    for (let i = 0; i < sunsetPoints.length; i++) {
-      const p = sunsetPoints[i];
+    for (let i = 0; i < sunset.length; i++) {
+      const p = project(sunset[i].lon, sunset[i].lat);
       if (i === 0) ctx.moveTo(p.x, p.y);
       else ctx.lineTo(p.x, p.y);
     }
@@ -251,8 +258,8 @@
 
     // ---- Sunrise line (night -> day): cool cyan, dashed ----
     ctx.beginPath();
-    for (let i = 0; i < sunrisePoints.length; i++) {
-      const p = sunrisePoints[i];
+    for (let i = 0; i < sunrise.length; i++) {
+      const p = project(sunrise[i].lon, sunrise[i].lat);
       if (i === 0) ctx.moveTo(p.x, p.y);
       else ctx.lineTo(p.x, p.y);
     }
@@ -703,11 +710,13 @@
 
   // Events without usable numeric coordinates or string title/category are not
   // renderable and must be dropped before drawing or stat/legend counting.
+  // NaN/Infinity slips past typeof checks (1e400 parses to Infinity), so gate
+  // on Number.isFinite and reject out-of-range coordinates too.
   function isPlottable(ev) {
-    return typeof ev.lat === 'number' &&
-      typeof ev.lon === 'number' &&
-      typeof ev.title === 'string' &&
-      typeof ev.category === 'string';
+    return typeof ev.title === 'string' &&
+      typeof ev.category === 'string' &&
+      Number.isFinite(ev.lat) && ev.lat >= -90 && ev.lat <= 90 &&
+      Number.isFinite(ev.lon) && ev.lon >= -180 && ev.lon <= 180;
   }
 
   async function loadEvents() {
