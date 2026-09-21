@@ -9,6 +9,7 @@ on:
       - 'index.md'
       - '_config.yml'
       - 'test/**'
+      - 'scripts/**'
       - '.github/workflows/ci.yml'
   pull_request:
     branches: [main]
@@ -18,6 +19,7 @@ on:
       - 'index.md'
       - '_config.yml'
       - 'test/**'
+      - 'scripts/**'
       - '.github/workflows/ci.yml'
 
 permissions:
@@ -41,6 +43,31 @@ jobs:
 
       - name: Unit & integration tests
         run: bun test test/
+
+  sync-script:
+    name: Milestone sync script tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Self-tests (stdlib)
+        run: python scripts/test_sync.py
+
+      - name: Scratch end-to-end generation
+        env:
+          STALE_ERROR_DAYS: "99"
+        run: |
+          set -euo pipefail
+          python scripts/sync_milestones.py \
+            --output-dir "$(mktemp -d)" \
+            --upstream data/milestones.json \
+            --today 2026-09-21
 
   jekyll-build:
     name: Jekyll build (GitHub Pages)

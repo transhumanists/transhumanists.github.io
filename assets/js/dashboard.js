@@ -41,6 +41,78 @@
     return card;
   }
 
+  // ---- Pure helpers (unit-tested via window.__DASHBOARD_TEST__) ----
+  function todayISO() {
+    return new Date().toISOString().slice(0, 10);
+  }
+
+  function parseDateOrNull(s) {
+    if (typeof s !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(s)) return null;
+    const d = new Date(s + 'T00:00:00Z');
+    return Number.isNaN(d.getTime()) ? null : d;
+  }
+
+  function daysSinceISO(dateStr, todayStr) {
+    const a = parseDateOrNull(dateStr);
+    const b = parseDateOrNull(todayStr);
+    if (!a || !b) return null;
+    return Math.round((b - a) / 86400000);
+  }
+
+  function metricKey(rec) {
+    return (rec.category || 'Unknown') + ' / ' + (rec.subcategory || 'general');
+  }
+
+  // Newest milestone DATE in the archive, not file freshness: this is what
+  // "no milestones after 25-8" actually looks like.
+  function computeStaleness(history, todayStr) {
+    let max = null;
+    for (const r of history || []) {
+      const d = parseDateOrNull(r.date);
+      if (d && (!max || d > max)) max = d;
+    }
+    if (!max) return { maxDate: null, days: null };
+    const maxDateStr = max.toISOString().slice(0, 10);
+    return { maxDate: maxDateStr, days: daysSinceISO(maxDateStr, todayStr) };
+  }
+
+  // One option per metric (category / subcategory), newest recorded date first.
+  function buildMetricOptionList(history, todayStr) {
+    const byMetric = new Map();
+    for (const r of history || []) {
+      const key = metricKey(r);
+      if (!byMetric.has(key)) byMetric.set(key, []);
+      byMetric.get(key).push(r);
+    }
+    const options = [];
+    for (const [key, recs] of byMetric.entries()) {
+      const sorted = recs.slice().sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
+      const st = computeStaleness(sorted, todayStr);
+      options.push({
+        value: key,
+        label: `${key} (${sorted.length} record${sorted.length !== 1 ? 's' : ''})`,
+        count: sorted.length,
+        newestDate: st.maxDate,
+        staleDays: st.days,
+        records: sorted,
+      });
+    }
+    options.sort((a, b) => (a.newestDate < b.newestDate ? 1 : a.newestDate > b.newestDate ? -1 : 0));
+    return options;
+  }
+
+  // Chronological per-metric counts {date, count} - feeds the mini sparkline.
+  function metricCountsByDate(records) {
+    const counts = new Map();
+    for (const r of records || []) {
+      if (!parseDateOrNull(r.date)) continue;
+      counts.set(r.date, (counts.get(r.date) || 0) + 1);
+    }
+    return Array.from(counts.entries())
+      .map(([date, count]) => ({ date, count }))
+      .sort((a, b) => (a.date < b.date ? -1 : 1));
+  }
+
   // ---- Counter animation utility ----
   function animateCounter(el, target, options = {}) {
     const { duration = 1200, threshold = 0.2, integer = true } = options;
@@ -68,6 +140,7 @@
   // ---- Shared milestone data cache ----
   let milestonesCache = null;
   let milestonesCachePromise = null;
+  let historyCachePromise = null;
   let fetchAbortControllers = [];
 
   function abortAllFetches() {
@@ -90,6 +163,13 @@
       if (idx >= 0) fetchAbortControllers.splice(idx, 1);
     }
   }
+
+  async function getHistoryData() {
+    if (!historyCachePromise) {
+      historyCachePromise = fetchJSON('/data/milestones_history.json');
+    }
+    return historyCachePromise;
+  }
   async function getMilestonesData() {
     if (milestonesCache) return milestonesCache;
     if (!milestonesCachePromise) {
@@ -101,19 +181,24 @@
     return milestonesCachePromise;
   }
 
-  // Activity chart (30-day bars)
+  // Activity chart (full timeline, from the beginning of scraping)
   async function loadActivity() {
     const bars = document.getElementById('activity-bars');
     const labels = document.getElementById('activity-labels');
     if (!bars || !labels) return;
 
-    // Show skeleton while loading
-    bars.replaceChildren(...Array.from({ length: 30 }, () => createEl('div', 'chart-bar skeleton', '')));
-    labels.replaceChildren(...Array.from({ length: 30 }, (_, i) => createEl('div', 'chart-label', i % 5 === 0 ? 'MM-DD' : '')));
+    // Skeleton while loading
+    bars.replaceChildren(...Array.from({ length: 24 }, () => createEl('div', 'chart-bar skeleton', '')));
+    labels.replaceChildren(createEl('div', 'chart-label', 'loading…'));
 
-    const data = await fetchJSON('/data/activity.json');
+    const [data, history] = await Promise.all([
+      fetchJSON('/data/activity.json'),
+      getHistoryData(),
+    ]);
     const series = (data && data.days) || generateSampleActivity();
+    const bucket = (data && data.bucket) || 'day';
     const max = Math.max(1, ...series.map(d => d.count));
+    const step = Math.max(1, Math.ceil(series.length / 12));
 
     const barsFrag = document.createDocumentFragment();
     const labelsFrag = document.createDocumentFragment();
@@ -121,11 +206,11 @@
     series.forEach((d, i) => {
       const bar = createEl('div', 'chart-bar');
       bar.style.height = (4 + (d.count / max) * 116) + 'px';
-      bar.title = `${d.date}: ${d.count} milestones`;
+      bar.title = `${bucket === 'week' ? 'Week of ' : ''}${d.date}: ${d.count} milestone${d.count !== 1 ? 's' : ''}`;
       barsFrag.appendChild(bar);
 
       const lbl = createEl('div', 'chart-label');
-      lbl.textContent = (i % 5 === 0 || i === series.length - 1) ? d.date.slice(5) : '';
+      lbl.textContent = (i % step === 0 || i === series.length - 1) ? d.date.slice(5) : '';
       labelsFrag.appendChild(lbl);
     });
 
@@ -133,7 +218,99 @@
     labels.replaceChildren(labelsFrag);
 
     const ts = document.getElementById('activity-update-time');
-    if (ts) ts.textContent = data && data.last_update ? '(updated ' + data.last_update + ')' : '(seed data)';
+    if (ts) ts.textContent = data && data.last_update ? ` (updated ${data.last_update})` : ' (seed data)';
+
+    // Staleness banner: newest milestone DATE across the archive vs today.
+    const stale = computeStaleness(history || [], todayISO());
+    const staleEl = document.getElementById('activity-staleness');
+    if (staleEl && stale.maxDate) {
+      if (stale.days === null) {
+        staleEl.hidden = true;
+      } else if (stale.days > 3) {
+        staleEl.textContent = `No new milestones since ${stale.maxDate} (${stale.days} days ago) — scraping or extraction may have stalled upstream.`;
+        staleEl.hidden = false;
+      } else {
+        staleEl.textContent = `Latest milestone recorded on ${stale.maxDate}.`;
+        staleEl.hidden = false;
+      }
+    }
+  }
+
+  // Per-metric timeline: pick one metric and see its full history, so a broken
+  // or stale metric is easy to trace back to the beginning of scraping.
+  async function loadMetricTimeline() {
+    const sel = document.getElementById('metric-select');
+    const list = document.getElementById('metric-timeline-list');
+    const sparkEl = document.getElementById('metric-sparkline');
+    const staleEl = document.getElementById('metric-staleness');
+    if (!sel || !list) return;
+
+    const history = await getHistoryData();
+    const options = buildMetricOptionList(history || [], todayISO());
+    const optFrag = document.createDocumentFragment();
+    options.forEach(opt => {
+      const o = createEl('option', '', opt.label);
+      o.value = opt.value;
+      optFrag.appendChild(o);
+    });
+    sel.appendChild(optFrag);
+
+    function render() {
+      const key = sel.value;
+      list.replaceChildren();
+      if (sparkEl) sparkEl.hidden = true;
+      if (staleEl) staleEl.hidden = true;
+      if (!key) return;
+
+      const opt = options.find(o => o.value === key);
+      if (!opt) return;
+
+      if (staleEl && opt.staleDays !== null && opt.staleDays > 3) {
+        staleEl.textContent = `No new ${key} record since ${opt.newestDate} (${opt.staleDays} days ago).`;
+        staleEl.hidden = false;
+      }
+
+      if (sparkEl) {
+        const counts = metricCountsByDate(opt.records);
+        const sMax = Math.max(1, ...counts.map(c => c.count));
+        const sparkFrag = document.createDocumentFragment();
+        counts.forEach(c => {
+          const b = createEl('div', 'metric-spark-bar');
+          b.title = `${c.date}: ${c.count}`;
+          b.style.height = (2 + (c.count / sMax) * 26) + 'px';
+          sparkFrag.appendChild(b);
+        });
+        sparkEl.replaceChildren(sparkFrag);
+        sparkEl.hidden = false;
+      }
+
+      const listFrag = document.createDocumentFragment();
+      opt.records.forEach(rec => {
+        const li = createEl('li', 'metric-timeline-item');
+        const dateEl = createEl('span', 'metric-timeline-date', rec.date);
+        const titleEl = createEl('a', 'metric-timeline-title', rec.title || 'Untitled');
+        if (rec.url) {
+          titleEl.href = rec.url;
+          titleEl.target = '_blank';
+          titleEl.rel = 'noopener noreferrer';
+        }
+        li.appendChild(dateEl);
+        li.appendChild(titleEl);
+        const val = `${rec.value ?? ''} ${rec.unit ?? ''}`.trim();
+        if (val) {
+          const vEl = createEl('span', 'metric-timeline-value', val);
+          li.appendChild(vEl);
+        }
+        if (rec.source) {
+          li.appendChild(createEl('span', 'metric-timeline-source', rec.source));
+        }
+        listFrag.appendChild(li);
+      });
+      list.replaceChildren(listFrag);
+    }
+
+    sel.addEventListener('change', render);
+    render();
   }
 
   function generateSampleActivity() {
@@ -475,17 +652,31 @@
   window.addEventListener('beforeunload', cleanup);
   window.addEventListener('pagehide', cleanup);
 
+  if (typeof window.__DASHBOARD_TEST__ === 'undefined') {
+    window.__DASHBOARD_TEST__ = {
+      todayISO,
+      parseDateOrNull,
+      daysSinceISO,
+      metricKey,
+      computeStaleness,
+      buildMetricOptionList,
+      metricCountsByDate,
+    };
+  }
+
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
       loadActivity();
       loadTopMilestones();
       loadMilestonesCatalog();
       initCategoryToggles();
+      loadMetricTimeline();
     });
   } else {
     loadActivity();
     loadTopMilestones();
     loadMilestonesCatalog();
     initCategoryToggles();
+    loadMetricTimeline();
   }
 })();

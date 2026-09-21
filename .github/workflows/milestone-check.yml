@@ -6,13 +6,14 @@ on:
   workflow_dispatch:
     inputs:
       dry_run:
-        description: "Run checks but skip commits"
+        description: "Fetch and validate but skip commits"
         type: boolean
         default: false
   push:
     branches: [main]
     paths:
       - ".github/workflows/milestone-check.yml"
+      - "scripts/sync_milestones.py"
 
 permissions:
   contents: write
@@ -37,243 +38,27 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install requests pyyaml
-
-      - name: Run milestone checks
+      - name: Run milestone sync
         env:
           DRY_RUN: ${{ inputs.dry_run == 'true' }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          MILESTONES_REPO: "transhumanists/milestones"
-          MILESTONES_BRANCH: "main"
         run: |
-          python - <<'PYEOF'
-          import json
-          import os
-          import sys
-          import subprocess
-          from datetime import datetime, timezone
-          from pathlib import Path
+          if [ "$DRY_RUN" = "true" ]; then
+            python scripts/sync_milestones.py --dry-run
+          else
+            python scripts/sync_milestones.py
+          fi
 
-          DRY = os.environ.get("DRY_RUN", "false").lower() in ("true", "1", "yes")
-          TOKEN = os.environ.get("GITHUB_TOKEN", "")
-          MILESTONES_REPO = os.environ.get("MILESTONES_REPO", "transhumanists/milestones")
-          BRANCH = os.environ.get("MILESTONES_BRANCH", "main")
-
-          REPO_DIR = Path(".")
-          DATA_DIR = REPO_DIR / "data"
-          MILESTONES_FILE = DATA_DIR / "milestones.json"
-          ACTIVITY_FILE = DATA_DIR / "activity.json"
-          EVENTS_FILE = DATA_DIR / "events.json"
-
-          def now_iso():
-              return datetime.now(timezone.utc).isoformat(timespec="seconds")
-
-          def load_json(path):
-              if path.exists():
-                  return json.loads(path.read_text(encoding="utf-8"))
-              return {}
-
-          def save_json(path, data):
-              tmp = path.with_suffix(path.suffix + ".tmp")
-              tmp.write_text(json.dumps(data, indent=2), encoding="utf-8")
-              tmp.replace(path)
-
-          def run_cmd(cmd, cwd=None):
-              import shlex
-              if isinstance(cmd, str):
-                  cmd = shlex.split(cmd)
-              result = subprocess.run(cmd, shell=False, capture_output=True, text=True, cwd=cwd)
-              return result.returncode, result.stdout, result.stderr
-
-          def fetch_milestones_from_source():
-              """Fetch milestones from the upstream milestones repo with retries and exponential backoff"""
-              print(f"Fetching from {MILESTONES_REPO}...")
-              import urllib.request
-              import time
-              import re
-              # Validate repo format: owner/repo with alphanumeric, dash, underscore only
-              if not re.fullmatch(r'[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+', MILESTONES_REPO):
-                  print("::error::Invalid MILESTONES_REPO format (expected owner/repo)")
-                  return None
-              # Validate branch: alphanumeric, dash, underscore, slash only
-              if not re.fullmatch(r'[A-Za-z0-9_/.-]+', BRANCH):
-                  print("::error::Invalid BRANCH format")
-                  return None
-              url = f"https://raw.githubusercontent.com/{MILESTONES_REPO}/{BRANCH}/data/milestones.json"
-              for attempt in range(3):
-                  try:
-                      req = urllib.request.Request(url, headers={'User-Agent': 'milestone-check/1.0'})
-                      with urllib.request.urlopen(req, timeout=15) as resp:
-                          return json.loads(resp.read().decode("utf-8"))
-                  except urllib.error.URLError as e:
-                      if attempt < 2:
-                          backoff = 5 * (2 ** attempt)  # 5s, 10s
-                          print(f"::warning::Fetch attempt {attempt + 1} failed: {e}, retrying in {backoff}s...")
-                          time.sleep(backoff)
-                      else:
-                          print(f"::warning::Could not fetch from source after 3 attempts: {e}")
-                          return None
-                  except json.JSONDecodeError as e:
-                      print(f"::error::Invalid JSON from source: {e}")
-                      return None
-              return None
-
-          def validate_milestones(data):
-              """Validate milestone data structure"""
-              if not data or "categories" not in data:
-                  return False, "Missing categories"
-              for cat_key, cat_data in data["categories"].items():
-                  if "milestones" not in cat_data:
-                      return False, f"Category {cat_key} missing milestones"
-                  for m in cat_data["milestones"]:
-                      required = ["id", "title", "value", "unit", "source", "date", "url", "geolocation"]
-                      for field in required:
-                          if field not in m:
-                              return False, f"Milestone {m.get('id', 'unknown')} missing {field}"
-                      # Validate geolocation
-                      geo = m.get("geolocation", {})
-                      if not isinstance(geo, dict) or "lat" not in geo or "lon" not in geo:
-                          return False, f"Milestone {m.get('id', 'unknown')} missing valid geolocation"
-                      try:
-                          lat, lon = float(geo["lat"]), float(geo["lon"])
-                          if not (-90 <= lat <= 90) or not (-180 <= lon <= 180):
-                              return False, f"Milestone {m.get('id', 'unknown')} geolocation out of bounds"
-                      except (ValueError, TypeError):
-                          return False, f"Milestone {m.get('id', 'unknown')} geolocation not numeric"
-              return True, "OK"
-
-          def generate_activity_from_milestones(data):
-              """Generate 30-day activity from milestone dates"""
-              from collections import Counter
-              from datetime import timedelta
-
-              today = datetime.now(timezone.utc).date()
-              counts = Counter()
-
-              for cat_data in data.get("categories", {}).values():
-                  for m in cat_data.get("milestones", []):
-                      try:
-                          d = datetime.fromisoformat(m["date"]).date()
-                          if today - timedelta(days=30) <= d <= today:
-                              counts[d.isoformat()] += 1
-                      except Exception:
-                          pass
-
-              days = []
-              for i in range(29, -1, -1):
-                  d = today - timedelta(days=i)
-                  days.append({"date": d.isoformat(), "count": counts.get(d.isoformat(), 0)})
-
-              spikes = []
-              for date_str, count in counts.most_common(3):
-                  reasons = []
-                  for cat_data in data.get("categories", {}).values():
-                      for m in cat_data.get("milestones", []):
-                          if m["date"] == date_str:
-                              reasons.append(m["title"])
-                  spikes.append({
-                      "date": date_str,
-                      "count": count,
-                      "reason": "; ".join(reasons[:3]) if reasons else "Multiple milestones"
-                  })
-
-              return {
-                  "last_update": now_iso(),
-                  "days": days,
-                  "spikes": spikes
-              }
-
-          def generate_events_from_milestones(data):
-              """Generate events.json from milestone data"""
-              events = []
-              for cat_data in data.get("categories", {}).values():
-                  for m in cat_data.get("milestones", []):
-                      geo = m.get("geolocation", {})
-                      events.append({
-                          "id": m["id"],
-                          "title": m["title"],
-                          "category": cat_data["name"],
-                          "value": f"{m['value']} {m['unit']}",
-                          "source": m["source"],
-                          "url": m["url"],
-                          "date": m["date"],
-                          "geolocation": geo
-                      })
-              return {
-                  "last_update": now_iso(),
-                  "version": "1.0.0",
-                  "events": events
-              }
-
-          def main():
-              print("=== Milestone Check Started ===")
-
-              # Fetch from upstream
-              upstream = fetch_milestones_from_source()
-              if upstream:
-                  valid, msg = validate_milestones(upstream)
-                  if not valid:
-                      print(f"::error::Upstream data invalid: {msg}")
-                      return 1
-                  print(f"✓ Upstream data valid: {msg}")
-
-                  # Generate derived data
-                  activity = generate_activity_from_milestones(upstream)
-                  events = generate_events_from_milestones(upstream)
-
-                  if not DRY:
-                      DATA_DIR.mkdir(exist_ok=True)
-                      save_json(MILESTONES_FILE, upstream)
-                      save_json(ACTIVITY_FILE, activity)
-                      save_json(EVENTS_FILE, events)
-                      print(f"✓ Updated {MILESTONES_FILE}")
-                      print(f"✓ Updated {ACTIVITY_FILE}")
-                      print(f"✓ Updated {EVENTS_FILE}")
-
-                      # Commit changes
-                      for cmd in [
-                          "git config user.name 'github-actions[bot]'",
-                          "git config user.email '41898282+github-actions[bot]@users.noreply.github.com'",
-                          f"git add {MILESTONES_FILE} {ACTIVITY_FILE} {EVENTS_FILE}",
-                      ]:
-                          code, out, err = run_cmd(cmd)
-                          if code != 0:
-                              print(f"::error::Command failed: {cmd} - {err}")
-                              return 1
-                      code, out, err = run_cmd("git diff --cached --quiet")
-                      if code == 1:  # Has changes
-                          msg = f"chore(milestone-check): refresh milestone data [{now_iso()}]"
-                          code, out, err = run_cmd(f"git commit -m '{msg}'")
-                          if code != 0:
-                              print(f"::error::Commit failed: {err}")
-                              return 1
-                          # Push directly to main (non-force; branch protection allows bot pushes).
-                          # Retry once on rejection (concurrent update race).
-                          for push_attempt in range(2):
-                              code, out, err = run_cmd("git push origin main")
-                              if code == 0:
-                                  print("✓ Committed and pushed")
-                                  break
-                              if "rejected" in err or "non-fast-forward" in err:
-                                  if push_attempt == 0:
-                                      print("::warning::Push rejected, fetching and retrying...")
-                                      run_cmd("git fetch origin main")
-                                  else:
-                                      print(f"::warning::Push failed after retry (non-fatal): {err}")
-                              else:
-                                  print(f"::warning::Push failed (non-fatal): {err}")
-                      else:
-                          print("No changes to commit")
-                  else:
-                      print("DRY_RUN - skipping writes")
-              else:
-                  print("No upstream data fetched, keeping local")
-
-              print("=== Milestone Check Complete ===")
-              return 0
-
-          sys.exit(main())
-          PYEOF
+      - name: Commit and push changes
+        if: ${{ inputs.dry_run != 'true' }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/ scripts/
+          if git diff --cached --quiet; then
+            echo "No data changes"
+            exit 0
+          fi
+          ts=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
+          git commit -m "chore(milestone-check): refresh milestone data ${ts}"
+          git push origin main

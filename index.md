@@ -246,17 +246,30 @@ description: "Tracking milestones across biotech, AGI, quantum, energy, cyber, s
 </section>
 
 <!-- ACTIVITY CHART -->
-<section class="section">
+<section class="section" id="activity-timeline">
   <div class="container">
     <header class="section-header">
       <h2>Activity Timeline</h2>
-      <p class="section-subtitle">Breakthrough frequency over the last 30 days</p>
+      <p class="section-subtitle">Full milestone history since scraping began (first record 2026-04-01). Gaps are honest — a silent metric means no new record surfaced yet</p>
     </header>
 
     <div class="activity-chart">
-      <h3>📈 Daily milestone activity <span style="color: var(--fg-subtle); font-weight: 400; font-size: 0.8rem; font-family: var(--font-mono);" id="activity-update-time">—</span></h3>
+      <h3>📈 Milestones recorded per day<span class="activity-update-time" id="activity-update-time">—</span></h3>
       <div class="chart-bars" id="activity-bars"></div>
       <div class="chart-labels" id="activity-labels"></div>
+      <p class="activity-staleness" id="activity-staleness" hidden></p>
+    </div>
+
+    <div class="metric-timeline">
+      <div class="metric-timeline-controls">
+        <label for="metric-select">Metric timeline:</label>
+        <select id="metric-select" aria-label="Pick a metric to see its full timeline">
+          <option value="">— choose a metric —</option>
+        </select>
+        <span class="metric-staleness" id="metric-staleness" hidden></span>
+      </div>
+      <div class="metric-sparkline" id="metric-sparkline" hidden></div>
+      <ol class="metric-timeline-list" id="metric-timeline-list" aria-live="polite"></ol>
     </div>
   </div>
 </section>
