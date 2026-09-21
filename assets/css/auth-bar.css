@@ -507,13 +507,14 @@
 }
 
 /* ── Backdrop ─────────────────────────────────────────────────── */
+/* Note: deliberately NO backdrop-filter blur here — a full-screen blur
+   smears the whole window (including overlays like the worldmap tooltip)
+   whenever a dock panel opens. Keep only a light scrim for focus + click-to-close. */
 .ai-dock__backdrop {
   position: fixed;
   inset: 0;
   z-index: calc(var(--ai-dock-z) - 1);
-  background: rgba(0, 0, 0, 0.3);
-  backdrop-filter: blur(2px);
-  -webkit-backdrop-filter: blur(2px);
+  background: rgba(0, 0, 0, 0.2);
   pointer-events: auto;
   animation: fade-in 0.2s ease;
 }

@@ -233,14 +233,7 @@ description: "Tracking milestones across biotech, AGI, quantum, energy, cyber, s
         <div class="category-milestones" style="display: none; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border); animation: slideDown 0.3s ease;"></div>
       </button>
 
-      <a href="{{ '/milestones/' | relative_url }}" class="milestone-card" style="text-decoration: none; color: inherit; background: var(--accent-dim); border-color: var(--accent);">
-        <div class="milestone-card-header">
-          <div class="milestone-card-icon" aria-hidden="true">📊</div>
-          <span class="milestone-card-category">All</span>
-        </div>
-        <h3>All Metrics</h3>
-        <p style="font-size: 0.85rem; color: var(--fg-muted);">Complete dashboard, full leaderboards, timegraph, activity spikes</p>
-      </a>
+
     </div>
   </div>
 </section>

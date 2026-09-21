@@ -342,7 +342,7 @@
       const a = createEl('a');
       a.className = 'milestone-card';
       a.style.cssText = 'text-decoration: none; color: inherit;';
-      a.href = (m.url || '/milestones/' + (m.category || '').toLowerCase().replace(/[^a-z]/g, '') + '/');
+      a.href = m.url || '';
       a.setAttribute('aria-label', (m.title || '').trim());
 
       const header = createEl('div', 'milestone-card-header');

@@ -21,6 +21,7 @@
   const MAX_SCALE = 8;
   const ZOOM_FACTOR = 1.1;
   const HIT_RADIUS_BASE = 10;
+  const CLICK_DRAG_THRESHOLD = 5;
   const TOOLTIP_WIDTH = 260;
   const TOOLTIP_HEIGHT = 100;
   const TOOLTIP_OFFSET = 12;
@@ -34,7 +35,10 @@
     transform: { scale: 1, tx: 0, ty: 0 },
     isDragging: false,
     hoveredEvent: null,
+    selectedEvent: null,
     tooltipHover: false,
+    pressX: null,
+    pressY: null,
     events: [],
     showTerminator: true,
     // Cached terminator data (geo-space: sun angle barely moves, but the
@@ -204,6 +208,31 @@
     return { sunset: cache.sunsetGeo, sunrise: cache.sunriseGeo };
   }
 
+  // Draw one terminator boundary as a few stacked translucent passes (widest
+  // first) so the day/night edge reads as a gentle, highly transparent gradient
+  // band instead of a hard line. Both boundaries get identical treatment so they
+  // blend into each other.
+  function strokeSoftBoundary(geo, rgbaBase) {
+    const passes = [
+      { w: 7, a: 0.03 },
+      { w: 4, a: 0.06 },
+      { w: 1.6, a: 0.11 }
+    ];
+    for (const pass of passes) {
+      ctx.beginPath();
+      geo.forEach((pt, i) => {
+        const p = project(pt.lon, pt.lat);
+        if (i === 0) ctx.moveTo(p.x, p.y);
+        else ctx.lineTo(p.x, p.y);
+      });
+      ctx.strokeStyle = rgbaBase.replace('ALPHA', String(pass.a));
+      ctx.lineWidth = pass.w;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.stroke();
+    }
+  }
+
   function drawTerminator() {
     if (!state.showTerminator) return;
 
@@ -242,32 +271,12 @@
     }
 
     ctx.closePath();
-    ctx.fillStyle = 'rgba(6, 11, 20, 0.35)';
+    ctx.fillStyle = 'rgba(6, 11, 20, 0.18)';
     ctx.fill();
 
-    // ---- Sunset line (day -> night): warm gold, solid ----
-    ctx.beginPath();
-    for (let i = 0; i < sunset.length; i++) {
-      const p = project(sunset[i].lon, sunset[i].lat);
-      if (i === 0) ctx.moveTo(p.x, p.y);
-      else ctx.lineTo(p.x, p.y);
-    }
-    ctx.strokeStyle = 'rgba(255, 180, 0, 0.85)';
-    ctx.lineWidth = 2;
-    ctx.stroke();
-
-    // ---- Sunrise line (night -> day): cool cyan, dashed ----
-    ctx.beginPath();
-    for (let i = 0; i < sunrise.length; i++) {
-      const p = project(sunrise[i].lon, sunrise[i].lat);
-      if (i === 0) ctx.moveTo(p.x, p.y);
-      else ctx.lineTo(p.x, p.y);
-    }
-    ctx.strokeStyle = 'rgba(0, 212, 255, 0.6)';
-    ctx.lineWidth = 1.5;
-    ctx.setLineDash([10, 6]);
-    ctx.stroke();
-    ctx.setLineDash([]);
+    // ---- Day/night boundary lines: soft, blended and very transparent ----
+    strokeSoftBoundary(sunset, 'rgba(255, 180, 0, ALPHA)');
+    strokeSoftBoundary(sunrise, 'rgba(0, 212, 255, ALPHA)');
 
     // ---- Sun position marker ----
     const sunPos = project(sun.lon, sun.lat);
@@ -400,13 +409,28 @@
     ctx.fillStyle = color;
     ctx.fill();
 
-    if (state.hoveredEvent === ev) {
+    if (state.hoveredEvent === ev || state.selectedEvent === ev) {
+      const isSelected = state.selectedEvent === ev;
       ctx.beginPath();
-      ctx.arc(p.x, p.y, r + 4, 0, Math.PI * 2);
-      ctx.strokeStyle = '#fff';
-      ctx.lineWidth = 1.5;
+      ctx.arc(p.x, p.y, r + (isSelected ? 5 : 4), 0, Math.PI * 2);
+      ctx.strokeStyle = isSelected ? 'rgba(255,255,255,0.95)' : '#fff';
+      ctx.lineWidth = isSelected ? 2 : 1.5;
       ctx.stroke();
     }
+  }
+
+  // Coalesce high-frequency redraws (wheel zoom, drag pan) into a single draw
+  // per animation frame instead of one full synchronous draw per input event.
+  let drawRequested = false;
+  let scheduledDrawId = null;
+  function requestDraw() {
+    if (drawRequested) return;
+    drawRequested = true;
+    scheduledDrawId = requestAnimationFrame(() => {
+      drawRequested = false;
+      scheduledDrawId = null;
+      draw();
+    });
   }
 
   // ---- Hit-test ----
@@ -432,7 +456,29 @@
     if (state.isDragging) {
       state.transform.tx += e.movementX;
       state.transform.ty += e.movementY;
-      draw();
+      requestDraw();
+      return;
+    }
+
+    // A pinned (selected) event keeps its popup persistent so the pointer can
+    // travel to it and click the "View source" link; hovering a different dot
+    // re-pins it in place instead of letting the popup chase the cursor.
+    if (state.selectedEvent) {
+      const hit = findEvent(x, y);
+      if (hit && hit !== state.selectedEvent) {
+        state.selectedEvent = hit;
+        state.hoveredEvent = hit;
+        canvas.style.cursor = 'pointer';
+        pinTooltipToEvent(hit);
+        draw();
+      } else if (hit === state.selectedEvent) {
+        canvas.style.cursor = 'pointer';
+        if (state.hoveredEvent !== hit) { state.hoveredEvent = hit; draw(); }
+        if (!tooltip || !tooltip.classList.contains('visible')) pinTooltipToEvent(hit);
+      } else {
+        canvas.style.cursor = 'grab';
+        state.hoveredEvent = null;
+      }
       return;
     }
 
@@ -448,15 +494,37 @@
     }
   });
 
-  canvas.addEventListener('mousedown', () => {
+  canvas.addEventListener('mousedown', e => {
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    state.pressX = Number.isFinite(x) ? x : null;
+    state.pressY = Number.isFinite(y) ? y : null;
     state.isDragging = true;
     canvas.style.cursor = 'grabbing';
     dismissTooltip();
   });
 
-  window.addEventListener('mouseup', () => {
+  window.addEventListener('mouseup', e => {
     state.isDragging = false;
     canvas.style.cursor = 'grab';
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    if (!Number.isFinite(x) || !Number.isFinite(y)) { state.pressX = null; state.pressY = null; return; }
+    // A press/release with (almost) no movement selects the event under the
+    // cursor and pins its popup, keeping "View source" reachable and clickable.
+    const moved = Math.hypot((state.pressX ?? x) - x, (state.pressY ?? y) - y);
+    if (moved <= CLICK_DRAG_THRESHOLD) {
+      const hit = findEvent(x, y);
+      if (hit) {
+        state.selectedEvent = hit;
+        pinTooltipToEvent(hit);
+        draw();
+      }
+    }
+    state.pressX = null;
+    state.pressY = null;
   });
 
   // Double-click to zoom in around the cursor
@@ -466,7 +534,7 @@
   });
 
   // ---- Zoom helpers (used by controls, wheel, keyboard, double-click) ----
-  function zoomAt(x, y, factor) {
+  function applyZoom(x, y, factor) {
     const newScale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, state.transform.scale * factor));
     const wx = (x - state.transform.tx) / state.transform.scale;
     const wy = (y - state.transform.ty) / state.transform.scale;
@@ -474,6 +542,10 @@
     state.transform.tx = x - wx * state.transform.scale;
     state.transform.ty = y - wy * state.transform.scale;
     dismissTooltip();
+  }
+
+  function zoomAt(x, y, factor) {
+    applyZoom(x, y, factor);
     draw();
   }
 
@@ -490,7 +562,10 @@
     const rect = canvas.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
-    zoomAt(x, y, e.deltaY < 0 ? ZOOM_FACTOR : 1 / ZOOM_FACTOR);
+    // Apply the transform immediately (feels responsive); coalesce the full
+    // redraw to one per animation frame so fast wheel input stays smooth.
+    applyZoom(x, y, e.deltaY < 0 ? ZOOM_FACTOR : 1 / ZOOM_FACTOR);
+    requestDraw();
   }, { passive: false });
 
   // ---- Keyboard accessibility ----
@@ -512,6 +587,9 @@
         break;
       case '0':
         resetView();
+        break;
+      case 'Escape':
+        handled = true;
         break;
       default: handled = false;
     }
@@ -588,10 +666,28 @@
     if (tooltip) tooltip.classList.remove('visible');
   }
 
-  // Remove the tooltip AND forget which event it pointed at. Forgetting is what
-  // lets the next mousemove re-open it cleanly after a pan/zoom/drag moved the
-  // dots underneath the pointer.
+  // Pin the popup for a selected event: place it beside the dot once and keep
+  // it from chasing the cursor, so the "View source" link stays reachable.
+  function pinTooltipToEvent(ev) {
+    if (!tooltip) return;
+    const p = project(ev.lon, ev.lat);
+    const tw = tooltip.offsetWidth || TOOLTIP_WIDTH;
+    const th = tooltip.offsetHeight || TOOLTIP_HEIGHT;
+    let tx = p.x + TOOLTIP_OFFSET;
+    let ty = p.y + TOOLTIP_OFFSET;
+    if (tx + tw > state.width) tx = p.x - tw - TOOLTIP_OFFSET;
+    if (ty + th > state.height) ty = p.y - th - TOOLTIP_OFFSET;
+    tooltip.style.left = tx + 'px';
+    tooltip.style.top = ty + 'px';
+    tooltip.replaceChildren(createTooltipElement(ev));
+    tooltip.classList.add('visible');
+  }
+
+  // Remove the tooltip AND forget which event it pointed at (including any
+  // pinned selection). Forgetting is what lets the next mousemove re-open it
+  // cleanly after a pan/zoom/drag moved the dots underneath the pointer.
   function dismissTooltip() {
+    state.selectedEvent = null;
     state.hoveredEvent = null;
     hideTooltip();
   }
@@ -790,6 +886,8 @@
       tooltip.addEventListener('mouseleave', () => {
         state.tooltipHover = false;
         state.hoveredEvent = null;
+        // Leave a pinned popup open so its link stays reachable.
+        if (state.selectedEvent) return;
         hideTooltip();
         draw();
       });
@@ -818,6 +916,7 @@
 
   function cleanup() {
     if (animationFrameId) { cancelAnimationFrame(animationFrameId); animationFrameId = null; }
+    if (scheduledDrawId) { cancelAnimationFrame(scheduledDrawId); scheduledDrawId = null; }
     if (terminatorInterval) clearInterval(terminatorInterval);
     if (eventsAbortController) eventsAbortController.abort();
     if (resizeTimeout) clearTimeout(resizeTimeout);

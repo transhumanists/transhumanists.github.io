@@ -302,6 +302,44 @@ test('tooltip canonicalizes legacy category names', () => {
     expect(tooltip.classList.contains('visible')).toBe(true);
   });
 
+  test('clicking a dot pins the popup so the source link stays reachable', () => {
+    registeredEls['reset-view'].fire('click', {});
+    // Cyber dot at (400, 111). Hover then click (press+release without moving).
+    canvas.fire('mousemove', { clientX: 400, clientY: 111, movementX: 0, movementY: 0 });
+    canvas.fire('mousedown', { clientX: 400, clientY: 111 });
+    expect(tooltip.classList.contains('visible')).toBe(false);      // press dismisses
+    windowObj.fire('mouseup', { clientX: 400, clientY: 111 });
+    expect(tooltip.classList.contains('visible')).toBe(true);       // release pins it
+    const link = tooltip.children[0].children.find((c) => c.className === 'tt-link');
+    expect(link).toBeDefined();
+    expect(link.href).toBe('https://example.com/7');
+    // Moving to an empty part of the map must NOT close the pinned popup.
+    canvas.fire('mousemove', { clientX: 700, clientY: 480, movementX: 0, movementY: 0 });
+    expect(tooltip.classList.contains('visible')).toBe(true);
+    // Clicking empty canvas dismisses the pinned popup.
+    canvas.fire('mousedown', { clientX: 700, clientY: 480 });
+    windowObj.fire('mouseup', { clientX: 700, clientY: 480 });
+    expect(tooltip.classList.contains('visible')).toBe(false);
+  });
+
+  test('Escape clears a pinned popup selection', () => {
+    registeredEls['reset-view'].fire('click', {});
+    canvas.fire('mousemove', { clientX: 400, clientY: 111, movementX: 0, movementY: 0 });
+    canvas.fire('mousedown', { clientX: 400, clientY: 111 });
+    windowObj.fire('mouseup', { clientX: 400, clientY: 111 });
+    expect(tooltip.classList.contains('visible')).toBe(true);
+    canvas.fire('keydown', { key: 'Escape', target: canvas, preventDefault() {} });
+    expect(tooltip.classList.contains('visible')).toBe(false);
+  });
+
+  test('a click that drags does not pin the dot', () => {
+    registeredEls['reset-view'].fire('click', {});
+    canvas.fire('mousemove', { clientX: 400, clientY: 111, movementX: 0, movementY: 0 });
+    canvas.fire('mousedown', { clientX: 400, clientY: 111 });
+    windowObj.fire('mouseup', { clientX: 420, clientY: 130 });      // > threshold = drag
+    expect(tooltip.classList.contains('visible')).toBe(false);
+  });
+
   test('internal invariants: every legend/stat key has a color', () => {
     const api = windowObj.__WORLDMAP_TEST__;
     expect(api).toBeDefined();
@@ -351,6 +389,20 @@ test('tooltip canonicalizes legacy category names', () => {
     expect(ctx.counters.lineTos).toBeGreaterThan(20);
     // Each of the 8 payload events draws a glow arc + a dot arc.
     expect(ctx.counters.arcs).toBeGreaterThanOrEqual(16);
+  });
+
+  test('terminator draws both boundaries as layered translucent bands', () => {
+    ctx.resetCounters();
+    registeredEls['reset-view'].fire('click', {});
+    const strokesOn = ctx.counters.strokes;
+    // Turning the terminator off must remove the band strokes from a redraw.
+    registeredEls['terminator-toggle'].fire('click', {});
+    ctx.resetCounters();
+    registeredEls['reset-view'].fire('click', {});
+    const strokesOff = ctx.counters.strokes;
+    expect(strokesOn).toBeGreaterThan(strokesOff + 3);  // 3 passes × 2 boundaries
+    registeredEls['terminator-toggle'].fire('click', {}); // restore for later tests
+    expect(registeredEls['terminator-toggle'].getAttribute('aria-pressed')).toBe('true');
   });
 
   test('zoom clamps to [0.5, 8] and keyboard 0 resets the view', () => {
