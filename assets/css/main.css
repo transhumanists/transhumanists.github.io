@@ -493,6 +493,130 @@ body {
   to { opacity: 1; transform: translateY(0); }
 }
 
+/* Milestone Detail Modal */
+.milestone-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+.milestone-modal.open {
+  opacity: 1;
+  pointer-events: all;
+}
+.milestone-modal-content {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  max-width: 500px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+  transform: scale(0.8);
+  transition: transform 0.3s ease;
+}
+.milestone-modal.open .milestone-modal-content {
+  transform: scale(1);
+}
+.milestone-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+}
+.milestone-modal-close {
+  background: none;
+  border: none;
+  color: var(--fg-muted);
+  font-size: 1.5rem;
+  cursor: pointer;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+}
+.milestone-modal-close:hover {
+  background: var(--accent-dim);
+  color: var(--fg);
+}
+.milestone-modal-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-sm);
+  background: var(--accent-dim);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  margin-right: 12px;
+}
+.milestone-modal-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--fg);
+  flex: 1;
+}
+.milestone-modal-body {
+  padding: 20px;
+}
+.milestone-modal-section {
+  margin-bottom: 16px;
+}
+.milestone-modal-section-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--fg-subtle);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 8px;
+}
+.milestone-modal-value {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--green);
+  font-family: var(--font-mono);
+  margin: 4px 0;
+}
+.milestone-modal-unit {
+  font-size: 0.9rem;
+  color: var(--fg-muted);
+  font-family: var(--font-mono);
+}
+.milestone-modal-source, .milestone-modal-date, .milestone-modal-geo {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 4px 0;
+  font-size: 0.9rem;
+  color: var(--fg-subtle);
+}
+.milestone-modal-source a {
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 500;
+}
+.milestone-modal-source a:hover {
+  text-decoration: underline;
+}
+.milestone-modal-description {
+  font-size: 0.95rem;
+  color: var(--fg);
+  line-height: 1.6;
+}
+
 /* EXPANDABLE CATEGORY CARDS */
 .milestone-card.category-toggle {
   overflow: visible;

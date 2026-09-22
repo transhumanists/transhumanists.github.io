@@ -62,6 +62,43 @@
 
   {% include auth-bar.html %}
 
+  <div class="milestone-modal" id="milestone-modal" role="dialog" aria-modal="true" aria-labelledby="milestone-modal-title">
+    <div class="milestone-modal-content">
+      <div class="milestone-modal-header">
+        <div style="display:flex;align-items:center;">
+          <div class="milestone-modal-icon" id="milestone-modal-icon" aria-hidden="true">📌</div>
+          <div class="milestone-modal-title" id="milestone-modal-title"></div>
+        </div>
+        <button class="milestone-modal-close" id="milestone-modal-close" aria-label="Close dialog">×</button>
+      </div>
+      <div class="milestone-modal-body">
+        <div class="milestone-modal-section">
+          <div class="milestone-modal-section-title">Value</div>
+          <div style="display:flex;align-items:baseline;gap:8px;">
+            <span class="milestone-modal-value" id="milestone-modal-value">0</span>
+            <span class="milestone-modal-unit" id="milestone-modal-unit"></span>
+          </div>
+        </div>
+        <div class="milestone-modal-section">
+          <div class="milestone-modal-section-title">Source</div>
+          <div class="milestone-modal-source" id="milestone-modal-source"></div>
+        </div>
+        <div class="milestone-modal-section">
+          <div class="milestone-modal-section-title">Date</div>
+          <div class="milestone-modal-date" id="milestone-modal-date"></div>
+        </div>
+        <div class="milestone-modal-section" id="milestone-modal-geo-section" style="display:none;">
+          <div class="milestone-modal-section-title">Location</div>
+          <div class="milestone-modal-geo" id="milestone-modal-geo"></div>
+        </div>
+        <div class="milestone-modal-section" id="milestone-modal-desc-section" style="display:none;">
+          <div class="milestone-modal-section-title">Description</div>
+          <div class="milestone-modal-description" id="milestone-modal-description"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script src="{{ '/assets/js/main.js' | relative_url }}"></script>
   <script src="{{ '/assets/js/network-ux.js' | relative_url }}"></script>
   <script src="{{ '/assets/js/auth-bar.js' | relative_url }}" defer></script>
