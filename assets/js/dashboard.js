@@ -83,14 +83,16 @@
     const beaten = new Map();
     if (!Array.isArray(milestones) || milestones.length < 2) return beaten;
 
-    const bySubcategory = new Map();
+    const byMetric = new Map();
     milestones.forEach(m => {
-      const key = m.subcategory || 'general';
-      if (!bySubcategory.has(key)) bySubcategory.set(key, []);
-      bySubcategory.get(key).push(m);
+      const subcat = m.subcategory || 'general';
+      const metricKey = normalizeMetricTitle(m.title);
+      const key = `${subcat}|${metricKey}`;
+      if (!byMetric.has(key)) byMetric.set(key, []);
+      byMetric.get(key).push(m);
     });
 
-    bySubcategory.forEach(group => {
+    byMetric.forEach(group => {
       if (group.length < 2) return;
       const sorted = group.slice().sort((a, b) => {
         const dateA = parseDateOrNull(a.date || '');
@@ -101,7 +103,7 @@
         return dateB - dateA;
       });
 
-      const lowerBetter = isLowerIsBetter(group[0].subcategory);
+      const lowerBetter = isLowerIsBetter(sorted[0].subcategory);
       for (let i = 1; i < sorted.length; i++) {
         const older = sorted[i];
         const newer = sorted[i - 1];
@@ -113,6 +115,15 @@
     });
 
     return beaten;
+  }
+
+  function normalizeMetricTitle(title) {
+    return String(title || '')
+      .toLowerCase()
+      .replace(/[^\w\s]/g, '')
+      .replace(/\s+/g, '_')
+      .replace(/_+/g, '_')
+      .replace(/^_|_$/g, '');
   }
 
   // Newest milestone DATE in the archive, not file freshness: this is what
