@@ -647,7 +647,9 @@ function canonicalCategory(cat) {
     meta.textContent = `${ev.source} · ${ev.date}`;
     wrapper.append(cat, title, meta);
 
-    if (ev.value) {
+    // Metric-less events publish their title as the value; skip the row when it
+    // would only repeat the title heading above it.
+    if (ev.value && ev.value !== ev.title) {
       const value = document.createElement('div');
       value.className = 'tt-value';
       value.textContent = ev.value;

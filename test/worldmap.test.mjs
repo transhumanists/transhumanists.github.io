@@ -18,7 +18,7 @@ const EVENT_PAYLOAD = {
     { id: 'def-old', title: 'Defense (old name)', category: 'Defense', value: '5', source: 'S5', url: 'https://example.com/5', date: '2026-08-05', geolocation: { lat: -1.2864, lon: 36.8172 } },
     { id: 'def-001', title: 'M&D', category: 'Military & Defense', value: '6', source: 'S6', url: 'https://example.com/6', date: '2026-08-06', geolocation: { lat: 50.8609, lon: 4.3676 } },
     { id: 'cyber-001', title: 'Cyber', category: 'Cybersecurity', value: '7', source: 'S7', url: 'https://example.com/7', date: '2026-08-07', geolocation: { lat: 51.5074, lon: -0.1278 } },
-    { id: 'unk-001', title: 'UnknownX', category: 'Totally Unknown', value: '8', source: 'S8', url: '', date: '2026-08-08', geolocation: { lat: 0, lon: 0 } },
+    { id: 'unk-001', title: 'UnknownX', category: 'Totally Unknown', value: 'UnknownX', source: 'S8', url: '', date: '2026-08-08', geolocation: { lat: 0, lon: 0 } },
   ],
 };
 
@@ -244,6 +244,21 @@ test('tooltip canonicalizes legacy category names', () => {
     const wrapper = tooltip.children[0];
     expect(wrapper.children.find((c) => c.className === 'tt-category').textContent).toBe('Quantum Physics');
     expect(wrapper.children.find((c) => c.className === 'tt-link')).toBeUndefined();
+  });
+
+  test('tooltip hides a value that merely repeats the title (metric-less)', () => {
+    registeredEls['reset-view'].fire('click', {});
+    // 'UnknownX' at lat 0 / lon 0 → (400, 260), isolated dot. Its value equals its
+    // title (metric-less events publish the title), so no .tt-value row is rendered.
+    canvas.fire('mousemove', { clientX: 400, clientY: 260, movementX: 0, movementY: 0 });
+    expect(tooltip.classList.contains('visible')).toBe(true);
+    const wrapper = tooltip.children[0];
+    expect(wrapper.children.find((c) => c.className === 'tt-title').textContent).toBe('UnknownX');
+    expect(wrapper.children.find((c) => c.className === 'tt-value')).toBeUndefined();
+    // mousedown dismisses the tooltip and starts a drag; release it for later tests.
+    canvas.fire('mousedown', {});
+    expect(tooltip.classList.contains('visible')).toBe(false);
+    windowObj.fire('mouseup', {});
   });
 
   test('terminator toggle flips aria-pressed state', () => {
