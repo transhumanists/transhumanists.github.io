@@ -63,6 +63,25 @@
     return (rec.category || 'Unknown') + ' / ' + (rec.subcategory || 'general');
   }
 
+  // Milestones with no numeric metric render the milestone info string (their
+  // summary, falling back to the title) instead of a misleading "0".
+  function milestoneValueText(m) {
+    if (!m) return '';
+    const v = m.value;
+    if (v === null || v === undefined || v === '') {
+      return m.summary || m.title || '';
+    }
+    return v;
+  }
+
+  function numericMilestoneValue(m) {
+    if (!m) return null;
+    const v = m.value;
+    if (v === null || v === undefined || v === '') return null;
+    const n = parseFloat(v);
+    return Number.isNaN(n) ? null : n;
+  }
+
   // Subcategories where lower numeric value = better (e.g., resolution, time, days)
   const LOWER_IS_BETTER_SUBCATEGORIES = new Set([
     'microscopy',
@@ -279,7 +298,7 @@
     title.textContent = milestone.title || 'Untitled';
     icon.textContent = milestone.icon || config.icon;
     icon.style.background = config.color + '22';
-    value.textContent = milestone.value ?? '0';
+    value.textContent = milestoneValueText(milestone);
     unit.textContent = milestone.unit || '';
     date.textContent = milestone.date || '—';
 
@@ -618,8 +637,9 @@
       header.appendChild(cat);
 
       const titleEl = createEl('h3', '', m.title || '');
-      const valueEl = createEl('div', 'milestone-card-value', m.value || '0');
-      valueEl.dataset.counter = m.value || '0';
+      const valueEl = createEl('div', 'milestone-card-value', milestoneValueText(m));
+      const cardNum = numericMilestoneValue(m);
+      if (cardNum !== null) valueEl.dataset.counter = cardNum;
       const unitEl = createEl('div', 'milestone-card-unit', m.unit || '');
 
       const meta = createEl('div', 'milestone-card-meta');
@@ -714,8 +734,9 @@
           info.appendChild(details);
 
           const valueDiv = createEl('div', 'category-milestone-value');
-          const valEl = createEl('span', 'value', m.value);
-          valEl.dataset.counter = m.value;
+          const valEl = createEl('span', 'value', milestoneValueText(m));
+          const catNum = numericMilestoneValue(m);
+          if (catNum !== null) valEl.dataset.counter = catNum;
           const unitEl = createEl('span', 'unit', m.unit);
           valueDiv.appendChild(valEl);
           valueDiv.appendChild(unitEl);
@@ -730,7 +751,7 @@
             link.target = '_blank';
             link.rel = 'noopener noreferrer';
             link.style.cssText = 'color:var(--orange);font-weight:600;text-decoration:none;';
-            const valueText = createEl('span', '', ` (${newer.value} ${newer.unit})`);
+const valueText = createEl('span', '', ` (${milestoneValueText(newer)} ${newer.unit || ''})`.trim());
             beatenBadge.append(arrow, label, link, valueText);
             item.appendChild(beatenBadge);
           }
@@ -955,6 +976,8 @@
       parseDateOrNull,
       daysSinceISO,
       metricKey,
+      milestoneValueText,
+      numericMilestoneValue,
       computeStaleness,
       buildMetricOptionList,
       metricCountsByDate,

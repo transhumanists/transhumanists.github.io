@@ -134,4 +134,23 @@ describe('dashboard timeline helpers', () => {
     expect(api.daysSinceISO('2026-09-19', '2026-09-21')).toBe(2);
     expect(api.daysSinceISO('2026-08-25', 'bad')).toBeNull();
   });
+
+  test('milestoneValueText shows info string instead of 0 for metric-less milestones', () => {
+    expect(api.milestoneValueText({ value: null, summary: 'Moderna vaccine approved.', title: 'Moderna mRNA flu vaccine' }))
+      .toBe('Moderna vaccine approved.');
+    expect(api.milestoneValueText({ value: undefined, title: 'Alkermes orexin ADHD' }))
+      .toBe('Alkermes orexin ADHD');
+    expect(api.milestoneValueText({ value: '', title: 'Empty metric' })).toBe('Empty metric');
+    expect(api.milestoneValueText({})).toBe('');
+    expect(api.milestoneValueText({ value: 98.7, title: 'Nanopore' })).toBe(98.7);
+    expect(api.milestoneValueText({ value: 'Tier-1', title: 'Cyber op' })).toBe('Tier-1');
+  });
+
+  test('numericMilestoneValue returns parsed number or null', () => {
+    expect(api.numericMilestoneValue({ value: 137 })).toBe(137);
+    expect(api.numericMilestoneValue({ value: '94.7' })).toBe(94.7);
+    expect(api.numericMilestoneValue({ value: null })).toBeNull();
+    expect(api.numericMilestoneValue({ value: '' })).toBeNull();
+    expect(api.numericMilestoneValue({ value: 'Tier-1' })).toBeNull();
+  });
 });

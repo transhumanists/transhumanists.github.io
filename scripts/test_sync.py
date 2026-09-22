@@ -159,6 +159,19 @@ class TestEvents(unittest.TestCase):
         no_geo = make_milestone(id="x", geolocation={"lat": 0.0, "lon": 0.0})
         self.assertEqual(sm.build_events([no_geo])["events"], [])
 
+    def test_events_value_uses_milestone_info_string_when_no_metric(self):
+        m = make_milestone(
+            id="ms-1", value=None, unit=None, category="Energy",
+            title="Fusion milestone", summary="A milestone info string about fusion.",
+        )
+        events = sm.build_events([m])
+        self.assertEqual(events["events"][0]["value"], "A milestone info string about fusion.")
+
+    def test_events_value_keeps_metric_when_present(self):
+        m = make_milestone(id="ms-2", value=100, unit="MW", category="Energy")
+        events = sm.build_events([m])
+        self.assertEqual(events["events"][0]["value"], "100 MW")
+
 
 class TestValidate(unittest.TestCase):
     def test_valid(self):

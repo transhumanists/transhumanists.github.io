@@ -511,6 +511,12 @@
     trackTimer(poll, opts.interval || _cfg.pollInterval);
   }
 
+  function msValueText(m) {
+    var v = m && m.value;
+    if (v === null || v === undefined || v === '') return (m && (m.summary || m.title)) || '';
+    return v;
+  }
+
   function renderMilestoneCard(m) {
     var card = el('a', { 'class': 'nhw-ms-card', href: m.url || '#', target: '_blank', rel: 'noopener' });
     card.style.setProperty('--ms-color', m.color || '#7c4dff');
@@ -520,7 +526,7 @@
     card.appendChild(header);
     card.appendChild(el('h4', { 'class': 'nhw-ms-title', text: m.title || '' }));
     var valWrap = el('div', { 'class': 'nhw-ms-value-wrap' });
-    var valEl = el('div', { 'class': 'nhw-ms-value', 'data-counter': m.value || '0', text: m.value || '0' });
+    var valEl = el('div', { 'class': 'nhw-ms-value', text: msValueText(m) });
     valWrap.appendChild(valEl);
     valWrap.appendChild(el('div', { 'class': 'nhw-ms-unit', text: m.unit || '' }));
     card.appendChild(valWrap);

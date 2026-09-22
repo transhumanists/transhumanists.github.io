@@ -398,6 +398,17 @@ def build_activity(history: list, today: date, include_spikes: bool = True) -> d
     }
 
 
+def event_value(m: dict) -> str:
+    """Value string for an event/map pin.
+
+    Milestones without a numeric metric carry the milestone info string (their
+    title) instead of an empty value or a misleading "0".
+    """
+    if m.get("value") is not None:
+        return f"{m.get('value')} {m.get('unit') or ''}".strip()
+    return m.get("summary") or m.get("title") or ""
+
+
 def build_events(milestones: list) -> dict:
     events = []
     for m in milestones:
@@ -410,7 +421,7 @@ def build_events(milestones: list) -> dict:
             "id": "ev-" + m.get("id", ""),
             "title": m.get("title", ""),
             "category": display_category(m.get("category")),
-            "value": f"{m.get('value', '')} {m.get('unit', '') or ''}".strip(),
+            "value": event_value(m),
             "source": m.get("source", ""),
             "url": m.get("url"),
             "date": m.get("date", ""),
