@@ -29,7 +29,7 @@ import sys
 import time
 import urllib.error
 import urllib.request
-from collections import Counter, defaultdict
+from collections import Counter
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
@@ -529,7 +529,7 @@ def main() -> int:
             print(f"::warning::Milestone data is {stale_days} days stale (latest milestone {latest}). "
                   f"No new records since {latest}.")
     else:
-        print(f"::error::No dated milestones found - refusing to publish.")
+        print("::error::No dated milestones found - refusing to publish.")
         return 1
 
     # 6. Content gate: only write when the persisted artifacts actually change.
