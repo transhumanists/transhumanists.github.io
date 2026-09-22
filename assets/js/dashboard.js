@@ -570,6 +570,28 @@
     return days;
   }
 
+  // Newest milestones across all categories, flattened from the site-format
+  // categories container (milestones.json has no top-level "recent" key).
+  function recentMilestones(data, n = 8) {
+    if (!data || !data.categories) return null;
+    const out = [];
+    for (const [catKey, catData] of Object.entries(data.categories)) {
+      const config = CATEGORY_CONFIG[catKey] || {};
+      (catData.milestones || []).forEach(m => {
+        out.push({
+          ...m,
+          category: m.category || catData.name || config.name || catKey,
+          category_key: catKey,
+          category_name: catData.name || config.name || catKey,
+          icon: m.icon || config.icon || '📌',
+        });
+      });
+    }
+    if (!out.length) return null;
+    out.sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')));
+    return out.slice(0, n);
+  }
+
   // Milestone cards (top 8 of "all")
   async function loadTopMilestones() {
     const grid = document.getElementById('top-milestones');
@@ -579,7 +601,7 @@
     grid.replaceChildren(...Array.from({ length: 8 }, () => createSkeletonCard('milestone-card skeleton-card')));
 
     const data = await getMilestonesData();
-    const items = (data && data.recent) || SAMPLE_MILESTONES;
+    const items = recentMilestones(data) || SAMPLE_MILESTONES;
     const frag = document.createDocumentFragment();
     items.slice(0, 8).forEach(function(m) {
       const card = createEl('div');

@@ -40,24 +40,80 @@ STALE_WARN_DAYS = int(os.environ.get("STALE_WARN_DAYS", "2"))
 STALE_ERROR_DAYS = int(os.environ.get("STALE_ERROR_DAYS", "8"))
 MAX_DAILY_DAYS = int(os.environ.get("MAX_DAILY_DAYS", "400"))
 
-# apis category names -> canonical site display names (worldmap/catalog).
-CATEGORY_DISPLAY_MAP = {
-    "Biotechnology": "Biotechnology",
-    "Computing & AGI": "Computing & AGI",
-    "Quantum Physics": "Quantum Physics",
-    "Quantum": "Quantum Physics",
-    "Energy": "Renewable Energy",
-    "Renewable Energy": "Renewable Energy",
-    "Cybersecurity": "Cybersecurity",
-    "Spaceflight": "Spaceflight & Aeronautics",
-    "Spaceflight & Aeronautics": "Spaceflight & Aeronautics",
-    "Defense": "Military & Defense",
-    "Military & Defense": "Military & Defense",
+# Upstream category keys -> website snake_case keys (for data file structure).
+UPSTREAM_TO_SITE_KEY = {
+    "Biotechnology": "biotechnology",
+    "Computing & AGI": "computing_agi",
+    "Quantum Physics": "quantum",
+    "Quantum": "quantum",
+    "Energy": "energy",
+    "Renewable Energy": "energy",
+    "Cybersecurity": "cybersecurity",
+    "Spaceflight": "spaceflight",
+    "Spaceflight & Aeronautics": "spaceflight",
+    "Defense": "defense",
+    "Military & Defense": "defense",
 }
 
+# Site keys -> display names for worldmap/catalog.
+SITE_KEY_TO_DISPLAY = {
+    "biotechnology": "Biotechnology",
+    "computing_agi": "Computing & AGI",
+    "quantum": "Quantum Physics",
+    "energy": "Renewable Energy",
+    "cybersecurity": "Cybersecurity",
+    "spaceflight": "Spaceflight & Aeronautics",
+    "defense": "Military & Defense",
+}
+
+# Display names -> site snake_case keys.
+DISPLAY_TO_SITE_KEY = {v: k for k, v in SITE_KEY_TO_DISPLAY.items()}
+
+
+def slugify(name: str) -> str:
+    """Coarse snake_case slug so unknown category names still get a stable key."""
+    return re.sub(r"[^a-z0-9_]+", "_", (name or "").lower().replace("&", "")).strip("_")
+
+
+# Reverse map: display name -> display name (for backward compat with upstream data)
+# Also include upstream display names that differ from site display names
+DISPLAY_TO_DISPLAY = {v: v for v in SITE_KEY_TO_DISPLAY.values()}
+DISPLAY_TO_DISPLAY.update({
+    "Energy": "Renewable Energy",
+    "Quantum": "Quantum Physics",
+    "Spaceflight": "Spaceflight & Aeronautics",
+    "Defense": "Military & Defense",
+    "Computing & AGI": "Computing & AGI",
+    "Cybersecurity": "Cybersecurity",
+    "Biotechnology": "Biotechnology",
+})
 
 def display_category(name: str) -> str:
-    return CATEGORY_DISPLAY_MAP.get(name or "", name or "Unknown")
+    # Try snake_case key first, then display name, then fallback
+    return SITE_KEY_TO_DISPLAY.get(name or "", DISPLAY_TO_DISPLAY.get(name or "", name or "Unknown"))
+
+
+def transform_upstream_to_site_format(upstream: dict) -> dict:
+    """Convert upstream milestone data (display-name keys) to site format (snake_case keys)."""
+    if not upstream or "categories" not in upstream:
+        return upstream
+    site_categories = {}
+    for upstream_key, cat_data in upstream.get("categories", {}).items():
+        site_key = UPSTREAM_TO_SITE_KEY.get(upstream_key, upstream_key.lower().replace(" ", "_").replace("&", ""))
+        display_name = cat_data.get("name") or SITE_KEY_TO_DISPLAY.get(site_key, upstream_key)
+        site_categories[site_key] = {
+            "name": display_name,
+            "icon": cat_data.get("icon", "📌"),
+            "color": cat_data.get("color", "#00d4ff"),
+            "subcategories": cat_data.get("subcategories", []),
+            "milestones": cat_data.get("milestones", []),
+        }
+    return {
+        "last_update": upstream.get("last_update", now_iso()),
+        "version": upstream.get("version", "1.0.0"),
+        "schema": upstream.get("schema", "https://transhumanists.github.io/schema/milestone-v1.json"),
+        "categories": site_categories,
+    }
 
 
 def now_iso() -> str:
@@ -145,6 +201,10 @@ def validate(data) -> tuple[bool, str]:
                 return False, f"Milestone {m.get('id', 'unknown')} geolocation not numeric"
             if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", str(m.get("date", ""))):
                 return False, f"Milestone {m.get('id', 'unknown')} has malformed date {m.get('date')!r}"
+            try:
+                date.fromisoformat(str(m.get("date", "")))
+            except ValueError:
+                return False, f"Milestone {m.get('id', 'unknown')} has invalid date {m.get('date')!r}"
     return True, "OK"
 
 
@@ -208,6 +268,54 @@ def merge_history(existing: list, current: list, seen_on: str) -> list:
     return out
 
 
+def merge_feed(current: list, history: list) -> list:
+    """Union the upstream snapshot with everything the archive has ever seen.
+
+    A thin or collapsed upstream snapshot must never empty the site feeds:
+    every milestone ever recorded stays visible until a same-id record from
+    upstream supersedes it (metadata wins). Deduplicated by canonical id.
+    """
+    by_id: dict[str, dict] = {}
+    for rec in history:
+        if isinstance(rec, dict):
+            by_id[rec.get("id", canonical_id(rec))] = rec
+    for m in current:
+        by_id[m.get("id", canonical_id(m))] = m
+    feed = list(by_id.values())
+    feed.sort(key=lambda r: (r.get("date") or "", r.get("category") or "", r.get("title") or ""), reverse=True)
+    return feed
+
+
+def build_site_categories(milestones: list, upstream_categories: dict) -> dict:
+    """Group a flat milestone list into the snake_case site-format container.
+
+    Category keys/displays/colors/icons/subcategories are inherited from the
+    (transformed) upstream container; anything else falls back to defaults so
+    records retained from the archive still render correctly.
+    """
+    cats: dict[str, dict] = {}
+    for m in milestones:
+        key = m.get("category_key")
+        key = key or DISPLAY_TO_SITE_KEY.get(m.get("category"), slugify(m.get("category", "Unknown")))
+        if key not in cats:
+            known = (upstream_categories or {}).get(key, {})
+            name = known.get("name") or SITE_KEY_TO_DISPLAY.get(key, m.get("category") or key)
+            cats[key] = {
+                "name": name,
+                "icon": known.get("icon", "📌"),
+                "color": known.get("color", "#00d4ff"),
+                "subcategories": list(known.get("subcategories", []) or []),
+                "milestones": [],
+            }
+        record = dict(m)
+        record.setdefault("category", cats[key]["name"])
+        record.setdefault("category_key", key)
+        record.pop("first_seen", None)
+        record.pop("last_seen", None)
+        cats[key]["milestones"].append(record)
+    return cats
+
+
 def date_range(start: date, end: date) -> list[date]:
     days = []
     d = start
@@ -240,7 +348,7 @@ def build_activity(history: list, today: date, include_spikes: bool = True) -> d
             "first": today_iso(),
             "last": today_iso(),
             "total": 0,
-            "days": [{"date": (today - timedelta(days=29 + i)).isoformat() if False else today.isoformat(), "count": 0}],
+            "days": [{"date": (today - timedelta(days=i)).isoformat(), "count": 0} for i in range(29, -1, -1)],
             "spikes": [],
         }
 
@@ -289,7 +397,9 @@ def build_events(milestones: list) -> dict:
     events = []
     for m in milestones:
         geo = m.get("geolocation", {})
-        if geo.get("lat") is None or geo.get("lon") is None:
+        lat = geo.get("lat")
+        lon = geo.get("lon")
+        if lat is None or lon is None or lat == 0.0 or lon == 0.0:
             continue
         events.append({
             "id": "ev-" + m.get("id", ""),
@@ -362,18 +472,30 @@ def main() -> int:
         return 1
     print(f"OK: upstream data valid ({msg})")
 
-    current = iter_milestones(upstream)
+    site_format = transform_upstream_to_site_format(upstream)
+    current = iter_milestones(site_format)
 
     # 2. Merge into the history archive (the full per-metric timeline)
     existing_history = load_json(history_file, [])
     history = merge_history(existing_history if isinstance(existing_history, list) else [], current, seen_on)
 
-    # 3. Derive outputs
-    activity = build_activity(history, today)
-    events = build_events(current)
+    # 3. The published feed is the union of the upstream snapshot and every
+    #    milestone the archive has ever seen - upstream collapse must never
+    #    wipe the site's feeds.
+    feed = merge_feed(current, history)
+    site_format = {
+        "last_update": now_iso(),
+        "version": "1.0.0",
+        "schema": "https://transhumanists.github.io/schema/milestone-v1.json",
+        "categories": build_site_categories(feed, site_format.get("categories", {})),
+    }
 
-    # 4. Staleness gate (milestone date freshness, not data-file freshness)
-    latest = latest_milestone_date(current)
+    # 4. Derive outputs
+    activity = build_activity(history, today)
+    events = build_events(feed)
+
+    # 5. Staleness gate (milestone date freshness, not data-file freshness)
+    latest = latest_milestone_date(feed)
     if latest is not None:
         stale_days = (today - latest).days
         if stale_days > STALE_ERROR_DAYS:
@@ -387,27 +509,28 @@ def main() -> int:
         print(f"::error::No dated milestones found - refusing to publish.")
         return 1
 
-    # 5. Write (content-only commits: fingerprint skips last_update-only churn)
+    # 6. Write (content-only commits: fingerprint skips last_update-only churn)
     if args.dry_run:
         print(f"[dry-run] would write {len(history)} history records, "
               f"{len(events['events'])} events, activity {activity['bucket']} x {len(activity['days'])}")
         return 0
 
     data_dir.mkdir(parents=True, exist_ok=True)
-    save_json(milestones_file, upstream)
+    save_json(milestones_file, site_format)
     save_json(history_file, history)
     save_json(activity_file, activity)
     save_json(events_file, events)
 
     prev_fp = load_json(fingerprint_file, None)
-    new_fp = content_fingerprint(current, history, activity, events)
+    new_fp = content_fingerprint(feed, history, activity, events)
     if new_fp == prev_fp:
         print("No content changes - leaving files untouched (no timestamp churn).")
         return 0
     save_json(fingerprint_file, new_fp)
 
     print(f"OK: wrote {len(history)} history records (by {len({h.get('subcategory') for h in history})} metrics), "
-          f"{len(events['events'])} events, activity {activity['bucket']} x {len(activity['days'])} days "
+          f"{len(feed)} feed milestones, {len(events['events'])} events, "
+          f"activity {activity['bucket']} x {len(activity['days'])} days "
           f"({activity['first']} -> {activity['last']}).")
     return 0
 

@@ -80,9 +80,11 @@
     'Quantum': 'Quantum Physics',
     'Energy': 'Renewable Energy',
     'Defense': 'Military & Defense',
+    'Spaceflight': 'Spaceflight & Aeronautics',
     'Quantum Physics': 'Quantum Physics',
     'Renewable Energy': 'Renewable Energy',
-    'Military & Defense': 'Military & Defense'
+    'Military & Defense': 'Military & Defense',
+    'Spaceflight & Aeronautics': 'Spaceflight & Aeronautics'
   };
 
   // Canonical category order used by the legend (color, label).
