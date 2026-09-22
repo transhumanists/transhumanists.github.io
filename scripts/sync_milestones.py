@@ -289,7 +289,7 @@ def build_events(milestones: list) -> dict:
     events = []
     for m in milestones:
         geo = m.get("geolocation", {})
-        if not geo.get("lat"):
+        if geo.get("lat") is None or geo.get("lon") is None:
             continue
         events.append({
             "id": "ev-" + m.get("id", ""),
