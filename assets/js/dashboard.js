@@ -436,7 +436,7 @@
 
     grid.querySelectorAll('[data-counter]').forEach(el => {
       const target = parseFloat(el.dataset.counter);
-      if (!isNaN(target)) animateCounter(el, target, { duration: 1500, threshold: 0.3, integer: Number.isInteger(target) });
+      if (!isNaN(target)) animateCounter(el, target, { integer: Number.isInteger(target) });
     });
   }
 
@@ -525,7 +525,7 @@
           frag.appendChild(item);
 
           const target = parseFloat(valEl.dataset.counter);
-          if (!isNaN(target)) animateCounter(valEl, target, { duration: 1000, threshold: 0.2, integer: Number.isInteger(target) });
+          if (!isNaN(target)) animateCounter(valEl, target, { integer: Number.isInteger(target), register: registerCategoryToggleObserver });
         });
         milestonesContainer.replaceChildren(frag);
         hasRendered = true;
