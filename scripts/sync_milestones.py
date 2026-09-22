@@ -88,13 +88,19 @@ DISPLAY_TO_DISPLAY.update({
     "Biotechnology": "Biotechnology",
 })
 
+
 def display_category(name: str) -> str:
     # Try snake_case key first, then display name, then fallback
     return SITE_KEY_TO_DISPLAY.get(name or "", DISPLAY_TO_DISPLAY.get(name or "", name or "Unknown"))
 
 
 def transform_upstream_to_site_format(upstream: dict) -> dict:
-    """Convert upstream milestone data (display-name keys) to site format (snake_case keys)."""
+    """Convert upstream milestone data to site format (snake_case keys).
+
+    Accepts either upstream shape - display-name category keys (pipeline
+    output) or snake_case keys (protected mirror) - and normalises to the
+    site's snake_case container with canonical display names.
+    """
     if not upstream or "categories" not in upstream:
         return upstream
     site_categories = {}
@@ -241,9 +247,10 @@ def archive_record(m: dict, seen_on: str) -> dict:
 def merge_history(existing: list, current: list, seen_on: str) -> list:
     """Union current milestone records into the append-only archive.
 
-    Existing records keep their original first_seen (and oldest date if a
-    duplicate id arrives), superseded records stay - the archive is the full
-    per-metric timeline. Sorted newest-first by milestone date.
+    Existing records keep their original first_seen; a duplicate id is
+    updated in place (fresh metadata wins, last_seen refreshed to seen_on).
+    Superseded records stay - the archive is the full per-metric timeline.
+    Sorted newest-first by milestone date.
     """
     by_id: dict[str, dict] = {}
     for rec in existing:
@@ -258,11 +265,7 @@ def merge_history(existing: list, current: list, seen_on: str) -> list:
         else:
             rec["first_seen"] = prev.get("first_seen", seen_on)
             rec["last_seen"] = seen_on
-            # Keep the oldest observed date if a duplicate id reappears with a
-            # different date; otherwise prefer the newer record's metadata.
-            if prev.get("date") and prev["date"] < rec["date"]:
-                pass
-            by_id[key] = rec
+            by_id[key] = rec  # fresh metadata wins on duplicate id
     out = list(by_id.values())
     out.sort(key=lambda r: (r.get("date") or "", r.get("title") or ""), reverse=True)
     return out
@@ -308,7 +311,9 @@ def build_site_categories(milestones: list, upstream_categories: dict) -> dict:
                 "milestones": [],
             }
         record = dict(m)
-        record.setdefault("category", cats[key]["name"])
+        # Normalise every record in a bucket to the canonical category name so
+        # retained (archive) records match freshly-mirrored ones in the feed.
+        record["category"] = cats[key]["name"]
         record.setdefault("category_key", key)
         record.pop("first_seen", None)
         record.pop("last_seen", None)
@@ -433,6 +438,24 @@ def content_fingerprint(*data) -> str:
     return hashlib.sha256(blob.encode("utf-8")).hexdigest()
 
 
+def churn_free_view(site_format: dict, history: list, activity: dict, events: dict) -> tuple:
+    """Stable projection of the artifacts we persist.
+
+    Drops fields that change on every run without carrying meaning -
+    "last_update" timestamps and per-record first_seen/last_seen sighting
+    markers - so the commit fingerprint only flips on real content changes.
+    """
+
+    def scrub(obj):
+        if isinstance(obj, dict):
+            return {k: scrub(v) for k, v in obj.items() if k not in ("last_update", "first_seen", "last_seen")}
+        if isinstance(obj, list):
+            return [scrub(x) for x in obj]
+        return obj
+
+    return (scrub(site_format), scrub(history), scrub(activity), scrub(events))
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--dry-run", action="store_true", help="fetch/validate/derive but write nothing")
@@ -509,10 +532,20 @@ def main() -> int:
         print(f"::error::No dated milestones found - refusing to publish.")
         return 1
 
-    # 6. Write (content-only commits: fingerprint skips last_update-only churn)
+    # 6. Content gate: only write when the persisted artifacts actually change.
+    #    Compute first so a content-identical run touches nothing on disk
+    #    (skips last_update / last_seen-only churn that would otherwise
+    #    produce a no-op commit on every schedule tick).
+    prev_fp = load_json(fingerprint_file, None)
+    new_fp = content_fingerprint(*churn_free_view(site_format, history, activity, events))
+
     if args.dry_run:
         print(f"[dry-run] would write {len(history)} history records, "
               f"{len(events['events'])} events, activity {activity['bucket']} x {len(activity['days'])}")
+        return 0
+
+    if new_fp == prev_fp:
+        print("No content changes - leaving files untouched (no timestamp churn).")
         return 0
 
     data_dir.mkdir(parents=True, exist_ok=True)
@@ -520,12 +553,6 @@ def main() -> int:
     save_json(history_file, history)
     save_json(activity_file, activity)
     save_json(events_file, events)
-
-    prev_fp = load_json(fingerprint_file, None)
-    new_fp = content_fingerprint(feed, history, activity, events)
-    if new_fp == prev_fp:
-        print("No content changes - leaving files untouched (no timestamp churn).")
-        return 0
     save_json(fingerprint_file, new_fp)
 
     print(f"OK: wrote {len(history)} history records (by {len({h.get('subcategory') for h in history})} metrics), "

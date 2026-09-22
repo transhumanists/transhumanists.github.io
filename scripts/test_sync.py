@@ -61,6 +61,63 @@ class TestMergeHistory(unittest.TestCase):
         self.assertEqual(sm.display_category("Biotechnology"), "Biotechnology")
 
 
+class TestRetentionFeed(unittest.TestCase):
+    def test_thin_upstream_never_wipes_feed(self):
+        """Collapse regression at the site level: a 3-milestone snapshot
+        mirrored after a 40-milestone history must still publish 40."""
+        history = [make_milestone(id=f"ms-{i}", category="Energy", date="2026-08-01") for i in range(40)]
+        thin = [make_milestone(id="ms-0", title="only record left today")]
+        feed = sm.merge_feed(thin, history)
+        self.assertEqual(len(feed), 40)
+
+    def test_current_metadata_wins_on_same_id(self):
+        history = [make_milestone(id="ms-a", date="2026-08-01", title="old")]
+        current = [make_milestone(id="ms-a", date="2026-08-22", title="fresh")]
+        feed = sm.merge_feed(current, history)
+        self.assertEqual(len(feed), 1)
+        self.assertEqual(feed[0]["title"], "fresh")
+        self.assertEqual(feed[0]["date"], "2026-08-22")
+
+    def test_build_site_categories_normalises_retained_names(self):
+        # Retained archive records carry short display names ("Spaceflight");
+        # the site container must normalise them to the canonical display name.
+        ms = [
+            {"id": "ms-b", "category": "Spaceflight", "subcategory": "launch",
+             "title": "Retained launch", "date": "2026-08-01", "category_key": None},
+        ]
+        cats = sm.build_site_categories(ms, {})
+        self.assertEqual(list(cats.keys()), ["spaceflight"])
+        self.assertEqual(cats["spaceflight"]["name"], "Spaceflight & Aeronautics")
+        self.assertEqual(cats["spaceflight"]["milestones"][0]["category"], "Spaceflight & Aeronautics")
+
+
+class TestFingerprint(unittest.TestCase):
+    def _artifacts(self):
+        site_format = {"last_update": "2026-09-22T00:00:00", "categories": {"energy": {"name": "Energy"}}}
+        history = [make_milestone(id="ms-a", first_seen="2026-08-01", last_seen="2026-09-22")]
+        activity = {"last_update": "2026-09-22T00:00:00", "days": [], "spikes": []}
+        events = {"last_update": "2026-09-22T00:00:00", "events": []}
+        return site_format, history, activity, events
+
+    def _fp(self, *args):
+        return sm.content_fingerprint(*sm.churn_free_view(*args))
+
+    def test_fingerprint_ignores_timestamp_churn(self):
+        a = self._artifacts()
+        b = self._artifacts()
+        b[0]["last_update"] = "2099-01-01T00:00:00"       # milestones last_update
+        b[1][0]["last_seen"] = "2099-01-01"               # archive sighting marker
+        b[2]["last_update"] = "2099-01-01T00:00:00"       # activity timestamp
+        b[3]["last_update"] = "2099-01-01T00:00:00"       # events timestamp
+        self.assertEqual(self._fp(*a), self._fp(*b))
+
+    def test_fingerprint_changes_on_real_content(self):
+        a = self._artifacts()
+        b = self._artifacts()
+        b[1][0]["title"] = "A real content change"
+        self.assertNotEqual(self._fp(*a), self._fp(*b))
+
+
 class TestActivity(unittest.TestCase):
     def test_full_range_daily(self):
         history = [
