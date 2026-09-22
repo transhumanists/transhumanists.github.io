@@ -793,7 +793,7 @@
         return;
       }
 
-const frag = document.createDocumentFragment();
+      const frag = document.createDocumentFragment();
       filtered.forEach(m => {
         const isBeaten = beatenMapAll.has(m.id);
         const catConfig = CATEGORY_CONFIG[m.category_key] || { name: m.category_name, icon: '📌', color: '#00d4ff' };
@@ -868,22 +868,19 @@ const frag = document.createDocumentFragment();
             openMilestoneModal(m);
           }
         });
-        card.style.cursor = 'pointer';
-        card.setAttribute('role', 'button');
-        card.setAttribute('tabindex', '0');
-
-        frag.appendChild(card);
-
-        const target = parseFloat(valueEl.dataset.counter);
-        if (!isNaN(target)) {
-          animateCounter(valueEl, target, { integer: Number.isInteger(target) });
-        }
-      });
+        card.addEventListener('mouseenter', () => {
+          card.style.transform = 'translateY(-2px)';
+          card.style.boxShadow = 'var(--shadow), 0 0 20px ' + catConfig.color + '33';
+          card.style.borderColor = catConfig.color;
+        });
         card.addEventListener('mouseleave', () => {
           card.style.transform = 'none';
           card.style.boxShadow = 'none';
           card.style.borderColor = 'var(--border)';
         });
+        card.style.cursor = 'pointer';
+        card.setAttribute('role', 'button');
+        card.setAttribute('tabindex', '0');
 
         frag.appendChild(card);
 
