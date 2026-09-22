@@ -135,12 +135,12 @@ describe('dashboard timeline helpers', () => {
     expect(api.daysSinceISO('2026-08-25', 'bad')).toBeNull();
   });
 
-  test('milestoneValueText shows info string instead of 0 for metric-less milestones', () => {
+  test('milestoneValueText is empty for metric-less milestones; title conveys the info', () => {
     expect(api.milestoneValueText({ value: null, summary: 'Moderna vaccine approved.', title: 'Moderna mRNA flu vaccine' }))
-      .toBe('Moderna vaccine approved.');
+      .toBe('');
     expect(api.milestoneValueText({ value: undefined, title: 'Alkermes orexin ADHD' }))
-      .toBe('Alkermes orexin ADHD');
-    expect(api.milestoneValueText({ value: '', title: 'Empty metric' })).toBe('Empty metric');
+      .toBe('');
+    expect(api.milestoneValueText({ value: '', title: 'Empty metric' })).toBe('');
     expect(api.milestoneValueText({})).toBe('');
     expect(api.milestoneValueText({ value: 98.7, title: 'Nanopore' })).toBe(98.7);
     expect(api.milestoneValueText({ value: 'Tier-1', title: 'Cyber op' })).toBe('Tier-1');
@@ -157,8 +157,8 @@ describe('dashboard timeline helpers', () => {
   test('milestoneMetricText joins value+unit and never shows empty parens', () => {
     expect(api.milestoneMetricText({ value: 98.7, unit: '%', title: 'Nanopore' })).toBe('98.7 %');
     expect(api.milestoneMetricText({ value: null, unit: null, summary: 'Vaccine approved.', title: 'Flu vaccine' }))
-      .toBe('Vaccine approved.');
-    expect(api.milestoneMetricText({ value: undefined, unit: undefined, title: 'No metric' })).toBe('No metric');
+      .toBe('');
+    expect(api.milestoneMetricText({ value: undefined, unit: undefined, title: 'No metric' })).toBe('');
     expect(api.milestoneMetricText({})).toBe('');
   });
 });

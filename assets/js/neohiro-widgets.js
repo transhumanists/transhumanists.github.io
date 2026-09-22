@@ -513,7 +513,7 @@
 
   function msValueText(m) {
     var v = m && m.value;
-    if (v === null || v === undefined || v === '') return (m && (m.summary || m.title)) || '';
+    if (v === null || v === undefined || v === '') return '';
     return v;
   }
 

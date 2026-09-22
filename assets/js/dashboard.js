@@ -63,13 +63,13 @@
     return (rec.category || 'Unknown') + ' / ' + (rec.subcategory || 'general');
   }
 
-  // Milestones with no numeric metric render the milestone info string (their
-  // summary, falling back to the title) instead of a misleading "0".
+  // Milestones with no numeric metric show nothing in the value area: the
+  // milestone title already conveys the info (never a summary-as-metric text).
   function milestoneValueText(m) {
     if (!m) return '';
     const v = m.value;
     if (v === null || v === undefined || v === '') {
-      return m.summary || m.title || '';
+      return '';
     }
     return v;
   }
@@ -82,7 +82,7 @@
     return Number.isNaN(n) ? null : n;
   }
 
-  // "Value unit" (or the info string alone) for headers/badges, never a bare "0".
+  // "Value unit" for headers/badges; empty when the milestone has no metric.
   function milestoneMetricText(m) {
     return [milestoneValueText(m), m && m.unit].filter(Boolean).join(' ');
   }
@@ -757,8 +757,10 @@
             link.rel = 'noopener noreferrer';
             link.style.cssText = 'color:var(--orange);font-weight:600;text-decoration:none;';
             const beatVal = milestoneMetricText(newer);
-            const valueText = createEl('span', '', ` (${beatVal})`);
-            beatenBadge.append(arrow, label, link, valueText);
+            beatenBadge.append(arrow, label, link);
+            if (beatVal) {
+              beatenBadge.appendChild(createEl('span', '', ` (${beatVal})`));
+            }
             item.appendChild(beatenBadge);
           }
 
@@ -912,8 +914,10 @@
           link.target = '_blank';
           link.rel = 'noopener noreferrer';
           const beatVal = milestoneMetricText(newer);
-          const valueText = createEl('span', '', ` (${beatVal})`);
-          beatenBadge.append(arrow, label, link, valueText);
+          beatenBadge.append(arrow, label, link);
+          if (beatVal) {
+            beatenBadge.appendChild(createEl('span', '', ` (${beatVal})`));
+          }
           card.appendChild(beatenBadge);
         }
 

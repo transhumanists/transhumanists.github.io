@@ -1,12 +1,12 @@
 {
-  "last_update": "2026-09-22T21:57:59+00:00",
+  "last_update": "2026-09-22T22:20:40+00:00",
   "version": "1.0.0",
   "events": [
     {
       "id": "ev-ms-1d88f31518db",
       "title": "Alkermes reports pioneering ADHD data for orexin agonist",
       "category": "Biotechnology",
-      "value": "Alkermes releases pioneering clinical data for orexin agonist in ADHD, potentially expanding the drug class beyond narcolepsy into broader patient populations.",
+      "value": "Alkermes reports pioneering ADHD data for orexin agonist",
       "source": "Alkermes",
       "url": "https://www.fiercebiotech.com/biotech/pioneering-adhd-data-alkermes-eyes-orexin-agonist-potential-company-changer",
       "date": "2026-09-22",
@@ -32,7 +32,7 @@
       "id": "ev-ms-a5c98baae9a8",
       "title": "Moderna mRNA flu vaccine receives FDA approval",
       "category": "Biotechnology",
-      "value": "Moderna's mRNA-based influenza vaccine gains FDA approval, marking the first regulatory clearance for an mRNA flu vaccine.",
+      "value": "Moderna mRNA flu vaccine receives FDA approval",
       "source": "FDA",
       "url": "https://www.nature.com/articles/s41587-026-03313-y",
       "date": "2026-09-10",

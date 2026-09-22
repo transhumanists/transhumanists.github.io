@@ -298,38 +298,34 @@ function canonicalCategory(cat) {
     strokeSoftBoundary(sunset, 'rgba(255, 180, 0, ALPHA)');
     strokeSoftBoundary(sunrise, 'rgba(0, 212, 255, ALPHA)');
 
-    // ---- Sun position marker ----
+    // ---- Sun position marker (small sun icon, no dot) ----
     const sunPos = project(sun.lon, sun.lat);
     if (sunPos.x >= -50 && sunPos.x <= w + 50 && sunPos.y >= -50 && sunPos.y <= h + 50) {
-      ctx.beginPath();
-      ctx.arc(sunPos.x, sunPos.y, 9, 0, Math.PI * 2);
-      ctx.fillStyle = 'rgba(255, 215, 64, 0.95)';
-      ctx.shadowColor = '#ffd740';
-      ctx.shadowBlur = 14;
-      ctx.fill();
-      ctx.shadowBlur = 0;
-
-      ctx.font = '11px ui-monospace, SFMono-Regular, monospace';
+      ctx.save();
+      ctx.font = '14px ui-monospace, SFMono-Regular, monospace';
       ctx.fillStyle = '#ffd740';
       ctx.textAlign = 'center';
-      ctx.fillText('☀', sunPos.x, sunPos.y + 17);
+      ctx.textBaseline = 'middle';
+      ctx.shadowColor = '#ffd740';
+      ctx.shadowBlur = 14;
+      ctx.fillText('☀', sunPos.x, sunPos.y);
+      ctx.restore();
     }
 
-    // ---- Anti-sun (sunrise) marker ----
+    // ---- Anti-sun (sunrise) marker: small moon icon, no outline dot ----
     const antiSunLon = normalizeLon(sun.lon + 180);
     const antiSunLat = -sun.lat;
     const antiSunPos = project(antiSunLon, antiSunLat);
     if (antiSunPos.x >= -50 && antiSunPos.x <= w + 50 && antiSunPos.y >= -50 && antiSunPos.y <= h + 50) {
-      ctx.beginPath();
-      ctx.arc(antiSunPos.x, antiSunPos.y, 7, 0, Math.PI * 2);
-      ctx.strokeStyle = 'rgba(0, 212, 255, 0.7)';
-      ctx.lineWidth = 2;
-      ctx.stroke();
-
-      ctx.font = '10px ui-monospace, SFMono-Regular, monospace';
+      ctx.save();
+      ctx.font = '12px ui-monospace, SFMono-Regular, monospace';
       ctx.fillStyle = '#00d4ff';
       ctx.textAlign = 'center';
-      ctx.fillText('☽', antiSunPos.x, antiSunPos.y + 15);
+      ctx.textBaseline = 'middle';
+      ctx.shadowColor = '#00d4ff';
+      ctx.shadowBlur = 10;
+      ctx.fillText('☽', antiSunPos.x, antiSunPos.y);
+      ctx.restore();
     }
 
     ctx.restore();
