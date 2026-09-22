@@ -363,14 +363,16 @@ body {
 .catalog-card {
   background: var(--bg-card);
   border: 1px solid var(--border);
+  border-left: 4px solid var(--catalog-accent, var(--accent));
   border-radius: var(--radius);
   padding: 16px;
   transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
   position: relative;
  }
  .catalog-card:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow);
+   transform: translateY(-2px);
+   box-shadow: var(--shadow), 0 0 20px var(--catalog-accent-alpha, transparent);
+   border-color: var(--catalog-accent, var(--accent));
  }
  .catalog-card-beaten {
   opacity: 0.55;
@@ -391,6 +393,81 @@ body {
   position: absolute;
   top: 12px;
   right: 12px;
+}
+
+/* Catalog card internals */
+.catalog-card__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+.catalog-card__left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.catalog-card__icon {
+  font-size: 1.3rem;
+}
+.catalog-card__cat-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.catalog-card__cat-name {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.catalog-card__title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--fg);
+  margin: 0;
+}
+.catalog-card__right {
+  text-align: right;
+  flex-shrink: 0;
+}
+.catalog-card__value {
+  font-family: var(--font-mono);
+  font-size: 1.3rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+.catalog-card__unit {
+  font-size: 0.75rem;
+  color: var(--fg-muted);
+  font-family: var(--font-mono);
+}
+.catalog-card__meta {
+  font-size: 0.7rem;
+  color: var(--fg-subtle);
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.catalog-card__beaten-badge {
+  margin-top: 10px;
+  padding: 8px 10px;
+  font-size: 0.7rem;
+  color: var(--fg-muted);
+  background: rgba(255, 145, 0, 0.1);
+  border: 1px solid rgba(255, 145, 0, 0.3);
+  border-radius: var(--radius-sm);
+  line-height: 1.4;
+}
+.catalog-card__beaten-badge a {
+  color: var(--orange);
+  font-weight: 600;
+  text-decoration: none;
+}
+.catalog-card__beaten-badge a:hover {
+  text-decoration: underline;
 }
 
 /* MILESTONE CARDS GRID */
@@ -494,6 +571,16 @@ body {
 }
 
 /* Milestone Detail Modal */
+@media (prefers-reduced-motion: reduce) {
+  .milestone-modal,
+  .milestone-modal-content {
+    transition: none !important;
+  }
+  .milestone-modal-content {
+    transform: scale(1);
+  }
+}
+
 .milestone-modal {
   position: fixed;
   top: 0;

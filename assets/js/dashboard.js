@@ -170,27 +170,35 @@
   const COUNTER_THRESHOLD = 0.2;
 
   // ---- Counter animation utility ----
+  const counterObserver = new IntersectionObserver(entries => {
+    entries.forEach(en => {
+      if (!en.isIntersecting) return;
+      const el = en.target;
+      const target = parseFloat(el.dataset.counterTarget);
+      const duration = parseInt(el.dataset.counterDuration, 10) || ANIMATION_DURATION;
+      const integer = el.dataset.counterInteger !== 'false';
+      if (isNaN(target)) return;
+
+      const start = performance.now();
+      const tick = now => {
+        const t = Math.min((now - start) / duration, 1);
+        const eased = 1 - Math.pow(1 - t, 3);
+        const val = target * eased;
+        el.textContent = integer ? Math.round(val) : val.toFixed(1);
+        if (t < 1) requestAnimationFrame(tick);
+      };
+      requestAnimationFrame(tick);
+      counterObserver.unobserve(el);
+    });
+  }, { threshold: COUNTER_THRESHOLD });
+
   function animateCounter(el, target, options = {}) {
-    const { duration = ANIMATION_DURATION, threshold = COUNTER_THRESHOLD, integer = true, register = registerObserver } = options;
+    const { duration = ANIMATION_DURATION, integer = true } = options;
     el.textContent = '0';
-    const io = new IntersectionObserver(entries => {
-      entries.forEach(en => {
-        if (!en.isIntersecting) return;
-        const start = performance.now();
-        const tick = now => {
-          const t = Math.min((now - start) / duration, 1);
-          const eased = 1 - Math.pow(1 - t, 3);
-          const val = target * eased;
-          el.textContent = integer ? Math.round(val) : val.toFixed(1);
-          if (t < 1) requestAnimationFrame(tick);
-        };
-        requestAnimationFrame(tick);
-        io.unobserve(el);
-      });
-    }, { threshold });
-    io.observe(el);
-    register(io);
-    return io;
+    el.dataset.counterTarget = target;
+    el.dataset.counterDuration = duration;
+    el.dataset.counterInteger = integer;
+    counterObserver.observe(el);
   }
 
   // ---- Milestone detail modal ----
@@ -246,7 +254,8 @@
   }
 
   function getCategoryConfig(milestone) {
-    const key = milestone.category_key || milestone.category;
+    const rawKey = milestone.category_key || milestone.category;
+    const key = String(rawKey).toLowerCase().replace(/\s+/g, '_').replace(/&/g, '');
     return CATEGORY_CONFIG[key] || { icon: '📌', color: '#00d4ff' };
   }
 
@@ -341,11 +350,16 @@
     delete modal._lastFocusable;
   }
 
-  // Initialize modal event listeners when DOM is ready
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', setupModalEventListeners);
-  } else {
+  // Initialize modal event listeners when DOM is ready (idempotent)
+  function initModal() {
+    removeModalEventListeners();
     setupModalEventListeners();
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initModal, { once: true });
+  } else {
+    initModal();
   }
 
   // ---- Shared milestone data cache ----
@@ -359,20 +373,27 @@
     fetchAbortControllers = [];
   }
 
-  async function fetchJSON(url) {
-    const ac = new AbortController();
-    fetchAbortControllers.push(ac);
-    try {
-      const r = await fetch(url, { cache: 'no-store', signal: ac.signal });
-      if (!r.ok) throw new Error(r.status);
-      return await r.json();
-    } catch (e) {
-      if (e.name === 'AbortError') return null;
-      return null;
-    } finally {
-      const idx = fetchAbortControllers.indexOf(ac);
-      if (idx >= 0) fetchAbortControllers.splice(idx, 1);
+  async function fetchJSON(url, retries = 2) {
+    for (let attempt = 0; attempt <= retries; attempt++) {
+      const ac = new AbortController();
+      fetchAbortControllers.push(ac);
+      try {
+        const r = await fetch(url, { cache: 'no-store', signal: ac.signal });
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return await r.json();
+      } catch (e) {
+        if (e.name === 'AbortError') return null;
+        if (attempt === retries) {
+          console.error(`[dashboard] fetchJSON failed for ${url}:`, e);
+          return null;
+        }
+        await new Promise(r => setTimeout(r, 500 * (attempt + 1)));
+      } finally {
+        const idx = fetchAbortControllers.indexOf(ac);
+        if (idx >= 0) fetchAbortControllers.splice(idx, 1);
+      }
     }
+    return null;
   }
 
   async function getHistoryData() {
@@ -692,7 +713,7 @@
           frag.appendChild(item);
 
           const target = parseFloat(valEl.dataset.counter);
-          if (!isNaN(target)) animateCounter(valEl, target, { integer: Number.isInteger(target), register: registerCategoryToggleObserver });
+          if (!isNaN(target)) animateCounter(valEl, target, { integer: Number.isInteger(target) });
         });
         milestonesContainer.replaceChildren(frag);
         hasRendered = true;
@@ -759,17 +780,7 @@
     // Sort by date descending (newest first)
     allMilestones.sort((a, b) => new Date(b.date) - new Date(a.date));
 
-    let activeObservers = [];
-
-    function clearObservers() {
-      activeObservers.forEach(io => io.disconnect());
-      // Also clean up from global observer registry
-      allObservers = allObservers.filter(io => !activeObservers.includes(io));
-      activeObservers = [];
-    }
-
     function render(filterKey) {
-      clearObservers();
       const filtered = filterKey === 'all'
         ? allMilestones
         : allMilestones.filter(m => m.category_key === filterKey);
@@ -782,46 +793,34 @@
         return;
       }
 
-      const frag = document.createDocumentFragment();
+const frag = document.createDocumentFragment();
       filtered.forEach(m => {
         const isBeaten = beatenMapAll.has(m.id);
         const catConfig = CATEGORY_CONFIG[m.category_key] || { name: m.category_name, icon: '📌', color: '#00d4ff' };
 
         const card = createEl('div', 'catalog-card');
+        card.style.setProperty('--catalog-accent', catConfig.color);
+        card.style.setProperty('--catalog-accent-alpha', catConfig.color + '33');
         if (isBeaten) card.classList.add('catalog-card-beaten');
-        card.style.cssText = `
-          background: var(--bg-card);
-          border: 1px solid var(--border);
-          border-left: 4px solid ${catConfig.color};
-          border-radius: var(--radius);
-          padding: 16px;
-          transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
-        `;
 
-        const header = createEl('div');
-        header.style.cssText = 'display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:8px;';
+        const header = createEl('div', 'catalog-card__header');
 
-        const left = createEl('div');
-        left.style.cssText = 'display:flex;align-items:center;gap:10px;';
-        const icon = createEl('span', '', catConfig.icon);
-        icon.style.fontSize = '1.3rem';
-        const catInfo = createEl('div');
-        const catName = createEl('div', '', catConfig.name);
-        catName.style.cssText = 'font-family:var(--font-mono);font-size:0.6rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:' + catConfig.color + ';';
-        const title = createEl('h4', '', m.title);
-        title.style.cssText = 'font-size:0.95rem;font-weight:600;color:var(--fg);margin-top:2px;';
+        const left = createEl('div', 'catalog-card__left');
+        const icon = createEl('span', 'catalog-card__icon', catConfig.icon);
+        const catInfo = createEl('div', 'catalog-card__cat-info');
+        const catName = createEl('div', 'catalog-card__cat-name', catConfig.name);
+        catName.style.color = catConfig.color;
+        const title = createEl('h4', 'catalog-card__title', m.title);
         catInfo.appendChild(catName);
         catInfo.appendChild(title);
         left.appendChild(icon);
         left.appendChild(catInfo);
 
-        const right = createEl('div');
-        right.style.cssText = 'text-align:right;flex-shrink:0;';
-        const valueEl = createEl('div', 'milestone-card-value', m.value);
-        valueEl.style.cssText = 'font-family:var(--font-mono);font-size:1.3rem;font-weight:700;color:' + catConfig.color + ';';
+        const right = createEl('div', 'catalog-card__right');
+        const valueEl = createEl('div', 'catalog-card__value', m.value);
+        valueEl.style.color = catConfig.color;
         valueEl.dataset.counter = m.value;
-        const unitEl = createEl('div', 'milestone-card-unit', m.unit);
-        unitEl.style.cssText = 'font-size:0.75rem;color:var(--fg-muted);';
+        const unitEl = createEl('div', 'catalog-card__unit', m.unit);
         right.appendChild(valueEl);
         right.appendChild(unitEl);
 
@@ -829,8 +828,7 @@
         header.appendChild(right);
         card.appendChild(header);
 
-        const meta = createEl('div');
-        meta.style.cssText = 'font-size:0.7rem;color:var(--fg-subtle);display:flex;gap:12px;flex-wrap:wrap;';
+        const meta = createEl('div', 'catalog-card__meta');
         const sourceSpan = createEl('span', '', m.source);
         const dotSpan = createEl('span', '', ' · ');
         const dateSpan = createEl('span', '', m.date);
@@ -845,15 +843,13 @@
 
         if (isBeaten) {
           const newer = beatenMapAll.get(m.id);
-          const beatenBadge = createEl('div', 'catalog-card-beaten-badge');
-          beatenBadge.style.cssText = 'margin-top:10px;padding:8px 10px;font-size:0.7rem;color:var(--fg-muted);background:rgba(255,145,0,0.1);border:1px solid rgba(255,145,0,0.3);border-radius:var(--radius-sm);line-height:1.4;';
+          const beatenBadge = createEl('div', 'catalog-card__beaten-badge');
           const arrow = createEl('span', '', '⤴ ');
           const label = createEl('span', '', 'Superseded by ');
           const link = createEl('a', '', newer.title);
           link.href = newer.url || '#';
           link.target = '_blank';
           link.rel = 'noopener noreferrer';
-          link.style.cssText = 'color:var(--orange);font-weight:600;text-decoration:none;';
           const valueText = createEl('span', '', ` (${newer.value} ${newer.unit})`);
           beatenBadge.append(arrow, label, link, valueText);
           card.appendChild(beatenBadge);
@@ -865,11 +861,24 @@
           card.appendChild(badge);
         }
 
-        card.addEventListener('mouseenter', () => {
-          card.style.transform = 'translateY(-2px)';
-          card.style.boxShadow = 'var(--shadow), 0 0 20px ' + catConfig.color + '33';
-          card.style.borderColor = catConfig.color;
+        card.addEventListener('click', () => openMilestoneModal(m));
+        card.addEventListener('keydown', e => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            openMilestoneModal(m);
+          }
         });
+        card.style.cursor = 'pointer';
+        card.setAttribute('role', 'button');
+        card.setAttribute('tabindex', '0');
+
+        frag.appendChild(card);
+
+        const target = parseFloat(valueEl.dataset.counter);
+        if (!isNaN(target)) {
+          animateCounter(valueEl, target, { integer: Number.isInteger(target) });
+        }
+      });
         card.addEventListener('mouseleave', () => {
           card.style.transform = 'none';
           card.style.boxShadow = 'none';
@@ -880,8 +889,7 @@
 
         const target = parseFloat(valueEl.dataset.counter);
         if (!isNaN(target)) {
-          const io = animateCounter(valueEl, target, { integer: Number.isInteger(target) });
-          activeObservers.push(io);
+          animateCounter(valueEl, target, { integer: Number.isInteger(target) });
         }
       });
 
@@ -902,22 +910,8 @@
   }
 
   // ---- Cleanup ----
-  let allObservers = [];
-  let categoryToggleObservers = [];
-
-  function registerObserver(io) {
-    if (io) allObservers.push(io);
-  }
-
-  function registerCategoryToggleObserver(io) {
-    if (io) categoryToggleObservers.push(io);
-  }
-
   function cleanup() {
-    allObservers.forEach(io => io.disconnect());
-    allObservers = [];
-    categoryToggleObservers.forEach(io => io.disconnect());
-    categoryToggleObservers = [];
+    counterObserver.disconnect();
     abortAllFetches();
     removeModalEventListeners();
   }
