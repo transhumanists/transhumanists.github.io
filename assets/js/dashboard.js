@@ -165,9 +165,13 @@
       .sort((a, b) => (a.date < b.date ? -1 : 1));
   }
 
+  // ---- Constants ----
+  const ANIMATION_DURATION = 1200;
+  const COUNTER_THRESHOLD = 0.2;
+
   // ---- Counter animation utility ----
   function animateCounter(el, target, options = {}) {
-    const { duration = 1200, threshold = 0.2, integer = true } = options;
+    const { duration = ANIMATION_DURATION, threshold = COUNTER_THRESHOLD, integer = true, register = registerObserver } = options;
     el.textContent = '0';
     const io = new IntersectionObserver(entries => {
       entries.forEach(en => {
@@ -185,8 +189,163 @@
       });
     }, { threshold });
     io.observe(el);
-    registerObserver(io);
+    register(io);
     return io;
+  }
+
+  // ---- Milestone detail modal ----
+  let modalElements = null;
+  let modalKeyHandler = null;
+  let modalClickHandler = null;
+
+  function getModalElements() {
+    if (modalElements) return modalElements;
+    modalElements = {
+      modal: document.getElementById('milestone-modal'),
+      title: document.getElementById('milestone-modal-title'),
+      icon: document.getElementById('milestone-modal-icon'),
+      value: document.getElementById('milestone-modal-value'),
+      unit: document.getElementById('milestone-modal-unit'),
+      source: document.getElementById('milestone-modal-source'),
+      date: document.getElementById('milestone-modal-date'),
+      geoSection: document.getElementById('milestone-modal-geo-section'),
+      geo: document.getElementById('milestone-modal-geo'),
+      descSection: document.getElementById('milestone-modal-desc-section'),
+      desc: document.getElementById('milestone-modal-description'),
+      close: document.getElementById('milestone-modal-close'),
+    };
+    return modalElements;
+  }
+
+  function setupModalEventListeners() {
+    const { modal, close } = getModalElements();
+    if (!modal) return;
+
+    modalKeyHandler = e => {
+      if (e.key === 'Escape' && modal.classList.contains('open')) closeMilestoneModal();
+    };
+    document.addEventListener('keydown', modalKeyHandler);
+
+    modalClickHandler = e => {
+      if (e.target === modal) closeMilestoneModal();
+    };
+    modal.addEventListener('click', modalClickHandler);
+
+    if (close) {
+      close.addEventListener('click', closeMilestoneModal);
+    }
+  }
+
+  function removeModalEventListeners() {
+    const { modal, close } = getModalElements();
+    if (modalKeyHandler) document.removeEventListener('keydown', modalKeyHandler);
+    if (modalClickHandler && modal) modal.removeEventListener('click', modalClickHandler);
+    if (close) close.removeEventListener('click', closeMilestoneModal);
+    modalKeyHandler = null;
+    modalClickHandler = null;
+  }
+
+  function getCategoryConfig(milestone) {
+    const key = milestone.category_key || milestone.category;
+    return CATEGORY_CONFIG[key] || { icon: '📌', color: '#00d4ff' };
+  }
+
+  function openMilestoneModal(milestone) {
+    const { modal, title, icon, value, unit, source, date, geoSection, geo, descSection, desc, close } = getModalElements();
+    if (!modal) return;
+
+    const config = getCategoryConfig(milestone);
+
+    title.textContent = milestone.title || 'Untitled';
+    icon.textContent = milestone.icon || config.icon;
+    icon.style.background = config.color + '22';
+    value.textContent = milestone.value ?? '0';
+    unit.textContent = milestone.unit || '';
+    date.textContent = milestone.date || '—';
+
+    source.replaceChildren();
+    if (milestone.source) {
+      const sourceLabel = createEl('span', '', milestone.source);
+      source.appendChild(sourceLabel);
+    }
+    if (milestone.url && /^https?:\/\//i.test(milestone.url)) {
+      const link = createEl('a', '', 'Open source ↗');
+      link.href = milestone.url;
+      link.target = '_blank';
+      link.rel = 'noopener noreferrer';
+      link.referrerPolicy = 'no-referrer';
+      source.appendChild(link);
+    }
+
+    if (milestone.geolocation && typeof milestone.geolocation.lat === 'number' && typeof milestone.geolocation.lon === 'number') {
+      geoSection.style.display = 'block';
+      geo.textContent = `📍 ${milestone.geolocation.lat.toFixed(2)}, ${milestone.geolocation.lon.toFixed(2)}`;
+    } else {
+      geoSection.style.display = 'none';
+    }
+
+    if (milestone.description) {
+      descSection.style.display = 'block';
+      desc.textContent = milestone.description;
+    } else {
+      descSection.style.display = 'none';
+    }
+
+    const wasOpen = modal.classList.contains('open');
+    modal.classList.add('open');
+    modal.setAttribute('aria-hidden', 'false');
+    document.body.style.overflow = 'hidden';
+
+    // Focus management
+    const focusable = modal.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+    if (focusable.length) focusable[0].focus();
+
+    // Trap focus (only add listener if modal wasn't already open)
+    modal._focusable = focusable;
+    modal._firstFocusable = focusable[0];
+    modal._lastFocusable = focusable[focusable.length - 1];
+    if (!wasOpen) {
+      modal.addEventListener('keydown', trapFocus);
+    }
+  }
+
+  function trapFocus(e) {
+    if (e.key !== 'Tab') return;
+    const { modal } = getModalElements();
+    if (!modal || !modal.classList.contains('open')) return;
+
+    const { _firstFocusable, _lastFocusable } = modal;
+    if (e.shiftKey) {
+      if (document.activeElement === _firstFocusable) {
+        e.preventDefault();
+        _lastFocusable?.focus();
+      }
+    } else {
+      if (document.activeElement === _lastFocusable) {
+        e.preventDefault();
+        _firstFocusable?.focus();
+      }
+    }
+  }
+
+  function closeMilestoneModal() {
+    const { modal } = getModalElements();
+    if (!modal) return;
+
+    modal.classList.remove('open');
+    modal.setAttribute('aria-hidden', 'true');
+    document.body.style.overflow = '';
+    modal.removeEventListener('keydown', trapFocus);
+    delete modal._focusable;
+    delete modal._firstFocusable;
+    delete modal._lastFocusable;
+  }
+
+  // Initialize modal event listeners when DOM is ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', setupModalEventListeners);
+  } else {
+    setupModalEventListeners();
   }
 
   // ---- Shared milestone data cache ----
@@ -391,11 +550,11 @@
     const items = (data && data.recent) || SAMPLE_MILESTONES;
     const frag = document.createDocumentFragment();
     items.slice(0, 8).forEach(function(m) {
-      const a = createEl('a');
-      a.className = 'milestone-card';
-      a.style.cssText = 'text-decoration: none; color: inherit;';
-      a.href = m.url || '';
-      a.setAttribute('aria-label', (m.title || '').trim());
+      const card = createEl('div');
+      card.className = 'milestone-card milestone-card-interactive';
+      card.setAttribute('role', 'button');
+      card.setAttribute('tabindex', '0');
+      card.setAttribute('aria-label', `View details for ${m.title || 'milestone'}`);
 
       const header = createEl('div', 'milestone-card-header');
       const icon = createEl('div', 'milestone-card-icon', m.icon || '\u{1F4CC}');
@@ -417,19 +576,27 @@
       meta.appendChild(dot);
       meta.appendChild(date);
 
-      a.appendChild(header);
-      a.appendChild(titleEl);
-      a.appendChild(valueEl);
-      a.appendChild(unitEl);
-      a.appendChild(meta);
+      card.appendChild(header);
+      card.appendChild(titleEl);
+      card.appendChild(valueEl);
+      card.appendChild(unitEl);
+      card.appendChild(meta);
 
       if (m.is_new) {
         const badge = createEl('span', 'milestone-card-new');
         badge.title = 'New this week';
-        a.appendChild(badge);
+        card.appendChild(badge);
       }
 
-      frag.appendChild(a);
+      card.addEventListener('click', () => openMilestoneModal(m));
+      card.addEventListener('keydown', e => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          openMilestoneModal(m);
+        }
+      });
+
+      frag.appendChild(card);
     });
 
     grid.replaceChildren(frag);
@@ -596,6 +763,8 @@
 
     function clearObservers() {
       activeObservers.forEach(io => io.disconnect());
+      // Also clean up from global observer registry
+      allObservers = allObservers.filter(io => !activeObservers.includes(io));
       activeObservers = [];
     }
 
@@ -711,7 +880,7 @@
 
         const target = parseFloat(valueEl.dataset.counter);
         if (!isNaN(target)) {
-          const io = animateCounter(valueEl, target, { duration: 1200, threshold: 0.2, integer: Number.isInteger(target) });
+          const io = animateCounter(valueEl, target, { integer: Number.isInteger(target) });
           activeObservers.push(io);
         }
       });
@@ -734,15 +903,23 @@
 
   // ---- Cleanup ----
   let allObservers = [];
+  let categoryToggleObservers = [];
 
   function registerObserver(io) {
     if (io) allObservers.push(io);
   }
 
+  function registerCategoryToggleObserver(io) {
+    if (io) categoryToggleObservers.push(io);
+  }
+
   function cleanup() {
     allObservers.forEach(io => io.disconnect());
     allObservers = [];
+    categoryToggleObservers.forEach(io => io.disconnect());
+    categoryToggleObservers = [];
     abortAllFetches();
+    removeModalEventListeners();
   }
 
   window.addEventListener('beforeunload', cleanup);
