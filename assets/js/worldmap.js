@@ -29,29 +29,30 @@
   // ---- State ----
   const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const state = {
-    width: 0,
-    height: 0,
-    dpr: window.devicePixelRatio || 1,
-    transform: { scale: 1, tx: 0, ty: 0 },
-    isDragging: false,
-    hoveredEvent: null,
-    selectedEvent: null,
-    tooltipHover: false,
-    pressX: null,
-    pressY: null,
-    events: [],
-    showTerminator: true,
-    // Cached terminator data (geo-space: sun angle barely moves, but the
-    // screen projection must be recomputed for every draw since pan/zoom
-    // changes the transform).
-    terminatorCache: {
-      sunLon: null,
-      sunLat: null,
-      sunsetGeo: null,
-      sunriseGeo: null,
-      computedAt: 0
-    }
-  };
+     width: 0,
+     height: 0,
+     dpr: window.devicePixelRatio || 1,
+     transform: { scale: 1, tx: 0, ty: 0 },
+     isDragging: false,
+     hoveredEvent: null,
+     selectedEvent: null,
+     tooltipHover: false,
+     pressX: null,
+     pressY: null,
+     events: [],
+     showTerminator: true,
+     hiddenCategories: new Set(),
+     // Cached terminator data (geo-space: sun angle barely moves, but the
+     // screen projection must be recomputed for every draw since pan/zoom
+     // changes the transform).
+     terminatorCache: {
+       sunLon: null,
+       sunLat: null,
+       sunsetGeo: null,
+       sunriseGeo: null,
+       computedAt: 0
+     }
+   };
 
   const CATEGORY_COLORS = {
     'Biotechnology': '#00e676',
@@ -95,9 +96,26 @@
     { key: 'Military & Defense', label: 'Military & Defense' }
   ];
 
-  function canonicalCategory(cat) {
-    return CATEGORY_ALIASES[cat] || cat;
-  }
+function canonicalCategory(cat) {
+     return CATEGORY_ALIASES[cat] || cat;
+   }
+
+  function isCategoryVisible(cat) {
+     const canonical = canonicalCategory(cat);
+     return !state.hiddenCategories.has(canonical);
+   }
+
+  function toggleCategory(cat) {
+     const canonical = canonicalCategory(cat);
+     if (state.hiddenCategories.has(canonical)) {
+       state.hiddenCategories.delete(canonical);
+     } else {
+       state.hiddenCategories.add(canonical);
+     }
+     draw();
+     updateStatsDisplay();
+     renderLegend();
+   }
 
   // ---- Country outlines (simplified continent path) ----
   const CONTINENTS = [
@@ -394,10 +412,19 @@
   }
 
   function drawEvent(ev) {
-    const p = project(ev.lon, ev.lat);
-    const color = CATEGORY_COLORS[canonicalCategory(ev.category)] || '#00d4ff';
-    const pulse = 0.5 + 0.5 * Math.sin((Date.now() / 1000 + ev.lon) * 2);
-    const r = 4 + pulse * 2;
+     if (!isCategoryVisible(ev.category)) {
+       const p = project(ev.lon, ev.lat);
+       const color = CATEGORY_COLORS[canonicalCategory(ev.category)] || '#00d4ff';
+       ctx.beginPath();
+       ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
+       ctx.fillStyle = color + '40';
+       ctx.fill();
+       return;
+     }
+     const p = project(ev.lon, ev.lat);
+     const color = CATEGORY_COLORS[canonicalCategory(ev.category)] || '#00d4ff';
+     const pulse = 0.5 + 0.5 * Math.sin((Date.now() / 1000 + ev.lon) * 2);
+     const r = 4 + pulse * 2;
 
     ctx.beginPath();
     ctx.arc(p.x, p.y, r * 2, 0, Math.PI * 2);
@@ -439,6 +466,7 @@
     const hitRadiusSq = hitRadius * hitRadius;
     for (let i = state.events.length - 1; i >= 0; i--) {
       const ev = state.events[i];
+      if (!isCategoryVisible(ev.category)) continue;
       const p = project(ev.lon, ev.lat);
       const dx = p.x - px;
       const dy = p.y - py;
@@ -694,16 +722,17 @@
 
   // ---- Stats computation ----
   function computeStats() {
-    const counts = { breakthroughs: 0, conflicts: 0, fleets: 0 };
-    state.events.forEach(ev => {
-      const statMap = CATEGORY_STAT_MAP[canonicalCategory(ev.category)];
-      if (!statMap) return;
-      if (statMap.statId === 'map-stat-active') counts.breakthroughs++;
-      else if (statMap.statId === 'map-stat-conflicts') counts.conflicts++;
-      else if (statMap.statId === 'map-stat-fleets') counts.fleets++;
-    });
-    return counts;
-  }
+     const counts = { breakthroughs: 0, conflicts: 0, fleets: 0 };
+     state.events.forEach(ev => {
+       if (!isCategoryVisible(ev.category)) return;
+       const statMap = CATEGORY_STAT_MAP[canonicalCategory(ev.category)];
+       if (!statMap) return;
+       if (statMap.statId === 'map-stat-active') counts.breakthroughs++;
+       else if (statMap.statId === 'map-stat-conflicts') counts.conflicts++;
+       else if (statMap.statId === 'map-stat-fleets') counts.fleets++;
+     });
+     return counts;
+   }
 
   function updateStatsDisplay() {
     const stats = computeStats();
@@ -731,41 +760,54 @@
 
     const counts = {};
     let unknown = 0;
-    state.events.forEach(ev => {
-      const key = canonicalCategory(ev.category);
-      if (CATEGORY_COLORS[key]) counts[key] = (counts[key] || 0) + 1;
-      else unknown++;
-    });
+      state.events.forEach(ev => {
+        const key = canonicalCategory(ev.category);
+        if (CATEGORY_COLORS[key]) {
+          counts[key] = (counts[key] || 0) + 1;
+        } else {
+          unknown++;
+        }
+      });
 
-    const fragment = document.createDocumentFragment();
-    const title = document.createElement('div');
-    title.className = 'map-legend-title';
-    title.textContent = 'Categories · live';
-    fragment.appendChild(title);
+     const fragment = document.createDocumentFragment();
+     const title = document.createElement('div');
+     title.className = 'map-legend-title';
+     title.textContent = 'Categories · click to toggle layers';
+     fragment.appendChild(title);
 
-    CATEGORY_LEGEND.forEach(cat => {
-      const row = document.createElement('div');
-      row.className = 'map-legend-row';
-      row.setAttribute('role', 'listitem');
-      row.setAttribute('aria-label', `${cat.label}, ${counts[cat.key] || 0} events`);
-      const dot = document.createElement('span');
-      dot.className = 'map-legend-dot';
-      dot.style.background = CATEGORY_COLORS[cat.key];
-      dot.setAttribute('aria-hidden', 'true');
-      const label = document.createElement('span');
-      label.className = 'map-legend-label';
-      label.textContent = cat.label;
-      const count = document.createElement('span');
-      count.className = 'map-legend-count';
-      count.textContent = String(counts[cat.key] || 0);
-      count.setAttribute('aria-hidden', 'true');
-      row.append(dot, label, count);
-      fragment.appendChild(row);
-    });
+     CATEGORY_LEGEND.forEach(cat => {
+       const row = document.createElement('div');
+       row.className = 'map-legend-row';
+       row.setAttribute('role', 'listitem');
+       row.setAttribute('aria-label', `${cat.label}, ${counts[cat.key] || 0} events`);
+       row.tabIndex = 0;
+       row.setAttribute('aria-pressed', String(!state.hiddenCategories.has(cat.key)));
+       row.setAttribute('data-category', cat.key);
+       const dot = document.createElement('span');
+       dot.className = 'map-legend-dot';
+       dot.style.background = CATEGORY_COLORS[cat.key];
+       dot.setAttribute('aria-hidden', 'true');
+       const label = document.createElement('span');
+       label.className = 'map-legend-label';
+       label.textContent = cat.label;
+       const count = document.createElement('span');
+       count.className = 'map-legend-count';
+       count.textContent = String(counts[cat.key] || 0);
+       count.setAttribute('aria-hidden', 'true');
+       row.append(dot, label, count);
+       row.addEventListener('click', () => toggleCategory(cat.key));
+       row.addEventListener('keydown', e => {
+         if (e.key === 'Enter' || e.key === ' ') {
+           e.preventDefault();
+           toggleCategory(cat.key);
+         }
+       });
+       fragment.appendChild(row);
+     });
 
     if (unknown > 0) {
       const row = document.createElement('div');
-      row.className = 'map-legend-row';
+      row.className = 'map-legend-row map-legend-row--static';
       row.setAttribute('role', 'listitem');
       row.setAttribute('aria-label', `Other, ${unknown} events`);
       const dot = document.createElement('span');

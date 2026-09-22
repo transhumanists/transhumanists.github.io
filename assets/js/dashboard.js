@@ -63,6 +63,58 @@
     return (rec.category || 'Unknown') + ' / ' + (rec.subcategory || 'general');
   }
 
+  // Subcategories where lower numeric value = better (e.g., resolution, time, days)
+  const LOWER_IS_BETTER_SUBCATEGORIES = new Set([
+    'microscopy',
+    'error_correction',
+    'time_to_train',
+    'encryption',
+    'defense_scores',
+    'range',
+    'radius',
+    'air_defense',
+  ]);
+
+  function isLowerIsBetter(subcategory) {
+    return LOWER_IS_BETTER_SUBCATEGORIES.has(subcategory);
+  }
+
+  function findBeatenMilestones(milestones) {
+    const beaten = new Map();
+    if (!Array.isArray(milestones) || milestones.length < 2) return beaten;
+
+    const bySubcategory = new Map();
+    milestones.forEach(m => {
+      const key = m.subcategory || 'general';
+      if (!bySubcategory.has(key)) bySubcategory.set(key, []);
+      bySubcategory.get(key).push(m);
+    });
+
+    bySubcategory.forEach(group => {
+      if (group.length < 2) return;
+      const sorted = group.slice().sort((a, b) => {
+        const dateA = parseDateOrNull(a.date || '');
+        const dateB = parseDateOrNull(b.date || '');
+        if (!dateA && !dateB) return 0;
+        if (!dateA) return 1;
+        if (!dateB) return -1;
+        return dateB - dateA;
+      });
+
+      const lowerBetter = isLowerIsBetter(group[0].subcategory);
+      for (let i = 1; i < sorted.length; i++) {
+        const older = sorted[i];
+        const newer = sorted[i - 1];
+        if (typeof older.value === 'number' && typeof newer.value === 'number') {
+          const isBeaten = lowerBetter ? newer.value < older.value : newer.value > older.value;
+          if (isBeaten) beaten.set(older.id, newer);
+        }
+      }
+    });
+
+    return beaten;
+  }
+
   // Newest milestone DATE in the archive, not file freshness: this is what
   // "no milestones after 25-8" actually looks like.
   function computeStaleness(history, todayStr) {
@@ -411,15 +463,19 @@
       function renderMilestones() {
         if (!milestonesContainer || hasRendered) return;
         const config = CATEGORY_CONFIG[catKey] || { icon: '📌', color: '#00d4ff' };
+        const beatenMap = findBeatenMilestones(catData.milestones || []);
         const frag = document.createDocumentFragment();
         (catData.milestones || []).forEach(m => {
+          const isBeaten = beatenMap.has(m.id);
           const item = createEl('div', 'category-milestone-item');
           item.style.cssText = 'animation: slideDown 0.3s ease;';
+          if (isBeaten) item.classList.add('category-milestone-beaten');
 
           const info = createEl('div', 'category-milestone-info');
           const iconSpan = createEl('span', 'icon', config.icon);
           const details = createEl('div', 'category-milestone-details');
           const title = createEl('div', 'category-milestone-title', m.title);
+          if (isBeaten) title.classList.add('beaten-title');
           const meta = createEl('div', 'category-milestone-meta');
           const sourceSpan = createEl('span', '', m.source);
           const dotSpan = createEl('span', '', ' · ');
@@ -442,6 +498,21 @@
           const unitEl = createEl('span', 'unit', m.unit);
           valueDiv.appendChild(valEl);
           valueDiv.appendChild(unitEl);
+
+          if (isBeaten) {
+            const newer = beatenMap.get(m.id);
+            const beatenBadge = createEl('div', 'category-milestone-beaten-badge');
+            const arrow = createEl('span', '', '⤴ ');
+            const label = createEl('span', '', 'Superseded by ');
+            const link = createEl('a', '', newer.title);
+            link.href = newer.url || '#';
+            link.target = '_blank';
+            link.rel = 'noopener noreferrer';
+            link.style.cssText = 'color:var(--orange);font-weight:600;text-decoration:none;';
+            const valueText = createEl('span', '', ` (${newer.value} ${newer.unit})`);
+            beatenBadge.append(arrow, label, link, valueText);
+            item.appendChild(beatenBadge);
+          }
 
           if (m.is_new) {
             const badge = createEl('span', 'category-milestone-new-badge');
@@ -511,6 +582,13 @@
       });
     }
 
+    // Compute beaten milestones across all categories (by subcategory within category)
+    const beatenMapAll = new Map();
+    for (const [catKey, catData] of Object.entries(data.categories)) {
+      const beaten = findBeatenMilestones(catData.milestones || []);
+      beaten.forEach((newer, olderId) => beatenMapAll.set(olderId, newer));
+    }
+
     // Sort by date descending (newest first)
     allMilestones.sort((a, b) => new Date(b.date) - new Date(a.date));
 
@@ -537,9 +615,11 @@
 
       const frag = document.createDocumentFragment();
       filtered.forEach(m => {
+        const isBeaten = beatenMapAll.has(m.id);
         const catConfig = CATEGORY_CONFIG[m.category_key] || { name: m.category_name, icon: '📌', color: '#00d4ff' };
 
         const card = createEl('div', 'catalog-card');
+        if (isBeaten) card.classList.add('catalog-card-beaten');
         card.style.cssText = `
           background: var(--bg-card);
           border: 1px solid var(--border);
@@ -593,6 +673,22 @@
           meta.appendChild(geoSpan);
         }
         card.appendChild(meta);
+
+        if (isBeaten) {
+          const newer = beatenMapAll.get(m.id);
+          const beatenBadge = createEl('div', 'catalog-card-beaten-badge');
+          beatenBadge.style.cssText = 'margin-top:10px;padding:8px 10px;font-size:0.7rem;color:var(--fg-muted);background:rgba(255,145,0,0.1);border:1px solid rgba(255,145,0,0.3);border-radius:var(--radius-sm);line-height:1.4;';
+          const arrow = createEl('span', '', '⤴ ');
+          const label = createEl('span', '', 'Superseded by ');
+          const link = createEl('a', '', newer.title);
+          link.href = newer.url || '#';
+          link.target = '_blank';
+          link.rel = 'noopener noreferrer';
+          link.style.cssText = 'color:var(--orange);font-weight:600;text-decoration:none;';
+          const valueText = createEl('span', '', ` (${newer.value} ${newer.unit})`);
+          beatenBadge.append(arrow, label, link, valueText);
+          card.appendChild(beatenBadge);
+        }
 
         if (m.is_new) {
           const badge = createEl('span', 'milestone-card-new');

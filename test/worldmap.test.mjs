@@ -166,7 +166,10 @@ beforeAll(async () => {
 
 function legendRows() {
   const legend = registeredEls['map-legend'];
-  return legend ? legend.children.filter((c) => c.className === 'map-legend-row') : [];
+  return legend ? legend.children.filter((c) => {
+    const cn = c.className || '';
+    return cn.split(' ').includes('map-legend-row');
+  }) : [];
 }
 
 function legendValue(label) {
