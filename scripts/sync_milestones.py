@@ -402,7 +402,8 @@ def event_value(m: dict) -> str:
     """Value string for an event/map pin.
 
     Milestones without a numeric metric carry the milestone info string (their
-    title) instead of an empty value or a misleading "0".
+    summary, falling back to the title) instead of an empty value or a
+    misleading "0".
     """
     if m.get("value") is not None:
         return f"{m.get('value')} {m.get('unit') or ''}".strip()

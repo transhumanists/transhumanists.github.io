@@ -82,6 +82,11 @@
     return Number.isNaN(n) ? null : n;
   }
 
+  // "Value unit" (or the info string alone) for headers/badges, never a bare "0".
+  function milestoneMetricText(m) {
+    return [milestoneValueText(m), m && m.unit].filter(Boolean).join(' ');
+  }
+
   // Subcategories where lower numeric value = better (e.g., resolution, time, days)
   const LOWER_IS_BETTER_SUBCATEGORIES = new Set([
     'microscopy',
@@ -751,7 +756,8 @@
             link.target = '_blank';
             link.rel = 'noopener noreferrer';
             link.style.cssText = 'color:var(--orange);font-weight:600;text-decoration:none;';
-const valueText = createEl('span', '', ` (${milestoneValueText(newer)} ${newer.unit || ''})`.trim());
+            const beatVal = milestoneMetricText(newer);
+            const valueText = createEl('span', '', ` (${beatVal})`);
             beatenBadge.append(arrow, label, link, valueText);
             item.appendChild(beatenBadge);
           }
@@ -871,9 +877,10 @@ const valueText = createEl('span', '', ` (${milestoneValueText(newer)} ${newer.u
         left.appendChild(catInfo);
 
         const right = createEl('div', 'catalog-card__right');
-        const valueEl = createEl('div', 'catalog-card__value', m.value);
+        const valueEl = createEl('div', 'catalog-card__value', milestoneValueText(m));
         valueEl.style.color = catConfig.color;
-        valueEl.dataset.counter = m.value;
+        const catNum = numericMilestoneValue(m);
+        if (catNum !== null) valueEl.dataset.counter = catNum;
         const unitEl = createEl('div', 'catalog-card__unit', m.unit);
         right.appendChild(valueEl);
         right.appendChild(unitEl);
@@ -904,7 +911,8 @@ const valueText = createEl('span', '', ` (${milestoneValueText(newer)} ${newer.u
           link.href = newer.url || '#';
           link.target = '_blank';
           link.rel = 'noopener noreferrer';
-          const valueText = createEl('span', '', ` (${newer.value} ${newer.unit})`);
+          const beatVal = milestoneMetricText(newer);
+          const valueText = createEl('span', '', ` (${beatVal})`);
           beatenBadge.append(arrow, label, link, valueText);
           card.appendChild(beatenBadge);
         }
@@ -978,6 +986,7 @@ const valueText = createEl('span', '', ` (${milestoneValueText(newer)} ${newer.u
       metricKey,
       milestoneValueText,
       numericMilestoneValue,
+      milestoneMetricText,
       computeStaleness,
       buildMetricOptionList,
       metricCountsByDate,

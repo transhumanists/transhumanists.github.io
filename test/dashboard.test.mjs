@@ -153,4 +153,12 @@ describe('dashboard timeline helpers', () => {
     expect(api.numericMilestoneValue({ value: '' })).toBeNull();
     expect(api.numericMilestoneValue({ value: 'Tier-1' })).toBeNull();
   });
+
+  test('milestoneMetricText joins value+unit and never shows empty parens', () => {
+    expect(api.milestoneMetricText({ value: 98.7, unit: '%', title: 'Nanopore' })).toBe('98.7 %');
+    expect(api.milestoneMetricText({ value: null, unit: null, summary: 'Vaccine approved.', title: 'Flu vaccine' }))
+      .toBe('Vaccine approved.');
+    expect(api.milestoneMetricText({ value: undefined, unit: undefined, title: 'No metric' })).toBe('No metric');
+    expect(api.milestoneMetricText({})).toBe('');
+  });
 });
