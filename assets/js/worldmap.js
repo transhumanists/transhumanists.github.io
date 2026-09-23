@@ -897,7 +897,17 @@ function canonicalCategory(cat) {
     title.textContent = zone.name;
     const meta = document.createElement('div');
     meta.style.cssText = 'color: var(--fg-subtle); font-size: 0.7rem; margin-top: 4px;';
-    meta.textContent = zone.source || 'Unknown source';
+    if (zone.source && zone.url && /^https?:\/\//i.test(zone.url)) {
+      const link = document.createElement('a');
+      link.href = zone.url;
+      link.target = '_blank';
+      link.rel = 'noopener noreferrer';
+      link.style.color = 'var(--accent)';
+      link.textContent = zone.source;
+      meta.appendChild(link);
+    } else {
+      meta.textContent = zone.source || 'Unknown source';
+    }
     wrapper.append(cat, title, meta);
     if (zone.note) {
       const note = document.createElement('div');
@@ -1169,6 +1179,77 @@ function canonicalCategory(cat) {
       fragment.appendChild(row);
     }
 
+    // Controls section at bottom of legend — reuse existing controls if present
+    // (e.g., from initial markup or previous render) to keep event listeners stable.
+    let controlsDiv = document.getElementById('map-legend-controls');
+    let zoomInBtn = document.getElementById('zoom-in');
+    let zoomOutBtn = document.getElementById('zoom-out');
+    let resetBtn = document.getElementById('reset-view');
+    let terminatorToggle = document.getElementById('terminator-toggle');
+    let terminatorIcon = document.getElementById('terminator-icon');
+    let terminatorLabel = document.getElementById('terminator-label');
+
+    if (!controlsDiv) {
+      controlsDiv = document.createElement('div');
+      controlsDiv.id = 'map-legend-controls';
+      controlsDiv.className = 'map-legend-controls';
+      controlsDiv.setAttribute('role', 'group');
+      controlsDiv.setAttribute('aria-label', 'Map controls');
+    } else {
+      // Clear existing children to rebuild
+      controlsDiv.replaceChildren();
+    }
+
+    function setupButton(btn, id, className, ariaLabel, text, handler) {
+      if (!btn) {
+        btn = document.createElement('button');
+        btn.id = id;
+        btn.className = className;
+        btn.setAttribute('aria-label', ariaLabel);
+        btn.textContent = text;
+      }
+      // Always ensure handler is attached (idempotent via flag)
+      const flag = '_handler_' + id;
+      if (!btn[flag]) {
+        btn[flag] = true;
+        btn.addEventListener('click', handler);
+      }
+      return btn;
+    }
+
+    zoomInBtn = setupButton(zoomInBtn, 'zoom-in', 'map-control-btn', 'Zoom in', '+', () => zoomAt(state.width / 2, state.height / 2, 1.4));
+    zoomOutBtn = setupButton(zoomOutBtn, 'zoom-out', 'map-control-btn', 'Zoom out', '−', () => zoomAt(state.width / 2, state.height / 2, 1 / 1.4));
+    resetBtn = setupButton(resetBtn, 'reset-view', 'map-control-btn', 'Reset map view', '⟲', resetView);
+    function setupTerminatorToggle(btn, icon) {
+      if (btn._terminatorHandler) return; // already set up
+      btn._terminatorHandler = true;
+      btn.addEventListener('click', () => {
+        state.showTerminator = !state.showTerminator;
+        btn.setAttribute('aria-pressed', state.showTerminator);
+        icon.textContent = state.showTerminator ? '☀' : '☾';
+        draw();
+      });
+    }
+
+    if (!terminatorToggle) {
+      terminatorToggle = document.createElement('button');
+      terminatorToggle.id = 'terminator-toggle';
+      terminatorToggle.className = 'map-control-btn';
+      terminatorIcon = document.createElement('span');
+      terminatorIcon.id = 'terminator-icon';
+      terminatorLabel = document.createElement('span');
+      terminatorLabel.id = 'terminator-label';
+      terminatorLabel.textContent = 'Day/Night';
+      terminatorToggle.append(terminatorIcon, terminatorLabel);
+    }
+    setupTerminatorToggle(terminatorToggle, terminatorIcon);
+    // Update terminator toggle state (in case it existed already)
+    terminatorToggle.setAttribute('aria-pressed', state.showTerminator);
+    terminatorIcon.textContent = state.showTerminator ? '☀' : '☾';
+
+    controlsDiv.append(zoomInBtn, zoomOutBtn, resetBtn, terminatorToggle);
+    fragment.appendChild(controlsDiv);
+
     legendEl.replaceChildren(fragment);
   }
 
@@ -1354,28 +1435,6 @@ function canonicalCategory(cat) {
         draw();
       });
     }
-
-    const zoomIn = document.getElementById('zoom-in');
-    const zoomOut = document.getElementById('zoom-out');
-    const resetViewBtn = document.getElementById('reset-view');
-    if (zoomIn) zoomIn.addEventListener('click', () => zoomAt(state.width / 2, state.height / 2, 1.4));
-    if (zoomOut) zoomOut.addEventListener('click', () => zoomAt(state.width / 2, state.height / 2, 1 / 1.4));
-    if (resetViewBtn) resetViewBtn.addEventListener('click', resetView);
-
-    const terminatorToggle = document.getElementById('terminator-toggle');
-    const terminatorIcon = document.getElementById('terminator-icon');
-    const terminatorLabel = document.getElementById('terminator-label');
-    if (terminatorToggle) {
-      terminatorToggle.addEventListener('click', () => {
-        state.showTerminator = !state.showTerminator;
-        terminatorToggle.setAttribute('aria-pressed', state.showTerminator);
-        if (terminatorIcon) terminatorIcon.textContent = state.showTerminator ? '☀' : '☾';
-        if (terminatorLabel) terminatorLabel.textContent = state.showTerminator ? 'Day/Night' : 'Day/Night (off)';
-        draw();
-      });
-    }
-    // Legacy "Reset day/night" button was removed from the UI; the toggle
-    // above remains the single source of truth for terminator geometry.
   }
 
   function cleanup() {

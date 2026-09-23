@@ -46,36 +46,21 @@ description: "Tracking milestones across biotech, AGI, quantum, energy, cyber, s
         <div class="map-hint-row">
           <button id="filter-recent" class="map-hint" aria-pressed="true">
             <span class="map-hint-dot" style="background: var(--green);"></span>
-            <span class="map-hint-body">
-              <span class="map-hint-title">
-                <span id="map-stat-active">—</span>
-                <span>breakthrough(s) this week</span>
-              </span>
-              <span class="map-hint-sub">recent ≤ 1 week only</span>
+            <span class="map-hint-title">
+              <span id="map-stat-active">—</span>
+              <span>breakthrough(s) this week</span>
             </span>
           </button>
         </div>
         <div class="map-hint-row">
           <button id="filter-military" class="map-hint" aria-pressed="true">
             <span class="map-hint-dot" style="background: var(--red);"></span>
-            <span class="map-hint-body">
-              <span class="map-hint-title">
-                <span id="map-stat-conflicts">—</span>
-                <span>active conflict zones,</span>
-                <span id="map-stat-fleets">—</span>
-                <span>deployments</span>
-              </span>
-              <span class="map-hint-sub">includes fleet movements; see below;</span>
+            <span class="map-hint-title">
+              <span id="map-stat-conflicts">—</span>
+              <span>active conflict zones,</span>
+              <span id="map-stat-fleets">—</span>
+              <span>deployments</span>
             </span>
-          </button>
-        </div>
-        <div class="map-controls">
-          <button id="zoom-in" class="map-control-btn" aria-label="Zoom in">+</button>
-          <button id="zoom-out" class="map-control-btn" aria-label="Zoom out">−</button>
-          <button id="reset-view" class="map-control-btn" aria-label="Reset map view">⟲</button>
-          <button id="terminator-toggle" class="map-control-btn" aria-pressed="true">
-            <span id="terminator-icon">☀</span>
-            <span id="terminator-label">Day/Night</span>
           </button>
         </div>
       </div>

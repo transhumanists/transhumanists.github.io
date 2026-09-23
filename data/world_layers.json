@@ -11,7 +11,8 @@
       "radiusDeg": 5.5,
       "status": "active",
       "note": "Russia–Ukraine line of contact",
-      "source": "ISW"
+      "source": "ISW",
+      "url": "https://www.understandingwar.org"
     },
     {
       "id": "zone-gaza",
@@ -22,7 +23,8 @@
       "radiusDeg": 2.2,
       "status": "active",
       "note": "Gaza–Israel conflict",
-      "source": "UN OCHA"
+      "source": "UN OCHA",
+      "url": "https://www.unocha.org"
     },
     {
       "id": "zone-red-sea",
@@ -33,7 +35,8 @@
       "radiusDeg": 4.0,
       "status": "active",
       "note": "Maritime security zone",
-      "source": "IMSC"
+      "source": "IMSC",
+      "url": "https://www.maritimeglobalsecurity.org"
     }
   ],
   "deployments": [
