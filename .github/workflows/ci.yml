@@ -10,6 +10,7 @@ on:
       - '_config.yml'
       - 'test/**'
       - 'scripts/**'
+      - 'data/**'
       - '.github/workflows/ci.yml'
   pull_request:
     branches: [main]
@@ -20,6 +21,7 @@ on:
       - '_config.yml'
       - 'test/**'
       - 'scripts/**'
+      - 'data/**'
       - '.github/workflows/ci.yml'
 
 permissions:
@@ -68,6 +70,24 @@ jobs:
             --output-dir "$(mktemp -d)" \
             --upstream data/milestones.json \
             --today 2026-09-21
+
+  data-check:
+    name: Validate map data files
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Validate events.json and world_layers.json
+        run: python scripts/check_data.py
+
+      - name: Data validator self-tests
+        run: python scripts/test_check_data.py
 
   jekyll-build:
     name: Jekyll build (GitHub Pages)
