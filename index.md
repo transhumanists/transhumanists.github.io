@@ -66,6 +66,7 @@ description: "Tracking milestones across biotech, AGI, quantum, energy, cyber, s
             <span id="terminator-icon">☀</span>
             <span id="terminator-label">Day/Night</span>
           </button>
+          <button id="terminator-reset" class="map-control-btn" aria-label="Reset day/night to live time">⟳</button>
         </div>
       </div>
       <div class="map-tooltip" id="map-tooltip" role="tooltip"></div>

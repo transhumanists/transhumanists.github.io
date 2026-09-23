@@ -26,6 +26,23 @@
   const TOOLTIP_HEIGHT = 100;
   const TOOLTIP_OFFSET = 12;
 
+  // Day/night palette. Deliberately disjoint from every CATEGORY_COLORS value
+  // so the terminator never visually collides with a milestone category.
+  const DAY_TINT = 'rgba(140, 200, 255, 0.07)';
+  const NIGHT_FILL = 'rgba(2, 6, 14, 0.45)';
+  const SUNSET_BOUNDARY = 'rgba(255, 222, 178, ALPHA)';
+  const SUNRISE_BOUNDARY = 'rgba(176, 188, 255, ALPHA)';
+  const SUN_ICON = '#fff3c4';
+  const SUN_ICON_GLOW = '#fff3c4';
+  const MOON_ICON = '#c9d0ff';
+  const MOON_ICON_GLOW = '#c9d0ff';
+
+  // Operational layers (conflict zones + tracked fleet movements).
+  const ZONE_COLOR = '#ff6d8a';
+  const ZONE_FILL = 'rgba(255, 109, 138, 0.14)';
+  const ZONE_STROKE = 'rgba(255, 109, 138, 0.9)';
+  const FLEET_COLOR = '#7ef2c2';
+
   // ---- State ----
   const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const state = {
@@ -42,6 +59,10 @@
      events: [],
      showTerminator: true,
      hiddenCategories: new Set(),
+     zones: [],
+     fleets: [],
+     showZones: true,
+     showFleets: true,
      // Cached terminator data (geo-space: sun angle barely moves, but the
      // screen projection must be recomputed for every draw since pan/zoom
      // changes the transform).
@@ -271,6 +292,11 @@ function canonicalCategory(cat) {
     const sunLonNorm = normalizeLon(sun.lon);
     const sunOnLeft = sunLonNorm < 0;
 
+    // Brighten the sunlit side of the map beneath the night shade so daytime
+    // hemispheres read clearly brighter than the night side.
+    ctx.fillStyle = DAY_TINT;
+    ctx.fillRect(0, 0, w, h);
+
     // ---- Night shading (sunset terminator) ----
     ctx.beginPath();
     ctx.moveTo(0, 0);
@@ -291,22 +317,22 @@ function canonicalCategory(cat) {
     }
 
     ctx.closePath();
-    ctx.fillStyle = 'rgba(6, 11, 20, 0.18)';
+    ctx.fillStyle = NIGHT_FILL;
     ctx.fill();
 
     // ---- Day/night boundary lines: soft, blended and very transparent ----
-    strokeSoftBoundary(sunset, 'rgba(255, 180, 0, ALPHA)');
-    strokeSoftBoundary(sunrise, 'rgba(0, 212, 255, ALPHA)');
+    strokeSoftBoundary(sunset, SUNSET_BOUNDARY);
+    strokeSoftBoundary(sunrise, SUNRISE_BOUNDARY);
 
     // ---- Sun position marker (small sun icon, no dot) ----
     const sunPos = project(sun.lon, sun.lat);
     if (sunPos.x >= -50 && sunPos.x <= w + 50 && sunPos.y >= -50 && sunPos.y <= h + 50) {
       ctx.save();
       ctx.font = '14px ui-monospace, SFMono-Regular, monospace';
-      ctx.fillStyle = '#ffd740';
+      ctx.fillStyle = SUN_ICON;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.shadowColor = '#ffd740';
+      ctx.shadowColor = SUN_ICON_GLOW;
       ctx.shadowBlur = 14;
       ctx.fillText('☀', sunPos.x, sunPos.y);
       ctx.restore();
@@ -319,10 +345,10 @@ function canonicalCategory(cat) {
     if (antiSunPos.x >= -50 && antiSunPos.x <= w + 50 && antiSunPos.y >= -50 && antiSunPos.y <= h + 50) {
       ctx.save();
       ctx.font = '12px ui-monospace, SFMono-Regular, monospace';
-      ctx.fillStyle = '#00d4ff';
+      ctx.fillStyle = MOON_ICON;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.shadowColor = '#00d4ff';
+      ctx.shadowColor = MOON_ICON_GLOW;
       ctx.shadowBlur = 10;
       ctx.fillText('☽', antiSunPos.x, antiSunPos.y);
       ctx.restore();
@@ -407,6 +433,8 @@ function canonicalCategory(cat) {
     drawTerminator();
 
     state.events.forEach(ev => drawEvent(ev));
+    state.zones.forEach(z => drawZone(z));
+    state.fleets.forEach(f => drawFleet(f));
   }
 
   function drawEvent(ev) {
@@ -442,6 +470,64 @@ function canonicalCategory(cat) {
       ctx.lineWidth = isSelected ? 2 : 1.5;
       ctx.stroke();
     }
+  }
+
+  // Conflict zone: translucent area ring + dashed outline + center marker.
+  function drawZone(zone) {
+    if (!state.showZones) return;
+    const p = project(zone.lon, zone.lat);
+    const degToPx = state.height / 180;
+    const r = Math.max(4, (zone.radiusDeg || 3) * degToPx * state.transform.scale);
+
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+    ctx.fillStyle = ZONE_FILL;
+    ctx.fill();
+
+    ctx.save();
+    ctx.setLineDash([4, 3]);
+    ctx.lineWidth = 1.5;
+    ctx.strokeStyle = ZONE_STROKE;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 2.5, 0, Math.PI * 2);
+    ctx.fillStyle = ZONE_COLOR;
+    ctx.fill();
+  }
+
+  // Tracked fleet movement: dashed vector from origin to destination with a
+  // solid arrowhead indicating direction of travel.
+  function drawFleet(fleet) {
+    if (!state.showFleets) return;
+    const a = project(fleet.from.lon, fleet.from.lat);
+    const b = project(fleet.to.lon, fleet.to.lat);
+    const dx = b.x - a.x;
+    const dy = b.y - a.y;
+    if (Math.abs(dx) < 0.5 && Math.abs(dy) < 0.5) return;
+    const ang = Math.atan2(dy, dx);
+    const headLen = 8;
+
+    ctx.save();
+    ctx.strokeStyle = FLEET_COLOR + 'cc';
+    ctx.lineWidth = 1.4;
+    ctx.setLineDash([5, 3]);
+    ctx.beginPath();
+    ctx.moveTo(a.x, a.y);
+    ctx.lineTo(b.x, b.y);
+    ctx.stroke();
+    ctx.restore();
+
+    ctx.beginPath();
+    ctx.moveTo(b.x, b.y);
+    ctx.lineTo(b.x - headLen * Math.cos(ang - 0.4), b.y - headLen * Math.sin(ang - 0.4));
+    ctx.lineTo(b.x - headLen * Math.cos(ang + 0.4), b.y - headLen * Math.sin(ang + 0.4));
+    ctx.closePath();
+    ctx.fillStyle = FLEET_COLOR;
+    ctx.fill();
   }
 
   // Coalesce high-frequency redraws (wheel zoom, drag pan) into a single draw
@@ -721,18 +807,79 @@ function canonicalCategory(cat) {
   }
 
   // ---- Stats computation ----
+  // Current week = Monday..Sunday (ISO week) containing `todayISO` (YYYY-MM-DD).
+  function weekBoundsISO(todayISO) {
+    const d = new Date(todayISO + 'T00:00:00Z');
+    const dow = (d.getUTCDay() + 6) % 7; // 0 = Monday
+    const start = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() - dow));
+    const end = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() - dow + 6));
+    return { start: start.toISOString().slice(0, 10), end: end.toISOString().slice(0, 10) };
+  }
+
+  function isInCurrentWeek(dateStr, todayISO) {
+    if (!dateStr) return false;
+    const iso = String(dateStr).slice(0, 10);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return false;
+    const { start, end } = weekBoundsISO(todayISO);
+    return iso >= start && iso <= end;
+  }
+
   function computeStats() {
      const counts = { breakthroughs: 0, conflicts: 0, fleets: 0 };
+     const todayISO = new Date().toISOString().slice(0, 10);
      state.events.forEach(ev => {
        if (!isCategoryVisible(ev.category)) return;
        const statMap = CATEGORY_STAT_MAP[canonicalCategory(ev.category)];
-       if (!statMap) return;
-       if (statMap.statId === 'map-stat-active') counts.breakthroughs++;
-       else if (statMap.statId === 'map-stat-conflicts') counts.conflicts++;
-       else if (statMap.statId === 'map-stat-fleets') counts.fleets++;
+       if (!statMap || statMap.statId !== 'map-stat-active') return;
+       // "Breakthroughs this week": only count events dated inside the current
+       // ISO week so the tile tracks the present week instead of lifetime volume.
+       if (isInCurrentWeek(ev.date, todayISO)) counts.breakthroughs++;
      });
+     // Conflicts/fleets come from the dedicated operational layers, not from
+     // milestone categories; hidden layers contribute zero.
+     counts.conflicts = state.showZones ? state.zones.length : 0;
+     counts.fleets = state.showFleets ? state.fleets.length : 0;
      return counts;
    }
+
+  function toggleLayer(name) {
+    if (name === 'zones') state.showZones = !state.showZones;
+    else if (name === 'fleets') state.showFleets = !state.showFleets;
+    draw();
+    updateStatsDisplay();
+    renderLegend();
+  }
+
+  function appendLayerRow(fragment, opts) {
+    const row = document.createElement('div');
+    row.className = 'map-legend-row';
+    row.setAttribute('role', 'listitem');
+    row.setAttribute('aria-label', `${opts.label}, ${opts.count}`);
+    row.tabIndex = 0;
+    row.setAttribute('aria-pressed', String(opts.visible));
+    row.setAttribute('data-layer', opts.key);
+    const dot = document.createElement('span');
+    dot.className = 'map-legend-dot' + (opts.ring ? ' map-legend-dot--ring' : '') + (opts.diamond ? ' map-legend-dot--diamond' : '');
+    dot.style.background = opts.color;
+    dot.style.borderColor = opts.color;
+    dot.setAttribute('aria-hidden', 'true');
+    const label = document.createElement('span');
+    label.className = 'map-legend-label';
+    label.textContent = opts.label;
+    const count = document.createElement('span');
+    count.className = 'map-legend-count';
+    count.textContent = opts.count;
+    count.setAttribute('aria-hidden', 'true');
+    row.append(dot, label, count);
+    row.addEventListener('click', () => toggleLayer(opts.key));
+    row.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        toggleLayer(opts.key);
+      }
+    });
+    fragment.appendChild(row);
+  }
 
   function updateStatsDisplay() {
     const stats = computeStats();
@@ -803,6 +950,25 @@ function canonicalCategory(cat) {
          }
        });
        fragment.appendChild(row);
+     });
+
+     // Operational layers: toggleable, with the same row pattern as categories.
+     // Zones render as a ring, fleets as a diamond (direction arrows on canvas).
+     appendLayerRow(fragment, {
+       key: 'zones',
+       label: 'Conflict Zones',
+       visible: state.showZones,
+       color: ZONE_COLOR,
+       count: String(state.zones.length),
+       ring: true
+     });
+     appendLayerRow(fragment, {
+       key: 'fleets',
+       label: 'Fleet Movements',
+       visible: state.showFleets,
+       color: FLEET_COLOR,
+       count: String(state.fleets.length),
+       diamond: true
      });
 
     if (unknown > 0) {
@@ -878,6 +1044,50 @@ function canonicalCategory(cat) {
     }
   }
 
+  // Operational layers: conflict zones (dots) and tracked fleet movements
+  // (direction arrows). Purely additive — safe to fall back to empty arrays.
+  let layersAbortController = null;
+
+  function normalizeZone(z) {
+    return {
+      id: z.id || '',
+      name: z.name || 'Unnamed zone',
+      region: z.region || '',
+      lat: z.lat,
+      lon: z.lon,
+      radiusDeg: z.radiusDeg || 3,
+      status: z.status || 'active'
+    };
+  }
+
+  function normalizeFleet(f) {
+    return {
+      id: f.id || '',
+      label: f.label || 'Fleet movement',
+      from: f.from || {},
+      to: f.to || {}
+    };
+  }
+
+  async function loadLayers() {
+    if (layersAbortController) layersAbortController.abort();
+    layersAbortController = new AbortController();
+
+    const layersUrl = '/data/world_layers.json';
+    try {
+      const r = await fetch(layersUrl, { cache: 'no-store', signal: layersAbortController.signal });
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      const data = await r.json();
+      state.zones = Array.isArray(data.conflict_zones) ? data.conflict_zones.map(normalizeZone) : [];
+      state.fleets = Array.isArray(data.fleet_movements) ? data.fleet_movements.map(normalizeFleet) : [];
+    } catch (err) {
+      if (err.name === 'AbortError') return;
+      console.warn('[worldmap] Failed to load world_layers.json, using empty layers:', err);
+      state.zones = [];
+      state.fleets = [];
+    }
+  }
+
   // ---- Animation loop ----
   let lastDrawTime = 0;
   let animationFrameId = null;
@@ -914,6 +1124,7 @@ function canonicalCategory(cat) {
   // ---- Init ----
   async function load() {
     await loadEvents();
+    await loadLayers();
     updateStatsDisplay();
     renderLegend();
     resize();
@@ -954,6 +1165,19 @@ function canonicalCategory(cat) {
         draw();
       });
     }
+    // "Reset day/night": re-sync the terminator to the live sun position and
+    // force a fresh geometry recompute, regardless of any manual toggling.
+    const terminatorReset = document.getElementById('terminator-reset');
+    if (terminatorReset) {
+      terminatorReset.addEventListener('click', () => {
+        state.showTerminator = true;
+        state.terminatorCache = { sunLon: null, sunLat: null, sunsetGeo: null, sunriseGeo: null, computedAt: 0 };
+        if (terminatorToggle) terminatorToggle.setAttribute('aria-pressed', 'true');
+        if (terminatorIcon) terminatorIcon.textContent = '☀';
+        if (terminatorLabel) terminatorLabel.textContent = 'Day/Night';
+        draw();
+      });
+    }
   }
 
   function cleanup() {
@@ -961,6 +1185,7 @@ function canonicalCategory(cat) {
     if (scheduledDrawId) { cancelAnimationFrame(scheduledDrawId); scheduledDrawId = null; }
     if (terminatorInterval) clearInterval(terminatorInterval);
     if (eventsAbortController) eventsAbortController.abort();
+    if (layersAbortController) layersAbortController.abort();
     if (resizeTimeout) clearTimeout(resizeTimeout);
     window.removeEventListener('resize', scheduleResize);
     document.removeEventListener('visibilitychange', onVisibilityChange);
@@ -976,6 +1201,8 @@ function canonicalCategory(cat) {
       CATEGORY_ALIASES,
       normalizeEvent,
       isPlottable,
+      weekBoundsISO,
+      isInCurrentWeek,
       getView: () => ({ ...state.transform })
     };
   }

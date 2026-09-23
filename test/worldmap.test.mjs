@@ -22,6 +22,28 @@ const EVENT_PAYLOAD = {
   ],
 };
 
+// Operational layers (matching data/world_layers.json shape) fetched by load().
+const LAYER_PAYLOAD = {
+  version: '1.0.0',
+  last_update: '2026-09-20T00:00:00+00:00',
+  conflict_zones: [
+    { id: 'z1', name: 'Zone A', region: 'R1', lat: 48.0, lon: 37.8, radiusDeg: 5.5, status: 'active' },
+    { id: 'z2', name: 'Zone B', region: 'R2', lat: 31.3, lon: 34.3, radiusDeg: 2.2, status: 'active' },
+    { id: 'z3', name: 'Zone C', region: 'R3', lat: 13.5, lon: 43.0, radiusDeg: 4.0, status: 'active' },
+  ],
+  fleet_movements: [
+    { id: 'f1', label: 'Fleet 1', from: { lat: 33.5, lon: 33.5 }, to: { lat: 27.0, lon: 52.5 } },
+    { id: 'f2', label: 'Fleet 2', from: { lat: 18.5, lon: 39.5 }, to: { lat: 12.5, lon: 58.5 } },
+    { id: 'f3', label: 'Fleet 3', from: { lat: 34.3, lon: 132.4 }, to: { lat: 12.5, lon: 115.0 } },
+    { id: 'f4', label: 'Fleet 4', from: { lat: 24.5, lon: 126.5 }, to: { lat: 25.0, lon: 120.5 } },
+    { id: 'f5', label: 'Fleet 5', from: { lat: 50.8, lon: -1.1 }, to: { lat: 57.0, lon: 18.0 } },
+    { id: 'f6', label: 'Fleet 6', from: { lat: 54.7, lon: 20.5 }, to: { lat: 58.0, lon: 20.0 } },
+    { id: 'f7', label: 'Fleet 7', from: { lat: 43.1, lon: 131.9 }, to: { lat: 38.7, lon: 137.0 } },
+    { id: 'f8', label: 'Fleet 8', from: { lat: 26.7, lon: 114.0 }, to: { lat: 31.2, lon: 122.5 } },
+    { id: 'f9', label: 'Fleet 9', from: { lat: 19.0, lon: 72.8 }, to: { lat: 12.5, lon: 45.0 } },
+  ],
+};
+
 // ---- Minimal fake DOM / canvas ------------------------------------------
 
 function makeClassList() {
@@ -117,7 +139,7 @@ const canvas = makeCanvas();
 const ctx = makeCtx();
 canvas.getContext = () => ctx;
 
-for (const id of ['world-map-canvas', 'map-tooltip', 'map-stat-active', 'map-stat-conflicts', 'map-stat-fleets', 'world-map', 'zoom-in', 'zoom-out', 'reset-view', 'terminator-toggle', 'terminator-icon', 'terminator-label']) {
+for (const id of ['world-map-canvas', 'map-tooltip', 'map-stat-active', 'map-stat-conflicts', 'map-stat-fleets', 'world-map', 'zoom-in', 'zoom-out', 'reset-view', 'terminator-toggle', 'terminator-icon', 'terminator-label', 'terminator-reset']) {
   registeredEls[id] = id === 'map-tooltip' ? tooltip : (id === 'world-map-canvas' ? canvas : makeEl());
 }
 
@@ -157,7 +179,10 @@ beforeAll(async () => {
   globalThis.AbortController = class { abort() {} signal = {}; };
   globalThis.setInterval = () => 1;
   globalThis.clearInterval = () => {};
-  globalThis.fetch = async () => ({ ok: true, json: async () => EVENT_PAYLOAD });
+  globalThis.fetch = async (url) => ({
+    ok: true,
+    json: async () => (String(url).includes('world_layers') ? LAYER_PAYLOAD : EVENT_PAYLOAD),
+  });
 
   await import('../assets/js/worldmap.js');
   // Let the async load() settle (it awaits fetch then calls draw).
@@ -185,17 +210,20 @@ function legendValue(label) {
 
 describe('worldmap', () => {
   test('loads events and renders stat tiles with canonical category mapping', () => {
-    expect(Number(registeredEls['map-stat-active'].textContent)).toBe(4);   // Bio + Energy + Quantum + Renewable Energy
-    expect(Number(registeredEls['map-stat-conflicts'].textContent)).toBe(1); // Cybersecurity
-    expect(Number(registeredEls['map-stat-fleets'].textContent)).toBe(2);    // Defense(alias) + Military & Defense
+    // Fixture events are dated 2026-08-* (outside the current ISO week vs the
+    // real clock), so "breakthroughs this week" must be 0, not a lifetime count.
+    expect(Number(registeredEls['map-stat-active'].textContent)).toBe(0);
+    // Conflict zones and fleet movements come from the operational layers file.
+    expect(Number(registeredEls['map-stat-conflicts'].textContent)).toBe(3);
+    expect(Number(registeredEls['map-stat-fleets'].textContent)).toBe(9);
   });
 
-  test('renders legend rows for all 7 categories plus Other', () => {
+  test('renders legend rows for all 7 categories plus layers and Other', () => {
     const legend = registeredEls['map-legend'];
     expect(legend).toBeDefined();
     expect(legend.getAttribute('role')).toBe('list');
     const rows = legendRows();
-    expect(rows.length).toBe(8);
+    expect(rows.length).toBe(10);
     expect(legendValue('Biotechnology')).toBe('1');
     expect(legendValue('Computing & AGI')).toBe('0');
     expect(legendValue('Quantum Physics')).toBe('1');      // aliased 'Quantum'
@@ -204,6 +232,47 @@ describe('worldmap', () => {
     expect(legendValue('Spaceflight & Aeronautics')).toBe('0');
     expect(legendValue('Military & Defense')).toBe('2');   // aliased 'Defense' + canonical
     expect(legendValue('Other')).toBe('1');
+    expect(legendValue('Conflict Zones')).toBe('3');
+    expect(legendValue('Fleet Movements')).toBe('9');
+  });
+
+  test('conflict and fleet layer rows toggle their stats and redraw', () => {
+    const rowByLayer = (key) => legendRows().find((r) => (r.attrs['data-layer'] || '') === key);
+    const zonesRow = rowByLayer('zones');
+    expect(zonesRow.getAttribute('aria-pressed')).toBe('true');
+    ctx.resetCounters();
+    zonesRow.fire('click', {});                               // legend rebuilds itself
+    expect(rowByLayer('zones').getAttribute('aria-pressed')).toBe('false');
+    expect(Number(registeredEls['map-stat-conflicts'].textContent)).toBe(0);
+    expect(ctx.counters.arcs).toBeGreaterThan(0);              // redraw happened
+    expect(Number(registeredEls['map-stat-fleets'].textContent)).toBe(9);
+    expect(legendValue('Fleet Movements')).toBe('9');          // fleet layer untouched
+
+    rowByLayer('zones').fire('click', {});                     // toggle zones back on
+    expect(rowByLayer('zones').getAttribute('aria-pressed')).toBe('true');
+    expect(Number(registeredEls['map-stat-conflicts'].textContent)).toBe(3);
+
+    const fleetsRow = rowByLayer('fleets');
+    fleetsRow.fire('click', {});
+    expect(rowByLayer('fleets').getAttribute('aria-pressed')).toBe('false');
+    expect(Number(registeredEls['map-stat-fleets'].textContent)).toBe(0);
+    expect(Number(registeredEls['map-stat-conflicts'].textContent)).toBe(3);
+    rowByLayer('fleets').fire('click', {});                   // restore for later tests
+    expect(rowByLayer('fleets').getAttribute('aria-pressed')).toBe('true');
+    expect(Number(registeredEls['map-stat-fleets'].textContent)).toBe(9);
+  });
+
+  test('current-week helpers bound an ISO week and gate dates', () => {
+    const api = windowObj.__WORLDMAP_TEST__;
+    // Wed 2026-09-23 → Mon 2026-09-21 .. Sun 2026-09-27.
+    expect(api.weekBoundsISO('2026-09-23')).toEqual({ start: '2026-09-21', end: '2026-09-27' });
+    expect(api.weekBoundsISO('2026-09-27')).toEqual({ start: '2026-09-21', end: '2026-09-27' });
+    expect(api.weekBoundsISO('2026-09-28')).toEqual({ start: '2026-09-28', end: '2026-10-04' });
+    expect(api.isInCurrentWeek('2026-09-22', '2026-09-23')).toBe(true);
+    expect(api.isInCurrentWeek('2026-09-28', '2026-09-23')).toBe(false);
+    expect(api.isInCurrentWeek('2026-08-01', '2026-09-23')).toBe(false);
+    expect(api.isInCurrentWeek('', '2026-09-23')).toBe(false);
+    expect(api.isInCurrentWeek('not-a-date', '2026-09-23')).toBe(false);
   });
 
   test('renders tooltip with canonical category, value and clickable source link', () => {
@@ -269,6 +338,18 @@ test('tooltip canonicalizes legacy category names', () => {
     expect(registeredEls['terminator-icon'].textContent).toBe('☾');
     toggle.fire('click', {});
     expect(toggle.getAttribute('aria-pressed')).toBe('true');
+  });
+
+  test('reset day/night re-enables the terminator and restores live state', () => {
+    const toggle = registeredEls['terminator-toggle'];
+    const reset = registeredEls['terminator-reset'];
+    toggle.fire('click', {});                                  // turn the overlay off
+    expect(toggle.getAttribute('aria-pressed')).toBe('false');
+    expect(registeredEls['terminator-icon'].textContent).toBe('☾');
+    reset.fire('click', {});                                   // back to live day/night
+    expect(toggle.getAttribute('aria-pressed')).toBe('true');
+    expect(registeredEls['terminator-icon'].textContent).toBe('☀');
+    expect(registeredEls['terminator-label'].textContent).toBe('Day/Night');
   });
 
   test('zoom controls, keyboard and double-click do not throw', () => {
