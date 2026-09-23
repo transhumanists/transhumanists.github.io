@@ -139,7 +139,7 @@ const canvas = makeCanvas();
 const ctx = makeCtx();
 canvas.getContext = () => ctx;
 
-for (const id of ['world-map-canvas', 'map-tooltip', 'map-stat-active', 'map-stat-conflicts', 'map-stat-fleets', 'world-map', 'zoom-in', 'zoom-out', 'reset-view', 'terminator-toggle', 'terminator-icon', 'terminator-label']) {
+for (const id of ['world-map-canvas', 'map-tooltip', 'map-stat-active', 'map-stat-conflicts', 'map-stat-fleets', 'world-map', 'zoom-in', 'zoom-out', 'reset-view', 'terminator-toggle', 'terminator-icon', 'terminator-label', 'filter-recent', 'filter-military', 'filter-recent-label', 'filter-military-conflict-label', 'filter-military-fleet-label']) {
   registeredEls[id] = id === 'map-tooltip' ? tooltip : (id === 'world-map-canvas' ? canvas : makeEl());
 }
 
@@ -147,6 +147,9 @@ for (const id of ['world-map-canvas', 'map-tooltip', 'map-stat-active', 'map-sta
 registeredEls['terminator-toggle'].setAttribute('aria-pressed', 'true');
 registeredEls['terminator-icon'].textContent = '☀';
 registeredEls['terminator-label'].textContent = 'Day/Night';
+// New filter buttons default state (filterRecent=true, filterMilitary=false)
+registeredEls['filter-recent'].setAttribute('aria-pressed', 'true');
+registeredEls['filter-military'].setAttribute('aria-pressed', 'false');
 
 // world-map children registry: legend is created at runtime and appended here.
 const worldMap = registeredEls['world-map'];
@@ -157,6 +160,19 @@ const documentObj = {
   readyState: 'complete',
   hidden: false,
   getElementById: (id) => registeredEls[id] ?? null,
+  querySelector: (sel) => {
+    // Simple selector support for test needs
+    if (sel === '#filter-recent .map-hint-title span:last-child') {
+      return registeredEls['filter-recent-label'];
+    }
+    if (sel === '#filter-military .map-hint-title span:nth-child(2)') {
+      return registeredEls['filter-military-conflict-label'];
+    }
+    if (sel === '#filter-military .map-hint-title span:last-child') {
+      return registeredEls['filter-military-fleet-label'];
+    }
+    return null;
+  },
   addEventListener() {},
   removeEventListener() {},
   createElement: () => makeEl(),
@@ -213,9 +229,9 @@ describe('worldmap', () => {
     // Fixture events are dated 2026-08-* (outside the current ISO week vs the
     // real clock), so "breakthroughs this week" must be 0, not a lifetime count.
     expect(Number(registeredEls['map-stat-active'].textContent)).toBe(0);
-    // Conflict zones and fleet movements come from the operational layers file.
-    expect(Number(registeredEls['map-stat-conflicts'].textContent)).toBe(3);
-    expect(Number(registeredEls['map-stat-fleets'].textContent)).toBe(9);
+    // Conflict zones and fleet movements are off by default (filterMilitary=false)
+    expect(Number(registeredEls['map-stat-conflicts'].textContent)).toBe(0);
+    expect(Number(registeredEls['map-stat-fleets'].textContent)).toBe(0);
   });
 
   test('renders legend rows for all 7 categories plus layers and Other', () => {
@@ -232,33 +248,42 @@ describe('worldmap', () => {
     expect(legendValue('Spaceflight & Aeronautics')).toBe('0');
     expect(legendValue('Military & Defense')).toBe('2');   // aliased 'Defense' + canonical
     expect(legendValue('Other')).toBe('1');
-    expect(legendValue('Conflict Zones')).toBe('3');
-    expect(legendValue('Deployments')).toBe('9');
+    // Military layers are dimmed by default (filterMilitary=false)
+    expect(legendValue('Conflict Zones (enable military filter)')).toBe('3');
+    expect(legendValue('Deployments (enable military filter)')).toBe('9');
   });
 
   test('conflict and fleet layer rows toggle their stats and redraw', () => {
     const rowByLayer = (key) => legendRows().find((r) => (r.attrs['data-layer'] || '') === key);
     const zonesRow = rowByLayer('zones');
-    expect(zonesRow.getAttribute('aria-pressed')).toBe('true');
+    // Military layers are off by default (filterMilitary=false), so aria-pressed is false
+    expect(zonesRow.getAttribute('aria-pressed')).toBe('false');
     ctx.resetCounters();
-    zonesRow.fire('click', {});                               // legend rebuilds itself
+    zonesRow.fire('click', {});                               // legend rebuilds itself - toggles zones only
+    expect(rowByLayer('zones').getAttribute('aria-pressed')).toBe('true');
+    // After clicking zones row: filterMilitary enabled, zones on, fleets still off (individual control)
+    expect(Number(registeredEls['map-stat-conflicts'].textContent)).toBe(3);
+    expect(ctx.counters.arcs).toBeGreaterThan(0);              // redraw happened
+    expect(Number(registeredEls['map-stat-fleets'].textContent)).toBe(0); // fleets still off
+    expect(legendValue('Deployments')).toBe('9');          // deployments layer present but off
+
+    rowByLayer('zones').fire('click', {});                     // toggle zones back off
     expect(rowByLayer('zones').getAttribute('aria-pressed')).toBe('false');
     expect(Number(registeredEls['map-stat-conflicts'].textContent)).toBe(0);
-    expect(ctx.counters.arcs).toBeGreaterThan(0);              // redraw happened
-    expect(Number(registeredEls['map-stat-fleets'].textContent)).toBe(9);
-    expect(legendValue('Deployments')).toBe('9');          // deployments layer untouched
-
-    rowByLayer('zones').fire('click', {});                     // toggle zones back on
-    expect(rowByLayer('zones').getAttribute('aria-pressed')).toBe('true');
-    expect(Number(registeredEls['map-stat-conflicts'].textContent)).toBe(3);
 
     const fleetsRow = rowByLayer('deployments');
     fleetsRow.fire('click', {});
+    expect(rowByLayer('deployments').getAttribute('aria-pressed')).toBe('true');
+    expect(Number(registeredEls['map-stat-fleets'].textContent)).toBe(9);
+    // Zones still off from previous toggle
+    expect(Number(registeredEls['map-stat-conflicts'].textContent)).toBe(0);
+    fleetsRow.fire('click', {});                               // toggle fleets back off
     expect(rowByLayer('deployments').getAttribute('aria-pressed')).toBe('false');
     expect(Number(registeredEls['map-stat-fleets'].textContent)).toBe(0);
+    // Restore both for later tests via test hook (button click not reliable in mock)
+    const api = windowObj.__WORLDMAP_TEST__;
+    api.setFilterMilitary(true);        // enables both
     expect(Number(registeredEls['map-stat-conflicts'].textContent)).toBe(3);
-    rowByLayer('deployments').fire('click', {});                   // restore for later tests
-    expect(rowByLayer('deployments').getAttribute('aria-pressed')).toBe('true');
     expect(Number(registeredEls['map-stat-fleets'].textContent)).toBe(9);
   });
 
@@ -468,6 +493,9 @@ test('zoom controls, keyboard and double-click do not throw', () => {
   });
 
   test('a redraw renders the full scene (background, terminator, dots)', () => {
+    // Disable filterRecent so all test events (dated 2026-08) are visible
+    const api = windowObj.__WORLDMAP_TEST__;
+    api.setFilterRecent(false);
     ctx.resetCounters();
     registeredEls['reset-view'].fire('click', {});
     expect(ctx.counters.fills).toBeGreaterThan(0);

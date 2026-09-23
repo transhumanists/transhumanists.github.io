@@ -41,11 +41,165 @@
   const ZONE_COLOR = '#ff6d8a';
   const ZONE_FILL = 'rgba(255, 109, 138, 0.14)';
   const ZONE_STROKE = 'rgba(255, 109, 138, 0.9)';
-  const GROUND_COLOR = '#7ef2c2';
+  // Ground deployments: distinct amber/orange to avoid confusion with Biotechnology green
+  const GROUND_COLOR = '#ffb347';
   const FLEET_COLOR = '#4fc3f7';
+  // Very transparent arrow tail line (barely visible)
+  const ARROW_TAIL_ALPHA = '0.08';
+
+  // Smart pluralization helper
+  function pluralize(count, singular, plural) {
+    if (count === 1) return singular;
+    return plural;
+  }
+
+  // Geocoding cache for intelligent fallback
+  const GEOCODE_CACHE_KEY = 'worldmap_geocode_cache_v1';
+  let geocodeCache = {};
+  try {
+    const cached = localStorage.getItem(GEOCODE_CACHE_KEY);
+    if (cached) geocodeCache = JSON.parse(cached);
+  } catch (_) {}
+
+  // Known institution coordinates for intelligent geocoding fallback
+  const INSTITUTION_COORDS = {
+    'arxiv': { lat: 42.4440, lon: -76.5019 }, // Cornell University, Ithaca NY
+    'cornell': { lat: 42.4440, lon: -76.5019 },
+    'mit': { lat: 42.3601, lon: -71.0942 },
+    'stanford': { lat: 37.4275, lon: -122.1697 },
+    'harvard': { lat: 42.3770, lon: -71.1167 },
+    'berkeley': { lat: 37.8719, lon: -122.2585 },
+    'cmu': { lat: 40.4433, lon: -79.9438 },
+    'caltech': { lat: 34.1377, lon: -118.1253 },
+    'princeton': { lat: 40.3440, lon: -74.6514 },
+    'yale': { lat: 41.3111, lon: -72.9267 },
+    'columbia': { lat: 40.8075, lon: -73.9626 },
+    'chicago': { lat: 41.7886, lon: -87.5987 },
+    'ucla': { lat: 34.0689, lon: -118.4452 },
+    'ucsd': { lat: 32.8801, lon: -117.2340 },
+    'eth zurich': { lat: 47.3769, lon: 8.5417 },
+    'epfl': { lat: 46.5197, lon: 6.5667 },
+    'oxford': { lat: 51.7548, lon: -1.2544 },
+    'cambridge': { lat: 52.2053, lon: 0.1218 },
+    'deepmind': { lat: 51.5074, lon: -0.1278 },
+    'google': { lat: 37.4220, lon: -122.0841 },
+    'openai': { lat: 37.7749, lon: -122.4194 },
+    'anthropic': { lat: 37.7749, lon: -122.4194 },
+    'nvidia': { lat: 37.3688, lon: -122.0363 },
+    'ibm': { lat: 41.0323, lon: -73.5543 },
+    'microsoft': { lat: 47.6062, lon: -122.3321 },
+    'meta': { lat: 37.4848, lon: -122.1484 },
+    'apple': { lat: 37.3349, lon: -122.0090 },
+    'amazon': { lat: 47.6062, lon: -122.3321 },
+    'spacex': { lat: 28.5728, lon: -80.6490 },
+    'nasa': { lat: 28.5237, lon: -80.6810 },
+    'jaxa': { lat: 35.6762, lon: 139.6503 },
+    'esa': { lat: 48.9219, lon: 2.3646 },
+    'cern': { lat: 46.2333, lon: 6.0500 },
+    'llnl': { lat: 37.6881, lon: -121.7045 },
+    'nifs': { lat: 35.6762, lon: 139.6503 },
+    'ipp': { lat: 54.0956, lon: 13.4725 },
+    'quantinuum': { lat: 51.5074, lon: -0.1278 },
+    'qutech': { lat: 52.0116, lon: 4.3571 },
+    'broad': { lat: 42.3375, lon: -71.1061 },
+    'neuralink': { lat: 37.4861, lon: -122.1519 },
+    'dexcom': { lat: 32.8844, lon: -117.2340 },
+    'thermofisher': { lat: 44.4268, lon: -123.0764 },
+    'hms': { lat: 42.3375, lon: -71.1061 },
+    'mpi-cbg': { lat: 51.0504, lon: 13.7373 },
+    'sparktx': { lat: 39.9526, lon: -75.1652 },
+    'jcvi': { lat: 32.7157, lon: -117.1611 },
+    'eth': { lat: 47.3769, lon: 8.5417 },
+    'nvidia': { lat: 37.3688, lon: -122.0363 },
+    'quantumscape': { lat: 37.5485, lon: -122.0591 },
+    'autogpt': { lat: 37.7749, lon: -122.4194 },
+    'cncell': { lat: 31.2304, lon: 121.4737 },
+    'intel': { lat: 45.5215, lon: -122.6774 },
+    'amd': { lat: 37.4220, lon: -122.0841 },
+    'tsmc': { lat: 24.7867, lon: 120.9969 },
+    'asml': { lat: 51.5900, lon: 5.0500 },
+    'samsung': { lat: 37.2636, lon: 127.0286 },
+    'hzdr': { lat: 51.2323, lon: 13.6830 },
+    'nist': { lat: 38.8951, lon: -77.0364 },
+    'csrc': { lat: 38.8951, lon: -77.0364 },
+    'cisa': { lat: 38.8951, lon: -77.0364 },
+    'nvd': { lat: 38.8951, lon: -77.0364 },
+    'usaf': { lat: 38.8951, lon: -77.0364 },
+    'norad': { lat: 38.8951, lon: -77.0364 },
+    'us navy': { lat: 36.8508, lon: -76.2995 },
+    'rafael': { lat: 32.0853, lon: 34.7818 },
+    'idf': { lat: 32.0853, lon: 34.7818 },
+    'almaz-antey': { lat: 55.7558, lon: 37.6173 },
+    'nato': { lat: 50.8609, lon: 4.3676 },
+    'ismsc': { lat: 13.5, lon: 43.0 },
+    'unocha': { lat: 31.3, lon: 34.3 },
+    'isw': { lat: 48.0, lon: 37.8 },
+    'usni': { lat: 38.8951, lon: -77.0364 },
+    'rn': { lat: 50.8, lon: -1.1 },
+    'iiss': { lat: 51.5074, lon: -0.1278 },
+    'in': { lat: 19.0, lon: 72.8 },
+    'plan': { lat: 26.7, lon: 114.0 },
+    'af': { lat: 38.8951, lon: -77.0364 },
+    'iaea': { lat: 48.2082, lon: 16.3738 },
+    'who': { lat: 46.2276, lon: 6.1424 },
+    'un': { lat: 40.7580, lon: -73.9683 },
+    'fda': { lat: 38.8951, lon: -77.0364 },
+    'ncsc': { lat: 51.5074, lon: -0.1278 },
+    'gchq': { lat: 51.5074, lon: -0.1278 },
+    'mossad': { lat: 31.9686, lon: 35.5064 },
+    'nsa': { lat: 38.8951, lon: -77.0364 },
+    'plaff': { lat: 39.9042, lon: 116.4074 },
+    'csir': { lat: 51.2323, lon: 13.6830 },
+    'significant-gravitas': { lat: 37.7749, lon: -122.4194 },
+    'github': { lat: 37.7749, lon: -122.4194 },
+  };
+
+  function geocodeInstitution(source, title, category) {
+    // Skip geocoding for placeholder/unknown values
+    if (!source || source === 'Unknown' || source === 'unknown') return null;
+    if (!title || title === 'Untitled' || title === 'untitled') return null;
+    
+    const cacheKey = `${source}|${title}|${category}`.toLowerCase();
+    if (geocodeCache[cacheKey]) {
+      return geocodeCache[cacheKey];
+    }
+    const text = `${source} ${title} ${category}`.toLowerCase();
+    for (const [key, coords] of Object.entries(INSTITUTION_COORDS)) {
+      if (text.includes(key.toLowerCase())) {
+        geocodeCache[cacheKey] = coords;
+        try { localStorage.setItem(GEOCODE_CACHE_KEY, JSON.stringify(geocodeCache)); } catch (_) {}
+        return coords;
+      }
+    }
+    // Fallback: try to extract from known patterns
+    return null;
+  }
 
   // ---- State ----
   const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  
+  // Persistence keys
+  const STORAGE_KEY_FILTER_RECENT = 'worldmap_filter_recent';
+  const STORAGE_KEY_FILTER_MILITARY = 'worldmap_filter_military';
+  const STORAGE_KEY_SHOW_ZONES = 'worldmap_show_zones';
+  const STORAGE_KEY_SHOW_FLEETS = 'worldmap_show_fleets';
+
+  // Load persisted preferences (default: breakthroughs filter ON, military layers OFF)
+  let filterRecentDefault = true;
+  let filterMilitaryDefault = false;
+  let showZonesDefault = false;
+  let showFleetsDefault = false;
+  try {
+    const fr = localStorage.getItem(STORAGE_KEY_FILTER_RECENT);
+    const fm = localStorage.getItem(STORAGE_KEY_FILTER_MILITARY);
+    const sz = localStorage.getItem(STORAGE_KEY_SHOW_ZONES);
+    const sf = localStorage.getItem(STORAGE_KEY_SHOW_FLEETS);
+    if (fr !== null) filterRecentDefault = fr === 'true';
+    if (fm !== null) filterMilitaryDefault = fm === 'true';
+    if (sz !== null) showZonesDefault = sz === 'true';
+    if (sf !== null) showFleetsDefault = sf === 'true';
+  } catch (_) {}
+
   const state = {
      width: 0,
      height: 0,
@@ -63,8 +217,12 @@
      hiddenCategories: new Set(),
      zones: [],
      fleets: [],
-     showZones: true,
-     showFleets: true,
+     // Filter states
+     filterRecent: filterRecentDefault,  // breakthroughs this week only
+     filterMilitary: filterMilitaryDefault, // conflict zones & deployments
+     // Layer visibility (persisted, default OFF)
+     showZones: showZonesDefault,
+     showFleets: showFleetsDefault,
      // Cached terminator data (geo-space: sun angle barely moves, but the
      // screen projection must be recomputed for every draw since pan/zoom
      // changes the transform).
@@ -434,9 +592,18 @@ function canonicalCategory(cat) {
 
     drawTerminator();
 
-    state.events.forEach(ev => drawEvent(ev));
-    state.zones.forEach(z => drawZone(z));
-    state.fleets.forEach(f => drawFleet(f));
+    // Filter events: if filterRecent is active, only show current week events
+    const todayISO = new Date().toISOString().slice(0, 10);
+    state.events.forEach(ev => {
+      if (state.filterRecent && !isInCurrentWeek(ev.date, todayISO)) return;
+      drawEvent(ev);
+    });
+
+    // Only draw military layers if filterMilitary is active
+    if (state.filterMilitary) {
+      if (state.showZones) state.zones.forEach(z => drawZone(z));
+      if (state.showFleets) state.fleets.forEach(f => drawFleet(f));
+    }
   }
 
   function drawEvent(ev) {
@@ -503,8 +670,8 @@ function canonicalCategory(cat) {
 
   // Tracked deployment: solid colored vector from origin to destination with a
   // solid arrowhead indicating direction of travel. Ground/troop movements
-  // render solid green, naval/fleet movements solid blue — never dashed or
-  // dotted, and the arrowhead matches the line colour.
+  // render distinct amber, naval/fleet movements solid blue — never dashed or
+  // dotted, and the arrowhead matches the line colour. Arrow tail is barely visible.
   function drawFleet(fleet) {
     if (!state.showFleets) return;
     const a = project(fleet.from.lon, fleet.from.lat);
@@ -516,15 +683,17 @@ function canonicalCategory(cat) {
     const headLen = 8;
     const color = fleet.kind === 'ground' ? GROUND_COLOR : FLEET_COLOR;
 
+    // Very transparent arrow tail line (barely visible)
     ctx.save();
-    ctx.strokeStyle = color + 'cc';
-    ctx.lineWidth = 1.4;
+    ctx.strokeStyle = color + ARROW_TAIL_ALPHA;
+    ctx.lineWidth = 1.2;
     ctx.beginPath();
     ctx.moveTo(a.x, a.y);
     ctx.lineTo(b.x, b.y);
     ctx.stroke();
     ctx.restore();
 
+    // Solid arrowhead
     ctx.beginPath();
     ctx.moveTo(b.x, b.y);
     ctx.lineTo(b.x - headLen * Math.cos(ang - 0.4), b.y - headLen * Math.sin(ang - 0.4));
@@ -1003,22 +1172,67 @@ function canonicalCategory(cat) {
      const todayISO = new Date().toISOString().slice(0, 10);
      state.events.forEach(ev => {
        if (!isCategoryVisible(ev.category)) return;
+       // If filterRecent is active, only count events from current week
+       if (state.filterRecent && !isInCurrentWeek(ev.date, todayISO)) return;
        const statMap = CATEGORY_STAT_MAP[canonicalCategory(ev.category)];
        if (!statMap || statMap.statId !== 'map-stat-active') return;
-       // "Breakthroughs this week": only count events dated inside the current
-       // ISO week so the tile tracks the present week instead of lifetime volume.
-       if (isInCurrentWeek(ev.date, todayISO)) counts.breakthroughs++;
+       counts.breakthroughs++;
      });
      // Conflicts/fleets come from the dedicated operational layers, not from
      // milestone categories; hidden layers contribute zero.
-     counts.conflicts = state.showZones ? state.zones.length : 0;
-     counts.fleets = state.showFleets ? state.fleets.length : 0;
+     counts.conflicts = (state.filterMilitary && state.showZones) ? state.zones.length : 0;
+     counts.fleets = (state.filterMilitary && state.showFleets) ? state.fleets.length : 0;
      return counts;
    }
 
+  function toggleFilterRecent() {
+    state.filterRecent = !state.filterRecent;
+    try { localStorage.setItem(STORAGE_KEY_FILTER_RECENT, String(state.filterRecent)); } catch (_) {}
+    updateFilterButton('filter-recent', state.filterRecent);
+    draw();
+    updateStatsDisplay();
+    renderLegend();
+  }
+
+  function toggleFilterMilitary() {
+    state.filterMilitary = !state.filterMilitary;
+    // When toggling military filter, also toggle both layers together
+    state.showZones = state.filterMilitary;
+    state.showFleets = state.filterMilitary;
+    try { 
+      localStorage.setItem(STORAGE_KEY_FILTER_MILITARY, String(state.filterMilitary)); 
+      localStorage.setItem(STORAGE_KEY_SHOW_ZONES, String(state.showZones));
+      localStorage.setItem(STORAGE_KEY_SHOW_FLEETS, String(state.showFleets));
+    } catch (_) {}
+    updateFilterButton('filter-military', state.filterMilitary);
+    draw();
+    updateStatsDisplay();
+    renderLegend();
+  }
+
+  function updateFilterButton(id, pressed) {
+    const btn = document.getElementById(id);
+    if (btn) {
+      btn.setAttribute('aria-pressed', String(pressed));
+      btn.style.opacity = pressed ? '1' : '0.5';
+    }
+  }
+
   function toggleLayer(name) {
-    if (name === 'zones') state.showZones = !state.showZones;
-    else if (name === 'fleets' || name === 'deployments') state.showFleets = !state.showFleets;
+    if (name === 'zones') {
+      state.showZones = !state.showZones;
+      try { localStorage.setItem(STORAGE_KEY_SHOW_ZONES, String(state.showZones)); } catch (_) {}
+    } else if (name === 'fleets' || name === 'deployments') {
+      state.showFleets = !state.showFleets;
+      try { localStorage.setItem(STORAGE_KEY_SHOW_FLEETS, String(state.showFleets)); } catch (_) {}
+    }
+    // If enabling a military layer, also enable the military filter
+    if ((name === 'zones' && state.showZones) || (name === 'fleets' && state.showFleets) || (name === 'deployments' && state.showFleets)) {
+      if (!state.filterMilitary) {
+        state.filterMilitary = true;
+        try { localStorage.setItem(STORAGE_KEY_FILTER_MILITARY, 'true'); } catch (_) {}
+      }
+    }
     draw();
     updateStatsDisplay();
     renderLegend();
@@ -1077,6 +1291,20 @@ function canonicalCategory(cat) {
     if (active) active.textContent = stats.breakthroughs;
     if (conflicts) conflicts.textContent = stats.conflicts;
     if (fleets) fleets.textContent = stats.fleets;
+
+    // Update button labels with smart pluralization
+    const breakthroughLabel = document.querySelector('#filter-recent .map-hint-title span:last-child');
+    if (breakthroughLabel) {
+      breakthroughLabel.textContent = ` ${pluralize(stats.breakthroughs, 'breakthrough', 'breakthroughs')} this week`;
+    }
+    const conflictLabel = document.querySelector('#filter-military .map-hint-title span:nth-child(2)');
+    if (conflictLabel) {
+      conflictLabel.textContent = ` ${pluralize(stats.conflicts, 'active conflict zone', 'active conflict zones')},`;
+    }
+    const fleetLabel = document.querySelector('#filter-military .map-hint-title span:last-child');
+    if (fleetLabel) {
+      fleetLabel.textContent = ` ${pluralize(stats.fleets, 'deployment', 'deployments')}`;
+    }
   }
 
   // ---- Legend ----
@@ -1142,18 +1370,23 @@ function canonicalCategory(cat) {
 
       // Operational layers: toggleable, with the same row pattern as categories.
       // Zones render as a ring, deployments as a diamond (direction arrows on canvas).
+      // When filterMilitary is off, show as dimmed (disabled)
+      const zonesVisible = state.filterMilitary && state.showZones;
+      const deploymentsVisible = state.filterMilitary && state.showFleets;
+      const zonesLabel = state.filterMilitary ? 'Conflict Zones' : 'Conflict Zones (enable military filter)';
+      const deploymentsLabel = state.filterMilitary ? 'Deployments' : 'Deployments (enable military filter)';
       appendLayerRow(fragment, {
         key: 'zones',
-        label: 'Conflict Zones',
-        visible: state.showZones,
+        label: zonesLabel,
+        visible: zonesVisible,
         color: ZONE_COLOR,
         count: String(state.zones.length),
         ring: true
       });
       appendLayerRow(fragment, {
         key: 'deployments',
-        label: 'Deployments',
-        visible: state.showFleets,
+        label: deploymentsLabel,
+        visible: deploymentsVisible,
         splitColors: [GROUND_COLOR, FLEET_COLOR],
         count: String(state.fleets.length),
         diamond: true
@@ -1258,10 +1491,21 @@ function canonicalCategory(cat) {
 
   // Map a raw event.json entry to the internal shape, applying fallbacks for
   // every optional field so downstream rendering never hits placeholders.
+  // Includes intelligent geocoding fallback for missing coordinates.
   function normalizeEvent(e) {
+    let lat = e.geolocation?.lat;
+    let lon = e.geolocation?.lon;
+    // Intelligent geocoding fallback if coordinates missing
+    if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
+      const geo = geocodeInstitution(e.source, e.title, e.category);
+      if (geo) {
+        lat = geo.lat;
+        lon = geo.lon;
+      }
+    }
     return {
-      lat: e.geolocation?.lat,
-      lon: e.geolocation?.lon,
+      lat,
+      lon,
       title: e.title ?? 'Untitled',
       category: e.category ?? 'Unknown',
       value: e.value ?? '',
@@ -1423,6 +1667,20 @@ function canonicalCategory(cat) {
     animationFrameId = requestAnimationFrame(loop);
     startTerminatorInterval();
 
+    // Initialize filter buttons
+    const filterRecentBtn = document.getElementById('filter-recent');
+    const filterMilitaryBtn = document.getElementById('filter-military');
+    if (filterRecentBtn) {
+      filterRecentBtn.setAttribute('aria-pressed', String(state.filterRecent));
+      filterRecentBtn.style.opacity = state.filterRecent ? '1' : '0.5';
+      filterRecentBtn.addEventListener('click', toggleFilterRecent);
+    }
+    if (filterMilitaryBtn) {
+      filterMilitaryBtn.setAttribute('aria-pressed', String(state.filterMilitary));
+      filterMilitaryBtn.style.opacity = state.filterMilitary ? '1' : '0.5';
+      filterMilitaryBtn.addEventListener('click', toggleFilterMilitary);
+    }
+
     // Keep tooltip open while the pointer is over it so the source link is clickable
     if (tooltip) {
       tooltip.addEventListener('mouseenter', () => { state.tooltipHover = true; });
@@ -1464,7 +1722,9 @@ function canonicalCategory(cat) {
       isFleetPlottable,
       weekBoundsISO,
       isInCurrentWeek,
-      getView: () => ({ ...state.transform })
+      getView: () => ({ ...state.transform }),
+      setFilterRecent: (val) => { state.filterRecent = val; draw(); updateStatsDisplay(); renderLegend(); },
+      setFilterMilitary: (val) => { state.filterMilitary = val; state.showZones = val; state.showFleets = val; draw(); updateStatsDisplay(); renderLegend(); }
     };
   }
 
