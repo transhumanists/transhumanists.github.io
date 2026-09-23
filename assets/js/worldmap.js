@@ -1355,8 +1355,8 @@ function canonicalCategory(cat) {
      const todayISO = new Date().toISOString().slice(0, 10);
      state.events.forEach(ev => {
        if (!isCategoryVisible(ev.category)) return;
-       // If filterRecent is active, only count events from last 7 days
-       if (state.filterRecent && !isInRolling7Days(ev.date, todayISO)) return;
+       // Always count breakthroughs in the last 7 days (static count)
+       if (!isInRolling7Days(ev.date, todayISO)) return;
        const statMap = CATEGORY_STAT_MAP[canonicalCategory(ev.category)];
        if (!statMap || statMap.statId !== 'map-stat-active') return;
        counts.breakthroughs++;
@@ -1559,10 +1559,18 @@ const fragment = document.createDocumentFragment();
       });
       fragment.appendChild(title);
 
-      // Wrapper for category rows that can be folded
+      // Wrapper for category rows that can be folded with animation
       const categoriesWrapper = document.createElement('div');
       categoriesWrapper.className = 'map-legend-categories';
-      categoriesWrapper.style.display = state.foldedCategories ? 'none' : 'block';
+      categoriesWrapper.style.overflow = 'hidden';
+      categoriesWrapper.style.transition = 'max-height 0.15s ease, opacity 0.15s ease';
+      if (state.foldedCategories) {
+        categoriesWrapper.style.maxHeight = '0';
+        categoriesWrapper.style.opacity = '0';
+      } else {
+        categoriesWrapper.style.maxHeight = '500px';
+        categoriesWrapper.style.opacity = '1';
+      }
 
       CATEGORY_LEGEND.forEach(cat => {
         const row = document.createElement('div');

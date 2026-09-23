@@ -13,7 +13,7 @@ description: "Tracking milestones across biotech, AGI, quantum, energy, cyber, s
            width="92" height="92"
            fetchpriority="high">
       <div class="hero-badges" aria-label="Categories">
-        <a href="https://frenzypenguin-media.github.io" class="badge badge-fpm" target="_blank" rel="noopener">FrenzyPenguin Media</a>
+        <a href="https://frenzypenguin-media.github.io" class="badge badge-fpm" target="_blank" rel="noopener" style="text-decoration: none;">FrenzyPenguin Media</a>
         <span class="badge badge-milestone">7 categories · 50+ subcategories</span>
       </div>
 
