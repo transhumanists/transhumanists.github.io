@@ -44,8 +44,15 @@
   // Ground deployments: distinct amber/orange to avoid confusion with Biotechnology green
   const GROUND_COLOR = '#ffb347';
   const FLEET_COLOR = '#4fc3f7';
-  // Very transparent arrow tail line (barely visible)
-  const ARROW_TAIL_ALPHA = '0.08';
+  // Very transparent arrow tail line (barely visible) — 8% opacity
+  const ARROW_TAIL_OPACITY = 0.08;
+  
+  function withOpacity(hexColor, opacity) {
+    const r = parseInt(hexColor.slice(1, 3), 16);
+    const g = parseInt(hexColor.slice(3, 5), 16);
+    const b = parseInt(hexColor.slice(5, 7), 16);
+    return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+  }
 
   // Smart pluralization helper
   function pluralize(count, singular, plural) {
@@ -109,8 +116,6 @@
     'mpi-cbg': { lat: 51.0504, lon: 13.7373 },
     'sparktx': { lat: 39.9526, lon: -75.1652 },
     'jcvi': { lat: 32.7157, lon: -117.1611 },
-    'eth': { lat: 47.3769, lon: 8.5417 },
-    'nvidia': { lat: 37.3688, lon: -122.0363 },
     'quantumscape': { lat: 37.5485, lon: -122.0591 },
     'autogpt': { lat: 37.7749, lon: -122.4194 },
     'cncell': { lat: 31.2304, lon: 121.4737 },
@@ -137,7 +142,7 @@
     'usni': { lat: 38.8951, lon: -77.0364 },
     'rn': { lat: 50.8, lon: -1.1 },
     'iiss': { lat: 51.5074, lon: -0.1278 },
-    'in': { lat: 19.0, lon: 72.8 },
+    'india': { lat: 19.0, lon: 72.8 },
     'plan': { lat: 26.7, lon: 114.0 },
     'af': { lat: 38.8951, lon: -77.0364 },
     'iaea': { lat: 48.2082, lon: 16.3738 },
@@ -685,7 +690,7 @@ function canonicalCategory(cat) {
 
     // Very transparent arrow tail line (barely visible)
     ctx.save();
-    ctx.strokeStyle = color + ARROW_TAIL_ALPHA;
+    ctx.strokeStyle = withOpacity(color, ARROW_TAIL_OPACITY);
     ctx.lineWidth = 1.2;
     ctx.beginPath();
     ctx.moveTo(a.x, a.y);
@@ -1151,6 +1156,22 @@ function canonicalCategory(cat) {
 
   // ---- Stats computation ----
   // Current week = Monday..Sunday (ISO week) containing `todayISO` (YYYY-MM-DD).
+  // Rolling 7-day window from today (inclusive)
+  function rolling7DayBounds(todayISO) {
+    const end = new Date(todayISO + 'T00:00:00Z');
+    const start = new Date(end.getTime() - 6 * 86400000); // 6 days back = 7 days total
+    return { start: start.toISOString().slice(0, 10), end: end.toISOString().slice(0, 10) };
+  }
+
+  function isInRolling7Days(dateStr, todayISO) {
+    if (!dateStr) return false;
+    const iso = String(dateStr).slice(0, 10);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return false;
+    const { start, end } = rolling7DayBounds(todayISO);
+    return iso >= start && iso <= end;
+  }
+
+  // Legacy ISO week function (kept for test compatibility)
   function weekBoundsISO(todayISO) {
     const d = new Date(todayISO + 'T00:00:00Z');
     const dow = (d.getUTCDay() + 6) % 7; // 0 = Monday
@@ -1172,16 +1193,15 @@ function canonicalCategory(cat) {
      const todayISO = new Date().toISOString().slice(0, 10);
      state.events.forEach(ev => {
        if (!isCategoryVisible(ev.category)) return;
-       // If filterRecent is active, only count events from current week
-       if (state.filterRecent && !isInCurrentWeek(ev.date, todayISO)) return;
+       // If filterRecent is active, only count events from last 7 days
+       if (state.filterRecent && !isInRolling7Days(ev.date, todayISO)) return;
        const statMap = CATEGORY_STAT_MAP[canonicalCategory(ev.category)];
        if (!statMap || statMap.statId !== 'map-stat-active') return;
        counts.breakthroughs++;
      });
-     // Conflicts/fleets come from the dedicated operational layers, not from
-     // milestone categories; hidden layers contribute zero.
-     counts.conflicts = (state.filterMilitary && state.showZones) ? state.zones.length : 0;
-     counts.fleets = (state.filterMilitary && state.showFleets) ? state.fleets.length : 0;
+     // Conflicts/fleets: always show actual total counts (not zero when invisible)
+     counts.conflicts = state.zones.length;
+     counts.fleets = state.fleets.length;
      return counts;
    }
 
@@ -1370,14 +1390,11 @@ function canonicalCategory(cat) {
 
       // Operational layers: toggleable, with the same row pattern as categories.
       // Zones render as a ring, deployments as a diamond (direction arrows on canvas).
-      // When filterMilitary is off, show as dimmed (disabled)
       const zonesVisible = state.filterMilitary && state.showZones;
       const deploymentsVisible = state.filterMilitary && state.showFleets;
-      const zonesLabel = state.filterMilitary ? 'Conflict Zones' : 'Conflict Zones (enable military filter)';
-      const deploymentsLabel = state.filterMilitary ? 'Deployments' : 'Deployments (enable military filter)';
       appendLayerRow(fragment, {
         key: 'zones',
-        label: zonesLabel,
+        label: 'Conflict Zones',
         visible: zonesVisible,
         color: ZONE_COLOR,
         count: String(state.zones.length),
@@ -1385,7 +1402,7 @@ function canonicalCategory(cat) {
       });
       appendLayerRow(fragment, {
         key: 'deployments',
-        label: deploymentsLabel,
+        label: 'Deployments',
         visible: deploymentsVisible,
         splitColors: [GROUND_COLOR, FLEET_COLOR],
         count: String(state.fleets.length),

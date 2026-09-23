@@ -229,9 +229,9 @@ describe('worldmap', () => {
     // Fixture events are dated 2026-08-* (outside the current ISO week vs the
     // real clock), so "breakthroughs this week" must be 0, not a lifetime count.
     expect(Number(registeredEls['map-stat-active'].textContent)).toBe(0);
-    // Conflict zones and fleet movements are off by default (filterMilitary=false)
-    expect(Number(registeredEls['map-stat-conflicts'].textContent)).toBe(0);
-    expect(Number(registeredEls['map-stat-fleets'].textContent)).toBe(0);
+    // Conflicts/fleets now always show actual counts regardless of filterMilitary
+    expect(Number(registeredEls['map-stat-conflicts'].textContent)).toBe(3);
+    expect(Number(registeredEls['map-stat-fleets'].textContent)).toBe(9);
   });
 
   test('renders legend rows for all 7 categories plus layers and Other', () => {
@@ -248,9 +248,9 @@ describe('worldmap', () => {
     expect(legendValue('Spaceflight & Aeronautics')).toBe('0');
     expect(legendValue('Military & Defense')).toBe('2');   // aliased 'Defense' + canonical
     expect(legendValue('Other')).toBe('1');
-    // Military layers are dimmed by default (filterMilitary=false)
-    expect(legendValue('Conflict Zones (enable military filter)')).toBe('3');
-    expect(legendValue('Deployments (enable military filter)')).toBe('9');
+    // Military layers now show simple labels with actual counts
+    expect(legendValue('Conflict Zones')).toBe('3');
+    expect(legendValue('Deployments')).toBe('9');
   });
 
   test('conflict and fleet layer rows toggle their stats and redraw', () => {
@@ -259,27 +259,27 @@ describe('worldmap', () => {
     // Military layers are off by default (filterMilitary=false), so aria-pressed is false
     expect(zonesRow.getAttribute('aria-pressed')).toBe('false');
     ctx.resetCounters();
-    zonesRow.fire('click', {});                               // legend rebuilds itself - toggles zones only
+    zonesRow.fire('click', {});                               // legend rebuilds itself - toggles zones
     expect(rowByLayer('zones').getAttribute('aria-pressed')).toBe('true');
-    // After clicking zones row: filterMilitary enabled, zones on, fleets still off (individual control)
+    // After clicking zones row: toggleLayer enables filterMilitary, which enables both zones and fleets
     expect(Number(registeredEls['map-stat-conflicts'].textContent)).toBe(3);
     expect(ctx.counters.arcs).toBeGreaterThan(0);              // redraw happened
-    expect(Number(registeredEls['map-stat-fleets'].textContent)).toBe(0); // fleets still off
-    expect(legendValue('Deployments')).toBe('9');          // deployments layer present but off
+    expect(Number(registeredEls['map-stat-fleets'].textContent)).toBe(9); // fleets also enabled
+    expect(legendValue('Deployments')).toBe('9');          // deployments layer present
 
     rowByLayer('zones').fire('click', {});                     // toggle zones back off
     expect(rowByLayer('zones').getAttribute('aria-pressed')).toBe('false');
-    expect(Number(registeredEls['map-stat-conflicts'].textContent)).toBe(0);
+    expect(Number(registeredEls['map-stat-conflicts'].textContent)).toBe(3); // stats still show actual count
 
     const fleetsRow = rowByLayer('deployments');
     fleetsRow.fire('click', {});
     expect(rowByLayer('deployments').getAttribute('aria-pressed')).toBe('true');
     expect(Number(registeredEls['map-stat-fleets'].textContent)).toBe(9);
-    // Zones still off from previous toggle
-    expect(Number(registeredEls['map-stat-conflicts'].textContent)).toBe(0);
+    // Zones still off from previous toggle, but stats show actual count
+    expect(Number(registeredEls['map-stat-conflicts'].textContent)).toBe(3);
     fleetsRow.fire('click', {});                               // toggle fleets back off
     expect(rowByLayer('deployments').getAttribute('aria-pressed')).toBe('false');
-    expect(Number(registeredEls['map-stat-fleets'].textContent)).toBe(0);
+    expect(Number(registeredEls['map-stat-fleets'].textContent)).toBe(9); // stats still show actual count
     // Restore both for later tests via test hook (button click not reliable in mock)
     const api = windowObj.__WORLDMAP_TEST__;
     api.setFilterMilitary(true);        // enables both

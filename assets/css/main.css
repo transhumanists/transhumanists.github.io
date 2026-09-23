@@ -726,15 +726,29 @@ body {
 /* EXPANDABLE CATEGORY CARDS */
 .milestone-card.category-toggle {
   overflow: visible;
+  position: relative; /* Establish stacking context for absolute children */
 }
 .milestone-card.category-toggle[aria-expanded="true"] .expand-arrow {
   transform: rotate(180deg);
 }
 .milestone-card.category-toggle .category-milestones {
-  overflow: hidden;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-lg);
+  padding: 12px;
+  margin-top: 8px;
+  max-height: 400px;
+  overflow-y: auto;
+  display: none;
+  animation: slideDown 0.2s ease;
 }
-.milestone-card.category-toggle .category-milestones[style*="display: block"],
-.milestone-card.category-toggle .category-milestones:not([style*="display: none"]) {
+.milestone-card.category-toggle[aria-expanded="true"] .category-milestones {
   display: block !important;
 }
 .category-milestone-item {

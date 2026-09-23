@@ -229,11 +229,33 @@
 
   function animateCounter(el, target, options = {}) {
     const { duration = ANIMATION_DURATION, integer = true } = options;
+    
+    // Handle scientific notation and very large numbers
+    if (!isFinite(target) || Math.abs(target) > 1e15) {
+      // For very large numbers or infinity, just display formatted value
+      el.textContent = formatLargeNumber(target);
+      return;
+    }
+    
     el.textContent = '0';
     el.dataset.counterTarget = target;
     el.dataset.counterDuration = duration;
     el.dataset.counterInteger = integer;
     counterObserver.observe(el);
+  }
+
+  function formatLargeNumber(num) {
+    if (!isFinite(num)) return String(num);
+    if (Math.abs(num) >= 1e12) {
+      // Use scientific notation for very large numbers
+      return num.toExponential(2).replace('+', '');
+    }
+    if (Math.abs(num) >= 1e6) {
+      // Use compact notation for millions/billions
+      if (num >= 1e9) return (num / 1e9).toFixed(2).replace(/\.00$/, '') + 'B';
+      if (num >= 1e6) return (num / 1e6).toFixed(2).replace(/\.00$/, '') + 'M';
+    }
+    return num.toLocaleString();
   }
 
   // ---- Milestone detail modal ----
@@ -793,10 +815,8 @@
         const expanded = btn.getAttribute('aria-expanded') === 'true';
         btn.setAttribute('aria-expanded', !expanded);
         if (indicator) indicator.style.transform = expanded ? 'rotate(0deg)' : 'rotate(180deg)';
-        if (milestonesContainer) {
-          milestonesContainer.style.display = expanded ? 'none' : 'block';
-          if (!expanded) renderMilestones();
-        }
+        if (milestonesContainer && !expanded) renderMilestones();
+        // CSS handles display via aria-expanded attribute
       });
     });
   }
