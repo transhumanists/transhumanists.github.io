@@ -96,7 +96,11 @@ def check_data(data: dict, filename: str) -> list[str]:
     if filename == "events.json":
         return check_events(data.get("events"))
     if filename == "world_layers.json":
-        return check_zones(data.get("conflict_zones")) + check_fleets(data.get("fleet_movements"))
+        # Accept both "deployments" (new) and "fleet_movements" (legacy)
+        deployments = data.get("deployments")
+        if deployments is None:
+            deployments = data.get("fleet_movements")
+        return check_zones(data.get("conflict_zones")) + check_fleets(deployments)
     return [f"unsupported data file: {filename}"]
 
 
