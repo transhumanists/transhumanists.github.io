@@ -1,8 +1,131 @@
 {
-  "last_update": "2026-09-23T02:23:51+00:00",
+  "last_update": "2026-09-23T15:46:03+00:00",
   "version": "1.0.0",
   "schema": "https://transhumanists.github.io/schema/milestone-v1.json",
   "categories": {
+    "computing_agi": {
+      "name": "Computing & AGI",
+      "icon": "🧠",
+      "color": "#448aff",
+      "subcategories": [
+        "frontier_models",
+        "agentic_ai",
+        "gpu_efficiency",
+        "benchmarks",
+        "time_to_train",
+        "inference_cost",
+        "code_generation",
+        "math_reasoning",
+        "multimodal"
+      ],
+      "milestones": [
+        {
+          "id": "ms-0a47a34ebd2d",
+          "title": "New evaluation protocol detects sequential reappearance in diffusion model unlearning",
+          "summary": "Researchers identify sequential reappearance in diffusion data-point unlearning and propose a target-level evaluation protocol to track forgetting persistence across sequential deletion requests.",
+          "category": "Computing & AGI",
+          "subcategory": "benchmarks",
+          "value": null,
+          "unit": null,
+          "source": "arXiv (Cornell University)",
+          "date": "2026-09-23",
+          "url": "https://arxiv.org/abs/2609.25166",
+          "is_record": false,
+          "is_breakthrough": true,
+          "is_new": false,
+          "geolocation": {
+            "lat": 0.0,
+            "lon": 0.0
+          },
+          "category_key": "computing_agi"
+        },
+        {
+          "id": "ai-001",
+          "subcategory": "frontier_models",
+          "title": "MMLU benchmark",
+          "value": 94.7,
+          "unit": "%",
+          "source": "OpenAI GPT-6",
+          "date": "2026-08-19",
+          "url": "https://openai.com",
+          "geolocation": {
+            "lat": 37.7749,
+            "lon": -122.4194
+          },
+          "category": "Computing & AGI",
+          "is_new": false,
+          "category_key": "computing_agi"
+        },
+        {
+          "id": "ai-002",
+          "subcategory": "agentic_ai",
+          "title": "HumanEval pass@1",
+          "value": 98.4,
+          "unit": "%",
+          "source": "Anthropic Claude-4",
+          "date": "2026-08-15",
+          "url": "https://anthropic.com",
+          "geolocation": {
+            "lat": 37.7749,
+            "lon": -122.4194
+          },
+          "category": "Computing & AGI",
+          "is_new": false,
+          "category_key": "computing_agi"
+        },
+        {
+          "id": "ai-003",
+          "subcategory": "frontier_models",
+          "title": "Training compute (FLOP)",
+          "value": 2.4e+25,
+          "unit": "FLOP",
+          "source": "Google Gemini-Ultra",
+          "date": "2026-08-01",
+          "url": "https://deepmind.google",
+          "geolocation": {
+            "lat": 37.4219,
+            "lon": -122.084
+          },
+          "category": "Computing & AGI",
+          "is_new": false,
+          "category_key": "computing_agi"
+        },
+        {
+          "id": "ai-004",
+          "subcategory": "gpu_efficiency",
+          "title": "Training TFLOPS/W",
+          "value": 2.1,
+          "unit": "TFLOPS/W",
+          "source": "NVIDIA GB300",
+          "date": "2026-07-28",
+          "url": "https://nvidia.com",
+          "geolocation": {
+            "lat": 37.3688,
+            "lon": -122.0363
+          },
+          "category": "Computing & AGI",
+          "is_new": false,
+          "category_key": "computing_agi"
+        },
+        {
+          "id": "ai-005",
+          "subcategory": "agentic_ai",
+          "title": "Autonomous task completion rate",
+          "value": 87.3,
+          "unit": "%",
+          "source": "AutoGPT v4",
+          "date": "2026-07-20",
+          "url": "https://github.com/Significant-Gravitas/AutoGPT",
+          "geolocation": {
+            "lat": 37.7749,
+            "lon": -122.4194
+          },
+          "category": "Computing & AGI",
+          "is_new": false,
+          "category_key": "computing_agi"
+        }
+      ]
+    },
     "biotechnology": {
       "name": "Biotechnology",
       "icon": "🧬",
@@ -604,109 +727,6 @@
           "category": "Quantum Physics",
           "is_new": false,
           "category_key": "quantum"
-        }
-      ]
-    },
-    "computing_agi": {
-      "name": "Computing & AGI",
-      "icon": "🧠",
-      "color": "#448aff",
-      "subcategories": [
-        "frontier_models",
-        "agentic_ai",
-        "gpu_efficiency",
-        "benchmarks",
-        "time_to_train",
-        "inference_cost",
-        "code_generation",
-        "math_reasoning",
-        "multimodal"
-      ],
-      "milestones": [
-        {
-          "id": "ai-001",
-          "subcategory": "frontier_models",
-          "title": "MMLU benchmark",
-          "value": 94.7,
-          "unit": "%",
-          "source": "OpenAI GPT-6",
-          "date": "2026-08-19",
-          "url": "https://openai.com",
-          "geolocation": {
-            "lat": 37.7749,
-            "lon": -122.4194
-          },
-          "category": "Computing & AGI",
-          "is_new": false,
-          "category_key": "computing_agi"
-        },
-        {
-          "id": "ai-002",
-          "subcategory": "agentic_ai",
-          "title": "HumanEval pass@1",
-          "value": 98.4,
-          "unit": "%",
-          "source": "Anthropic Claude-4",
-          "date": "2026-08-15",
-          "url": "https://anthropic.com",
-          "geolocation": {
-            "lat": 37.7749,
-            "lon": -122.4194
-          },
-          "category": "Computing & AGI",
-          "is_new": false,
-          "category_key": "computing_agi"
-        },
-        {
-          "id": "ai-003",
-          "subcategory": "frontier_models",
-          "title": "Training compute (FLOP)",
-          "value": 2.4e+25,
-          "unit": "FLOP",
-          "source": "Google Gemini-Ultra",
-          "date": "2026-08-01",
-          "url": "https://deepmind.google",
-          "geolocation": {
-            "lat": 37.4219,
-            "lon": -122.084
-          },
-          "category": "Computing & AGI",
-          "is_new": false,
-          "category_key": "computing_agi"
-        },
-        {
-          "id": "ai-004",
-          "subcategory": "gpu_efficiency",
-          "title": "Training TFLOPS/W",
-          "value": 2.1,
-          "unit": "TFLOPS/W",
-          "source": "NVIDIA GB300",
-          "date": "2026-07-28",
-          "url": "https://nvidia.com",
-          "geolocation": {
-            "lat": 37.3688,
-            "lon": -122.0363
-          },
-          "category": "Computing & AGI",
-          "is_new": false,
-          "category_key": "computing_agi"
-        },
-        {
-          "id": "ai-005",
-          "subcategory": "agentic_ai",
-          "title": "Autonomous task completion rate",
-          "value": 87.3,
-          "unit": "%",
-          "source": "AutoGPT v4",
-          "date": "2026-07-20",
-          "url": "https://github.com/Significant-Gravitas/AutoGPT",
-          "geolocation": {
-            "lat": 37.7749,
-            "lon": -122.4194
-          },
-          "category": "Computing & AGI",
-          "is_new": false,
-          "category_key": "computing_agi"
         }
       ]
     },
