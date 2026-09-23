@@ -27,10 +27,15 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: "ci-${{ github.ref }}"
+  cancel-in-progress: true
+
 jobs:
   js-checks:
     name: JS lint & unit tests
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -39,6 +44,7 @@ jobs:
         uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
+          cache: true
 
       - name: Static parse check (worldmap.js)
         run: bun build assets/js/worldmap.js --no-bundle --outdir /tmp/worldmap-check
@@ -49,6 +55,7 @@ jobs:
   sync-script:
     name: Milestone sync script tests
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -57,6 +64,7 @@ jobs:
         uses: actions/setup-python@v6
         with:
           python-version: "3.12"
+          cache: pip
 
       - name: Self-tests (stdlib)
         run: python scripts/test_sync.py
@@ -74,6 +82,7 @@ jobs:
   data-check:
     name: Validate map data files
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -82,6 +91,7 @@ jobs:
         uses: actions/setup-python@v6
         with:
           python-version: "3.12"
+          cache: pip
 
       - name: Validate events.json and world_layers.json
         run: python scripts/check_data.py
@@ -92,6 +102,7 @@ jobs:
   jekyll-build:
     name: Jekyll build (GitHub Pages)
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - name: Checkout
         uses: actions/checkout@v5
