@@ -62,11 +62,25 @@
 
   // Geocoding cache for intelligent fallback
   const GEOCODE_CACHE_KEY = 'worldmap_geocode_cache_v1';
+  const GEOCODE_CACHE_MAX_SIZE = 500;
   let geocodeCache = {};
   try {
     const cached = localStorage.getItem(GEOCODE_CACHE_KEY);
     if (cached) geocodeCache = JSON.parse(cached);
   } catch (_) {}
+
+  let geocodeCacheDirty = false;
+  function saveGeocodeCache() {
+    if (!geocodeCacheDirty) return;
+    try {
+      localStorage.setItem(GEOCODE_CACHE_KEY, JSON.stringify(geocodeCache));
+      geocodeCacheDirty = false;
+    } catch (_) {}
+  }
+  // Persist cache periodically and on unload
+  setInterval(saveGeocodeCache, 30000);
+  window.addEventListener('beforeunload', saveGeocodeCache);
+  window.addEventListener('pagehide', saveGeocodeCache);
 
   // Known institution coordinates for intelligent geocoding fallback
   const INSTITUTION_COORDS = {
@@ -144,10 +158,10 @@
     'iiss': { lat: 51.5074, lon: -0.1278 },
     'india': { lat: 19.0, lon: 72.8 },
     'plan': { lat: 26.7, lon: 114.0 },
-    'af': { lat: 38.8951, lon: -77.0364 },
+    'usaf': { lat: 38.8951, lon: -77.0364 },
     'iaea': { lat: 48.2082, lon: 16.3738 },
-    'who': { lat: 46.2276, lon: 6.1424 },
-    'un': { lat: 40.7580, lon: -73.9683 },
+    'who_org': { lat: 46.2276, lon: 6.1424 },
+    'un_org': { lat: 40.7580, lon: -73.9683 },
     'fda': { lat: 38.8951, lon: -77.0364 },
     'ncsc': { lat: 51.5074, lon: -0.1278 },
     'gchq': { lat: 51.5074, lon: -0.1278 },
@@ -170,9 +184,16 @@
     }
     const text = `${source} ${title} ${category}`.toLowerCase();
     for (const [key, coords] of Object.entries(INSTITUTION_COORDS)) {
-      if (text.includes(key.toLowerCase())) {
+      // Use word-boundary-ish matching to avoid false positives on short keys
+      const pattern = `(^|[^a-z0-9])${key.toLowerCase()}([^a-z0-9]|$)`;
+      if (new RegExp(pattern).test(text)) {
+        // Enforce cache size limit (LRU-ish: delete oldest entry)
+        if (Object.keys(geocodeCache).length >= GEOCODE_CACHE_MAX_SIZE) {
+          const firstKey = Object.keys(geocodeCache)[0];
+          delete geocodeCache[firstKey];
+        }
         geocodeCache[cacheKey] = coords;
-        try { localStorage.setItem(GEOCODE_CACHE_KEY, JSON.stringify(geocodeCache)); } catch (_) {}
+        geocodeCacheDirty = true;
         return coords;
       }
     }
