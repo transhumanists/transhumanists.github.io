@@ -527,4 +527,28 @@ test('tooltip canonicalizes legacy category names', () => {
     expect(api.canonicalCategory('Cybersecurity')).toBe('Cybersecurity');
     expect(api.canonicalCategory('Something Weird')).toBe('Something Weird');
   });
+
+  test('normalizeZone clamps degenerate radiusDeg and isZonePlottable rejects bad coordinates', () => {
+    const api = windowObj.__WORLDMAP_TEST__;
+    expect(api.normalizeZone({ id: 'z10', lat: 40, lon: 25, radiusDeg: 'abc' }).radiusDeg).toBe(3);
+    expect(api.normalizeZone({ id: 'z11', lat: 40, lon: 25, radiusDeg: 400 }).radiusDeg).toBe(30);
+    expect(api.normalizeZone({ id: 'z12', lat: 40, lon: 25, radiusDeg: -5 }).radiusDeg).toBe(3);
+    const z = api.normalizeZone({ id: 'z13', lat: 40, lon: 25, radiusDeg: 2.2 });
+    expect(z.radiusDeg).toBeCloseTo(2.2);
+    expect(api.isZonePlottable(z)).toBe(true);
+    expect(api.isZonePlottable({ ...z, lat: 1e400 })).toBe(false);  // Infinity
+    expect(api.isZonePlottable({ ...z, lat: Number.NaN })).toBe(false);
+    expect(api.isZonePlottable({ ...z, lon: -190 })).toBe(false);
+    expect(api.isZonePlottable({ ...z, name: 42 })).toBe(false);
+    expect(api.isZonePlottable({ ...z, lat: undefined })).toBe(false);
+  });
+
+  test('isFleetPlottable requires two valid endpoints', () => {
+    const api = windowObj.__WORLDMAP_TEST__;
+    const ok = api.normalizeFleet({ id: 'f10', from: { lat: 50, lon: 10 }, to: { lat: 51, lon: 11 } });
+    expect(api.isFleetPlottable(ok)).toBe(true);
+    expect(api.isFleetPlottable(api.normalizeFleet({ id: 'f11', from: { lat: 50, lon: 10 } }))).toBe(false);
+    expect(api.isFleetPlottable(api.normalizeFleet({ id: 'f12', from: { lat: 50, lon: 999 }, to: { lat: 51, lon: 11 } }))).toBe(false);
+    expect(api.isFleetPlottable(api.normalizeFleet({ id: 'f13', from: { lat: 50, lon: 10 }, to: { lat: 1e400, lon: 11 } }))).toBe(false);
+  });
 });

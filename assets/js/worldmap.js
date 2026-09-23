@@ -1049,13 +1049,19 @@ function canonicalCategory(cat) {
   let layersAbortController = null;
 
   function normalizeZone(z) {
+    // radiusDeg: coerce to a finite number and clamp to a sane range so a bad
+    // value can never produce NaN pixels or a dot larger than a hemisphere.
+    const rawR = Number(z.radiusDeg);
+    const radiusDeg = Number.isFinite(rawR) && rawR > 0
+      ? Math.min(Math.max(rawR, 0.5), 30)
+      : 3;
     return {
       id: z.id || '',
       name: z.name || 'Unnamed zone',
       region: z.region || '',
       lat: z.lat,
       lon: z.lon,
-      radiusDeg: z.radiusDeg || 3,
+      radiusDeg,
       status: z.status || 'active'
     };
   }
@@ -1069,6 +1075,23 @@ function canonicalCategory(cat) {
     };
   }
 
+  // The same Number.isFinite + range gate as isPlottable (1e400 Infinity slips
+  // past typeof checks); bad layers draw NaN dots/arrows, so drop them first.
+  function isZonePlottable(z) {
+    return typeof z.name === 'string' &&
+      Number.isFinite(z.lat) && z.lat >= -90 && z.lat <= 90 &&
+      Number.isFinite(z.lon) && z.lon >= -180 && z.lon <= 180;
+  }
+
+  // A fleet arrow needs both endpoints valid; a missing/malformed endpoint
+  // drops the whole movement instead of drawing a degenerate arrow.
+  function isFleetPlottable(f) {
+    return Number.isFinite(f.from?.lat) && f.from?.lat >= -90 && f.from?.lat <= 90 &&
+      Number.isFinite(f.from?.lon) && f.from?.lon >= -180 && f.from?.lon <= 180 &&
+      Number.isFinite(f.to?.lat) && f.to?.lat >= -90 && f.to?.lat <= 90 &&
+      Number.isFinite(f.to?.lon) && f.to?.lon >= -180 && f.to?.lon <= 180;
+  }
+
   async function loadLayers() {
     if (layersAbortController) layersAbortController.abort();
     layersAbortController = new AbortController();
@@ -1078,8 +1101,12 @@ function canonicalCategory(cat) {
       const r = await fetch(layersUrl, { cache: 'no-store', signal: layersAbortController.signal });
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
       const data = await r.json();
-      state.zones = Array.isArray(data.conflict_zones) ? data.conflict_zones.map(normalizeZone) : [];
-      state.fleets = Array.isArray(data.fleet_movements) ? data.fleet_movements.map(normalizeFleet) : [];
+      state.zones = Array.isArray(data.conflict_zones)
+        ? data.conflict_zones.map(normalizeZone).filter(isZonePlottable)
+        : [];
+      state.fleets = Array.isArray(data.fleet_movements)
+        ? data.fleet_movements.map(normalizeFleet).filter(isFleetPlottable)
+        : [];
     } catch (err) {
       if (err.name === 'AbortError') return;
       console.warn('[worldmap] Failed to load world_layers.json, using empty layers:', err);
@@ -1201,6 +1228,10 @@ function canonicalCategory(cat) {
       CATEGORY_ALIASES,
       normalizeEvent,
       isPlottable,
+      normalizeZone,
+      isZonePlottable,
+      normalizeFleet,
+      isFleetPlottable,
       weekBoundsISO,
       isInCurrentWeek,
       getView: () => ({ ...state.transform })
