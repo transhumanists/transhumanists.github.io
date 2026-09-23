@@ -31,6 +31,13 @@ const LAYER_PAYLOAD = {
     { id: 'z2', name: 'Zone B', region: 'R2', lat: 31.3, lon: 34.3, radiusDeg: 2.2, status: 'active' },
     { id: 'z3', name: 'Zone C', region: 'R3', lat: 13.5, lon: 43.0, radiusDeg: 4.0, status: 'active' },
   ],
+  crisis_zones: [
+    { id: 'c1', name: 'Crisis A', region: 'R1', lat: 10.0, lon: 20.0, radiusDeg: 3.0, status: 'active' },
+    { id: 'c2', name: 'Crisis B', region: 'R2', lat: 15.0, lon: 25.0, radiusDeg: 2.5, status: 'active' },
+    { id: 'c3', name: 'Crisis C', region: 'R3', lat: 20.0, lon: 30.0, radiusDeg: 3.5, status: 'active' },
+    { id: 'c4', name: 'Crisis D', region: 'R4', lat: 25.0, lon: 35.0, radiusDeg: 2.0, status: 'active' },
+    { id: 'c5', name: 'Crisis E', region: 'R5', lat: 30.0, lon: 40.0, radiusDeg: 4.0, status: 'active' },
+  ],
   deployments: [
     { id: 'f1', label: 'Fleet 1', from: { lat: 33.5, lon: 33.5 }, to: { lat: 27.0, lon: 52.5 }, kind: 'fleet', note: '', source: '' },
     { id: 'f2', label: 'Fleet 2', from: { lat: 18.5, lon: 39.5 }, to: { lat: 12.5, lon: 58.5 }, kind: 'fleet', note: '', source: '' },
@@ -207,10 +214,15 @@ beforeAll(async () => {
 
 function legendRows() {
   const legend = registeredEls['map-legend'];
-  return legend ? legend.children.filter((c) => {
+  if (!legend) return [];
+  // Check direct children and also children of the categories wrapper
+  const allChildren = [...legend.children];
+  const wrapper = legend.children.find(c => c.className === 'map-legend-categories');
+  if (wrapper) allChildren.push(...wrapper.children);
+  return allChildren.filter((c) => {
     const cn = c.className || '';
     return cn.split(' ').includes('map-legend-row');
-  }) : [];
+  });
 }
 
 function legendValue(label) {
@@ -239,7 +251,7 @@ describe('worldmap', () => {
     expect(legend).toBeDefined();
     expect(legend.getAttribute('role')).toBe('list');
     const rows = legendRows();
-    expect(rows.length).toBe(10);
+    expect(rows.length).toBe(11);
     expect(legendValue('Biotechnology')).toBe('1');
     expect(legendValue('Computing & AGI')).toBe('0');
     expect(legendValue('Quantum Physics')).toBe('1');      // aliased 'Quantum'
@@ -251,6 +263,7 @@ describe('worldmap', () => {
     // Military layers now show simple labels with actual counts
     expect(legendValue('Conflict Zones')).toBe('3');
     expect(legendValue('Deployments')).toBe('9');
+    expect(legendValue('Crisis Zones')).toBe('5');
   });
 
   test('conflict and fleet layer rows toggle their stats and redraw', () => {

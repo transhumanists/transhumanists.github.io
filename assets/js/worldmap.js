@@ -41,6 +41,10 @@
   const ZONE_COLOR = '#ff6d8a';
   const ZONE_FILL = 'rgba(255, 109, 138, 0.14)';
   const ZONE_STROKE = 'rgba(255, 109, 138, 0.9)';
+  // Crisis zones (humanitarian): distinct purple to differentiate from conflict (red) and deployments (blue/amber)
+  const CRISIS_COLOR = '#b388ff';
+  const CRISIS_FILL = 'rgba(179, 136, 255, 0.14)';
+  const CRISIS_STROKE = 'rgba(179, 136, 255, 0.9)';
   // Ground deployments: distinct amber/orange to avoid confusion with Biotechnology green
   const GROUND_COLOR = '#ffb347';
   const FLEET_COLOR = '#4fc3f7';
@@ -207,59 +211,71 @@
   // Persistence keys
   const STORAGE_KEY_FILTER_RECENT = 'worldmap_filter_recent';
   const STORAGE_KEY_FILTER_MILITARY = 'worldmap_filter_military';
+  const STORAGE_KEY_FILTER_CRISIS = 'worldmap_filter_crisis';
   const STORAGE_KEY_SHOW_ZONES = 'worldmap_show_zones';
   const STORAGE_KEY_SHOW_FLEETS = 'worldmap_show_fleets';
+  const STORAGE_KEY_SHOW_CRISES = 'worldmap_show_crises';
 
-  // Load persisted preferences (default: breakthroughs filter ON, military layers OFF)
+  // Load persisted preferences (default: breakthroughs filter ON, military/crisis layers OFF)
   let filterRecentDefault = true;
   let filterMilitaryDefault = false;
+  let filterCrisisDefault = false;
   let showZonesDefault = false;
   let showFleetsDefault = false;
+  let showCrisesDefault = false;
   try {
     const fr = localStorage.getItem(STORAGE_KEY_FILTER_RECENT);
     const fm = localStorage.getItem(STORAGE_KEY_FILTER_MILITARY);
+    const fc = localStorage.getItem(STORAGE_KEY_FILTER_CRISIS);
     const sz = localStorage.getItem(STORAGE_KEY_SHOW_ZONES);
     const sf = localStorage.getItem(STORAGE_KEY_SHOW_FLEETS);
+    const sc = localStorage.getItem(STORAGE_KEY_SHOW_CRISES);
     if (fr !== null) filterRecentDefault = fr === 'true';
     if (fm !== null) filterMilitaryDefault = fm === 'true';
+    if (fc !== null) filterCrisisDefault = fc === 'true';
     if (sz !== null) showZonesDefault = sz === 'true';
     if (sf !== null) showFleetsDefault = sf === 'true';
+    if (sc !== null) showCrisesDefault = sc === 'true';
   } catch (_) {}
 
   const state = {
      width: 0,
-     height: 0,
-     dpr: window.devicePixelRatio || 1,
-     transform: { scale: 1, tx: 0, ty: 0 },
-     isDragging: false,
-     hoveredEvent: null,
-     hoveredType: null, // 'zone', 'deployment', 'event'
-     selectedEvent: null,
-     tooltipHover: false,
-     pressX: null,
-     pressY: null,
-     events: [],
-     showTerminator: true,
-     hiddenCategories: new Set(),
-     zones: [],
-     fleets: [],
-     // Filter states
-     filterRecent: filterRecentDefault,  // breakthroughs this week only
-     filterMilitary: filterMilitaryDefault, // conflict zones & deployments
-     // Layer visibility (persisted, default OFF)
-     showZones: showZonesDefault,
-     showFleets: showFleetsDefault,
-     // Cached terminator data (geo-space: sun angle barely moves, but the
-     // screen projection must be recomputed for every draw since pan/zoom
-     // changes the transform).
-     terminatorCache: {
-       sunLon: null,
-       sunLat: null,
-       sunsetGeo: null,
-       sunriseGeo: null,
-       computedAt: 0
-     }
-   };
+height: 0,
+      dpr: window.devicePixelRatio || 1,
+      transform: { scale: 1, tx: 0, ty: 0 },
+      isDragging: false,
+      hoveredEvent: null,
+      hoveredType: null, // 'zone', 'deployment', 'event', 'crisis'
+      selectedEvent: null,
+      tooltipHover: false,
+      pressX: null,
+      pressY: null,
+      events: [],
+      showTerminator: true,
+      hiddenCategories: new Set(),
+      foldedCategories: false,  // whether the entire categories section is folded
+      zones: [],
+      fleets: [],
+      crises: [],
+      // Filter states
+      filterRecent: filterRecentDefault,  // breakthroughs this week only
+      filterMilitary: filterMilitaryDefault, // conflict zones & deployments
+      filterCrisis: filterCrisisDefault,   // crisis zones
+      // Layer visibility (persisted, default OFF)
+      showZones: showZonesDefault,
+      showFleets: showFleetsDefault,
+      showCrises: showCrisesDefault,
+      // Cached terminator data (geo-space: sun angle barely moves, but the
+      // screen projection must be recomputed for every draw since pan/zoom
+      // changes the transform).
+      terminatorCache: {
+        sunLon: null,
+        sunLat: null,
+        sunsetGeo: null,
+        sunriseGeo: null,
+        computedAt: 0
+      }
+    };
 
   const CATEGORY_COLORS = {
     'Biotechnology': '#00e676',
@@ -483,23 +499,44 @@ function canonicalCategory(cat) {
     ctx.fillStyle = DAY_TINT;
     ctx.fillRect(0, 0, w, h);
 
-    // ---- Night shading (sunset terminator) ----
+    // ---- Night shading: area between sunset and sunrise terminators ----
+    // Night is the region between the two terminators on the side opposite the sun.
     ctx.beginPath();
-    ctx.moveTo(0, 0);
-
+    
     if (sunOnLeft) {
-      ctx.lineTo(w, 0);
-      ctx.lineTo(w, h);
-      for (let i = sunset.length - 1; i >= 0; i--) {
-        const p = project(sunset[i].lon, sunset[i].lat);
-        ctx.lineTo(p.x, p.y);
-      }
-    } else {
+      // Sun is on left: night is on the right side (between sunset on right, sunrise on left)
+      // Start at top-right, go down sunset terminator (right edge of night)
+      ctx.moveTo(w, 0);
       for (let i = 0; i < sunset.length; i++) {
         const p = project(sunset[i].lon, sunset[i].lat);
         ctx.lineTo(p.x, p.y);
       }
+      // Go across bottom to sunrise terminator
+      ctx.lineTo(w, h);
+      // Go up sunrise terminator (left edge of night) - reverse order
+      for (let i = sunrise.length - 1; i >= 0; i--) {
+        const p = project(sunrise[i].lon, sunrise[i].lat);
+        ctx.lineTo(p.x, p.y);
+      }
+      // Close at top
+      ctx.lineTo(0, 0);
+    } else {
+      // Sun is on right: night is on the left side
+      // Start at top-left, go down sunrise terminator (left edge of night)
+      ctx.moveTo(0, 0);
+      for (let i = 0; i < sunrise.length; i++) {
+        const p = project(sunrise[i].lon, sunrise[i].lat);
+        ctx.lineTo(p.x, p.y);
+      }
+      // Go across bottom to sunset terminator
       ctx.lineTo(0, h);
+      // Go up sunset terminator (right edge of night) - reverse order
+      for (let i = sunset.length - 1; i >= 0; i--) {
+        const p = project(sunset[i].lon, sunset[i].lat);
+        ctx.lineTo(p.x, p.y);
+      }
+      // Close at top
+      ctx.lineTo(w, 0);
     }
 
     ctx.closePath();
@@ -618,10 +655,10 @@ function canonicalCategory(cat) {
 
     drawTerminator();
 
-    // Filter events: if filterRecent is active, only show current week events
+    // Filter events: if filterRecent is active, only show last 7 days events
     const todayISO = new Date().toISOString().slice(0, 10);
     state.events.forEach(ev => {
-      if (state.filterRecent && !isInCurrentWeek(ev.date, todayISO)) return;
+      if (state.filterRecent && !isInRolling7Days(ev.date, todayISO)) return;
       drawEvent(ev);
     });
 
@@ -629,6 +666,11 @@ function canonicalCategory(cat) {
     if (state.filterMilitary) {
       if (state.showZones) state.zones.forEach(z => drawZone(z));
       if (state.showFleets) state.fleets.forEach(f => drawFleet(f));
+    }
+
+    // Only draw crisis zones if filterCrisis is active
+    if (state.filterCrisis) {
+      if (state.showCrises) state.crises.forEach(c => drawCrisis(c));
     }
   }
 
@@ -691,6 +733,34 @@ function canonicalCategory(cat) {
     ctx.beginPath();
     ctx.arc(p.x, p.y, 2.5, 0, Math.PI * 2);
     ctx.fillStyle = ZONE_COLOR;
+    ctx.fill();
+  }
+
+  // Crisis zone (humanitarian): translucent area ring + dashed outline + center marker.
+  // Distinct purple color to differentiate from conflict zones (red) and deployments.
+  function drawCrisis(crisis) {
+    if (!state.showCrises) return;
+    const p = project(crisis.lon, crisis.lat);
+    const degToPx = state.height / 180;
+    const r = Math.max(4, (crisis.radiusDeg || 3) * degToPx * state.transform.scale);
+
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+    ctx.fillStyle = CRISIS_FILL;
+    ctx.fill();
+
+    ctx.save();
+    ctx.setLineDash([4, 3]);
+    ctx.lineWidth = 1.5;
+    ctx.strokeStyle = CRISIS_STROKE;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 2.5, 0, Math.PI * 2);
+    ctx.fillStyle = CRISIS_COLOR;
     ctx.fill();
   }
 
@@ -795,6 +865,21 @@ function canonicalCategory(cat) {
     return null;
   }
 
+  // Crisis zone hit-test: check if mouse is near crisis zone center
+  function findCrisis(px, py) {
+    if (!state.showCrises) return null;
+    const hitRadius = HIT_RADIUS_BASE / state.transform.scale;
+    const hitRadiusSq = hitRadius * hitRadius;
+    for (let i = state.crises.length - 1; i >= 0; i--) {
+      const crisis = state.crises[i];
+      const p = project(crisis.lon, crisis.lat);
+      const dx = p.x - px;
+      const dy = p.y - py;
+      if (dx * dx + dy * dy < hitRadiusSq) return crisis;
+    }
+    return null;
+  }
+
   // ---- Mouse ----
   canvas.addEventListener('mousemove', e => {
     const rect = canvas.getBoundingClientRect();
@@ -830,9 +915,9 @@ function canonicalCategory(cat) {
       return;
     }
 
-    // Check for hovered event (primary), zone, or deployment
+    // Check for hovered event (primary), zone, deployment, or crisis
     let hit = null;
-    let hitType = null; // 'zone', 'deployment', 'event'
+    let hitType = null; // 'zone', 'deployment', 'event', 'crisis'
     
     const eventHit = findEvent(x, y);
     if (eventHit) {
@@ -848,6 +933,12 @@ function canonicalCategory(cat) {
         if (deployHit) {
           hit = deployHit;
           hitType = 'deployment';
+        } else {
+          const crisisHit = findCrisis(x, y);
+          if (crisisHit) {
+            hit = crisisHit;
+            hitType = 'crisis';
+          }
         }
       }
     }
@@ -861,6 +952,8 @@ function canonicalCategory(cat) {
           showZoneTooltip(hit, e.clientX - rect.left, e.clientY - rect.top);
         } else if (hitType === 'deployment') {
           showDeploymentTooltip(hit, e.clientX - rect.left, e.clientY - rect.top);
+        } else if (hitType === 'crisis') {
+          showCrisisTooltip(hit, e.clientX - rect.left, e.clientY - rect.top);
         } else {
           showTooltip(hit, e.clientX - rect.left, e.clientY - rect.top);
         }
@@ -873,6 +966,8 @@ function canonicalCategory(cat) {
         moveZoneTooltip(e.clientX - rect.left, e.clientY - rect.top);
       } else if (hitType === 'deployment') {
         moveDeploymentTooltip(e.clientX - rect.left, e.clientY - rect.top);
+      } else if (hitType === 'crisis') {
+        moveCrisisTooltip(e.clientX - rect.left, e.clientY - rect.top);
       } else {
         moveTooltip(e.clientX - rect.left, e.clientY - rect.top);
       }
@@ -943,15 +1038,9 @@ function canonicalCategory(cat) {
   }
 
   canvas.addEventListener('wheel', e => {
-    e.preventDefault();
-    const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    // Apply the transform immediately (feels responsive); coalesce the full
-    // redraw to one per animation frame so fast wheel input stays smooth.
-    applyZoom(x, y, e.deltaY < 0 ? ZOOM_FACTOR : 1 / ZOOM_FACTOR);
-    requestDraw();
-  }, { passive: false });
+    // Scroll zoom disabled per UX request — use zoom buttons or keyboard instead
+    // e.preventDefault(); // Don't prevent default to allow page scrolling
+  }, { passive: true });
 
   // ---- Keyboard accessibility ----
   canvas.addEventListener('keydown', e => {
@@ -1175,6 +1264,58 @@ function canonicalCategory(cat) {
     moveDeploymentTooltip(x, y);
   }
 
+  function createCrisisTooltipElement(crisis) {
+    const wrapper = document.createElement('div');
+    const cat = document.createElement('div');
+    cat.className = 'tt-category';
+    cat.style.color = CRISIS_COLOR;
+    cat.textContent = 'Crisis Zone';
+    const title = document.createElement('div');
+    title.className = 'tt-title';
+    title.textContent = crisis.name;
+    const meta = document.createElement('div');
+    meta.style.cssText = 'color: var(--fg-subtle); font-size: 0.7rem; margin-top: 4px;';
+    if (crisis.source && crisis.url && /^https?:\/\//i.test(crisis.url)) {
+      const link = document.createElement('a');
+      link.href = crisis.url;
+      link.target = '_blank';
+      link.rel = 'noopener noreferrer';
+      link.style.color = 'var(--accent)';
+      link.textContent = crisis.source;
+      meta.appendChild(link);
+    } else {
+      meta.textContent = crisis.source || 'Unknown source';
+    }
+    wrapper.append(cat, title, meta);
+    if (crisis.note) {
+      const note = document.createElement('div');
+      note.style.cssText = 'margin-top: 6px; font-size: 0.75rem; color: var(--fg-muted);';
+      note.textContent = crisis.note;
+      wrapper.appendChild(note);
+    }
+    return wrapper;
+  }
+
+  function moveCrisisTooltip(x, y) {
+    if (!tooltip) return;
+    const offset = TOOLTIP_OFFSET;
+    const tw = tooltip.offsetWidth || TOOLTIP_WIDTH;
+    const th = tooltip.offsetHeight || TOOLTIP_HEIGHT;
+    let tx = x + TOOLTIP_OFFSET;
+    let ty = y + TOOLTIP_OFFSET;
+    if (tx + tw > state.width) tx = x - tw - TOOLTIP_OFFSET;
+    if (ty + th > state.height) ty = y - th - TOOLTIP_OFFSET;
+    tooltip.style.left = tx + 'px';
+    tooltip.style.top = ty + 'px';
+  }
+
+  function showCrisisTooltip(crisis, x, y) {
+    if (!tooltip) return;
+    tooltip.replaceChildren(createCrisisTooltipElement(crisis));
+    tooltip.classList.add('visible');
+    moveCrisisTooltip(x, y);
+  }
+
   // ---- Stats computation ----
   // Current week = Monday..Sunday (ISO week) containing `todayISO` (YYYY-MM-DD).
   // Rolling 7-day window from today (inclusive)
@@ -1251,6 +1392,19 @@ function canonicalCategory(cat) {
     renderLegend();
   }
 
+  function toggleFilterCrisis() {
+    state.filterCrisis = !state.filterCrisis;
+    // When toggling crisis filter, also toggle crisis layer
+    state.showCrises = state.filterCrisis;
+    try { 
+      localStorage.setItem(STORAGE_KEY_FILTER_CRISIS, String(state.filterCrisis)); 
+      localStorage.setItem(STORAGE_KEY_SHOW_CRISES, String(state.showCrises));
+    } catch (_) {}
+    draw();
+    updateStatsDisplay();
+    renderLegend();
+  }
+
   function updateFilterButton(id, pressed) {
     const btn = document.getElementById(id);
     if (btn) {
@@ -1266,12 +1420,22 @@ function canonicalCategory(cat) {
     } else if (name === 'fleets' || name === 'deployments') {
       state.showFleets = !state.showFleets;
       try { localStorage.setItem(STORAGE_KEY_SHOW_FLEETS, String(state.showFleets)); } catch (_) {}
+    } else if (name === 'crises') {
+      state.showCrises = !state.showCrises;
+      try { localStorage.setItem(STORAGE_KEY_SHOW_CRISES, String(state.showCrises)); } catch (_) {}
     }
     // If enabling a military layer, also enable the military filter
     if ((name === 'zones' && state.showZones) || (name === 'fleets' && state.showFleets) || (name === 'deployments' && state.showFleets)) {
       if (!state.filterMilitary) {
         state.filterMilitary = true;
         try { localStorage.setItem(STORAGE_KEY_FILTER_MILITARY, 'true'); } catch (_) {}
+      }
+    }
+    // If enabling crisis layer, also enable the crisis filter
+    if (name === 'crises' && state.showCrises) {
+      if (!state.filterCrisis) {
+        state.filterCrisis = true;
+        try { localStorage.setItem(STORAGE_KEY_FILTER_CRISIS, 'true'); } catch (_) {}
       }
     }
     draw();
@@ -1373,46 +1537,70 @@ function canonicalCategory(cat) {
         }
       });
 
-     const fragment = document.createDocumentFragment();
-     const title = document.createElement('div');
-     title.className = 'map-legend-title';
-     title.textContent = 'Categories · click to toggle layers';
-     fragment.appendChild(title);
+const fragment = document.createDocumentFragment();
+      const title = document.createElement('div');
+      title.className = 'map-legend-title';
+      title.textContent = 'CATEGORIES';
+      title.setAttribute('role', 'button');
+      title.setAttribute('tabindex', '0');
+      title.setAttribute('aria-pressed', String(state.foldedCategories));
+      title.setAttribute('aria-label', 'Toggle categories visibility');
+      title.style.cursor = 'pointer';
+      title.addEventListener('click', () => {
+        state.foldedCategories = !state.foldedCategories;
+        renderLegend();
+      });
+      title.addEventListener('keydown', e => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          state.foldedCategories = !state.foldedCategories;
+          renderLegend();
+        }
+      });
+      fragment.appendChild(title);
 
-     CATEGORY_LEGEND.forEach(cat => {
-       const row = document.createElement('div');
-       row.className = 'map-legend-row';
-       row.setAttribute('role', 'listitem');
-       row.setAttribute('aria-label', `${cat.label}, ${counts[cat.key] || 0} events`);
-       row.tabIndex = 0;
-       row.setAttribute('aria-pressed', String(!state.hiddenCategories.has(cat.key)));
-       row.setAttribute('data-category', cat.key);
-       const dot = document.createElement('span');
-       dot.className = 'map-legend-dot';
-       dot.style.background = CATEGORY_COLORS[cat.key];
-       dot.setAttribute('aria-hidden', 'true');
-       const label = document.createElement('span');
-       label.className = 'map-legend-label';
-       label.textContent = cat.label;
-       const count = document.createElement('span');
-       count.className = 'map-legend-count';
-       count.textContent = String(counts[cat.key] || 0);
-       count.setAttribute('aria-hidden', 'true');
-       row.append(dot, label, count);
-       row.addEventListener('click', () => toggleCategory(cat.key));
-       row.addEventListener('keydown', e => {
-         if (e.key === 'Enter' || e.key === ' ') {
-           e.preventDefault();
-           toggleCategory(cat.key);
-         }
-       });
-       fragment.appendChild(row);
-     });
+      // Wrapper for category rows that can be folded
+      const categoriesWrapper = document.createElement('div');
+      categoriesWrapper.className = 'map-legend-categories';
+      categoriesWrapper.style.display = state.foldedCategories ? 'none' : 'block';
+
+      CATEGORY_LEGEND.forEach(cat => {
+        const row = document.createElement('div');
+        row.className = 'map-legend-row';
+        row.setAttribute('role', 'listitem');
+        row.setAttribute('aria-label', `${cat.label}, ${counts[cat.key] || 0} events`);
+        row.tabIndex = 0;
+        row.setAttribute('aria-pressed', String(!state.hiddenCategories.has(cat.key)));
+        row.setAttribute('data-category', cat.key);
+        const dot = document.createElement('span');
+        dot.className = 'map-legend-dot';
+        dot.style.background = CATEGORY_COLORS[cat.key];
+        dot.setAttribute('aria-hidden', 'true');
+        const label = document.createElement('span');
+        label.className = 'map-legend-label';
+        label.textContent = cat.label;
+        const count = document.createElement('span');
+        count.className = 'map-legend-count';
+        count.textContent = String(counts[cat.key] || 0);
+        count.setAttribute('aria-hidden', 'true');
+        row.append(dot, label, count);
+        row.addEventListener('click', () => toggleCategory(cat.key));
+        row.addEventListener('keydown', e => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            toggleCategory(cat.key);
+          }
+        });
+        categoriesWrapper.appendChild(row);
+      });
+      fragment.appendChild(categoriesWrapper);
 
       // Operational layers: toggleable, with the same row pattern as categories.
       // Zones render as a ring, deployments as a diamond (direction arrows on canvas).
+      // Crisis zones (humanitarian) render as a ring with purple color.
       const zonesVisible = state.filterMilitary && state.showZones;
       const deploymentsVisible = state.filterMilitary && state.showFleets;
+      const crisesVisible = state.filterCrisis && state.showCrises;
       appendLayerRow(fragment, {
         key: 'zones',
         label: 'Conflict Zones',
@@ -1428,6 +1616,14 @@ function canonicalCategory(cat) {
         splitColors: [GROUND_COLOR, FLEET_COLOR],
         count: String(state.fleets.length),
         diamond: true
+      });
+      appendLayerRow(fragment, {
+        key: 'crises',
+        label: 'Crisis Zones',
+        visible: crisesVisible,
+        color: CRISIS_COLOR,
+        count: String(state.crises.length),
+        ring: true
       });
 
     if (unknown > 0) {
@@ -1603,7 +1799,10 @@ function canonicalCategory(cat) {
       lat: z.lat,
       lon: z.lon,
       radiusDeg,
-      status: z.status || 'active'
+      status: z.status || 'active',
+      source: z.source || '',
+      url: z.url || '',
+      note: z.note || ''
     };
   }
 
@@ -1648,6 +1847,9 @@ function canonicalCategory(cat) {
       state.zones = Array.isArray(data.conflict_zones)
         ? data.conflict_zones.map(normalizeZone).filter(isZonePlottable)
         : [];
+      state.crises = Array.isArray(data.crisis_zones)
+        ? data.crisis_zones.map(normalizeZone).filter(isZonePlottable)
+        : [];
       const deployments = data.deployments && Array.isArray(data.deployments)
         ? data.deployments
         : (data.fleet_movements && Array.isArray(data.fleet_movements) ? data.fleet_movements : []);
@@ -1657,6 +1859,7 @@ function canonicalCategory(cat) {
       console.warn('[worldmap] Failed to load world_layers.json, using empty layers:', err);
       state.zones = [];
       state.fleets = [];
+      state.crises = [];
     }
   }
 

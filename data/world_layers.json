@@ -39,6 +39,68 @@
       "url": "https://www.maritimeglobalsecurity.org"
     }
   ],
+  "crisis_zones": [
+    {
+      "id": "crisis-sudan",
+      "name": "Sudan · Darfur famine",
+      "region": "East Africa",
+      "lat": 13.0,
+      "lon": 24.5,
+      "radiusDeg": 4.5,
+      "status": "active",
+      "note": "Humanitarian catastrophe, 25M+ in need",
+      "source": "UN OCHA",
+      "url": "https://www.unocha.org"
+    },
+    {
+      "id": "crisis-yemen",
+      "name": "Yemen · Cholera & famine",
+      "region": "Middle East",
+      "lat": 15.5,
+      "lon": 44.2,
+      "radiusDeg": 3.8,
+      "status": "active",
+      "note": "World's worst humanitarian crisis",
+      "source": "WHO",
+      "url": "https://www.who.int"
+    },
+    {
+      "id": "crisis-myanmar",
+      "name": "Myanmar · Rohingya displacement",
+      "region": "Southeast Asia",
+      "lat": 20.5,
+      "lon": 92.5,
+      "radiusDeg": 3.0,
+      "status": "active",
+      "note": "1M+ stateless refugees in camps",
+      "source": "UNHCR",
+      "url": "https://www.unhcr.org"
+    },
+    {
+      "id": "crisis-afghanistan",
+      "name": "Afghanistan · Winter hunger crisis",
+      "region": "Central Asia",
+      "lat": 33.5,
+      "lon": 65.5,
+      "radiusDeg": 5.0,
+      "status": "active",
+      "note": "28M+ facing acute food insecurity",
+      "source": "WFP",
+      "url": "https://www.wfp.org"
+    },
+    {
+      "id": "crisis-somalia",
+      "name": "Somalia · Drought & famine",
+      "region": "East Africa",
+      "lat": 2.5,
+      "lon": 45.5,
+      "radiusDeg": 4.0,
+      "status": "active",
+      "note": "5 consecutive failed rainy seasons",
+      "source": "FAO",
+      "url": "https://www.fao.org"
+    }
+  ],
   "deployments": [
     {
       "id": "fleet-01",
