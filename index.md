@@ -43,20 +43,31 @@ description: "Tracking milestones across biotech, AGI, quantum, energy, cyber, s
     <div id="world-map">
       <canvas id="world-map-canvas"></canvas>
       <div class="map-overlay" aria-live="polite">
-        <div class="map-stat">
-          <span class="map-stat-dot" style="background: var(--green);"></span>
-          <span id="map-stat-active">—</span>
-          <span>breakthroughs this week</span>
+        <div class="map-hint-row">
+          <button id="filter-recent" class="map-hint" aria-pressed="true">
+            <span class="map-hint-dot" style="background: var(--green);"></span>
+            <span class="map-hint-body">
+              <span class="map-hint-title">
+                <span id="map-stat-active">—</span>
+                <span>breakthrough(s) this week</span>
+              </span>
+              <span class="map-hint-sub">recent ≤ 1 week only</span>
+            </span>
+          </button>
         </div>
-        <div class="map-stat">
-          <span class="map-stat-dot" style="background: var(--red);"></span>
-          <span id="map-stat-conflicts">—</span>
-          <span>active conflict zones</span>
-        </div>
-        <div class="map-stat">
-          <span class="map-stat-dot" style="background: var(--accent);"></span>
-          <span id="map-stat-fleets">—</span>
-          <span>fleet movements tracked</span>
+        <div class="map-hint-row">
+          <button id="filter-military" class="map-hint" aria-pressed="true">
+            <span class="map-hint-dot" style="background: var(--red);"></span>
+            <span class="map-hint-body">
+              <span class="map-hint-title">
+                <span id="map-stat-conflicts">—</span>
+                <span>active conflict zones,</span>
+                <span id="map-stat-fleets">—</span>
+                <span>deployments</span>
+              </span>
+              <span class="map-hint-sub">includes fleet movements; see below;</span>
+            </span>
+          </button>
         </div>
         <div class="map-controls">
           <button id="zoom-in" class="map-control-btn" aria-label="Zoom in">+</button>
@@ -66,7 +77,6 @@ description: "Tracking milestones across biotech, AGI, quantum, energy, cyber, s
             <span id="terminator-icon">☀</span>
             <span id="terminator-label">Day/Night</span>
           </button>
-          <button id="terminator-reset" class="map-control-btn" aria-label="Reset day/night to live time">⟳</button>
         </div>
       </div>
       <div class="map-tooltip" id="map-tooltip" role="tooltip"></div>

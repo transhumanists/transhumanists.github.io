@@ -36,12 +36,13 @@
       "source": "IMSC"
     }
   ],
-  "fleet_movements": [
+  "deployments": [
     {
       "id": "fleet-01",
       "label": "USN CVN-78 · Ford CSG",
       "from": { "lat": 33.5, "lon": 33.5 },
       "to": { "lat": 27.0, "lon": 52.5 },
+      "kind": "fleet",
       "note": "Eastern Mediterranean → Persian Gulf",
       "source": "USNI"
     },
@@ -50,6 +51,7 @@
       "label": "USN CVN-69 · Eisenhower CSG",
       "from": { "lat": 18.5, "lon": 39.5 },
       "to": { "lat": 12.5, "lon": 58.5 },
+      "kind": "fleet",
       "note": "Red Sea → Arabian Sea",
       "source": "USNI"
     },
@@ -58,6 +60,7 @@
       "label": "USN · America ESG (7th Fleet)",
       "from": { "lat": 34.3, "lon": 132.4 },
       "to": { "lat": 12.5, "lon": 115.0 },
+      "kind": "fleet",
       "note": "Sasebo → South China Sea",
       "source": "USNI"
     },
@@ -66,6 +69,7 @@
       "label": "USN CVN-76 · Reagan CSG",
       "from": { "lat": 24.5, "lon": 126.5 },
       "to": { "lat": 25.0, "lon": 120.5 },
+      "kind": "fleet",
       "note": "Philippine Sea → Taiwan Strait",
       "source": "USNI"
     },
@@ -74,6 +78,7 @@
       "label": "Royal Navy · Carrier Strike Group",
       "from": { "lat": 50.8, "lon": -1.1 },
       "to": { "lat": 57.0, "lon": 18.0 },
+      "kind": "fleet",
       "note": "Portsmouth → Baltic (Gotland approaches)",
       "source": "RN"
     },
@@ -82,6 +87,7 @@
       "label": "Russian Baltic Fleet",
       "from": { "lat": 54.7, "lon": 20.5 },
       "to": { "lat": 58.0, "lon": 20.0 },
+      "kind": "fleet",
       "note": "Kaliningrad → Baltic approaches",
       "source": "ISW"
     },
@@ -90,6 +96,7 @@
       "label": "Russian Pacific Fleet",
       "from": { "lat": 43.1, "lon": 131.9 },
       "to": { "lat": 38.7, "lon": 137.0 },
+      "kind": "fleet",
       "note": "Vladivostok → Sea of Japan / Tsugaru",
       "source": "ISW"
     },
@@ -98,6 +105,7 @@
       "label": "PLAN · Type-055 task group",
       "from": { "lat": 26.7, "lon": 114.0 },
       "to": { "lat": 31.2, "lon": 122.5 },
+      "kind": "fleet",
       "note": "South China Sea → Yangtze delta",
       "source": "IISS"
     },
@@ -106,6 +114,7 @@
       "label": "Indian Navy · task group",
       "from": { "lat": 19.0, "lon": 72.8 },
       "to": { "lat": 12.5, "lon": 45.0 },
+      "kind": "fleet",
       "note": "Mumbai → Gulf of Aden",
       "source": "IN"
     }

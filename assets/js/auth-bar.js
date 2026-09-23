@@ -35,7 +35,18 @@
   const CONTACT_ENDPOINT = '/api/contact';
   const SESSION_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 
-  const state = { activeTab: null };
+  const STORAGE_TAB_KEY = 'ai_dock_active_tab_v1';
+const state = { activeTab: null };
+
+function persistActiveTab() {
+  try {
+    if (state.activeTab) {
+      sessionStorage.setItem(STORAGE_TAB_KEY, state.activeTab);
+    } else {
+      sessionStorage.removeItem(STORAGE_TAB_KEY);
+    }
+  } catch (_) {}
+}
 
   function $(id) { return document.getElementById(id); }
   function qa(sel, ctx) { return Array.from((ctx || document).querySelectorAll(sel)); }
@@ -61,6 +72,7 @@
     });
     hide($('ai-dock__backdrop'));
     state.activeTab = null;
+    try { sessionStorage.removeItem(STORAGE_TAB_KEY); } catch (_) {}
   }
 
   function selectTab(tabId) {
@@ -77,6 +89,7 @@
     tab.classList.add('active');
     show(panel);
     state.activeTab = tabId;
+    persistActiveTab();
 
     const backdrop = $('ai-dock__backdrop');
     if (tabId === 'contact' || tabId === 'login' || tabId === 'ai') {
@@ -339,6 +352,14 @@
   async function init() {
     await consumeCallback();
 
+    // Restore active tab from sessionStorage
+    try {
+      const savedTab = sessionStorage.getItem(STORAGE_TAB_KEY);
+      if (savedTab && $(`ai-dock__panel--${savedTab}`)) {
+        state.activeTab = savedTab;
+      }
+    } catch (_) {}
+
     qa('.ai-dock__tab').forEach(tab => {
       tab.addEventListener('click', (e) => {
         // Anchor tabs (dashboard) should still navigate
@@ -359,6 +380,26 @@
     initBackdrop();
     initEscClose();
     setUser(readStoredSession());
+
+    // Restore active tab after setUser to ensure UI is correct
+    if (state.activeTab) {
+      const panel = $(`ai-dock__panel--${state.activeTab}`);
+      const tab = $(`ai-dock__tab--${state.activeTab}`);
+      if (panel && tab) {
+        qa('.ai-dock__panel').forEach(hide);
+        qa('.ai-dock__tab').forEach(t => {
+          t.setAttribute('aria-selected', 'false');
+          t.classList.remove('active');
+        });
+        tab.setAttribute('aria-selected', 'true');
+        tab.classList.add('active');
+        show(panel);
+        const backdrop = $('ai-dock__backdrop');
+        if (['contact', 'login', 'ai'].includes(state.activeTab)) {
+          if (backdrop) backdrop.hidden = false;
+        }
+      }
+    }
   }
 
   if (document.readyState === 'loading') {

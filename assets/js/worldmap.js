@@ -37,11 +37,12 @@
   const MOON_ICON = '#c9d0ff';
   const MOON_ICON_GLOW = '#c9d0ff';
 
-  // Operational layers (conflict zones + tracked fleet movements).
+  // Operational layers (conflict zones + tracked deployments).
   const ZONE_COLOR = '#ff6d8a';
   const ZONE_FILL = 'rgba(255, 109, 138, 0.14)';
   const ZONE_STROKE = 'rgba(255, 109, 138, 0.9)';
-  const FLEET_COLOR = '#7ef2c2';
+  const GROUND_COLOR = '#7ef2c2';
+  const FLEET_COLOR = '#4fc3f7';
 
   // ---- State ----
   const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -52,6 +53,7 @@
      transform: { scale: 1, tx: 0, ty: 0 },
      isDragging: false,
      hoveredEvent: null,
+     hoveredType: null, // 'zone', 'deployment', 'event'
      selectedEvent: null,
      tooltipHover: false,
      pressX: null,
@@ -499,8 +501,10 @@ function canonicalCategory(cat) {
     ctx.fill();
   }
 
-  // Tracked fleet movement: dashed vector from origin to destination with a
-  // solid arrowhead indicating direction of travel.
+  // Tracked deployment: solid colored vector from origin to destination with a
+  // solid arrowhead indicating direction of travel. Ground/troop movements
+  // render solid green, naval/fleet movements solid blue — never dashed or
+  // dotted, and the arrowhead matches the line colour.
   function drawFleet(fleet) {
     if (!state.showFleets) return;
     const a = project(fleet.from.lon, fleet.from.lat);
@@ -510,11 +514,11 @@ function canonicalCategory(cat) {
     if (Math.abs(dx) < 0.5 && Math.abs(dy) < 0.5) return;
     const ang = Math.atan2(dy, dx);
     const headLen = 8;
+    const color = fleet.kind === 'ground' ? GROUND_COLOR : FLEET_COLOR;
 
     ctx.save();
-    ctx.strokeStyle = FLEET_COLOR + 'cc';
+    ctx.strokeStyle = color + 'cc';
     ctx.lineWidth = 1.4;
-    ctx.setLineDash([5, 3]);
     ctx.beginPath();
     ctx.moveTo(a.x, a.y);
     ctx.lineTo(b.x, b.y);
@@ -526,7 +530,7 @@ function canonicalCategory(cat) {
     ctx.lineTo(b.x - headLen * Math.cos(ang - 0.4), b.y - headLen * Math.sin(ang - 0.4));
     ctx.lineTo(b.x - headLen * Math.cos(ang + 0.4), b.y - headLen * Math.sin(ang + 0.4));
     ctx.closePath();
-    ctx.fillStyle = FLEET_COLOR;
+    ctx.fillStyle = color;
     ctx.fill();
   }
 
@@ -555,6 +559,43 @@ function canonicalCategory(cat) {
       const dx = p.x - px;
       const dy = p.y - py;
       if (dx * dx + dy * dy < hitRadiusSq) return ev;
+    }
+    return null;
+  }
+
+  function findZone(px, py) {
+    if (!state.showZones) return null;
+    const hitRadius = HIT_RADIUS_BASE / state.transform.scale;
+    const hitRadiusSq = hitRadius * hitRadius;
+    for (let i = state.zones.length - 1; i >= 0; i--) {
+      const zone = state.zones[i];
+      const p = project(zone.lon, zone.lat);
+      const dx = p.x - px;
+      const dy = p.y - py;
+      if (dx * dx + dy * dy < hitRadiusSq) return zone;
+    }
+    return null;
+  }
+
+  function findDeployment(px, py) {
+    if (!state.showFleets) return null;
+    // Check if mouse is near any deployment arrow (distance to line segment)
+    const hitDist = 8 / state.transform.scale; // threshold in map coordinates
+    const hitDistSq = hitDist * hitDist;
+    for (let i = state.fleets.length - 1; i >= 0; i--) {
+      const fleet = state.fleets[i];
+      const a = project(fleet.from.lon, fleet.from.lat);
+      const b = project(fleet.to.lon, fleet.to.lat);
+      // Distance from point to line segment
+      const dx = b.x - a.x;
+      const dy = b.y - a.y;
+      const lenSq = dx * dx + dy * dy;
+      if (lenSq < 1e-6) continue;
+      const t = Math.max(0, Math.min(1, ((px - a.x) * dx + (py - a.y) * dy) / lenSq));
+      const closestX = a.x + t * dx;
+      const closestY = a.y + t * dy;
+      const distSq = (px - closestX) ** 2 + (py - closestY) ** 2;
+      if (distSq < hitDistSq) return fleet;
     }
     return null;
   }
@@ -594,15 +635,52 @@ function canonicalCategory(cat) {
       return;
     }
 
-    const hit = findEvent(x, y);
+    // Check for hovered event (primary), zone, or deployment
+    let hit = null;
+    let hitType = null; // 'zone', 'deployment', 'event'
+    
+    const eventHit = findEvent(x, y);
+    if (eventHit) {
+      hit = eventHit;
+      hitType = 'event';
+    } else {
+      const zoneHit = findZone(x, y);
+      if (zoneHit) {
+        hit = zoneHit;
+        hitType = 'zone';
+      } else {
+        const deployHit = findDeployment(x, y);
+        if (deployHit) {
+          hit = deployHit;
+          hitType = 'deployment';
+        }
+      }
+    }
+
     canvas.style.cursor = hit ? 'pointer' : 'grab';
-    if (hit !== state.hoveredEvent) {
+    if (hit !== state.hoveredEvent || hitType !== state.hoveredType) {
       state.hoveredEvent = hit;
-      if (hit) showTooltip(hit, e.clientX - rect.left, e.clientY - rect.top);
-      else if (!state.tooltipHover) hideTooltip();
+      state.hoveredType = hitType;
+      if (hit) {
+        if (hitType === 'zone') {
+          showZoneTooltip(hit, e.clientX - rect.left, e.clientY - rect.top);
+        } else if (hitType === 'deployment') {
+          showDeploymentTooltip(hit, e.clientX - rect.left, e.clientY - rect.top);
+        } else {
+          showTooltip(hit, e.clientX - rect.left, e.clientY - rect.top);
+        }
+      } else if (!state.tooltipHover) {
+        hideTooltip();
+      }
       draw();
     } else if (hit) {
-      moveTooltip(e.clientX - rect.left, e.clientY - rect.top);
+      if (hitType === 'zone') {
+        moveZoneTooltip(e.clientX - rect.left, e.clientY - rect.top);
+      } else if (hitType === 'deployment') {
+        moveDeploymentTooltip(e.clientX - rect.left, e.clientY - rect.top);
+      } else {
+        moveTooltip(e.clientX - rect.left, e.clientY - rect.top);
+      }
     }
   });
 
@@ -803,7 +881,93 @@ function canonicalCategory(cat) {
   function dismissTooltip() {
     state.selectedEvent = null;
     state.hoveredEvent = null;
+    state.hoveredType = null;
     hideTooltip();
+  }
+
+  // ---- Zone/Deployment Tooltips ----
+  function createZoneTooltipElement(zone) {
+    const wrapper = document.createElement('div');
+    const cat = document.createElement('div');
+    cat.className = 'tt-category';
+    cat.style.color = ZONE_COLOR;
+    cat.textContent = 'Conflict Zone';
+    const title = document.createElement('div');
+    title.className = 'tt-title';
+    title.textContent = zone.name;
+    const meta = document.createElement('div');
+    meta.style.cssText = 'color: var(--fg-subtle); font-size: 0.7rem; margin-top: 4px;';
+    meta.textContent = zone.source || 'Unknown source';
+    wrapper.append(cat, title, meta);
+    if (zone.note) {
+      const note = document.createElement('div');
+      note.style.cssText = 'margin-top: 6px; font-size: 0.75rem; color: var(--fg-muted);';
+      note.textContent = zone.note;
+      wrapper.appendChild(note);
+    }
+    return wrapper;
+  }
+
+  function createDeploymentTooltipElement(fleet) {
+    const wrapper = document.createElement('div');
+    const cat = document.createElement('div');
+    cat.className = 'tt-category';
+    cat.style.color = fleet.kind === 'ground' ? GROUND_COLOR : FLEET_COLOR;
+    cat.textContent = fleet.kind === 'ground' ? 'Ground Deployment' : 'Fleet Deployment';
+    const title = document.createElement('div');
+    title.className = 'tt-title';
+    title.textContent = fleet.label;
+    const meta = document.createElement('div');
+    meta.style.cssText = 'color: var(--fg-subtle); font-size: 0.7rem; margin-top: 4px;';
+    meta.textContent = fleet.source || 'Unknown source';
+    wrapper.append(cat, title, meta);
+    if (fleet.note) {
+      const note = document.createElement('div');
+      note.style.cssText = 'margin-top: 6px; font-size: 0.75rem; color: var(--fg-muted);';
+      note.textContent = fleet.note;
+      wrapper.appendChild(note);
+    }
+    return wrapper;
+  }
+
+  function moveZoneTooltip(x, y) {
+    if (!tooltip) return;
+    const offset = TOOLTIP_OFFSET;
+    const tw = tooltip.offsetWidth || TOOLTIP_WIDTH;
+    const th = tooltip.offsetHeight || TOOLTIP_HEIGHT;
+    let tx = x + TOOLTIP_OFFSET;
+    let ty = y + TOOLTIP_OFFSET;
+    if (tx + tw > state.width) tx = x - tw - TOOLTIP_OFFSET;
+    if (ty + th > state.height) ty = y - th - TOOLTIP_OFFSET;
+    tooltip.style.left = tx + 'px';
+    tooltip.style.top = ty + 'px';
+  }
+
+  function moveDeploymentTooltip(x, y) {
+    if (!tooltip) return;
+    const offset = TOOLTIP_OFFSET;
+    const tw = tooltip.offsetWidth || TOOLTIP_WIDTH;
+    const th = tooltip.offsetHeight || TOOLTIP_HEIGHT;
+    let tx = x + TOOLTIP_OFFSET;
+    let ty = y + TOOLTIP_OFFSET;
+    if (tx + tw > state.width) tx = x - tw - TOOLTIP_OFFSET;
+    if (ty + th > state.height) ty = y - th - TOOLTIP_OFFSET;
+    tooltip.style.left = tx + 'px';
+    tooltip.style.top = ty + 'px';
+  }
+
+  function showZoneTooltip(zone, x, y) {
+    if (!tooltip) return;
+    tooltip.replaceChildren(createZoneTooltipElement(zone));
+    tooltip.classList.add('visible');
+    moveZoneTooltip(x, y);
+  }
+
+  function showDeploymentTooltip(fleet, x, y) {
+    if (!tooltip) return;
+    tooltip.replaceChildren(createDeploymentTooltipElement(fleet));
+    tooltip.classList.add('visible');
+    moveDeploymentTooltip(x, y);
   }
 
   // ---- Stats computation ----
@@ -844,7 +1008,7 @@ function canonicalCategory(cat) {
 
   function toggleLayer(name) {
     if (name === 'zones') state.showZones = !state.showZones;
-    else if (name === 'fleets') state.showFleets = !state.showFleets;
+    else if (name === 'fleets' || name === 'deployments') state.showFleets = !state.showFleets;
     draw();
     updateStatsDisplay();
     renderLegend();
@@ -858,11 +1022,25 @@ function canonicalCategory(cat) {
     row.tabIndex = 0;
     row.setAttribute('aria-pressed', String(opts.visible));
     row.setAttribute('data-layer', opts.key);
-    const dot = document.createElement('span');
-    dot.className = 'map-legend-dot' + (opts.ring ? ' map-legend-dot--ring' : '') + (opts.diamond ? ' map-legend-dot--diamond' : '');
-    dot.style.background = opts.color;
-    dot.style.borderColor = opts.color;
-    dot.setAttribute('aria-hidden', 'true');
+    if (opts.splitColors && opts.splitColors.length > 1) {
+      // Split dot: render a dot for each color in the split array
+      // so the legend shows both ground (green) and fleet (blue) components.
+      for (const c of opts.splitColors) {
+        const dot = document.createElement('span');
+        dot.className = 'map-legend-dot';
+        dot.style.background = c;
+        dot.style.borderColor = c;
+        dot.setAttribute('aria-hidden', 'true');
+        row.append(dot);
+      }
+    } else {
+      const dot = document.createElement('span');
+      dot.className = 'map-legend-dot' + (opts.ring ? ' map-legend-dot--ring' : '') + (opts.diamond ? ' map-legend-dot--diamond' : '');
+      dot.style.background = opts.color;
+      dot.style.borderColor = opts.color;
+      dot.setAttribute('aria-hidden', 'true');
+      row.append(dot);
+    }
     const label = document.createElement('span');
     label.className = 'map-legend-label';
     label.textContent = opts.label;
@@ -870,7 +1048,7 @@ function canonicalCategory(cat) {
     count.className = 'map-legend-count';
     count.textContent = opts.count;
     count.setAttribute('aria-hidden', 'true');
-    row.append(dot, label, count);
+    row.append(label, count);
     row.addEventListener('click', () => toggleLayer(opts.key));
     row.addEventListener('keydown', e => {
       if (e.key === 'Enter' || e.key === ' ') {
@@ -952,24 +1130,24 @@ function canonicalCategory(cat) {
        fragment.appendChild(row);
      });
 
-     // Operational layers: toggleable, with the same row pattern as categories.
-     // Zones render as a ring, fleets as a diamond (direction arrows on canvas).
-     appendLayerRow(fragment, {
-       key: 'zones',
-       label: 'Conflict Zones',
-       visible: state.showZones,
-       color: ZONE_COLOR,
-       count: String(state.zones.length),
-       ring: true
-     });
-     appendLayerRow(fragment, {
-       key: 'fleets',
-       label: 'Fleet Movements',
-       visible: state.showFleets,
-       color: FLEET_COLOR,
-       count: String(state.fleets.length),
-       diamond: true
-     });
+      // Operational layers: toggleable, with the same row pattern as categories.
+      // Zones render as a ring, deployments as a diamond (direction arrows on canvas).
+      appendLayerRow(fragment, {
+        key: 'zones',
+        label: 'Conflict Zones',
+        visible: state.showZones,
+        color: ZONE_COLOR,
+        count: String(state.zones.length),
+        ring: true
+      });
+      appendLayerRow(fragment, {
+        key: 'deployments',
+        label: 'Deployments',
+        visible: state.showFleets,
+        splitColors: [GROUND_COLOR, FLEET_COLOR],
+        count: String(state.fleets.length),
+        diamond: true
+      });
 
     if (unknown > 0) {
       const row = document.createElement('div');
@@ -1069,9 +1247,12 @@ function canonicalCategory(cat) {
   function normalizeFleet(f) {
     return {
       id: f.id || '',
-      label: f.label || 'Fleet movement',
+      label: f.label || 'Deployment',
+      kind: f.kind === 'ground' ? 'ground' : 'fleet',
       from: f.from || {},
-      to: f.to || {}
+      to: f.to || {},
+      note: f.note || '',
+      source: f.source || ''
     };
   }
 
@@ -1104,9 +1285,10 @@ function canonicalCategory(cat) {
       state.zones = Array.isArray(data.conflict_zones)
         ? data.conflict_zones.map(normalizeZone).filter(isZonePlottable)
         : [];
-      state.fleets = Array.isArray(data.fleet_movements)
-        ? data.fleet_movements.map(normalizeFleet).filter(isFleetPlottable)
-        : [];
+      const deployments = data.deployments && Array.isArray(data.deployments)
+        ? data.deployments
+        : (data.fleet_movements && Array.isArray(data.fleet_movements) ? data.fleet_movements : []);
+      state.fleets = deployments.map(normalizeFleet).filter(isFleetPlottable);
     } catch (err) {
       if (err.name === 'AbortError') return;
       console.warn('[worldmap] Failed to load world_layers.json, using empty layers:', err);
@@ -1192,19 +1374,8 @@ function canonicalCategory(cat) {
         draw();
       });
     }
-    // "Reset day/night": re-sync the terminator to the live sun position and
-    // force a fresh geometry recompute, regardless of any manual toggling.
-    const terminatorReset = document.getElementById('terminator-reset');
-    if (terminatorReset) {
-      terminatorReset.addEventListener('click', () => {
-        state.showTerminator = true;
-        state.terminatorCache = { sunLon: null, sunLat: null, sunsetGeo: null, sunriseGeo: null, computedAt: 0 };
-        if (terminatorToggle) terminatorToggle.setAttribute('aria-pressed', 'true');
-        if (terminatorIcon) terminatorIcon.textContent = '☀';
-        if (terminatorLabel) terminatorLabel.textContent = 'Day/Night';
-        draw();
-      });
-    }
+    // Legacy "Reset day/night" button was removed from the UI; the toggle
+    // above remains the single source of truth for terminator geometry.
   }
 
   function cleanup() {

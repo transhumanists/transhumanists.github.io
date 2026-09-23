@@ -31,16 +31,16 @@ const LAYER_PAYLOAD = {
     { id: 'z2', name: 'Zone B', region: 'R2', lat: 31.3, lon: 34.3, radiusDeg: 2.2, status: 'active' },
     { id: 'z3', name: 'Zone C', region: 'R3', lat: 13.5, lon: 43.0, radiusDeg: 4.0, status: 'active' },
   ],
-  fleet_movements: [
-    { id: 'f1', label: 'Fleet 1', from: { lat: 33.5, lon: 33.5 }, to: { lat: 27.0, lon: 52.5 } },
-    { id: 'f2', label: 'Fleet 2', from: { lat: 18.5, lon: 39.5 }, to: { lat: 12.5, lon: 58.5 } },
-    { id: 'f3', label: 'Fleet 3', from: { lat: 34.3, lon: 132.4 }, to: { lat: 12.5, lon: 115.0 } },
-    { id: 'f4', label: 'Fleet 4', from: { lat: 24.5, lon: 126.5 }, to: { lat: 25.0, lon: 120.5 } },
-    { id: 'f5', label: 'Fleet 5', from: { lat: 50.8, lon: -1.1 }, to: { lat: 57.0, lon: 18.0 } },
-    { id: 'f6', label: 'Fleet 6', from: { lat: 54.7, lon: 20.5 }, to: { lat: 58.0, lon: 20.0 } },
-    { id: 'f7', label: 'Fleet 7', from: { lat: 43.1, lon: 131.9 }, to: { lat: 38.7, lon: 137.0 } },
-    { id: 'f8', label: 'Fleet 8', from: { lat: 26.7, lon: 114.0 }, to: { lat: 31.2, lon: 122.5 } },
-    { id: 'f9', label: 'Fleet 9', from: { lat: 19.0, lon: 72.8 }, to: { lat: 12.5, lon: 45.0 } },
+  deployments: [
+    { id: 'f1', label: 'Fleet 1', from: { lat: 33.5, lon: 33.5 }, to: { lat: 27.0, lon: 52.5 }, kind: 'fleet', note: '', source: '' },
+    { id: 'f2', label: 'Fleet 2', from: { lat: 18.5, lon: 39.5 }, to: { lat: 12.5, lon: 58.5 }, kind: 'fleet', note: '', source: '' },
+    { id: 'f3', label: 'Fleet 3', from: { lat: 34.3, lon: 132.4 }, to: { lat: 12.5, lon: 115.0 }, kind: 'fleet', note: '', source: '' },
+    { id: 'f4', label: 'Fleet 4', from: { lat: 24.5, lon: 126.5 }, to: { lat: 25.0, lon: 120.5 }, kind: 'fleet', note: '', source: '' },
+    { id: 'f5', label: 'Fleet 5', from: { lat: 50.8, lon: -1.1 }, to: { lat: 57.0, lon: 18.0 }, kind: 'fleet', note: '', source: '' },
+    { id: 'f6', label: 'Fleet 6', from: { lat: 54.7, lon: 20.5 }, to: { lat: 58.0, lon: 20.0 }, kind: 'fleet', note: '', source: '' },
+    { id: 'f7', label: 'Fleet 7', from: { lat: 43.1, lon: 131.9 }, to: { lat: 38.7, lon: 137.0 }, kind: 'fleet', note: '', source: '' },
+    { id: 'f8', label: 'Fleet 8', from: { lat: 26.7, lon: 114.0 }, to: { lat: 31.2, lon: 122.5 }, kind: 'fleet', note: '', source: '' },
+    { id: 'f9', label: 'Fleet 9', from: { lat: 19.0, lon: 72.8 }, to: { lat: 12.5, lon: 45.0 }, kind: 'fleet', note: '', source: '' },
   ],
 };
 
@@ -139,7 +139,7 @@ const canvas = makeCanvas();
 const ctx = makeCtx();
 canvas.getContext = () => ctx;
 
-for (const id of ['world-map-canvas', 'map-tooltip', 'map-stat-active', 'map-stat-conflicts', 'map-stat-fleets', 'world-map', 'zoom-in', 'zoom-out', 'reset-view', 'terminator-toggle', 'terminator-icon', 'terminator-label', 'terminator-reset']) {
+for (const id of ['world-map-canvas', 'map-tooltip', 'map-stat-active', 'map-stat-conflicts', 'map-stat-fleets', 'world-map', 'zoom-in', 'zoom-out', 'reset-view', 'terminator-toggle', 'terminator-icon', 'terminator-label']) {
   registeredEls[id] = id === 'map-tooltip' ? tooltip : (id === 'world-map-canvas' ? canvas : makeEl());
 }
 
@@ -233,7 +233,7 @@ describe('worldmap', () => {
     expect(legendValue('Military & Defense')).toBe('2');   // aliased 'Defense' + canonical
     expect(legendValue('Other')).toBe('1');
     expect(legendValue('Conflict Zones')).toBe('3');
-    expect(legendValue('Fleet Movements')).toBe('9');
+    expect(legendValue('Deployments')).toBe('9');
   });
 
   test('conflict and fleet layer rows toggle their stats and redraw', () => {
@@ -246,19 +246,19 @@ describe('worldmap', () => {
     expect(Number(registeredEls['map-stat-conflicts'].textContent)).toBe(0);
     expect(ctx.counters.arcs).toBeGreaterThan(0);              // redraw happened
     expect(Number(registeredEls['map-stat-fleets'].textContent)).toBe(9);
-    expect(legendValue('Fleet Movements')).toBe('9');          // fleet layer untouched
+    expect(legendValue('Deployments')).toBe('9');          // deployments layer untouched
 
     rowByLayer('zones').fire('click', {});                     // toggle zones back on
     expect(rowByLayer('zones').getAttribute('aria-pressed')).toBe('true');
     expect(Number(registeredEls['map-stat-conflicts'].textContent)).toBe(3);
 
-    const fleetsRow = rowByLayer('fleets');
+    const fleetsRow = rowByLayer('deployments');
     fleetsRow.fire('click', {});
-    expect(rowByLayer('fleets').getAttribute('aria-pressed')).toBe('false');
+    expect(rowByLayer('deployments').getAttribute('aria-pressed')).toBe('false');
     expect(Number(registeredEls['map-stat-fleets'].textContent)).toBe(0);
     expect(Number(registeredEls['map-stat-conflicts'].textContent)).toBe(3);
-    rowByLayer('fleets').fire('click', {});                   // restore for later tests
-    expect(rowByLayer('fleets').getAttribute('aria-pressed')).toBe('true');
+    rowByLayer('deployments').fire('click', {});                   // restore for later tests
+    expect(rowByLayer('deployments').getAttribute('aria-pressed')).toBe('true');
     expect(Number(registeredEls['map-stat-fleets'].textContent)).toBe(9);
   });
 
@@ -340,19 +340,7 @@ test('tooltip canonicalizes legacy category names', () => {
     expect(toggle.getAttribute('aria-pressed')).toBe('true');
   });
 
-  test('reset day/night re-enables the terminator and restores live state', () => {
-    const toggle = registeredEls['terminator-toggle'];
-    const reset = registeredEls['terminator-reset'];
-    toggle.fire('click', {});                                  // turn the overlay off
-    expect(toggle.getAttribute('aria-pressed')).toBe('false');
-    expect(registeredEls['terminator-icon'].textContent).toBe('☾');
-    reset.fire('click', {});                                   // back to live day/night
-    expect(toggle.getAttribute('aria-pressed')).toBe('true');
-    expect(registeredEls['terminator-icon'].textContent).toBe('☀');
-    expect(registeredEls['terminator-label'].textContent).toBe('Day/Night');
-  });
-
-  test('zoom controls, keyboard and double-click do not throw', () => {
+test('zoom controls, keyboard and double-click do not throw', () => {
     registeredEls['zoom-in'].fire('click', {});
     registeredEls['zoom-out'].fire('click', {});
     registeredEls['reset-view'].fire('click', {});
