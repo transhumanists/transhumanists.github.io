@@ -90,6 +90,7 @@
   const INSTITUTION_COORDS = {
     'arxiv': { lat: 42.4440, lon: -76.5019 }, // Cornell University, Ithaca NY
     'cornell': { lat: 42.4440, lon: -76.5019 },
+    'cornell university': { lat: 42.4440, lon: -76.5019 },
     'mit': { lat: 42.3601, lon: -71.0942 },
     'stanford': { lat: 37.4275, lon: -122.1697 },
     'harvard': { lat: 42.3770, lon: -71.1167 },
@@ -1766,12 +1767,13 @@ const fragment = document.createDocumentFragment();
 
   // Map a raw event.json entry to the internal shape, applying fallbacks for
   // every optional field so downstream rendering never hits placeholders.
-  // Includes intelligent geocoding fallback for missing coordinates.
+  // Includes intelligent geocoding fallback for missing or invalid coordinates.
   function normalizeEvent(e) {
     let lat = e.geolocation?.lat;
     let lon = e.geolocation?.lon;
-    // Intelligent geocoding fallback if coordinates missing
-    if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
+    // Intelligent geocoding fallback if coordinates missing OR invalid (0,0 indicates missing)
+    const hasValidCoords = Number.isFinite(lat) && Number.isFinite(lon) && !(lat === 0 && lon === 0);
+    if (!hasValidCoords) {
       const geo = geocodeInstitution(e.source, e.title, e.category);
       if (geo) {
         lat = geo.lat;
@@ -2034,6 +2036,11 @@ function initTimelineSlider() {
     timeline.setAttribute('aria-valuenow', Math.round(ratio * 100));
     // Update handle aria-label
     handle.setAttribute('aria-label', `Year ${timelineYear}`);
+    // Update year label display
+    const yearLabel = document.getElementById('map-timeline-year-label');
+    if (yearLabel) {
+      yearLabel.textContent = timelineYear;
+    }
   }
   
   function renderTimelineYears() {

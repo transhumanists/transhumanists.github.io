@@ -33,6 +33,100 @@ from collections import Counter
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
+# Institution coordinates for geocoding fallback (shared with worldmap.js)
+INSTITUTION_COORDS = {
+    'arxiv': { 'lat': 42.4440, 'lon': -76.5019 },  # Cornell University, Ithaca NY
+    'cornell': { 'lat': 42.4440, 'lon': -76.5019 },
+    'cornell university': { 'lat': 42.4440, 'lon': -76.5019 },
+    'mit': { 'lat': 42.3601, 'lon': -71.0942 },
+    'stanford': { 'lat': 37.4275, 'lon': -122.1697 },
+    'harvard': { 'lat': 42.3770, 'lon': -71.1167 },
+    'berkeley': { 'lat': 37.8719, 'lon': -122.2585 },
+    'cmu': { 'lat': 40.4433, 'lon': -79.9438 },
+    'caltech': { 'lat': 34.1377, 'lon': -118.1253 },
+    'princeton': { 'lat': 40.3440, 'lon': -74.6514 },
+    'yale': { 'lat': 41.3111, 'lon': -72.9267 },
+    'columbia': { 'lat': 40.8075, 'lon': -73.9626 },
+    'chicago': { 'lat': 41.7886, 'lon': -87.5987 },
+    'ucla': { 'lat': 34.0689, 'lon': -118.4452 },
+    'ucsd': { 'lat': 32.8801, 'lon': -117.2340 },
+    'eth zurich': { 'lat': 47.3769, 'lon': 8.5417 },
+    'epfl': { 'lat': 46.5197, 'lon': 6.5667 },
+    'oxford': { 'lat': 51.7548, 'lon': -1.2544 },
+    'cambridge': { 'lat': 52.2053, 'lon': 0.1218 },
+    'deepmind': { 'lat': 51.5074, 'lon': -0.1278 },
+    'google': { 'lat': 37.4220, 'lon': -122.0841 },
+    'openai': { 'lat': 37.7749, 'lon': -122.4194 },
+    'anthropic': { 'lat': 37.7749, 'lon': -122.4194 },
+    'nvidia': { 'lat': 37.3688, 'lon': -122.0363 },
+    'ibm': { 'lat': 41.0323, 'lon': -73.5543 },
+    'microsoft': { 'lat': 47.6062, 'lon': -122.3321 },
+    'meta': { 'lat': 37.4848, 'lon': -122.1484 },
+    'apple': { 'lat': 37.3349, 'lon': -122.0090 },
+    'amazon': { 'lat': 47.6062, 'lon': -122.3321 },
+    'spacex': { 'lat': 28.5728, 'lon': -80.6490 },
+    'nasa': { 'lat': 28.5237, 'lon': -80.6810 },
+    'jaxa': { 'lat': 35.6762, 'lon': 139.6503 },
+    'esa': { 'lat': 48.9219, 'lon': 2.3646 },
+    'cern': { 'lat': 46.2333, 'lon': 6.0500 },
+    'llnl': { 'lat': 37.6881, 'lon': -121.7045 },
+    'nifs': { 'lat': 35.6762, 'lon': 139.6503 },
+    'ipp': { 'lat': 54.0956, 'lon': 13.4725 },
+    'quantinuum': { 'lat': 51.5074, 'lon': -0.1278 },
+    'qutech': { 'lat': 52.0116, 'lon': 4.3571 },
+    'broad': { 'lat': 42.3375, 'lon': -71.1061 },
+    'neuralink': { 'lat': 37.4861, 'lon': -122.1519 },
+    'dexcom': { 'lat': 32.8844, 'lon': -117.2340 },
+    'thermofisher': { 'lat': 44.4268, 'lon': -123.0764 },
+    'hms': { 'lat': 42.3375, 'lon': -71.1061 },
+    'mpi-cbg': { 'lat': 51.0504, 'lon': 13.7373 },
+    'sparktx': { 'lat': 39.9526, 'lon': -75.1652 },
+    'jcvi': { 'lat': 32.7157, 'lon': -117.1611 },
+    'eth': { 'lat': 47.3769, 'lon': 8.5417 },
+    'nvidia': { 'lat': 37.3688, 'lon': -122.0363 },
+    'quantumscape': { 'lat': 37.5485, 'lon': -122.0591 },
+    'autogpt': { 'lat': 37.7749, 'lon': -122.4194 },
+    'cncell': { 'lat': 31.2304, 'lon': 121.4737 },
+    'intel': { 'lat': 45.5215, 'lon': -122.6774 },
+    'amd': { 'lat': 37.4220, 'lon': -122.0841 },
+    'tsmc': { 'lat': 24.7867, 'lon': 120.9969 },
+    'asml': { 'lat': 51.5900, 'lon': 5.0500 },
+    'samsung': { 'lat': 37.2636, 'lon': 127.0286 },
+    'hzdr': { 'lat': 51.2323, 'lon': 13.6830 },
+    'nist': { 'lat': 38.8951, 'lon': -77.0364 },
+    'csrc': { 'lat': 38.8951, 'lon': -77.0364 },
+    'cisa': { 'lat': 38.8951, 'lon': -77.0364 },
+    'nvd': { 'lat': 38.8951, 'lon': -77.0364 },
+    'usaf': { 'lat': 38.8951, 'lon': -77.0364 },
+    'norad': { 'lat': 38.8951, 'lon': -77.0364 },
+    'us navy': { 'lat': 36.8508, 'lon': -76.2995 },
+    'rafael': { 'lat': 32.0853, 'lon': 34.7818 },
+    'idf': { 'lat': 32.0853, 'lon': 34.7818 },
+    'almaz-antey': { 'lat': 55.7558, 'lon': 37.6173 },
+    'nato': { 'lat': 50.8609, 'lon': 4.3676 },
+    'ismsc': { 'lat': 13.5, 'lon': 43.0 },
+    'unocha': { 'lat': 31.3, 'lon': 34.3 },
+    'isw': { 'lat': 48.0, 'lon': 37.8 },
+    'usni': { 'lat': 38.8951, 'lon': -77.0364 },
+    'rn': { 'lat': 50.8, 'lon': -1.1 },
+    'iiss': { 'lat': 51.5074, 'lon': -0.1278 },
+    'in': { 'lat': 19.0, 'lon': 72.8 },
+    'plan': { 'lat': 26.7, 'lon': 114.0 },
+    'af': { 'lat': 38.8951, 'lon': -77.0364 },
+    'iaea': { 'lat': 48.2082, 'lon': 16.3738 },
+    'who_org': { 'lat': 46.2276, 'lon': 6.1424 },
+    'un_org': { 'lat': 40.7580, 'lon': -73.9683 },
+    'fda': { 'lat': 38.8951, 'lon': -77.0364 },
+    'ncsc': { 'lat': 51.5074, 'lon': -0.1278 },
+    'gchq': { 'lat': 51.5074, 'lon': -0.1278 },
+    'mossad': { 'lat': 31.9686, 'lon': 35.5064 },
+    'nsa': { 'lat': 38.8951, 'lon': -77.0364 },
+    'plaff': { 'lat': 39.9042, 'lon': 116.4074 },
+    'csir': { 'lat': 51.2323, 'lon': 13.6830 },
+    'significant-gravitas': { 'lat': 37.7749, 'lon': -122.4194 },
+    'github': { 'lat': 37.7749, 'lon': -122.4194 },
+}
+
 MILESTONES_REPO = os.environ.get("MILESTONES_REPO", "transhumanists/milestones")
 MILESTONES_BRANCH = os.environ.get("MILESTONES_BRANCH", "main")
 # Additional upstream sources for milestone data (merged in order)
@@ -451,14 +545,32 @@ def event_value(m: dict) -> str:
     return m.get("title") or ""
 
 
+def geocode_milestone(m: dict) -> tuple[float, float] | None:
+    """Attempt to geocode a milestone using institution name matching."""
+    source = m.get("source", "")
+    title = m.get("title", "")
+    category = m.get("category", "")
+    text = f"{source} {title} {category}".lower()
+    for key, coords in INSTITUTION_COORDS.items():
+        pattern = f"(^|[^a-z0-9]){key.lower()}([^a-z0-9]|\$)"
+        if re.search(pattern, text):
+            return coords["lat"], coords["lon"]
+    return None
+
+
 def build_events(milestones: list) -> dict:
     events = []
     for m in milestones:
         geo = m.get("geolocation", {})
         lat = geo.get("lat")
         lon = geo.get("lon")
+        # Try to geocode if coordinates are missing or invalid (0,0)
         if lat is None or lon is None or lat == 0.0 or lon == 0.0:
-            continue
+            geocoded = geocode_milestone(m)
+            if geocoded:
+                lat, lon = geocoded
+            else:
+                continue
         events.append({
             "id": "ev-" + m.get("id", ""),
             "title": m.get("title", ""),
@@ -467,7 +579,7 @@ def build_events(milestones: list) -> dict:
             "source": m.get("source", ""),
             "url": m.get("url"),
             "date": m.get("date", ""),
-            "geolocation": geo,
+            "geolocation": {"lat": lat, "lon": lon},
         })
     return {"last_update": now_iso(), "version": "1.0.0", "events": events}
 

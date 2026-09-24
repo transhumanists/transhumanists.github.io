@@ -365,68 +365,84 @@ body {
 .map-tooltip .tt-category { font-family: var(--font-mono); font-size: 0.7rem; color: var(--fg-subtle); text-transform: uppercase; letter-spacing: 0.06em; }
 .map-tooltip .tt-value { color: var(--green); font-family: var(--font-mono); font-weight: 700; }
 
-/* MAP TIMELINE SLIDER */
+/* MAP TIMELINE SLIDER - Ultra Minimal, White Transparent */
 .map-timeline {
   position: absolute;
   bottom: 12px;
-  left: 12px;
-  right: 12px;
-  height: 48px;
-  background: rgba(6,11,20,0.85);
-  backdrop-filter: blur(8px);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  padding: 8px 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 50%;
+  max-width: 320px;
+  min-width: 180px;
+  height: 24px;
+  background: rgba(255,255,255,0.06);
+  backdrop-filter: blur(6px);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 10px;
+  padding: 4px 12px;
   z-index: 5;
   display: flex;
   align-items: center;
+  gap: 8px;
 }
 .map-timeline-track {
   flex: 1;
-  height: 4px;
-  background: var(--border);
-  border-radius: 2px;
+  height: 1.5px;
+  background: rgba(255,255,255,0.12);
+  border-radius: 1px;
   position: relative;
   cursor: pointer;
 }
 .map-timeline-years {
-  position: absolute;
-  top: -20px;
-  left: 0;
-  right: 0;
-  display: flex;
-  justify-content: space-between;
-  font-size: 0.55rem;
-  font-family: var(--font-mono);
-  color: var(--fg-subtle);
-  padding: 0 4px;
-  pointer-events: none;
+  display: none; /* Hidden - year shown in label only */
 }
 .map-timeline-handle {
   position: absolute;
   top: 50%;
   transform: translate(-50%, -50%);
-  width: 20px;
-  height: 20px;
-  background: var(--accent);
-  border: 2px solid var(--fg);
+  width: 12px;
+  height: 12px;
+  background: #fff;
+  border: 1.5px solid var(--accent);
   border-radius: 50%;
   cursor: grab;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-  transition: transform 0.1s ease, box-shadow 0.1s ease;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+  transition: transform 0.08s ease, box-shadow 0.08s ease, border-color 0.08s ease, background 0.08s ease;
   z-index: 10;
 }
 .map-timeline-handle:hover {
   transform: translate(-50%, -50%) scale(1.15);
-  box-shadow: 0 4px 16px rgba(0,212,255,0.4);
+  box-shadow: 0 2px 8px rgba(0,212,255,0.35);
+  border-color: rgba(255,255,255,0.9);
 }
 .map-timeline-handle:active {
   cursor: grabbing;
-  transform: translate(-50%, -50%) scale(0.95);
+  transform: translate(-50%, -50%) scale(0.92);
 }
 .map-timeline-handle:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
+  outline: 1px solid var(--accent);
+  outline-offset: 1px;
+}
+
+/* Year label - clean, minimal, always visible */
+.map-timeline-year-label {
+  position: absolute;
+  top: -22px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.65rem;
+  font-weight: 600;
+  font-family: var(--font-mono);
+  color: rgba(255,255,255,0.95);
+  text-shadow: 0 1px 2px rgba(0,0,0,0.35);
+  white-space: nowrap;
+  padding: 1px 8px;
+  background: rgba(0,0,0,0.25);
+  border-radius: 4px;
+  pointer-events: none;
+  z-index: 11;
+  transition: opacity 0.12s ease, transform 0.08s ease;
+  opacity: 0.95;
 }
 
 /* MILESTONES CATALOG */
