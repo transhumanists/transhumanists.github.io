@@ -39,8 +39,6 @@ jobs:
         uses: actions/setup-python@v6
         with:
           python-version: "3.12"
-          cache: pip
-          cache-key: "pip-${{ runner.os }}-${{ hashFiles('requirements.txt') }}"
 
       - name: Cache milestone data
         uses: actions/cache@v4
@@ -54,13 +52,6 @@ jobs:
           key: milestone-data-${{ hashFiles('data/*.json') }}
           restore-keys: |
             milestone-data-
-
-      - name: Set up Python
-        uses: actions/setup-python@v6
-        with:
-          python-version: "3.12"
-          cache: pip
-          cache-key: "pip-${{ runner.os }}-${{ hashFiles('requirements.txt') }}"
 
       - name: Run milestone sync
         env:

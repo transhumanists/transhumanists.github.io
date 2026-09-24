@@ -44,7 +44,6 @@ jobs:
         uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
-          cache: true
 
       - name: Static parse check (worldmap.js)
         run: bun build assets/js/worldmap.js --no-bundle --outdir /tmp/worldmap-check
@@ -64,7 +63,6 @@ jobs:
         uses: actions/setup-python@v6
         with:
           python-version: "3.12"
-          cache: pip
 
       - name: Self-tests (stdlib)
         run: python scripts/test_sync.py
@@ -94,7 +92,6 @@ jobs:
         uses: actions/setup-python@v6
         with:
           python-version: "3.12"
-          cache: pip
 
       - name: Validate events.json and world_layers.json
         run: python scripts/check_data.py
@@ -121,8 +118,11 @@ jobs:
         run: |
           set -euo pipefail
           test -f _site/index.html
-          grep -q 'id="zoom-in"'       _site/index.html
-          grep -q 'id="zoom-out"'      _site/index.html
-          grep -q 'id="reset-view"'    _site/index.html
-          grep -q 'id="terminator-toggle"' _site/index.html
-          grep -q 'id="map-tooltip"'   _site/index.html
+          # Zoom/terminator buttons are created at runtime by worldmap.js, so
+          # assert the static containers the widget is wired into.
+          grep -q 'id="world-map-canvas"' _site/index.html
+          grep -q 'id="map-timeline"'     _site/index.html
+          grep -q 'id="map-tooltip"'      _site/index.html
+          grep -q 'id="filter-recent"'    _site/index.html
+          grep -q 'id="filter-military"'  _site/index.html
+          grep -q 'id="filter-crisis"'    _site/index.html
