@@ -552,7 +552,7 @@ def geocode_milestone(m: dict) -> tuple[float, float] | None:
     category = m.get("category", "")
     text = f"{source} {title} {category}".lower()
     for key, coords in INSTITUTION_COORDS.items():
-        pattern = f"(^|[^a-z0-9]){key.lower()}([^a-z0-9]|\$)"
+        pattern = fr"(^|[^a-z0-9]){key.lower()}([^a-z0-9]|\$)"
         if re.search(pattern, text):
             return coords["lat"], coords["lon"]
     return None
