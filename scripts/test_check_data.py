@@ -88,6 +88,53 @@ class TestCheckLayers(unittest.TestCase):
         self.assertTrue(any("from" in i for i in issues))
 
 
+class TestCheckLayerLifecycle(unittest.TestCase):
+    def _zone(self, **extra):
+        z = {"name": "Z", "lat": 10, "lon": 10, "radiusDeg": 3}
+        z.update(extra)
+        return z
+
+    def test_full_lifecycle_is_valid(self):
+        zones = [
+            self._zone(status="active", start_date="2022-02-24", end_date=""),
+            self._zone(status="concluded", start_date="2022-02-24", end_date="2024-02-24"),
+            self._zone(status="ongoing", start_date="2021"),
+            self._zone(status="active", start_date="2022-03"),
+        ]
+        self.assertEqual(cd.check_zones(zones), [])
+
+    def test_unknown_status_fails(self):
+        zones = [self._zone(status="exploding")]
+        self.assertTrue(any("status" in i for i in cd.check_zones(zones)))
+
+    def test_non_string_status_fails(self):
+        zones = [self._zone(status=3)]
+        self.assertTrue(any("status" in i for i in cd.check_zones(zones)))
+
+    def test_malformed_dates_fail(self):
+        zones = [self._zone(start_date="2022-13-99"), self._zone(end_date="2022/02/24")]
+        issues = cd.check_zones(zones)
+        self.assertEqual(len(issues), 2)
+
+    def test_month_out_of_range_fails(self):
+        zones = [self._zone(start_date="2022-13")]
+        self.assertTrue(any("start_date" in i for i in cd.check_zones(zones)))
+
+    def test_start_after_end_fails(self):
+        zones = [self._zone(start_date="2024-06-01", end_date="2022-01-01")]
+        issues = cd.check_zones(zones)
+        self.assertTrue(any("start_date must not be after end_date" in i for i in issues))
+
+    def test_lifecycle_is_checked_on_fleets_too(self):
+        fleets = [
+            {"from": {"lat": 0, "lon": 0}, "to": {"lat": 1, "lon": 1}, "status": "concluded", "start_date": "2022", "end_date": "2022-12"},
+            {"from": {"lat": 0, "lon": 0}, "to": {"lat": 1, "lon": 1}, "status": "whatever"},
+        ]
+        issues = cd.check_fleets(fleets)
+        self.assertEqual(len(issues), 1)
+        self.assertIn("status", issues[0])
+
+
 class TestCheckFile(unittest.TestCase):
     def test_end_to_end_with_written_files(self):
         with tempfile.TemporaryDirectory() as tmp:

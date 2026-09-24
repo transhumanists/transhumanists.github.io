@@ -58,6 +58,80 @@
     return `rgba(${r}, ${g}, ${b}, ${opacity})`;
   }
 
+  // ---- Layer lifecycle (active/concluded + duration) ----
+  // Operational layers now carry an optional lifecycle: still-active zones,
+  // crises and deployments are drawn with a distinct "fluo" glow, while
+  // concluded ones render dim and expose their full duration in the tooltip.
+  const STATUS_ACTIVE = 'active';
+  const STATUS_CONCLUDED = 'concluded';
+  const FLUO_GLOW_BLUR = 18;        // halo radius for live area rings
+  const FLUO_LINE_GLOW_BLUR = 9;    // halo radius for vector tails + arrowheads
+  const FLUO_PULSE_RADIUS = 6;      // how much the halo breathes (px)
+  const CONCLUDED_OPACITY = 0.45;   // dimming applied to concluded markers
+
+  // Normalize a layer entry's lifecycle status. Missing/`active`/`ongoing`
+  // mean the marker is still live (fluo glow); anything explicitly ended
+  // (`concluded`, `inactive`, `ended`, `resolved`) maps to the dimmed state.
+  function layerStatus(item) {
+    const s = String(item && (item.status || '')).toLowerCase();
+    return s === '' || s === 'active' || s === 'ongoing' ? STATUS_ACTIVE : STATUS_CONCLUDED;
+  }
+
+  function isLayerActive(item) {
+    return layerStatus(item) === STATUS_ACTIVE;
+  }
+
+  // Accept YYYY-MM-DD, YYYY-MM or just YYYY (the forms sync_layers.py writes)
+  // and normalize to a comparable YYYY-MM-DD, or null when absent/unparsable.
+  function normalizeLayerDate(value) {
+    if (value === null || value === undefined) return null;
+    const s = String(value).trim();
+    if (!s) return null;
+    const isoMatch = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (isoMatch) return isoMatch[0];
+    const monthMatch = s.match(/^(\d{4})-(\d{2})$/);
+    if (monthMatch) return `${monthMatch[1]}-${monthMatch[2]}-01`;
+    const yearMatch = s.match(/^(\d{4})$/);
+    if (yearMatch) return `${yearMatch[1]}-01-01`;
+    return parseDateToISO(s);
+  }
+
+  function layerStartDate(item) { return item && (item.start_date || item.startDate); }
+  function layerEndDate(item) { return item && (item.end_date || item.endDate); }
+
+  // Humanized lifecycle line shown in layer tooltips: active markers say how
+  // long they have been live; concluded ones show the complete duration span.
+  function layerActivityLabel(item) {
+    const start = normalizeLayerDate(layerStartDate(item));
+    const end = normalizeLayerDate(layerEndDate(item));
+    if (isLayerActive(item)) return start ? `Active since ${start}` : 'Active';
+    if (start && end) {
+      const days = Math.max(1, 1 + Math.round(
+        (Date.parse(end + 'T00:00:00Z') - Date.parse(start + 'T00:00:00Z')) / 86400000
+      ));
+      return `Concluded · ${days} day${days === 1 ? '' : 's'} (${start} → ${end})`;
+    }
+    if (start) return `Concluded · ran from ${start}`;
+    if (end) return `Concluded · ended ${end}`;
+    return 'Concluded';
+  }
+
+  // Whether a layer entry was (or is) live during `year`. Active entries appear
+  // from their start year onward (so a conflict begun in 2022 stays on the map
+  // at 2025); concluded entries stay visible only inside their active window.
+  // Entries without dates default to visible in every year (backwards-compatible).
+  function layerVisibleInYear(item, year) {
+    const start = normalizeLayerDate(layerStartDate(item));
+    const end = normalizeLayerDate(layerEndDate(item));
+    const startYear = start ? parseInt(start.slice(0, 4), 10) : null;
+    const endYear = end ? parseInt(end.slice(0, 4), 10) : null;
+    if (isLayerActive(item)) return startYear === null || year >= startYear;
+    if (startYear !== null && endYear !== null) return year >= startYear && year <= endYear;
+    if (startYear !== null) return year >= startYear;
+    if (endYear !== null) return year <= endYear;
+    return true;
+  }
+
   // Smart pluralization helper
   function pluralize(count, singular, plural) {
     if (count === 1) return singular;
@@ -217,8 +291,11 @@
   const STORAGE_KEY_SHOW_FLEETS = 'worldmap_show_fleets';
   const STORAGE_KEY_SHOW_CRISES = 'worldmap_show_crises';
 
-  // Load persisted preferences (default: breakthroughs filter ON, military/crisis layers OFF)
-  let filterRecentDefault = true;
+  // Load persisted preferences. Defaults are deliberately "show everything":
+  // a brand-new visitor sees the full milestone set (filterRecent OFF), while
+  // the operational layers (conflict zones / deployments / crises) stay hidden
+  // until explicitly enabled. A returning visitor's saved choice wins.
+  let filterRecentDefault = false;
   let filterMilitaryDefault = false;
   let filterCrisisDefault = false;
   let showZonesDefault = false;
@@ -338,10 +415,10 @@ function canonicalCategory(cat) {
      } else {
        state.hiddenCategories.add(canonical);
      }
-     draw();
-     updateStatsDisplay();
-     renderLegend();
-   }
+draw();
+    updateStatsDisplay();
+    renderLegend();
+  }
 
   // ---- Country outlines (simplified continent path) ----
   const CONTINENTS = [
@@ -716,57 +793,126 @@ function drawEvent(ev) {
   }
 
   // Conflict zone: translucent area ring + dashed outline + center marker.
+  // Still-active zones get a fluo (glow) treatment so they read as "live";
+  // concluded zones render flat and dim, with their duration surfaced in the
+  // tooltip. Zones outside the timeline year are skipped entirely.
   function drawZone(zone) {
     if (!state.showZones) return;
+    if (zone._hiddenByTimeline) return;
     const p = project(zone.lon, zone.lat);
     const degToPx = state.height / 180;
     const r = Math.max(4, (zone.radiusDeg || 3) * degToPx * state.transform.scale);
+    const active = isLayerActive(zone);
 
-    ctx.beginPath();
-    ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
-    ctx.fillStyle = ZONE_FILL;
-    ctx.fill();
+    if (active) {
+      // Fluo halo: soft breathing glow emitted outward from the ring, plus a
+      // stronger luminous shadow on the ring itself.
+      const pulse = 0.5 + 0.5 * Math.sin(Date.now() / 900 + zone.lon);
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.shadowColor = ZONE_COLOR;
+      ctx.shadowBlur = FLUO_GLOW_BLUR + FLUO_PULSE_RADIUS * pulse;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, r * 1.14, 0, Math.PI * 2);
+      ctx.fillStyle = withOpacity(ZONE_COLOR, 0.055);
+      ctx.fill();
+      ctx.restore();
 
-    ctx.save();
-    ctx.setLineDash([4, 3]);
-    ctx.lineWidth = 1.5;
-    ctx.strokeStyle = ZONE_STROKE;
-    ctx.beginPath();
-    ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
-    ctx.stroke();
-    ctx.restore();
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+      ctx.fillStyle = ZONE_FILL;
+      ctx.fill();
+
+      ctx.save();
+      ctx.shadowColor = ZONE_COLOR;
+      ctx.shadowBlur = FLUO_LINE_GLOW_BLUR;
+      ctx.setLineDash([4, 3]);
+      ctx.lineWidth = 1.5;
+      ctx.strokeStyle = ZONE_STROKE;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+    } else {
+      // Concluded: a frozen, dim footprint — no glow, thinner dashed ring.
+      ctx.save();
+      ctx.globalAlpha = CONCLUDED_OPACITY;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+      ctx.fillStyle = ZONE_FILL;
+      ctx.fill();
+      ctx.setLineDash([4, 3]);
+      ctx.lineWidth = 1;
+      ctx.strokeStyle = withOpacity(ZONE_COLOR, 0.45);
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+    }
 
     ctx.beginPath();
     ctx.arc(p.x, p.y, 2.5, 0, Math.PI * 2);
-    ctx.fillStyle = ZONE_COLOR;
+    ctx.fillStyle = active ? ZONE_COLOR : withOpacity(ZONE_COLOR, 0.5);
     ctx.fill();
   }
 
   // Crisis zone (humanitarian): translucent area ring + dashed outline + center marker.
   // Distinct purple color to differentiate from conflict zones (red) and deployments.
+  // Same fluo/dim lifecycle split as conflict zones.
   function drawCrisis(crisis) {
     if (!state.showCrises) return;
+    if (crisis._hiddenByTimeline) return;
     const p = project(crisis.lon, crisis.lat);
     const degToPx = state.height / 180;
     const r = Math.max(4, (crisis.radiusDeg || 3) * degToPx * state.transform.scale);
+    const active = isLayerActive(crisis);
 
-    ctx.beginPath();
-    ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
-    ctx.fillStyle = CRISIS_FILL;
-    ctx.fill();
+    if (active) {
+      const pulse = 0.5 + 0.5 * Math.sin(Date.now() / 900 + crisis.lon);
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.shadowColor = CRISIS_COLOR;
+      ctx.shadowBlur = FLUO_GLOW_BLUR + FLUO_PULSE_RADIUS * pulse;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, r * 1.14, 0, Math.PI * 2);
+      ctx.fillStyle = withOpacity(CRISIS_COLOR, 0.055);
+      ctx.fill();
+      ctx.restore();
 
-    ctx.save();
-    ctx.setLineDash([4, 3]);
-    ctx.lineWidth = 1.5;
-    ctx.strokeStyle = CRISIS_STROKE;
-    ctx.beginPath();
-    ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
-    ctx.stroke();
-    ctx.restore();
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+      ctx.fillStyle = CRISIS_FILL;
+      ctx.fill();
+
+      ctx.save();
+      ctx.shadowColor = CRISIS_COLOR;
+      ctx.shadowBlur = FLUO_LINE_GLOW_BLUR;
+      ctx.setLineDash([4, 3]);
+      ctx.lineWidth = 1.5;
+      ctx.strokeStyle = CRISIS_STROKE;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+    } else {
+      ctx.save();
+      ctx.globalAlpha = CONCLUDED_OPACITY;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+      ctx.fillStyle = CRISIS_FILL;
+      ctx.fill();
+      ctx.setLineDash([4, 3]);
+      ctx.lineWidth = 1;
+      ctx.strokeStyle = withOpacity(CRISIS_COLOR, 0.45);
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+    }
 
     ctx.beginPath();
     ctx.arc(p.x, p.y, 2.5, 0, Math.PI * 2);
-    ctx.fillStyle = CRISIS_COLOR;
+    ctx.fillStyle = active ? CRISIS_COLOR : withOpacity(CRISIS_COLOR, 0.5);
     ctx.fill();
   }
 
@@ -774,8 +920,11 @@ function drawEvent(ev) {
   // solid arrowhead indicating direction of travel. Ground/troop movements
   // render distinct amber, naval/fleet movements solid blue — never dashed or
   // dotted, and the arrowhead matches the line colour. Arrow tail is barely visible.
+  // Still-active movements glow ("fluo"); concluded ones are dimmed and their
+  // arrowhead stays flat. Movements outside the timeline year are skipped.
   function drawFleet(fleet) {
     if (!state.showFleets) return;
+    if (fleet._hiddenByTimeline) return;
     const a = project(fleet.from.lon, fleet.from.lat);
     const b = project(fleet.to.lon, fleet.to.lat);
     const dx = b.x - a.x;
@@ -784,18 +933,37 @@ function drawEvent(ev) {
     const ang = Math.atan2(dy, dx);
     const headLen = 8;
     const color = fleet.kind === 'ground' ? GROUND_COLOR : FLEET_COLOR;
+    const active = isLayerActive(fleet);
 
-    // Very transparent arrow tail line (barely visible)
+    // Very transparent arrow tail line (barely visible); very active movements
+    // get a luminous second pass over the tail so the whole vector reads live.
     ctx.save();
-    ctx.strokeStyle = withOpacity(color, ARROW_TAIL_OPACITY);
+    ctx.strokeStyle = withOpacity(color, ARROW_TAIL_OPACITY * (active ? 1 : 0.35));
     ctx.lineWidth = 1.2;
     ctx.beginPath();
     ctx.moveTo(a.x, a.y);
     ctx.lineTo(b.x, b.y);
     ctx.stroke();
+    if (active) {
+      ctx.shadowColor = color;
+      ctx.shadowBlur = FLUO_LINE_GLOW_BLUR;
+      ctx.strokeStyle = withOpacity(color, 0.3);
+      ctx.lineWidth = 2.2;
+      ctx.beginPath();
+      ctx.moveTo(a.x, a.y);
+      ctx.lineTo(b.x, b.y);
+      ctx.stroke();
+    }
     ctx.restore();
 
-    // Solid arrowhead
+    // Solid arrowhead; the halo makes active heads breathe slightly.
+    ctx.save();
+    if (active) {
+      ctx.shadowColor = color;
+      ctx.shadowBlur = FLUO_LINE_GLOW_BLUR + 5 * (0.5 + 0.5 * Math.sin(Date.now() / 650 + a.x));
+    } else {
+      ctx.globalAlpha = CONCLUDED_OPACITY;
+    }
     ctx.beginPath();
     ctx.moveTo(b.x, b.y);
     ctx.lineTo(b.x - headLen * Math.cos(ang - 0.4), b.y - headLen * Math.sin(ang - 0.4));
@@ -803,6 +971,7 @@ function drawEvent(ev) {
     ctx.closePath();
     ctx.fillStyle = color;
     ctx.fill();
+    ctx.restore();
   }
 
   // Coalesce high-frequency redraws (wheel zoom, drag pan) into a single draw
@@ -845,6 +1014,7 @@ function drawEvent(ev) {
     const hitRadiusSq = hitRadius * hitRadius;
     for (let i = state.zones.length - 1; i >= 0; i--) {
       const zone = state.zones[i];
+      if (zone._hiddenByTimeline) continue;
       const p = project(zone.lon, zone.lat);
       const dx = p.x - px;
       const dy = p.y - py;
@@ -860,6 +1030,7 @@ function drawEvent(ev) {
     const hitDistSq = hitDist * hitDist;
     for (let i = state.fleets.length - 1; i >= 0; i--) {
       const fleet = state.fleets[i];
+      if (fleet._hiddenByTimeline) continue;
       const a = project(fleet.from.lon, fleet.from.lat);
       const b = project(fleet.to.lon, fleet.to.lat);
       // Distance from point to line segment
@@ -883,6 +1054,7 @@ function drawEvent(ev) {
     const hitRadiusSq = hitRadius * hitRadius;
     for (let i = state.crises.length - 1; i >= 0; i--) {
       const crisis = state.crises[i];
+      if (crisis._hiddenByTimeline) continue;
       const p = project(crisis.lon, crisis.lat);
       const dx = p.x - px;
       const dy = p.y - py;
@@ -1181,6 +1353,21 @@ function drawEvent(ev) {
   }
 
   // ---- Zone/Deployment Tooltips ----
+  // Shared lifecycle line for layer tooltips: a glowing "●" marker for still
+  // active entries (shows how long they have been live) and a dim "○" for
+  // concluded ones (shows the full duration span the layers pipeline recorded).
+  function appendActivityLine(wrapper, item) {
+    const line = document.createElement('div');
+    line.style.cssText = 'margin-top: 4px; font-size: 0.7rem; color: var(--fg-muted);';
+    line.textContent = `${isLayerActive(item) ? '●' : '○'} ${layerActivityLabel(item)}`;
+    if (isLayerActive(item)) {
+      line.style.color = 'var(--accent)';
+      line.style.fontWeight = '600';
+    }
+    wrapper.appendChild(line);
+    return wrapper;
+  }
+
   function createZoneTooltipElement(zone) {
     const wrapper = document.createElement('div');
     const cat = document.createElement('div');
@@ -1210,7 +1397,7 @@ function drawEvent(ev) {
       note.textContent = zone.note;
       wrapper.appendChild(note);
     }
-    return wrapper;
+    return appendActivityLine(wrapper, zone);
   }
 
   function createDeploymentTooltipElement(fleet) {
@@ -1232,7 +1419,7 @@ function drawEvent(ev) {
       note.textContent = fleet.note;
       wrapper.appendChild(note);
     }
-    return wrapper;
+    return appendActivityLine(wrapper, fleet);
   }
 
   function moveZoneTooltip(x, y) {
@@ -1304,7 +1491,7 @@ function drawEvent(ev) {
       note.textContent = crisis.note;
       wrapper.appendChild(note);
     }
-    return wrapper;
+    return appendActivityLine(wrapper, crisis);
   }
 
   function moveCrisisTooltip(x, y) {
@@ -1385,7 +1572,12 @@ function drawEvent(ev) {
   }
 
   function computeStats() {
-     const counts = { breakthroughs: 0, conflicts: 0, fleets: 0, crises: 0 };
+     const counts = {
+       breakthroughs: 0, conflicts: 0, fleets: 0, crises: 0,
+       conflictsActive: 0, conflictsConcluded: 0,
+       fleetsActive: 0, fleetsConcluded: 0,
+       crisesActive: 0, crisesConcluded: 0
+     };
      const todayISO = new Date().toISOString().slice(0, 10);
      state.events.forEach(ev => {
        if (!isCategoryVisible(ev.category)) return;
@@ -1395,10 +1587,18 @@ function drawEvent(ev) {
        if (!statMap || statMap.statId !== 'map-stat-active') return;
        counts.breakthroughs++;
      });
-     // Conflicts/fleets/crises: always show actual total counts (not zero when invisible)
+     // Conflicts/fleets/crises: always show actual total counts (not zero when
+     // invisible), plus an active/concluded split so the fluo/dim styling is
+     // reflected in the button labels and legend counts.
      counts.conflicts = state.zones.length;
+     counts.conflictsActive = state.zones.filter(isLayerActive).length;
+     counts.conflictsConcluded = counts.conflicts - counts.conflictsActive;
      counts.fleets = state.fleets.length;
+     counts.fleetsActive = state.fleets.filter(isLayerActive).length;
+     counts.fleetsConcluded = counts.fleets - counts.fleetsActive;
      counts.crises = state.crises.length;
+     counts.crisesActive = state.crises.filter(isLayerActive).length;
+     counts.crisesConcluded = counts.crises - counts.crisesActive;
      return counts;
    }
 
@@ -1435,6 +1635,7 @@ function drawEvent(ev) {
       localStorage.setItem(STORAGE_KEY_FILTER_CRISIS, String(state.filterCrisis)); 
       localStorage.setItem(STORAGE_KEY_SHOW_CRISES, String(state.showCrises));
     } catch (_) {}
+    updateFilterButton('filter-crisis', state.filterCrisis);
     draw();
     updateStatsDisplay();
     renderLegend();
@@ -1475,6 +1676,11 @@ function drawEvent(ev) {
     }
     draw();
     updateStatsDisplay();
+    // A layer toggle can flip a filter (zones/deployments turn the military
+    // filter on, crises turn the crisis filter on); keep the filter buttons'
+    // brightness in sync so an enabled layer always lights up its button.
+    updateFilterButton('filter-military', state.filterMilitary);
+    updateFilterButton('filter-crisis', state.filterCrisis);
     renderLegend();
   }
 
@@ -1486,6 +1692,7 @@ function drawEvent(ev) {
     row.tabIndex = 0;
     row.setAttribute('aria-pressed', String(opts.visible));
     row.setAttribute('data-layer', opts.key);
+    if (opts.title) row.setAttribute('title', opts.title);
     if (opts.splitColors && opts.splitColors.length > 1) {
       // Split dot: render a dot for each color in the split array
       // so the legend shows both ground (green) and fleet (blue) components.
@@ -1541,19 +1748,33 @@ function drawEvent(ev) {
     }
     const conflictLabel = document.querySelector('#filter-military .map-hint-title span:nth-child(2)');
     if (conflictLabel) {
-      conflictLabel.textContent = ` ${pluralize(stats.conflicts, 'active conflict zone', 'active conflict zones')},`;
+      conflictLabel.textContent = stats.conflictsConcluded > 0
+        ? ` ${pluralize(stats.conflicts, 'conflict zone', 'conflict zones')} · ${stats.conflictsActive} active, ${stats.conflictsConcluded} concluded,`
+        : ` ${pluralize(stats.conflicts, 'active conflict zone', 'active conflict zones')},`;
     }
     const fleetLabel = document.querySelector('#filter-military .map-hint-title span:last-child');
     if (fleetLabel) {
-      fleetLabel.textContent = ` ${pluralize(stats.fleets, 'deployment', 'deployments')}`;
+      fleetLabel.textContent = stats.fleetsConcluded > 0
+        ? ` ${pluralize(stats.fleets, 'deployment', 'deployments')} · ${stats.fleetsActive} active, ${stats.fleetsConcluded} concluded`
+        : ` ${pluralize(stats.fleets, 'deployment', 'deployments')}`;
     }
     const crisisLabel = document.querySelector('#filter-crisis .map-hint-title span:last-child');
     if (crisisLabel) {
-      crisisLabel.textContent = ` ${pluralize(stats.crises, 'humanitarian crisis', 'humanitarian crises')}`;
+      crisisLabel.textContent = stats.crisesConcluded > 0
+        ? ` ${pluralize(stats.crises, 'humanitarian crisis', 'humanitarian crises')} · ${stats.crisesActive} active, ${stats.crisesConcluded} concluded`
+        : ` ${pluralize(stats.crises, 'humanitarian crisis', 'humanitarian crises')}`;
     }
   }
 
   // ---- Legend ----
+  // Humanized legend/count breakdown for a layer list (active vs concluded).
+  function layerCountTitle(items) {
+    const active = items.filter(isLayerActive).length;
+    const concluded = items.length - active;
+    if (concluded === 0) return `${active} active`;
+    return `${active} active, ${concluded} concluded`;
+  }
+
   function renderLegend() {
     const mapEl = document.getElementById('world-map');
     if (!mapEl) return;
@@ -1656,7 +1877,8 @@ const fragment = document.createDocumentFragment();
         visible: zonesVisible,
         color: ZONE_COLOR,
         count: String(state.zones.length),
-        ring: true
+        ring: true,
+        title: layerCountTitle(state.zones)
       });
       appendLayerRow(fragment, {
         key: 'deployments',
@@ -1664,7 +1886,8 @@ const fragment = document.createDocumentFragment();
         visible: deploymentsVisible,
         splitColors: [GROUND_COLOR, FLEET_COLOR],
         count: String(state.fleets.length),
-        diamond: true
+        diamond: true,
+        title: layerCountTitle(state.fleets)
       });
       appendLayerRow(fragment, {
         key: 'crises',
@@ -1672,8 +1895,16 @@ const fragment = document.createDocumentFragment();
         visible: crisesVisible,
         color: CRISIS_COLOR,
         count: String(state.crises.length),
-        ring: true
+        ring: true,
+        title: layerCountTitle(state.crises)
       });
+
+      // Explain the lifecycle glyphs without cluttering the toggleable rows.
+      const note = document.createElement('div');
+      note.className = 'map-legend-note';
+      note.setAttribute('aria-hidden', 'true');
+      note.textContent = '● glow = still active · ○ dim = concluded (hover shows duration)';
+      fragment.appendChild(note);
 
     if (unknown > 0) {
       const row = document.createElement('div');
@@ -1852,6 +2083,8 @@ const fragment = document.createDocumentFragment();
       lon: z.lon,
       radiusDeg,
       status: z.status || 'active',
+      start_date: z.start_date || '',
+      end_date: z.end_date || '',
       source: z.source || '',
       url: z.url || '',
       note: z.note || ''
@@ -1865,6 +2098,9 @@ const fragment = document.createDocumentFragment();
       kind: f.kind === 'ground' ? 'ground' : 'fleet',
       from: f.from || {},
       to: f.to || {},
+      status: f.status || 'active',
+      start_date: f.start_date || f.date || '',
+      end_date: f.end_date || '',
       note: f.note || '',
       source: f.source || ''
     };
@@ -1949,9 +2185,31 @@ function startTerminatorInterval() {
 }
 
 // Timeline slider state
-let timelineYear = 2026; // Current year
+let timelineYear = new Date().getFullYear(); // current year by default
 const TIMELINE_MIN_YEAR = 2020;
-const TIMELINE_MAX_YEAR = 2026;
+const TIMELINE_MAX_YEAR = new Date().getFullYear();
+
+// Cluster milestone events by year: only events dated in that year stay visible.
+// Like filterLayersByYear, this is intentionally inert until the slider moves so
+// a first-time visitor sees the whole milestone set.
+function filterEventsByYear(year) {
+  state.events.forEach(ev => {
+    if (ev.date) {
+      ev._hiddenByTimeline = parseInt(ev.date.slice(0, 4), 10) !== year;
+    }
+  });
+}
+
+// Cluster the operational layers by year, mirroring how the slider clusters
+// milestone events: still-active entries are plotted from their start year
+// onward, concluded ones only inside their active window. Items are left
+// untouched on first load so a fresh visitor sees the full set (consistent
+// with the events behaviour — the slider only engages once moved).
+function filterLayersByYear(year) {
+  state.zones.forEach(z => { z._hiddenByTimeline = !layerVisibleInYear(z, year); });
+  state.fleets.forEach(f => { f._hiddenByTimeline = !layerVisibleInYear(f, year); });
+  state.crises.forEach(c => { c._hiddenByTimeline = !layerVisibleInYear(c, year); });
+}
 
 // Timeline slider initialization
 function initTimelineSlider() {
@@ -2071,17 +2329,9 @@ function initTimelineSlider() {
   }
   
   function applyTimelineFilter() {
-    // Filter events by year
-    state.events.forEach(ev => {
-      if (ev.date) {
-        const eventYear = parseInt(ev.date.slice(0, 4), 10);
-        if (eventYear !== timelineYear) {
-          ev._hiddenByTimeline = true;
-        } else {
-          ev._hiddenByTimeline = false;
-        }
-      }
-    });
+    // Filter events by year and cluster the operational layers per year too.
+    filterEventsByYear(timelineYear);
+    filterLayersByYear(timelineYear);
     draw();
     updateStatsDisplay();
   }
@@ -2170,8 +2420,35 @@ function initTimelineSlider() {
         return existingTestHook?.getTodayISO ?? (() => new Date().toISOString().slice(0, 10));
       },
       getView: () => ({ ...state.transform }),
-      setFilterRecent: (val) => { state.filterRecent = val; draw(); updateStatsDisplay(); renderLegend(); },
-      setFilterMilitary: (val) => { state.filterMilitary = val; state.showZones = val; state.showFleets = val; draw(); updateStatsDisplay(); renderLegend(); }
+      setFilterRecent: (val) => { state.filterRecent = val; updateFilterButton('filter-recent', state.filterRecent); draw(); updateStatsDisplay(); renderLegend(); },
+      setFilterMilitary: (val) => { state.filterMilitary = val; state.showZones = val; state.showFleets = val; updateFilterButton('filter-military', state.filterMilitary); draw(); updateStatsDisplay(); renderLegend(); },
+      // Layer lifecycle helpers + stats (fluo/concluded split).
+      layerStatus,
+      isLayerActive,
+      layerActivityLabel,
+      layerVisibleInYear,
+      normalizeLayerDate,
+      computeStats,
+      layerCountTitle,
+      // Replace the loaded layer data (used to exercise fluo/dim + timeline
+      // clustering deterministically without mutating the shared fixtures).
+      setLayers: (zones, fleets, crises) => {
+        state.zones = (zones || []).map(normalizeZone).filter(isZonePlottable);
+        state.fleets = (fleets || []).map(normalizeFleet).filter(isFleetPlottable);
+        state.crises = (crises || []).map(normalizeZone).filter(isZonePlottable);
+        updateStatsDisplay();
+        renderLegend();
+      },
+      getLayers: () => ({ zones: state.zones, fleets: state.fleets, crises: state.crises }),
+      // Drive the same year-clustering code path as the timeline slider.
+      setTimelineYear: (year) => {
+        timelineYear = Math.max(TIMELINE_MIN_YEAR, Math.min(TIMELINE_MAX_YEAR, year));
+        filterEventsByYear(timelineYear);
+        filterLayersByYear(timelineYear);
+        draw();
+        updateStatsDisplay();
+      },
+      getTimelineYear: () => timelineYear
     };
   }
 

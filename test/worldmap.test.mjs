@@ -146,7 +146,7 @@ const canvas = makeCanvas();
 const ctx = makeCtx();
 canvas.getContext = () => ctx;
 
-for (const id of ['world-map-canvas', 'map-tooltip', 'map-stat-active', 'map-stat-conflicts', 'map-stat-fleets', 'world-map', 'zoom-in', 'zoom-out', 'reset-view', 'terminator-toggle', 'terminator-icon', 'terminator-label', 'filter-recent', 'filter-military', 'filter-recent-label', 'filter-military-conflict-label', 'filter-military-fleet-label']) {
+for (const id of ['world-map-canvas', 'map-tooltip', 'map-stat-active', 'map-stat-conflicts', 'map-stat-fleets', 'map-stat-crises', 'world-map', 'zoom-in', 'zoom-out', 'reset-view', 'terminator-toggle', 'terminator-icon', 'terminator-label', 'filter-recent', 'filter-military', 'filter-crisis', 'filter-recent-label', 'filter-military-conflict-label', 'filter-military-fleet-label']) {
   registeredEls[id] = id === 'map-tooltip' ? tooltip : (id === 'world-map-canvas' ? canvas : makeEl());
 }
 
@@ -154,9 +154,11 @@ for (const id of ['world-map-canvas', 'map-tooltip', 'map-stat-active', 'map-sta
 registeredEls['terminator-toggle'].setAttribute('aria-pressed', 'true');
 registeredEls['terminator-icon'].textContent = '☀';
 registeredEls['terminator-label'].textContent = 'Day/Night';
-// New filter buttons default state (filterRecent=true, filterMilitary=false)
-registeredEls['filter-recent'].setAttribute('aria-pressed', 'true');
+// New filter buttons default state (filterRecent=false, filterMilitary=false,
+// filterCrisis=false) — the fresh-visitor experience, per the markup.
+registeredEls['filter-recent'].setAttribute('aria-pressed', 'false');
 registeredEls['filter-military'].setAttribute('aria-pressed', 'false');
+registeredEls['filter-crisis'].setAttribute('aria-pressed', 'false');
 
 // world-map children registry: legend is created at runtime and appended here.
 const worldMap = registeredEls['world-map'];
@@ -584,5 +586,112 @@ test('zoom controls, keyboard and double-click do not throw', () => {
     expect(api.isFleetPlottable(api.normalizeFleet({ id: 'f11', from: { lat: 50, lon: 10 } }))).toBe(false);
     expect(api.isFleetPlottable(api.normalizeFleet({ id: 'f12', from: { lat: 50, lon: 999 }, to: { lat: 51, lon: 11 } }))).toBe(false);
     expect(api.isFleetPlottable(api.normalizeFleet({ id: 'f13', from: { lat: 50, lon: 10 }, to: { lat: 1e400, lon: 11 } }))).toBe(false);
+  });
+
+  test('new visitors see ALL milestones by default (breakthrough filter off)', () => {
+    expect(registeredEls['filter-recent'].getAttribute('aria-pressed')).toBe('false');
+    const api = windowObj.__WORLDMAP_TEST__;
+    api.setFilterRecent(true);
+    expect(registeredEls['filter-recent'].getAttribute('aria-pressed')).toBe('true');
+    expect(registeredEls['filter-recent'].style.opacity).toBe('1');
+    api.setFilterRecent(false);
+    expect(registeredEls['filter-recent'].getAttribute('aria-pressed')).toBe('false');
+    expect(registeredEls['filter-recent'].style.opacity).toBe('0.5');
+  });
+
+  test('crisis filter button lights up bright when toggled active', () => {
+    const btn = registeredEls['filter-crisis'];
+    expect(btn.getAttribute('aria-pressed')).toBe('false');
+    btn.fire('click', {});
+    expect(btn.getAttribute('aria-pressed')).toBe('true');
+    expect(btn.style.opacity).toBe('1');
+    expect(Number(registeredEls['map-stat-crises'].textContent)).toBe(5);
+    btn.fire('click', {});
+    expect(btn.getAttribute('aria-pressed')).toBe('false');
+    expect(btn.style.opacity).toBe('0.5');
+  });
+
+  test('layer lifecycle helpers: status, duration label and date parsing', () => {
+    const api = windowObj.__WORLDMAP_TEST__;
+    // Status normalization.
+    expect(api.layerStatus({})).toBe('active');
+    expect(api.layerStatus({ status: 'ongoing' })).toBe('active');
+    expect(api.layerStatus({ status: 'concluded' })).toBe('concluded');
+    expect(api.layerStatus({ status: 'inactive' })).toBe('concluded');
+    expect(api.isLayerActive({ status: 'active' })).toBe(true);
+    expect(api.isLayerActive({ status: 'ended' })).toBe(false);
+    // Date parsing accepts YYYY, YYYY-MM and YYYY-MM-DD.
+    expect(api.normalizeLayerDate('2022')).toBe('2022-01-01');
+    expect(api.normalizeLayerDate('2022-03')).toBe('2022-03-01');
+    expect(api.normalizeLayerDate('2022-03-05')).toBe('2022-03-05');
+    expect(api.normalizeLayerDate('nonsense')).toBeNull();
+    expect(api.normalizeLayerDate('')).toBeNull();
+    // Tooltip copy: active = "since", concluded = full duration span.
+    expect(api.layerActivityLabel({ status: 'active', start_date: '2022-02-24' })).toBe('Active since 2022-02-24');
+    expect(api.layerActivityLabel({ status: 'active' })).toBe('Active');
+    expect(api.layerActivityLabel({ status: 'concluded', start_date: '2022-02-24', end_date: '2024-02-24' }))
+      .toBe('Concluded · 731 days (2022-02-24 → 2024-02-24)');
+    expect(api.layerActivityLabel({ status: 'concluded', start_date: '2022-01-01' })).toBe('Concluded · ran from 2022-01-01');
+    expect(api.layerActivityLabel({ status: 'concluded', end_date: '2024-01-01' })).toBe('Concluded · ended 2024-01-01');
+    expect(api.layerActivityLabel({ status: 'concluded' })).toBe('Concluded');
+  });
+
+  test('year clustering: active layers persist, concluded ones stay in their window', () => {
+    const api = windowObj.__WORLDMAP_TEST__;
+    api.setLayers(
+      [
+        { id: 'z-old', name: 'Concluded war', lat: 40, lon: 25, status: 'concluded', start_date: '2022-01-01', end_date: '2024-12-31' },
+        { id: 'z-new', name: 'War since 2026', lat: 41, lon: 26, status: 'active', start_date: '2026-01-01' },
+        { id: 'z-any', name: 'Dataless zone', lat: 42, lon: 27 },
+      ],
+      [],
+      []
+    );
+    api.setFilterMilitary(true);
+    // 2023: concluded zone inside its window → visible; 2026 zone not yet started → hidden.
+    api.setTimelineYear(2023);
+    expect(api.getTimelineYear()).toBe(2023);
+    const stateAt2023 = api.getLayers().zones;
+    expect(stateAt2023.find((z) => z.id === 'z-old')._hiddenByTimeline).toBe(false);
+    expect(stateAt2023.find((z) => z.id === 'z-new')._hiddenByTimeline).toBe(true);
+    expect(stateAt2023.find((z) => z.id === 'z-any')._hiddenByTimeline).toBe(false); // no dates → all years
+    // 2026: concluded zone ended in 2024 → dropped; active-from-2026 → visible.
+    api.setTimelineYear(2026);
+    const stateAt2026 = api.getLayers().zones;
+    expect(stateAt2026.find((z) => z.id === 'z-old')._hiddenByTimeline).toBe(true);
+    expect(stateAt2026.find((z) => z.id === 'z-new')._hiddenByTimeline).toBe(false);
+    // Restore the shared fixtures for later tests.
+    api.setTimelineYear(2026);
+    api.setLayers(LAYER_PAYLOAD.conflict_zones, LAYER_PAYLOAD.deployments, LAYER_PAYLOAD.crisis_zones);
+  });
+
+  test('stats split active vs concluded layers and labels reflect it', () => {
+    const api = windowObj.__WORLDMAP_TEST__;
+    api.setLayers(
+      [
+        { id: 'a1', name: 'Active zone', lat: 40, lon: 25, status: 'active' },
+        { id: 'c1', name: 'Concluded zone', lat: 41, lon: 26, status: 'concluded', start_date: '2022-01-01', end_date: '2024-01-01' },
+      ],
+      [{ id: 'f-old', label: 'Old op', from: { lat: 50, lon: 10 }, to: { lat: 55, lon: 15 }, status: 'concluded', end_date: '2023-06-01' }],
+      [{ id: 'cr1', name: 'Active crisis', lat: 10, lon: 20, status: 'active' }]
+    );
+    const stats = api.computeStats();
+    expect(stats.conflicts).toBe(2);
+    expect(stats.conflictsActive).toBe(1);
+    expect(stats.conflictsConcluded).toBe(1);
+    expect(stats.fleets).toBe(1);
+    expect(stats.fleetsActive).toBe(0);
+    expect(stats.fleetsConcluded).toBe(1);
+    expect(stats.crises).toBe(1);
+    expect(stats.crisesActive).toBe(1);
+    expect(stats.crisesConcluded).toBe(0);
+    // The zone legend row title gives the active/concluded breakdown.
+    const rowByLayer = (key) => legendRows().find((r) => (r.attrs['data-layer'] || '') === key);
+    expect(rowByLayer('zones').getAttribute('title')).toBe('1 active, 1 concluded');
+    // Concluded deployments produce the detailed fleet label.
+    expect(registeredEls['filter-military-fleet-label'].textContent).toContain('concluded');
+    // Restore shared fixtures.
+    api.setLayers(LAYER_PAYLOAD.conflict_zones, LAYER_PAYLOAD.deployments, LAYER_PAYLOAD.crisis_zones);
+    expect(Number(registeredEls['map-stat-conflicts'].textContent)).toBe(3);
   });
 });

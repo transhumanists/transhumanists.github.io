@@ -15,7 +15,9 @@ from __future__ import annotations
 
 import json
 import math
+import re
 import sys
+from datetime import date as _date
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -38,6 +40,53 @@ def _coord_ok(lat: object, lon: object) -> bool:
         _is_number(lat) and -90.0 <= float(lat) <= 90.0
         and _is_number(lon) and -180.0 <= float(lon) <= 180.0
     )
+
+
+# Layer lifecycle schema (drives the fluo/dim rendering + duration tooltips in
+# the worldmap): status must be one of the known values and the date fields must
+# be sane. Empty/absent fields are allowed (active layers may have no end date).
+_STATUS_VALUES = {"active", "ongoing", "concluded", "inactive", "ended", "resolved"}
+_DATE_RE = re.compile(r"^\d{4}(-\d{2}){0,2}$")
+
+
+def _valid_date(value: object) -> bool:
+    if value is None or value == "":
+        return True
+    if not isinstance(value, str):
+        return False
+    s = value.strip()
+    if not _DATE_RE.fullmatch(s):
+        return False
+    parts = s.split("-")
+    if len(parts) >= 2 and not 1 <= int(parts[1]) <= 12:
+        return False
+    if len(parts) == 3:
+        try:
+            _date.fromisoformat(s)
+        except ValueError:
+            return False
+    return True
+
+
+def _check_lifecycle(kind: str, i: int, item: dict) -> list[str]:
+    issues: list[str] = []
+    status = item.get("status")
+    if status is not None and (
+        not isinstance(status, str) or status.strip().lower() not in _STATUS_VALUES
+    ):
+        issues.append(f"{kind}[{i}]: status must be one of {sorted(_STATUS_VALUES)}")
+    for field in ("start_date", "end_date"):
+        if not _valid_date(item.get(field)):
+            issues.append(f"{kind}[{i}]: {field} must be YYYY-MM-DD, YYYY-MM or YYYY")
+    start = item.get("start_date")
+    end = item.get("end_date")
+    if (
+        isinstance(start, str) and len(start.strip()) == 10
+        and isinstance(end, str) and len(end.strip()) == 10
+        and start.strip() > end.strip()
+    ):
+        issues.append(f"{kind}[{i}]: start_date must not be after end_date")
+    return issues
 
 
 def check_events(events: object) -> list[str]:
@@ -70,6 +119,7 @@ def check_zones(zones: object) -> list[str]:
             issues.append(f"conflict_zones[{i}]: name must be a string")
         if not _coord_ok(z.get("lat"), z.get("lon")):
             issues.append(f"conflict_zones[{i}]: lat/lon must be finite and in range")
+        issues.extend(_check_lifecycle("conflict_zones", i, z))
     return issues
 
 
@@ -87,6 +137,7 @@ def check_fleets(fleets: object) -> list[str]:
         if not _coord_ok(f.get("to", {}).get("lat") if isinstance(f.get("to"), dict) else None,
                          f.get("to", {}).get("lon") if isinstance(f.get("to"), dict) else None):
             issues.append(f"fleet_movements[{i}]: to must be a finite lat/lon pair in range")
+        issues.extend(_check_lifecycle("fleet_movements", i, f))
     return issues
 
 

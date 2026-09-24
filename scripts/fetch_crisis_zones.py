@@ -25,16 +25,19 @@ RELIEFWEB_API_V2 = "https://api.reliefweb.int/v2/disasters?appname=crisis-zone-f
 RELIEFWEB_API_V1 = "https://api.reliefweb.int/v1/disasters?appname=crisis-zone-fetcher&preset=latest&limit=50&fields[id,name,date,primary_country,url,description]"
 
 # RSS feeds that work (verified)
-OCHA_RSS = "https://reliefweb.int/rss.xml"  # ReliefWeb RSS (includes OCHA content)
+OCHA_RSS = "https://www.unocha.org/rss.xml"  # OCHA official RSS feed
 UNHCR_RSS = "https://www.unhcr.org/rss.xml"  # UNHCR official RSS feed
 WFP_RSS = "https://www.wfp.org/rss.xml"  # WFP official RSS feed
 FAO_RSS = "https://www.fao.org/rss.xml"  # FAO official RSS feed
 WHO_EMERGENCIES = "https://www.who.int/emergencies/disease-outbreak-news"  # WHO emergencies page
-
-# Additional crisis data sources
 RELIEFWEB_API_V2 = "https://api.reliefweb.int/v2/disasters"  # ReliefWeb API v2
 RELIEFWEB_API_V1 = "https://api.reliefweb.int/v1/disasters"  # ReliefWeb API v1 fallback
-RELIEFWEB_API_URL = "https://api.reliefweb.int/v2/reports?appname=crisis-zone-fetcher&preset=latest&limit=50&fields[id,title,date,primary_country,url,description,url_alias,primary_country_code,source]"
+
+# Additional crisis data sources
+UNHCR_RSS = "https://www.unhcr.org/rss.xml"  # UNHCR official RSS feed
+WFP_RSS = "https://www.wfp.org/rss.xml"  # WFP official RSS feed
+FAO_RSS = "https://www.fao.org/rss.xml"  # FAO official RSS feed
+OCHA_HAPI = "https://data.humdata.org/api/3/action/package_search?q=humanitarian+crisis&rows=50"  # HDX API
 
 # Better headers to avoid 403/410 errors
 REQUEST_HEADERS = {
@@ -300,13 +303,13 @@ def fetch_reliefweb_crises() -> list[dict]:
 
 
 def build_crisis_zones_from_sources(ocha_data: list, who_data: list, reliefweb_data: list, 
-                                    unhcr_data: list, wfp_data: list, fao_data: list) -> list[dict]:
+                                    unhcr_data: list, wfp_data: list, fao_data: list, hdx_data: list) -> list[dict]:
     """Build crisis zones from fetched sources, merging with static fallback."""
     zones = []
     seen_names = set()
     
-    # Priority: ReliefWeb (structured) > OCHA > UNHCR > WFP > FAO > WHO
-    for source in [reliefweb_data, ocha_data, unhcr_data, wfp_data, fao_data, who_data]:
+    # Priority: ReliefWeb (structured) > OCHA > HDX > UNHCR > WFP > FAO > WHO
+    for source in [reliefweb_data, ocha_data, hdx_data, unhcr_data, wfp_data, fao_data, who_data]:
         for item in source:
             title = item.get("title", "").strip()
             if not title or title in seen_names:
@@ -326,7 +329,7 @@ def build_crisis_zones_from_sources(ocha_data: list, who_data: list, reliefweb_d
                 "radiusDeg": 4.0,
                 "status": "active",
                 "note": item.get("description", item.get("title", ""))[:200],
-                "source": "ReliefWeb / OCHA / WHO / UNHCR / WFP / FAO",
+                "source": "ReliefWeb / OCHA / WHO / UNHCR / WFP / FAO / HDX",
                 "url": item.get("link", "https://www.unocha.org"),
             })
             if len(zones) >= 15:  # Limit to 15 crisis zones
@@ -395,6 +398,29 @@ def save_world_layers(data: dict) -> bool:
         return False
 
 
+def fetch_hdx_crises() -> list[dict]:
+    """Fetch crisis data from HDX API."""
+    hdx_data = []
+    try:
+        url = "https://data.humdata.org/api/3/action/package_search?q=humanitarian+crisis&rows=50"
+        data = fetch_url(url)
+        if data:
+            resp = json.loads(data)
+            for pkg in resp.get("result", {}).get("results", []):
+                title = pkg.get("title", "")
+                notes = pkg.get("notes", "")
+                url = f"https://data.humdata.org/dataset/{pkg.get('name', '')}"
+                if title:
+                    hdx_data.append({
+                        "title": title,
+                        "description": notes[:200],
+                        "link": url,
+                    })
+    except Exception as e:
+        print(f"  HDX API error: {e}")
+    return hdx_data
+
+
 def main() -> int:
     print("Fetching crisis zone data...")
     
@@ -423,10 +449,9 @@ def main() -> int:
     fao = parse_ocha_rss(fao_xml) if fao_xml else []
     print(f"  Got {len(fao)} FAO items")
     
-    print("  Fetching OCHA RSS...")
-    ocha_xml = fetch_url(OCHA_RSS)
-    ocha = parse_ocha_rss(ocha_xml) if ocha_xml else []
-    print(f"  Got {len(ocha)} OCHA items")
+    print("  Fetching HDX API...")
+    hdx = fetch_hdx_crises()
+    print(f"  Got {len(hdx)} HDX items")
     
     print("  Fetching WHO emergencies...")
     who_html = fetch_url(WHO_EMERGENCIES)
@@ -434,7 +459,7 @@ def main() -> int:
     print(f"  Got {len(who)} WHO items")
     
     # Build crisis zones
-    crisis_zones = build_crisis_zones_from_sources(ocha, who, reliefweb, unhcr, wfp, fao)
+    crisis_zones = build_crisis_zones_from_sources(ocha, who, reliefweb, unhcr, wfp, fao, hdx)
     print(f"Built {len(crisis_zones)} crisis zones")
     
     # Load existing world_layers

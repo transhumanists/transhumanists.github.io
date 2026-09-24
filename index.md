@@ -44,7 +44,7 @@ description: "Tracking milestones across biotech, AGI, quantum, energy, cyber, s
       <canvas id="world-map-canvas"></canvas>
       <div class="map-overlay" aria-live="polite">
         <div class="map-hint-row">
-          <button id="filter-recent" class="map-hint" aria-pressed="true">
+          <button id="filter-recent" class="map-hint" aria-pressed="false">
             <span class="map-hint-dot" style="background: var(--green);"></span>
             <span class="map-hint-title">
               <span id="map-stat-active">—</span>
@@ -53,7 +53,7 @@ description: "Tracking milestones across biotech, AGI, quantum, energy, cyber, s
           </button>
         </div>
         <div class="map-hint-row">
-          <button id="filter-military" class="map-hint" aria-pressed="true">
+          <button id="filter-military" class="map-hint" aria-pressed="false">
             <span class="map-hint-dot" style="background: var(--red);"></span>
             <span class="map-hint-title">
               <span id="map-stat-conflicts">—</span>

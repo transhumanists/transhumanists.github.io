@@ -69,6 +69,9 @@ jobs:
       - name: Self-tests (stdlib)
         run: python scripts/test_sync.py
 
+      - name: Layers sync script tests
+        run: python scripts/test_sync_layers.py
+
       - name: Scratch end-to-end generation
         env:
           STALE_ERROR_DAYS: "99"

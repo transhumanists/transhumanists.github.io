@@ -357,10 +357,19 @@ body {
   .map-legend-dot--ring { background: transparent !important; border: 2px solid; border-radius: 50%; }
   .map-legend-dot--diamond { border-radius: 2px; transform: rotate(45deg); }
   .map-legend-label { flex: 1; min-width: 0; }
- .map-legend-count {
+.map-legend-count {
   margin-left: auto;
   color: var(--fg-subtle);
- }
+}
+.map-legend-note {
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px dashed var(--border);
+  color: var(--fg-muted);
+  font-size: 0.62rem;
+  line-height: 1.4;
+  user-select: none;
+}
 .map-tooltip .tt-title { font-weight: 700; color: var(--accent); margin-bottom: 4px; }
 .map-tooltip .tt-category { font-family: var(--font-mono); font-size: 0.7rem; color: var(--fg-subtle); text-transform: uppercase; letter-spacing: 0.06em; }
 .map-tooltip .tt-value { color: var(--green); font-family: var(--font-mono); font-weight: 700; }

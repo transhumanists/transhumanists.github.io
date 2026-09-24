@@ -1,6 +1,6 @@
 {
-  "version": "1.0.0",
-  "last_update": "2026-09-24T08:14:54+00:00",
+  "version": "1.1.0",
+  "last_update": "2026-09-24T19:20:12+00:00",
   "conflict_zones": [
     {
       "id": "zone-ukraine",
@@ -10,6 +10,8 @@
       "lon": 37.8,
       "radiusDeg": 5.5,
       "status": "active",
+      "start_date": "2022-02-24",
+      "end_date": "",
       "note": "Russia–Ukraine line of contact",
       "source": "ISW",
       "url": "https://www.understandingwar.org"
@@ -22,6 +24,8 @@
       "lon": 34.3,
       "radiusDeg": 2.2,
       "status": "active",
+      "start_date": "2023-10-07",
+      "end_date": "",
       "note": "Gaza–Israel conflict",
       "source": "UN OCHA",
       "url": "https://www.unocha.org"
@@ -34,9 +38,275 @@
       "lon": 43.0,
       "radiusDeg": 4.0,
       "status": "active",
+      "start_date": "2023-11-19",
+      "end_date": "",
       "note": "Maritime security zone",
       "source": "IMSC",
       "url": "https://www.maritimeglobalsecurity.org"
+    },
+    {
+      "id": "zone-arab-israeli",
+      "name": "Arab–Israeli",
+      "region": "Asia",
+      "lat": 31.05,
+      "lon": 34.85,
+      "radiusDeg": 5.0,
+      "tier": "major",
+      "countries": [
+        "Israel",
+        "Palestine",
+        "Lebanon",
+        "Syria",
+        "Iran",
+        "Iraq",
+        "Jordan",
+        "Saudi Arabia",
+        "Kuwait",
+        "Bahrain",
+        "Qatar",
+        "United Arab Emirates",
+        "Oman",
+        "Yemen",
+        "Egypt"
+      ],
+      "status": "active",
+      "start_date": "1948-01-01",
+      "end_date": "",
+      "source": "Wikipedia (List of ongoing armed conflicts)",
+      "url": "https://en.wikipedia.org/wiki/List_of_ongoing_armed_conflicts"
+    },
+    {
+      "id": "zone-congolese-conflicts",
+      "name": "Congolese conflicts",
+      "region": "Africa",
+      "lat": -4.04,
+      "lon": 21.75,
+      "radiusDeg": 5.0,
+      "tier": "major",
+      "countries": [
+        "Democratic Republic of the Congo",
+        "Central African Republic",
+        "South Sudan",
+        "Rwanda",
+        "Burundi",
+        "Uganda"
+      ],
+      "status": "active",
+      "start_date": "1960-01-01",
+      "end_date": "",
+      "source": "Wikipedia (List of ongoing armed conflicts)",
+      "url": "https://en.wikipedia.org/wiki/List_of_ongoing_armed_conflicts"
+    },
+    {
+      "id": "zone-islamist-insurgencies-in-the-maghreb",
+      "name": "Islamist insurgencies in the Maghreb",
+      "region": "Africa",
+      "lat": 12.24,
+      "lon": -1.56,
+      "radiusDeg": 5.0,
+      "tier": "major",
+      "countries": [
+        "Algeria",
+        "Benin",
+        "Burkina Faso",
+        "Cameroon",
+        "Chad",
+        "Ivory Coast",
+        "Libya",
+        "Mali",
+        "Mauritania",
+        "Morocco",
+        "Niger",
+        "Nigeria",
+        "Togo",
+        "Tunisia"
+      ],
+      "status": "active",
+      "start_date": "2002-01-01",
+      "end_date": "",
+      "source": "Wikipedia (List of ongoing armed conflicts)",
+      "url": "https://en.wikipedia.org/wiki/List_of_ongoing_armed_conflicts"
+    },
+    {
+      "id": "zone-mexican-drug-war",
+      "name": "Mexican drug war",
+      "region": "North America",
+      "lat": 23.63,
+      "lon": -102.55,
+      "radiusDeg": 5.0,
+      "tier": "major",
+      "countries": [
+        "Mexico",
+        "Belize",
+        "El Salvador",
+        "Honduras",
+        "Guatemala",
+        "Nicaragua",
+        "United States"
+      ],
+      "status": "active",
+      "start_date": "2006-01-01",
+      "end_date": "",
+      "source": "Wikipedia (List of ongoing armed conflicts)",
+      "url": "https://en.wikipedia.org/wiki/List_of_ongoing_armed_conflicts"
+    },
+    {
+      "id": "zone-myanmar-civil-war",
+      "name": "Myanmar civil war",
+      "region": "Asia",
+      "lat": 21.92,
+      "lon": 95.96,
+      "radiusDeg": 5.0,
+      "tier": "major",
+      "countries": [
+        "Myanmar",
+        "India",
+        "Bangladesh",
+        "Thailand",
+        "China"
+      ],
+      "status": "active",
+      "start_date": "1948-01-01",
+      "end_date": "",
+      "source": "Wikipedia (List of ongoing armed conflicts)",
+      "url": "https://en.wikipedia.org/wiki/List_of_ongoing_armed_conflicts"
+    },
+    {
+      "id": "zone-somali-civil-war",
+      "name": "Somali Civil War",
+      "region": "Africa",
+      "lat": 5.15,
+      "lon": 46.2,
+      "radiusDeg": 5.0,
+      "tier": "major",
+      "countries": [
+        "Somalia",
+        "Somaliland",
+        "Kenya",
+        "Ethiopia"
+      ],
+      "status": "active",
+      "start_date": "1978-01-01",
+      "end_date": "",
+      "source": "Wikipedia (List of ongoing armed conflicts)",
+      "url": "https://en.wikipedia.org/wiki/List_of_ongoing_armed_conflicts"
+    },
+    {
+      "id": "zone-sudanese-civil-wars",
+      "name": "Sudanese civil wars",
+      "region": "Africa",
+      "lat": 12.86,
+      "lon": 30.22,
+      "radiusDeg": 5.0,
+      "tier": "major",
+      "countries": [
+        "Sudan",
+        "South Sudan",
+        "Egypt",
+        "Libya",
+        "Chad",
+        "Ethiopia",
+        "Central African Republic"
+      ],
+      "status": "active",
+      "start_date": "1955-01-01",
+      "end_date": "",
+      "source": "Wikipedia (List of ongoing armed conflicts)",
+      "url": "https://en.wikipedia.org/wiki/List_of_ongoing_armed_conflicts"
+    },
+    {
+      "id": "zone-afghanistan-conflict",
+      "name": "Afghanistan conflict",
+      "region": "Asia",
+      "lat": 33.94,
+      "lon": 67.71,
+      "radiusDeg": 4.0,
+      "tier": "minor",
+      "countries": [
+        "Afghanistan",
+        "Pakistan",
+        "Tajikistan"
+      ],
+      "status": "active",
+      "start_date": "1978-01-01",
+      "end_date": "",
+      "source": "Wikipedia (List of ongoing armed conflicts)",
+      "url": "https://en.wikipedia.org/wiki/List_of_ongoing_armed_conflicts"
+    },
+    {
+      "id": "zone-cameroonian-conflicts",
+      "name": "Cameroonian conflicts",
+      "region": "Africa",
+      "lat": 7.37,
+      "lon": 12.35,
+      "radiusDeg": 4.0,
+      "tier": "minor",
+      "countries": [
+        "Cameroon",
+        "Nigeria",
+        "Niger",
+        "Chad"
+      ],
+      "status": "active",
+      "start_date": "2012-01-01",
+      "end_date": "",
+      "source": "Wikipedia (List of ongoing armed conflicts)",
+      "url": "https://en.wikipedia.org/wiki/List_of_ongoing_armed_conflicts"
+    },
+    {
+      "id": "zone-colombian-conflict",
+      "name": "Colombian conflict",
+      "region": "South America",
+      "lat": 4.57,
+      "lon": -74.3,
+      "radiusDeg": 4.0,
+      "tier": "minor",
+      "countries": [
+        "Colombia",
+        "Venezuela",
+        "Ecuador"
+      ],
+      "status": "active",
+      "start_date": "1964-01-01",
+      "end_date": "",
+      "source": "Wikipedia (List of ongoing armed conflicts)",
+      "url": "https://en.wikipedia.org/wiki/List_of_ongoing_armed_conflicts"
+    },
+    {
+      "id": "zone-haitian-conflict",
+      "name": "Haitian conflict",
+      "region": "North America",
+      "lat": 18.97,
+      "lon": -72.29,
+      "radiusDeg": 4.0,
+      "tier": "minor",
+      "countries": [
+        "Haiti"
+      ],
+      "status": "active",
+      "start_date": "2018-01-01",
+      "end_date": "",
+      "source": "Wikipedia (List of ongoing armed conflicts)",
+      "url": "https://en.wikipedia.org/wiki/List_of_ongoing_armed_conflicts"
+    },
+    {
+      "id": "zone-insurgencies-in-iran",
+      "name": "Insurgencies in Iran",
+      "region": "Asia",
+      "lat": 32.43,
+      "lon": 53.68,
+      "radiusDeg": 4.0,
+      "tier": "minor",
+      "countries": [
+        "Iran",
+        "Iraq",
+        "Turkey"
+      ],
+      "status": "active",
+      "start_date": "1918-01-01",
+      "end_date": "",
+      "source": "Wikipedia (List of ongoing armed conflicts)",
+      "url": "https://en.wikipedia.org/wiki/List_of_ongoing_armed_conflicts"
     }
   ],
   "crisis_zones": [
@@ -48,6 +318,8 @@
       "lon": 24.5,
       "radiusDeg": 4.5,
       "status": "active",
+      "start_date": "2023-04-15",
+      "end_date": "",
       "note": "Humanitarian catastrophe, 25M+ in need",
       "source": "UN OCHA",
       "url": "https://www.unocha.org"
@@ -60,6 +332,8 @@
       "lon": 44.2,
       "radiusDeg": 3.8,
       "status": "active",
+      "start_date": "2015-03-26",
+      "end_date": "",
       "note": "World's worst humanitarian crisis",
       "source": "WHO",
       "url": "https://www.who.int"
@@ -72,6 +346,8 @@
       "lon": 92.5,
       "radiusDeg": 3.0,
       "status": "active",
+      "start_date": "2017-08-25",
+      "end_date": "",
       "note": "1M+ stateless refugees in camps",
       "source": "UNHCR",
       "url": "https://www.unhcr.org"
@@ -84,6 +360,8 @@
       "lon": 65.5,
       "radiusDeg": 5.0,
       "status": "active",
+      "start_date": "2021-08-15",
+      "end_date": "",
       "note": "28M+ facing acute food insecurity",
       "source": "WFP",
       "url": "https://www.wfp.org"
@@ -96,6 +374,8 @@
       "lon": 45.5,
       "radiusDeg": 4.0,
       "status": "active",
+      "start_date": "2021-01-01",
+      "end_date": "",
       "note": "5 consecutive failed rainy seasons",
       "source": "FAO",
       "url": "https://www.fao.org"
@@ -114,6 +394,9 @@
         "lon": 52.5
       },
       "kind": "fleet",
+      "status": "active",
+      "start_date": "2024-01-01",
+      "end_date": "",
       "note": "Eastern Mediterranean → Persian Gulf",
       "source": "USNI"
     },
@@ -129,6 +412,9 @@
         "lon": 58.5
       },
       "kind": "fleet",
+      "status": "active",
+      "start_date": "2024-01-01",
+      "end_date": "",
       "note": "Red Sea → Arabian Sea",
       "source": "USNI"
     },
@@ -144,6 +430,9 @@
         "lon": 115.0
       },
       "kind": "fleet",
+      "status": "active",
+      "start_date": "2024-01-01",
+      "end_date": "",
       "note": "Sasebo → South China Sea",
       "source": "USNI"
     },
@@ -159,6 +448,9 @@
         "lon": 120.5
       },
       "kind": "fleet",
+      "status": "active",
+      "start_date": "2024-01-01",
+      "end_date": "",
       "note": "Philippine Sea → Taiwan Strait",
       "source": "USNI"
     },
@@ -174,6 +466,9 @@
         "lon": 18.0
       },
       "kind": "fleet",
+      "status": "active",
+      "start_date": "2024-01-01",
+      "end_date": "",
       "note": "Portsmouth → Baltic (Gotland approaches)",
       "source": "RN"
     },
@@ -189,6 +484,9 @@
         "lon": 20.0
       },
       "kind": "fleet",
+      "status": "active",
+      "start_date": "2022-02-24",
+      "end_date": "",
       "note": "Kaliningrad → Baltic approaches",
       "source": "ISW"
     },
@@ -204,6 +502,9 @@
         "lon": 137.0
       },
       "kind": "fleet",
+      "status": "active",
+      "start_date": "2022-02-24",
+      "end_date": "",
       "note": "Vladivostok → Sea of Japan / Tsugaru",
       "source": "ISW"
     },
@@ -219,6 +520,9 @@
         "lon": 122.5
       },
       "kind": "fleet",
+      "status": "active",
+      "start_date": "2024-01-01",
+      "end_date": "",
       "note": "South China Sea → Yangtze delta",
       "source": "IISS"
     },
@@ -234,6 +538,9 @@
         "lon": 45.0
       },
       "kind": "fleet",
+      "status": "active",
+      "start_date": "2024-01-01",
+      "end_date": "",
       "note": "Mumbai → Gulf of Aden",
       "source": "IN"
     }
