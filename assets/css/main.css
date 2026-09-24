@@ -1423,6 +1423,99 @@ body {
   .milestones-grid { grid-template-columns: 1fr; }
   #world-map { height: 360px; }
   .site-nav .nav-link:not(.nav-sponsor) { display: none; }
+
+  /* Mobile world map optimizations */
+  #world-map { touch-action: pan-x pan-y; }
+  .map-overlay { top: 8px; left: 8px; right: 8px; font-size: 0.7rem; }
+  .map-hint-row { gap: 6px; margin-bottom: 3px; }
+  .map-hint-dot { width: 6px; height: 6px; }
+  .map-hint-title { font-size: 0.7rem; }
+  .map-timeline { bottom: 8px; left: 8px; right: 8px; height: 40px; padding: 6px 8px; }
+  .map-timeline-track { height: 3px; }
+  .map-timeline-years { top: -16px; font-size: 0.5rem; }
+  .map-timeline-handle { width: 18px; height: 18px; }
+  .map-legend { left: 8px; bottom: 8px; max-width: calc(100% - 16px); padding: 8px 10px; font-size: 0.6rem; min-width: 140px; }
+  .map-legend-title { font-size: 0.6rem; margin-bottom: 4px; }
+  .map-legend-row { gap: 6px; padding: 3px 4px; margin: -1px -4px; }
+  .map-legend-dot { width: 6px; height: 6px; }
+  .map-legend-label { font-size: 0.6rem; }
+  .map-legend-count { font-size: 0.6rem; }
+  .map-legend-controls { gap: 4px; margin-top: 6px; padding-top: 6px; }
+  .map-control-btn { padding: 3px 8px; font-size: 0.65rem; }
+  .map-tooltip { font-size: 0.7rem; max-width: 200px; padding: 8px 10px; }
+  .map-tooltip .tt-title { font-size: 0.75rem; margin-bottom: 3px; }
+  .map-tooltip .tt-category { font-size: 0.6rem; }
+  .map-tooltip .tt-value { font-size: 0.65rem; }
+  .map-tooltip .tt-link { font-size: 0.65rem; margin-top: 4px; }
+  .map-hint-row .map-hint { padding: 1px 0; }
+
+  /* Mobile highlights carousel */
+  .highlights-carousel-btn { width: 32px; height: 32px; font-size: 1.2rem; }
+  .highlights-carousel-prev { left: 4px; }
+  .highlights-carousel-next { right: 4px; }
+  .highlights-carousel-track > * { flex: 0 0 100%; }
+  .highlights-carousel-indicators { gap: 6px; margin-top: 12px; }
+  .highlights-carousel-indicator { width: 8px; height: 8px; }
+
+  /* Mobile world map timeline */
+  .map-timeline { bottom: 60px; } /* Above carousel */
+  .map-timeline-track { height: 3px; }
+  .map-timeline-years { top: -16px; font-size: 0.5rem; }
+  .map-timeline-handle { width: 18px; height: 18px; }
+  .map-timeline-years { top: -14px; font-size: 0.5rem; }
+}
+
+/* Mobile landscape */
+@media (max-width: 480px) {
+  #world-map { height: 300px; }
+  .map-overlay { top: 4px; left: 4px; right: 4px; }
+  .map-timeline { height: 36px; padding: 6px 6px; }
+  .map-timeline-track { height: 2px; }
+  .map-timeline-handle { width: 16px; height: 16px; }
+  .map-legend { font-size: 0.55rem; min-width: 120px; padding: 6px 8px; }
+  .map-legend-title { font-size: 0.55rem; }
+  .map-legend-row { gap: 4px; padding: 2px 3px; }
+  .map-legend-dot { width: 5px; height: 5px; }
+  .map-legend-label { font-size: 0.55rem; }
+  .map-control-btn { padding: 2px 6px; font-size: 0.6rem; }
+  .map-tooltip { font-size: 0.65rem; max-width: 180px; }
+  .highlights-carousel-btn { width: 28px; height: 28px; font-size: 1rem; }
+  .highlights-carousel-prev { left: 4px; }
+  .highlights-carousel-next { right: 4px; }
+}
+
+/* Landscape orientation adjustments */
+@media (max-height: 500px) and (orientation: landscape) {
+  #world-map { height: 40vh; min-height: 200px; }
+  .map-overlay { top: 4px; left: 4px; right: 4px; }
+  .map-timeline { bottom: 4px; height: 32px; padding: 4px 8px; }
+  .map-legend { display: none; }
+}
+
+/* Prevent horizontal scroll on mobile */
+@media (max-width: 768px) {
+  html, body { overflow-x: hidden; width: 100%; }
+  #world-map { width: 100%; max-width: 100vw; }
+  .map-overlay { max-width: 100%; }
+  .highlights-carousel { max-width: 100%; overflow: hidden; }
+  .highlights-carousel-track { width: 100%; }
+}
+
+/* Touch-friendly targets */
+@media (hover: none) and (pointer: coarse) {
+  .map-control-btn { padding: 8px 12px; min-width: 44px; min-height: 44px; }
+  .map-hint { padding: 4px 8px; }
+  .map-legend-row { padding: 8px 10px; min-height: 44px; }
+  .category-milestone-item { padding: 14px 16px; min-height: 44px; }
+  .highlights-carousel-btn { width: 48px; height: 48px; }
+}
+
+/* Landscape mode for mobile */
+@media (max-width: 768px) and (orientation: landscape) {
+  #world-map { height: 45vh; min-height: 200px; }
+  .map-overlay { top: 4px; left: 4px; right: 4px; }
+  .map-timeline { bottom: 4px; height: 36px; padding: 4px 8px; }
+  .map-legend { display: none; }
 }
 
 /* SCROLLBAR */
