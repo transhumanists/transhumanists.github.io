@@ -40,19 +40,6 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Cache milestone data
-        uses: actions/cache@v4
-        with:
-          path: |
-            data/milestones.json
-            data/milestones_history.json
-            data/activity.json
-            data/events.json
-            data/world_layers.json
-          key: milestone-data-${{ hashFiles('data/*.json') }}
-          restore-keys: |
-            milestone-data-
-
       - name: Run milestone sync
         env:
           DRY_RUN: ${{ inputs.dry_run == 'true' }}
