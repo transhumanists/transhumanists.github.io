@@ -20,19 +20,21 @@ WORLD_LAYERS_FILE = Path("data/world_layers.json")
 CRISIS_ZONES_KEY = "crisis_zones"
 
 # API endpoints (stdlib only - using public RSS/JSON feeds where available)
-OCHA_RSS = "https://www.unocha.org/rss.xml"  # OCHA official RSS feed
+# ReliefWeb API - requires appname parameter for identification
+RELIEFWEB_API_V2 = "https://api.reliefweb.int/v2/disasters?appname=crisis-zone-fetcher&preset=latest&limit=50&fields[id,name,date,primary_country,url,description]"
+RELIEFWEB_API_V1 = "https://api.reliefweb.int/v1/disasters?appname=crisis-zone-fetcher&preset=latest&limit=50&fields[id,name,date,primary_country,url,description]"
+
+# RSS feeds that work (verified)
+OCHA_RSS = "https://reliefweb.int/rss.xml"  # ReliefWeb RSS (includes OCHA content)
 UNHCR_RSS = "https://www.unhcr.org/rss.xml"  # UNHCR official RSS feed
 WFP_RSS = "https://www.wfp.org/rss.xml"  # WFP official RSS feed
 FAO_RSS = "https://www.fao.org/rss.xml"  # FAO official RSS feed
 WHO_EMERGENCIES = "https://www.who.int/emergencies/disease-outbreak-news"  # WHO emergencies page
-RELIEFWEB_API_V2 = "https://api.reliefweb.int/v2/disasters"  # ReliefWeb API v2
-RELIEFWEB_API_V1 = "https://api.reliefweb.int/v1/disasters"  # ReliefWeb API v1 fallback
 
 # Additional crisis data sources
-UNHCR_RSS = "https://www.unhcr.org/rss.xml"  # UNHCR official RSS feed
-WFP_RSS = "https://www.wfp.org/rss.xml"  # WFP official RSS feed
-FAO_RSS = "https://www.fao.org/rss.xml"  # FAO official RSS feed
-OCHA_HAPI = "https://data.humdata.org/api/3/action/package_search?q=humanitarian+crisis&rows=50"  # HDX API
+RELIEFWEB_API_V2 = "https://api.reliefweb.int/v2/disasters"  # ReliefWeb API v2
+RELIEFWEB_API_V1 = "https://api.reliefweb.int/v1/disasters"  # ReliefWeb API v1 fallback
+RELIEFWEB_API_URL = "https://api.reliefweb.int/v2/reports?appname=crisis-zone-fetcher&preset=latest&limit=50&fields[id,title,date,primary_country,url,description,url_alias,primary_country_code,source]"
 
 # Better headers to avoid 403/410 errors
 REQUEST_HEADERS = {
@@ -115,6 +117,78 @@ STATIC_CRISIS_ZONES = [
         "note": "5 consecutive failed rainy seasons",
         "source": "FAO",
         "url": "https://www.fao.org"
+    },
+    {
+        "id": "crisis-syria",
+        "name": "Syria · Humanitarian crisis",
+        "region": "Middle East",
+        "lat": 34.8,
+        "lon": 38.9,
+        "radiusDeg": 4.0,
+        "status": "active",
+        "note": "15M+ in need of humanitarian aid",
+        "source": "UN OCHA",
+        "url": "https://www.unocha.org"
+    },
+    {
+        "id": "crisis-haiti",
+        "name": "Haiti · Gang violence & hunger",
+        "region": "Caribbean",
+        "lat": 18.5,
+        "lon": -72.3,
+        "radiusDeg": 3.5,
+        "status": "active",
+        "note": "5M+ in need, gang violence & cholera",
+        "source": "UN OCHA",
+        "url": "https://www.unocha.org"
+    },
+    {
+        "id": "crisis-ethiopia",
+        "name": "Ethiopia · Tigray conflict",
+        "region": "East Africa",
+        "lat": 14.0,
+        "lon": 38.5,
+        "radiusDeg": 4.0,
+        "status": "active",
+        "note": "Millions displaced, famine risk",
+        "source": "UN OCHA",
+        "url": "https://www.unocha.org"
+    },
+    {
+        "id": "crisis-sahel",
+        "name": "Sahel · Conflict & hunger",
+        "region": "West Africa",
+        "lat": 13.0,
+        "lon": 2.0,
+        "radiusDeg": 6.0,
+        "status": "active",
+        "note": "10M+ displaced across Sahel",
+        "source": "UN OCHA",
+        "url": "https://www.unocha.org"
+    },
+    {
+        "id": "crisis-haiti",
+        "name": "Haiti · Gang violence & hunger",
+        "region": "Caribbean",
+        "lat": 18.5,
+        "lon": -72.3,
+        "radiusDeg": 3.5,
+        "status": "active",
+        "note": "5M+ in need, gang violence & cholera",
+        "source": "UN OCHA",
+        "url": "https://www.unocha.org"
+    },
+    {
+        "id": "crisis-drc",
+        "name": "DRC · Conflict & Ebola",
+        "region": "Central Africa",
+        "lat": -1.5,
+        "lon": 25.0,
+        "radiusDeg": 5.0,
+        "status": "active",
+        "note": "Conflict, Ebola, displacement",
+        "source": "WHO",
+        "url": "https://www.who.int"
     },
 ]
 

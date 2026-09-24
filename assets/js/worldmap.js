@@ -1742,7 +1742,8 @@ const fragment = document.createDocumentFragment();
       btn.addEventListener('click', () => {
         state.showTerminator = !state.showTerminator;
         btn.setAttribute('aria-pressed', state.showTerminator);
-        icon.textContent = state.showTerminator ? '☀' : '☾';
+        // Icon shows what clicking will do: ☀ = will show day (turn off), ☾ = will show night (turn on)
+        icon.textContent = state.showTerminator ? '☾' : '☀';
         draw();
       });
     }
@@ -1761,7 +1762,8 @@ const fragment = document.createDocumentFragment();
     setupTerminatorToggle(terminatorToggle, terminatorIcon);
     // Update terminator toggle state (in case it existed already)
     terminatorToggle.setAttribute('aria-pressed', state.showTerminator);
-    terminatorIcon.textContent = state.showTerminator ? '☀' : '☾';
+    // Icon shows what clicking will do: ☀ = will show day (turn off), ☾ = will show night (turn on)
+    terminatorIcon.textContent = state.showTerminator ? '☾' : '☀';
 
     controlsDiv.append(zoomInBtn, zoomOutBtn, resetBtn, terminatorToggle);
     fragment.appendChild(controlsDiv);
