@@ -63,6 +63,15 @@ description: "Tracking milestones across biotech, AGI, quantum, energy, cyber, s
             </span>
           </button>
         </div>
+        <div class="map-hint-row">
+          <button id="filter-crisis" class="map-hint" aria-pressed="false">
+            <span class="map-hint-dot" style="background: var(--purple);"></span>
+            <span class="map-hint-title">
+              <span id="map-stat-crises">—</span>
+              <span>humanitarian crises</span>
+            </span>
+          </button>
+        </div>
       </div>
       <div class="map-timeline" id="map-timeline" role="slider" aria-label="Timeline" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100" tabindex="0">
         <div class="map-timeline-track" id="map-timeline-track">

@@ -1385,7 +1385,7 @@ function drawEvent(ev) {
   }
 
   function computeStats() {
-     const counts = { breakthroughs: 0, conflicts: 0, fleets: 0 };
+     const counts = { breakthroughs: 0, conflicts: 0, fleets: 0, crises: 0 };
      const todayISO = new Date().toISOString().slice(0, 10);
      state.events.forEach(ev => {
        if (!isCategoryVisible(ev.category)) return;
@@ -1395,9 +1395,10 @@ function drawEvent(ev) {
        if (!statMap || statMap.statId !== 'map-stat-active') return;
        counts.breakthroughs++;
      });
-     // Conflicts/fleets: always show actual total counts (not zero when invisible)
+     // Conflicts/fleets/crises: always show actual total counts (not zero when invisible)
      counts.conflicts = state.zones.length;
      counts.fleets = state.fleets.length;
+     counts.crises = state.crises.length;
      return counts;
    }
 
@@ -1527,9 +1528,11 @@ function drawEvent(ev) {
     const active = document.getElementById('map-stat-active');
     const conflicts = document.getElementById('map-stat-conflicts');
     const fleets = document.getElementById('map-stat-fleets');
+    const crises = document.getElementById('map-stat-crises');
     if (active) active.textContent = stats.breakthroughs;
     if (conflicts) conflicts.textContent = stats.conflicts;
     if (fleets) fleets.textContent = stats.fleets;
+    if (crises) crises.textContent = stats.crises;
 
     // Update button labels with smart pluralization
     const breakthroughLabel = document.querySelector('#filter-recent .map-hint-title span:last-child');
@@ -1543,6 +1546,10 @@ function drawEvent(ev) {
     const fleetLabel = document.querySelector('#filter-military .map-hint-title span:last-child');
     if (fleetLabel) {
       fleetLabel.textContent = ` ${pluralize(stats.fleets, 'deployment', 'deployments')}`;
+    }
+    const crisisLabel = document.querySelector('#filter-crisis .map-hint-title span:last-child');
+    if (crisisLabel) {
+      crisisLabel.textContent = ` ${pluralize(stats.crises, 'humanitarian crisis', 'humanitarian crises')}`;
     }
   }
 
@@ -2102,6 +2109,14 @@ function initTimelineSlider() {
       filterMilitaryBtn.setAttribute('aria-pressed', String(state.filterMilitary));
       filterMilitaryBtn.style.opacity = state.filterMilitary ? '1' : '0.5';
       filterMilitaryBtn.addEventListener('click', toggleFilterMilitary);
+    }
+
+    // Initialize crisis filter button
+    const filterCrisisBtn = document.getElementById('filter-crisis');
+    if (filterCrisisBtn) {
+      filterCrisisBtn.setAttribute('aria-pressed', String(state.filterCrisis));
+      filterCrisisBtn.style.opacity = state.filterCrisis ? '1' : '0.5';
+      filterCrisisBtn.addEventListener('click', toggleFilterCrisis);
     }
 
     // Initialize timeline slider
