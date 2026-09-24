@@ -7,13 +7,30 @@ dedupe/cap contract shared by the sourced and static paths, and the RSS parser.
 """
 from __future__ import annotations
 
+import ssl
 import sys
 import unittest
+import urllib.error
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import fetch_crisis_zones as fz
+
+
+class _FakeResp:
+    def __init__(self, body: bytes, encoding: str = ""):
+        self._body = body
+        self.headers = {"Content-Encoding": encoding}
+
+    def read(self) -> bytes:
+        return self._body
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc):
+        return False
 
 
 class TestInferLocation(unittest.TestCase):
@@ -148,6 +165,86 @@ class TestSchemaVersion(unittest.TestCase):
     def test_schema_version_is_current(self):
         # Kept in sync with sync_layers.LIFECYCLE_VERSION (checked at runtime).
         self.assertEqual(fz.SCHEMA_VERSION, "1.1.0")
+
+
+class TestFetchUrl(unittest.TestCase):
+    def setUp(self):
+        self._saved_hosts = set(fz._UNVERIFIED_TLS_HOSTS)
+
+    def tearDown(self):
+        fz._UNVERIFIED_TLS_HOSTS.clear()
+        fz._UNVERIFIED_TLS_HOSTS.update(self._saved_hosts)
+
+    def test_rejects_non_https(self):
+        with self.assertRaises(ValueError):
+            fz.fetch_url("http://example.org/feed.xml")
+
+    def test_verified_context_by_default(self):
+        ctx = fz._tls_context("example.org")
+        self.assertEqual(ctx.check_hostname, True)
+        self.assertEqual(ctx.verify_mode, ssl.CERT_REQUIRED)
+
+    def test_cert_failure_retries_verified_then_unverified(self):
+        # First open fails certificate verification -> host is opted into
+        # unverified TLS -> the retry succeeds under CERT_NONE.
+        ctx_modes = []
+
+        def fake_open(req, timeout, context):
+            ctx_modes.append(context.verify_mode)
+            if len(ctx_modes) < 2:
+                raise urllib.error.URLError(ssl.SSLCertVerificationError("certificate verify failed"))
+            return _FakeResp(b"<ok/>\n")
+
+        orig = fz.urllib.request.urlopen
+        try:
+            fz.urllib.request.urlopen = fake_open
+            out = fz.fetch_url("https://example.org/feed.xml")
+        finally:
+            fz.urllib.request.urlopen = orig
+        self.assertEqual(out, "<ok/>\n")
+        self.assertEqual(ctx_modes, [ssl.CERT_REQUIRED, ssl.CERT_NONE])
+        self.assertIn("example.org", fz._UNVERIFIED_TLS_HOSTS)
+
+    def test_opts_host_in_once_and_only_once(self):
+        self.assertTrue(fz._mark_unverified_host("bad.host"))
+        self.assertFalse(fz._mark_unverified_host("bad.host"))
+        self.assertEqual(fz._UNVERIFIED_TLS_HOSTS, {"bad.host"})
+
+    def test_http_error_retries_then_gives_up(self):
+        calls = {"n": 0}
+
+        def fake_open(req, timeout, context):
+            calls["n"] += 1
+            raise urllib.error.HTTPError("https://e.org/x", 403, "Forbidden", {}, None)
+
+        orig = fz.urllib.request.urlopen
+        try:
+            fz.urllib.request.urlopen = fake_open
+            out = fz.fetch_url("https://e.org/x")
+        finally:
+            fz.urllib.request.urlopen = orig
+        self.assertIsNone(out)
+        self.assertEqual(calls["n"], 3)
+        self.assertEqual(fz._UNVERIFIED_TLS_HOSTS, set())
+
+    def test_decode_plain_text(self):
+        self.assertEqual(fz._decode_body(_FakeResp(b"hello")), "hello")
+
+    def test_decode_gzip(self):
+        import gzip
+        body = gzip.compress("Sudan emergency".encode())
+        self.assertEqual(fz._decode_body(_FakeResp(body, "gzip")), "Sudan emergency")
+
+    def test_decode_zlib_deflate(self):
+        import zlib
+        body = zlib.compress("Yemen cholera".encode())
+        self.assertEqual(fz._decode_body(_FakeResp(body, "deflate")), "Yemen cholera")
+
+    def test_decode_raw_deflate(self):
+        import zlib
+        co = zlib.compressobj(wbits=-zlib.MAX_WBITS)
+        body = co.compress(b"raw deflate") + co.flush()
+        self.assertEqual(fz._decode_body(_FakeResp(body, "deflate")), "raw deflate")
 
 
 if __name__ == "__main__":

@@ -1,6 +1,6 @@
 {
   "version": "1.1.0",
-  "last_update": "2026-09-24T19:26:57+00:00",
+  "last_update": "2026-09-24T19:54:22+00:00",
   "conflict_zones": [
     {
       "id": "zone-ukraine",
@@ -498,18 +498,6 @@
       "url": "https://data.humdata.org/dataset/afghanistan-humanitarian-needs"
     },
     {
-      "id": "crisis-red-sea-crisis-suez-canal-traffic-impacts",
-      "name": "Red Sea crisis: Suez Canal traffic impacts",
-      "region": "Middle East",
-      "lat": 29.96,
-      "lon": 32.55,
-      "radiusDeg": 4.0,
-      "status": "active",
-      "note": "The attacks in the Red Sea are disrupting commercial and humanitarian supplies. International partners have raised alarm over the economic and humanitarian impact of the escalating attacks on ships in",
-      "source": "ReliefWeb / OCHA / WHO / UNHCR / WFP / FAO / HDX",
-      "url": "https://data.humdata.org/dataset/the-red-sea-suez-canal-traffic"
-    },
-    {
       "id": "crisis-chad-humanitarian-needs",
       "name": "Chad: Humanitarian Needs",
       "region": "Central Africa",
@@ -520,6 +508,18 @@
       "note": "This dataset was compiled by the United Nations Office for the Coordination of Humanitarian Affairs (UNOCHA) on behalf of the Humanitarian Country Team and partners. It provides the Humanitarian Count",
       "source": "ReliefWeb / OCHA / WHO / UNHCR / WFP / FAO / HDX",
       "url": "https://data.humdata.org/dataset/chad-humanitarian-needs"
+    },
+    {
+      "id": "crisis-red-sea-crisis-suez-canal-traffic-impacts",
+      "name": "Red Sea crisis: Suez Canal traffic impacts",
+      "region": "Middle East",
+      "lat": 29.96,
+      "lon": 32.55,
+      "radiusDeg": 4.0,
+      "status": "active",
+      "note": "The attacks in the Red Sea are disrupting commercial and humanitarian supplies. International partners have raised alarm over the economic and humanitarian impact of the escalating attacks on ships in",
+      "source": "ReliefWeb / OCHA / WHO / UNHCR / WFP / FAO / HDX",
+      "url": "https://data.humdata.org/dataset/the-red-sea-suez-canal-traffic"
     },
     {
       "id": "crisis-yemen-humanitarian-needs",

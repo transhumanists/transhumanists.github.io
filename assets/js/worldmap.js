@@ -2188,7 +2188,11 @@ function startTerminatorInterval() {
   }, TERMINATOR_UPDATE_MS);
 }
 
-// Timeline slider state
+// Timeline slider state. The floor is a deliberate UI/perf choice: a first-time
+// visitor sees the full set and the slider clusters within a recent window, so a
+// layer concluded wholly before TIMELINE_MIN_YEAR would never be reachable at any
+// position. Current data has no such entry (the oldest layer, Papua 1962, is
+// still active); if one ever appears it will need a data-level decision.
 let timelineYear = new Date().getFullYear(); // current year by default
 const TIMELINE_MIN_YEAR = 2020;
 const TIMELINE_MAX_YEAR = new Date().getFullYear();

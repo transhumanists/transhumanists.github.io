@@ -18,6 +18,7 @@ import math
 import re
 import sys
 from datetime import date as _date
+from datetime import timedelta as _timedelta
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -75,6 +76,25 @@ def _valid_date(value: object) -> bool:
     return True
 
 
+def _month_end(ym: str) -> str:
+    year, month = ym.split("-")
+    if month == "12":
+        return f"{year}-12-31"
+    next_month = _date.fromisoformat(f"{year}-{int(month) + 1:02d}-01")
+    return (next_month - _timedelta(days=1)).isoformat()
+
+
+def _date_bounds(value: str) -> tuple[str, str]:
+    """Earliest and latest ISO dates a partial date (YYYY or YYYY-MM) could
+    represent; full dates bound to themselves. Caller guarantees a valid date."""
+    s = value.strip()
+    if len(s) == 4:
+        return f"{s}-01-01", f"{s}-12-31"
+    if len(s) == 7:
+        return f"{s}-01", _month_end(s)
+    return s, s
+
+
 def _check_lifecycle(kind: str, i: int, item: dict) -> list[str]:
     issues: list[str] = []
     status = item.get("status")
@@ -87,18 +107,26 @@ def _check_lifecycle(kind: str, i: int, item: dict) -> list[str]:
             issues.append(f"{kind}[{i}]: {field} must be YYYY-MM-DD, YYYY-MM or YYYY")
     start = item.get("start_date")
     end = item.get("end_date")
-    # Compare dates at equal granularity only: mixing precisions (e.g. "2022-03"
-    # vs "2022-03-05") is ambiguous, and plain string ordering of a prefix/suffix
-    # pair would flag perfectly valid ranges. Same-length ISO partial dates order
-    # lexicographically just like full dates, so this is a strict superset of the
-    # old full-date-only check (also catches year- and month-level inversions).
+    # Ordering semantics (same-length ISO partial dates order lexicographically):
+    #   * equal precision -> start > end is an unambiguous inversion.
+    #   * mixed precision -> flag only a PROVABLE inversion: the earliest instant
+    #     the start could be is after the latest instant the end could be
+    #     (e.g. start "2025" vs end "2024-12" is an empty window whatever the
+    #     real day; start "2024" vs end "2024-06-30" stays valid/unflagged).
     if (
         isinstance(start, str) and isinstance(end, str)
+        and _valid_date(start) and _valid_date(end)
         and start.strip() and end.strip()
-        and len(start.strip()) == len(end.strip())
-        and start.strip() > end.strip()
     ):
-        issues.append(f"{kind}[{i}]: start_date must not be after end_date")
+        s, e = start.strip(), end.strip()
+        if len(s) == len(e):
+            if s > e:
+                issues.append(f"{kind}[{i}]: start_date must not be after end_date")
+        else:
+            start_min, _ = _date_bounds(s)
+            _, end_max = _date_bounds(e)
+            if start_min > end_max:
+                issues.append(f"{kind}[{i}]: start_date is after end_date (empty window)")
     return issues
 
 

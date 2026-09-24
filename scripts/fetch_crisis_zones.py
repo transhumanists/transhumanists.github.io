@@ -12,6 +12,7 @@ import re
 import ssl
 import sys
 import urllib.error
+import urllib.parse
 import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
@@ -37,7 +38,7 @@ REQUEST_HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
     "Accept": "application/json, application/xml, text/xml, */*",
     "Accept-Language": "en-US,en;q=0.9",
-    "Accept-Encoding": "gzip, deflate, br",
+    "Accept-Encoding": "gzip, deflate",
     "Connection": "keep-alive",
     "Upgrade-Insecure-Requests": "1",
     "Sec-Fetch-Dest": "document",
@@ -176,25 +177,76 @@ STATIC_CRISIS_ZONES = [
 ]
 
 
+# Hosts that served broken certificate chains from the runner and were thereby
+# opted into unverified-TLS retries for the rest of this process. Process-scoped
+# and per-host: verification stays ON for everything else, and first opt-in is
+# always surfaced as a warning.
+_UNVERIFIED_TLS_HOSTS: set[str] = set()
+
+
+def _tls_context(host: str) -> ssl.SSLContext:
+    if host in _UNVERIFIED_TLS_HOSTS:
+        ctx = ssl.create_default_context()
+        ctx.check_hostname = False
+        ctx.verify_mode = ssl.CERT_NONE
+        return ctx
+    return ssl.create_default_context()
+
+
+def _mark_unverified_host(host: str) -> bool:
+    if host in _UNVERIFIED_TLS_HOSTS:
+        return False
+    _UNVERIFIED_TLS_HOSTS.add(host)
+    print(
+        f"  WARNING: certificate verification failed for {host!r}; retrying this "
+        f"host without TLS verification for the rest of the run"
+    )
+    return True
+
+
+def _decode_body(resp) -> str:
+    import gzip
+    import zlib
+
+    encoding = resp.headers.get("Content-Encoding", "").strip().lower()
+    data = resp.read()
+    if encoding == "gzip":
+        return gzip.decompress(data).decode("utf-8", errors="replace")
+    if encoding == "deflate":
+        try:
+            return zlib.decompress(data).decode("utf-8", errors="replace")
+        except zlib.error:
+            return zlib.decompress(data, -zlib.MAX_WBITS).decode("utf-8", errors="replace")
+    return data.decode("utf-8", errors="replace")
+
+
 def fetch_url(url: str, timeout: int = 30) -> str | None:
-    """Fetch URL with retry, return text or None. Handles gzip compression and SSL issues."""
+    """Fetch URL with retry, return text or None. Handles gzip/deflate.
+
+    TLS is certificate-verified by default. An upstream host with a broken
+    certificate chain is retried once WITHOUT verification, scoped to that exact
+    host for the rest of the process and flagged with a warning — never a
+    blanket, all-hosts verification bypass.
+    """
+    parsed = urllib.parse.urlparse(url)
+    if parsed.scheme != "https":
+        raise ValueError(f"refusing non-HTTPS URL: {url!r}")
+    netloc = parsed.netloc.rpartition("@")[2]
+    host = netloc.partition(":")[0]
     for attempt in range(3):
         try:
             req = urllib.request.Request(url, headers=REQUEST_HEADERS)
-            # Use SSL context that doesn't verify certificates for problematic sites
-            ssl_context = ssl.create_default_context()
-            ssl_context.check_hostname = False
-            ssl_context.verify_mode = ssl.CERT_NONE
-            with urllib.request.urlopen(req, timeout=timeout, context=ssl_context) as resp:
-                # Handle gzip compression
-                content_encoding = resp.headers.get('Content-Encoding', '')
-                if content_encoding == 'gzip':
-                    import gzip
-                    return gzip.decompress(resp.read()).decode("utf-8", errors="replace")
-                return resp.read().decode("utf-8", errors="replace")
+            with urllib.request.urlopen(req, timeout=timeout, context=_tls_context(host)) as resp:
+                return _decode_body(resp)
         except urllib.error.HTTPError as e:
             print(f"  Attempt {attempt + 1}/3 failed: HTTP {e.code} - {e.reason}")
+        except ssl.SSLError as e:
+            if isinstance(e, ssl.SSLCertVerificationError) and _mark_unverified_host(host):
+                continue
+            print(f"  Attempt {attempt + 1}/3 failed: TLS error: {e}")
         except urllib.error.URLError as e:
+            if isinstance(getattr(e, "reason", None), ssl.SSLCertVerificationError) and _mark_unverified_host(host):
+                continue
             print(f"  Attempt {attempt + 1}/3 failed: {e.reason}")
         except Exception as e:
             print(f"  Attempt {attempt + 1}/3 failed with unexpected error: {e}")

@@ -152,6 +152,40 @@ class TestCheckLayerLifecycle(unittest.TestCase):
         ]
         self.assertEqual(cd.check_zones(zones), [])
 
+    def test_mixed_granularity_year_after_full_inversion_fails(self):
+        # "2025" can be as early as 2025-01-01, which is already after the end's
+        # latest possible instant (2024-12-31) -> provably an empty window.
+        zones = [self._zone(start_date="2025", end_date="2024-12-31")]
+        issues = cd.check_zones(zones)
+        self.assertTrue(any("start_date is after end_date" in i for i in issues))
+
+    def test_mixed_granularity_month_after_full_inversion_fails(self):
+        zones = [self._zone(start_date="2024-07", end_date="2024-06-15")]
+        issues = cd.check_zones(zones)
+        self.assertTrue(any("start_date is after end_date" in i for i in issues))
+
+    def test_mixed_granularity_partial_month_end_is_valid(self):
+        # start "2024-05" earliest is 2024-05-01; end "2024-06" latest is
+        # 2024-06-30 -> overlaps, so it must stay valid.
+        zones = [self._zone(start_date="2024-05", end_date="2024-06")]
+        self.assertEqual(cd.check_zones(zones), [])
+
+    def test_mixed_granularity_year_brackets_month_is_valid(self):
+        zones = [
+            self._zone(start_date="2024", end_date="2024-06-30"),
+            self._zone(start_date="2024", end_date="2024-12"),
+        ]
+        self.assertEqual(cd.check_zones(zones), [])
+
+    def test_malformed_dates_never_crash_bounds_detection(self):
+        # Invalid month/day strings are flagged, not compared (must not crash).
+        zones = [
+            self._zone(start_date="2024-13", end_date="2023"),
+            self._zone(start_date="2023", end_date="2024-02-30"),
+        ]
+        issues = cd.check_zones(zones)
+        self.assertEqual(len(issues), 2)
+
     def test_lifecycle_is_checked_on_fleets_too(self):
         fleets = [
             {"from": {"lat": 0, "lon": 1}, "to": {"lat": 1, "lon": 1}, "status": "concluded", "start_date": "2022", "end_date": "2022-12"},
