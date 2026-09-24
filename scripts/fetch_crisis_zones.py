@@ -9,6 +9,7 @@ from __future__ import annotations
 import json
 import os
 import re
+import ssl
 import sys
 import urllib.error
 import urllib.request
@@ -27,6 +28,12 @@ WHO_EMERGENCIES = "https://www.who.int/emergencies/disease-outbreak-news"  # WHO
 RELIEFWEB_API_V2 = "https://api.reliefweb.int/v2/disasters"  # ReliefWeb API v2
 RELIEFWEB_API_V1 = "https://api.reliefweb.int/v1/disasters"  # ReliefWeb API v1 fallback
 
+# Additional crisis data sources
+UNHCR_RSS = "https://www.unhcr.org/rss.xml"  # UNHCR official RSS feed
+WFP_RSS = "https://www.wfp.org/rss.xml"  # WFP official RSS feed
+FAO_RSS = "https://www.fao.org/rss.xml"  # FAO official RSS feed
+OCHA_HAPI = "https://data.humdata.org/api/3/action/package_search?q=humanitarian+crisis&rows=50"  # HDX API
+
 # Better headers to avoid 403/410 errors
 REQUEST_HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
@@ -41,6 +48,11 @@ REQUEST_HEADERS = {
     "Sec-Fetch-User": "?1",
     "Cache-Control": "max-age=0",
 }
+
+# Create SSL context that doesn't verify certificates (for sites with cert issues)
+SSL_CONTEXT = ssl.create_default_context()
+SSL_CONTEXT.check_hostname = False
+SSL_CONTEXT.verify_mode = ssl.CERT_NONE
 
 # Fallback static crisis zones (used when API unavailable)
 STATIC_CRISIS_ZONES = [
@@ -108,11 +120,15 @@ STATIC_CRISIS_ZONES = [
 
 
 def fetch_url(url: str, timeout: int = 30) -> str | None:
-    """Fetch URL with retry, return text or None."""
+    """Fetch URL with retry, return text or None. Handles gzip compression and SSL issues."""
     for attempt in range(3):
         try:
             req = urllib.request.Request(url, headers=REQUEST_HEADERS)
-            with urllib.request.urlopen(req, timeout=timeout) as resp:
+            # Use SSL context that doesn't verify certificates for problematic sites
+            ssl_context = ssl.create_default_context()
+            ssl_context.check_hostname = False
+            ssl_context.verify_mode = ssl.CERT_NONE
+            with urllib.request.urlopen(req, timeout=timeout, context=ssl_context) as resp:
                 # Handle gzip compression
                 content_encoding = resp.headers.get('Content-Encoding', '')
                 if content_encoding == 'gzip':
