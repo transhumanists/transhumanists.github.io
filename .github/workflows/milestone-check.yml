@@ -32,11 +32,34 @@ jobs:
         with:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
+          persist-credentials: true
 
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
           python-version: "3.12"
+          cache: pip
+          cache-key: "pip-${{ runner.os }}-${{ hashFiles('requirements.txt') }}"
+
+      - name: Cache milestone data
+        uses: actions/cache@v4
+        with:
+          path: |
+            data/milestones.json
+            data/milestones_history.json
+            data/activity.json
+            data/events.json
+            data/world_layers.json
+          key: milestone-data-${{ hashFiles('data/*.json') }}
+          restore-keys: |
+            milestone-data-
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-key: "pip-${{ runner.os }}-${{ hashFiles('requirements.txt') }}"
 
       - name: Run milestone sync
         env:
