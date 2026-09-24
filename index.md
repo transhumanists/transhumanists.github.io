@@ -83,7 +83,12 @@ description: "Tracking milestones across biotech, AGI, quantum, energy, cyber, s
       <p class="section-subtitle">Latest breakthroughs across all categories</p>
     </header>
 
-    <div class="milestones-grid" id="top-milestones"></div>
+    <div class="highlights-carousel" id="highlights-carousel" role="region" aria-label="Recent highlights carousel">
+      <div class="highlights-carousel-track" id="highlights-carousel-track"></div>
+      <button class="highlights-carousel-btn highlights-carousel-prev" id="highlights-carousel-prev" aria-label="Previous highlight" aria-controls="highlights-carousel-track" tabindex="0">‹</button>
+      <button class="highlights-carousel-btn highlights-carousel-next" id="highlights-carousel-next" aria-label="Next highlight" aria-controls="highlights-carousel-track" tabindex="0">›</button>
+      <div class="highlights-carousel-indicators" id="highlights-carousel-indicators" aria-label="Slide indicators"></div>
+    </div>
   </div>
 </section>
 

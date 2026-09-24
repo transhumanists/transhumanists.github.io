@@ -203,6 +203,7 @@
   // ---- Constants ----
   const ANIMATION_DURATION = 1200;
   const COUNTER_THRESHOLD = 0.2;
+  const AUTO_SLIDE_INTERVAL = 5000;
 
   // ---- Counter animation utility ----
   const counterObserver = new IntersectionObserver(entries => {
@@ -999,6 +1000,146 @@
     removeModalEventListeners();
   }
 
+  // ---- Highlights Carousel ----
+  function initHighlightsCarousel() {
+    const carousel = document.getElementById('highlights-carousel');
+    const track = document.getElementById('highlights-carousel-track');
+    const prevBtn = document.getElementById('highlights-carousel-prev');
+    const nextBtn = document.getElementById('highlights-carousel-next');
+    const indicatorsContainer = document.getElementById('highlights-carousel-indicators');
+    
+    if (!carousel || !track) return;
+    
+    let currentIndex = 0;
+    let items = [];
+    let indicators = [];
+    let autoSlideTimer = null;
+    const AUTO_SLIDE_INTERVAL = 5000;
+    
+    function updateCarousel() {
+      if (!items.length) return;
+      
+      // Update track position
+      const itemWidth = track.children[0]?.offsetWidth || 0;
+      if (itemWidth > 0) {
+        track.style.transform = `translateX(-${currentIndex * (items[0].offsetWidth + 16)}px)`;
+      }
+      
+      // Update indicators
+      indicators.forEach((indicator, i) => {
+        indicator.classList.toggle('active', i === currentIndex);
+        indicator.setAttribute('aria-current', i === currentIndex ? 'true' : 'false');
+      });
+      
+      // Update button states
+      if (prevBtn) prevBtn.disabled = currentIndex === 0;
+      if (nextBtn) nextBtn.disabled = currentIndex >= items.length - 1;
+    }
+    
+    function goToSlide(index) {
+      if (index < 0 || index >= items.length) return;
+      currentIndex = index;
+      updateCarousel();
+    }
+    
+    function nextSlide() {
+      if (currentIndex < items.length - 1) {
+        goToSlide(currentIndex + 1);
+      } else {
+        goToSlide(0); // Loop back to start
+      }
+    }
+    
+    function prevSlide() {
+      if (currentIndex > 0) {
+        goToSlide(currentIndex - 1);
+      } else {
+        goToSlide(items.length - 1); // Loop to end
+      }
+    }
+    
+    function startAutoSlide() {
+      stopAutoSlide();
+      autoSlideTimer = setInterval(() => {
+        nextSlide();
+      }, AUTO_SLIDE_INTERVAL);
+    }
+    
+    function stopAutoSlide() {
+      if (autoSlideTimer) {
+        clearInterval(autoSlideTimer);
+        autoSlideTimer = null;
+      }
+    }
+    
+    function renderIndicators() {
+      if (!indicatorsContainer || !items.length) return;
+      indicatorsContainer.innerHTML = '';
+      indicators = [];
+      for (let i = 0; i < items.length; i++) {
+        const indicator = document.createElement('button');
+        indicator.className = 'highlights-carousel-indicator';
+        indicator.setAttribute('aria-label', `Go to slide ${i + 1}`);
+        indicator.setAttribute('aria-current', i === 0 ? 'true' : 'false');
+        indicator.addEventListener('click', () => goToSlide(i));
+        indicators.push(indicator);
+        indicatorsContainer.appendChild(indicator);
+      }
+    }
+    
+    // Pause auto-slide on hover
+    carousel.addEventListener('mouseenter', stopAutoSlide);
+    carousel.addEventListener('mouseleave', startAutoSlide);
+    
+    // Button handlers
+    if (prevBtn) {
+      prevBtn.addEventListener('click', prevSlide);
+      prevBtn.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          prevSlide();
+        }
+      });
+    }
+    if (nextBtn) {
+      nextBtn.addEventListener('click', nextSlide);
+      nextBtn.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          nextSlide();
+        }
+      });
+    }
+    
+    // Keyboard navigation
+    carousel.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        prevSlide();
+      } else if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        nextSlide();
+      }
+    });
+    
+    // Initialize
+    function init() {
+      // Get the milestone cards from the track
+      items = Array.from(track.children).filter(el => el.classList.contains('milestone-card'));
+      
+      if (items.length === 0) {
+        carousel.style.display = 'none';
+        return;
+      }
+      
+      renderIndicators();
+      updateCarousel();
+      startAutoSlide();
+    }
+    
+    init();
+  }
+
   window.addEventListener('beforeunload', cleanup);
   window.addEventListener('pagehide', cleanup);
 
@@ -1024,6 +1165,7 @@
       loadMilestonesCatalog();
       initCategoryToggles();
       loadMetricTimeline();
+      initHighlightsCarousel();
     });
   } else {
     loadActivity();
@@ -1031,5 +1173,6 @@
     loadMilestonesCatalog();
     initCategoryToggles();
     loadMetricTimeline();
+    initHighlightsCarousel();
   }
 })();
