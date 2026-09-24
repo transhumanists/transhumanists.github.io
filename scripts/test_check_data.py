@@ -27,40 +27,89 @@ def _layers_payload(zones: list[dict], fleets: list[dict], crises: list[dict] | 
 class TestCheckEvents(unittest.TestCase):
     def test_happy_path(self):
         payload = _events_payload(
-            {"title": "X", "category": "Energy", "geolocation": {"lat": 1.5, "lon": 2.5}},
+            {"title": "X", "category": "Energy", "date": "2026-03-15",
+             "geolocation": {"lat": 1.5, "lon": 2.5}},
         )
         self.assertEqual(cd.check_events(payload["events"]), [])
 
     def test_missing_geolocation_fails(self):
-        payload = _events_payload({"title": "X", "category": "Energy"})
+        payload = _events_payload({"title": "X", "category": "Energy", "date": "2026-03-15"})
         self.assertTrue(cd.check_events(payload["events"]))
 
     def test_nonfinite_coordinate_fails(self):
         payload = _events_payload(
-            {"title": "X", "category": "Biotech", "geolocation": {"lat": 1e400, "lon": 0}},
+            {"title": "X", "category": "Biotech", "date": "2026-03-15",
+             "geolocation": {"lat": 1e400, "lon": 0}},
         )
         issues = cd.check_events(payload["events"])
         self.assertTrue(any("geolocation" in i for i in issues))
 
     def test_bool_coordinate_fails(self):
         payload = _events_payload(
-            {"title": "X", "category": "Biotech", "geolocation": {"lat": True, "lon": 0}},
+            {"title": "X", "category": "Biotech", "date": "2026-03-15",
+             "geolocation": {"lat": True, "lon": 0}},
         )
         issues = cd.check_events(payload["events"])
         self.assertTrue(any("geolocation" in i for i in issues))
 
     def test_out_of_range_fails(self):
         payload = _events_payload(
-            {"title": "X", "category": "Biotech", "geolocation": {"lat": 91, "lon": 190}},
+            {"title": "X", "category": "Biotech", "date": "2026-03-15",
+             "geolocation": {"lat": 91, "lon": 190}},
         )
         issues = cd.check_events(payload["events"])
         self.assertTrue(any("geolocation" in i for i in issues))
 
     def test_bad_title_type_fails(self):
         payload = _events_payload(
-            {"title": 42, "category": "Biotech", "geolocation": {"lat": 1, "lon": 1}},
+            {"title": 42, "category": "Biotech", "date": "2026-03-15",
+             "geolocation": {"lat": 1, "lon": 1}},
         )
         self.assertTrue(any("title" in i for i in cd.check_events(payload["events"])))
+
+    def test_missing_date_fails(self):
+        payload = _events_payload(
+            {"title": "X", "category": "Energy", "geolocation": {"lat": 1, "lon": 1}},
+        )
+        issues = cd.check_events(payload["events"])
+        self.assertTrue(any("date" in i for i in issues))
+
+    def test_non_string_date_fails(self):
+        payload = _events_payload(
+            {"title": "X", "category": "Energy", "date": 42,
+             "geolocation": {"lat": 1, "lon": 1}},
+        )
+        issues = cd.check_events(payload["events"])
+        self.assertTrue(any("date" in i for i in issues))
+
+    def test_nonexistent_calendar_date_fails(self):
+        # parseDateToISO would pass "2026-02-30" through unvalidated; the
+        # validator must reject it so a non-date never renders on the map.
+        payload = _events_payload(
+            {"title": "X", "category": "Energy", "date": "2026-02-30",
+             "geolocation": {"lat": 1, "lon": 1}},
+        )
+        issues = cd.check_events(payload["events"])
+        self.assertTrue(any("date" in i for i in issues))
+
+    def test_malformed_or_empty_date_fails(self):
+        for bad in ("banana", "", "  ", "32/13/2026"):
+            payload = _events_payload(
+                {"title": "X", "category": "Energy", "date": bad,
+                 "geolocation": {"lat": 1, "lon": 1}},
+            )
+            issues = cd.check_events(payload["events"])
+            self.assertTrue(any("date" in i for i in issues), f"bad date {bad!r}")
+
+    def test_frontend_accepted_date_shapes_pass(self):
+        # Same acceptance surface as worldmap.js parseDateToISO.
+        for good in ("2026-03-15", "15/03/2026", "15-03-2026", "2026", "2026-03",
+                     "2026-03-15T10:00:00", "2026-03-15T19:23:03+00:00"):
+            payload = _events_payload(
+                {"title": "X", "category": "Energy", "date": good,
+                 "geolocation": {"lat": 1, "lon": 1}},
+            )
+            self.assertEqual(cd.check_events(payload["events"]), [], f"good date {good!r}")
 
 
 class TestCheckLayers(unittest.TestCase):
@@ -252,7 +301,8 @@ class TestCheckFile(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             d = Path(tmp)
             (d / "events.json").write_text(
-                json.dumps(_events_payload({"title": "X", "category": "C", "geolocation": {"lat": 0, "lon": 0}})),
+                json.dumps(_events_payload({"title": "X", "category": "C", "date": "2026-03-15",
+                                            "geolocation": {"lat": 0, "lon": 0}})),
                 encoding="utf-8",
             )
             (d / "world_layers.json").write_text(

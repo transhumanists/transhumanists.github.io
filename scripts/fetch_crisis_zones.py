@@ -14,6 +14,7 @@ import sys
 import urllib.error
 import urllib.parse
 import urllib.request
+import zlib
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -204,19 +205,31 @@ def _mark_unverified_host(host: str) -> bool:
     return True
 
 
-def _decode_body(resp) -> str:
-    import gzip
-    import zlib
+_MAX_HTTP_BODY = 10 * 1024 * 1024  # 10 MiB safety cap on untrusted public feed bodies
 
+
+def _inflate_bounded(data: bytes, wbits: int) -> bytes:
+    # zlib decompressobj lets us cap the decompressed size, not just the read:
+    # a tiny compressed bomb can't expand into gigabytes of memory.
+    obj = zlib.decompressobj(wbits)
+    out = obj.decompress(data, _MAX_HTTP_BODY + 1)
+    if obj.unconsumed_tail or not obj.eof or len(out) > _MAX_HTTP_BODY:
+        raise ValueError("inflated body exceeds safety cap")
+    return out
+
+
+def _decode_body(resp) -> str:
     encoding = resp.headers.get("Content-Encoding", "").strip().lower()
-    data = resp.read()
+    data = resp.read(_MAX_HTTP_BODY + 1)
+    if len(data) > _MAX_HTTP_BODY:
+        raise ValueError("response body exceeds safety cap")
     if encoding == "gzip":
-        return gzip.decompress(data).decode("utf-8", errors="replace")
+        return _inflate_bounded(data, 47).decode("utf-8", errors="replace")
     if encoding == "deflate":
         try:
-            return zlib.decompress(data).decode("utf-8", errors="replace")
+            return _inflate_bounded(data, 15).decode("utf-8", errors="replace")
         except zlib.error:
-            return zlib.decompress(data, -zlib.MAX_WBITS).decode("utf-8", errors="replace")
+            return _inflate_bounded(data, -zlib.MAX_WBITS).decode("utf-8", errors="replace")
     return data.decode("utf-8", errors="replace")
 
 

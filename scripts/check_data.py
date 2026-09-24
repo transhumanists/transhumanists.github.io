@@ -6,7 +6,7 @@ isZonePlottable, isFleetPlottable) so malformed data fails in CI instead of
 rendering silently-garbled layers (NaN dots/arrows) in production.
 
 Usage:
-    python scripts/check_data.py             # checks the reenv data/ directory
+    python scripts/check_data.py             # checks the repo's data/ directory
     python scripts/check_data.py DIR...      # checks given dirs (each must hold
                                              # events.json + world_layers.json)
 Exit code is 1 if any problem is found.
@@ -18,6 +18,7 @@ import math
 import re
 import sys
 from datetime import date as _date
+from datetime import datetime as _datetime
 from datetime import timedelta as _timedelta
 from pathlib import Path
 
@@ -146,6 +147,41 @@ def _check_unique_ids(kind: str, items: list) -> list[str]:
     return issues
 
 
+def _valid_event_date(value: object) -> bool:
+    # Mirrors the shapes worldmap.js parseDateToISO accepts (YYYY-MM-DD,
+    # D-M-YYYY / D/M/YYYY, plus a Date-constructor fallback covering partial
+    # YYYY / YYYY-MM), but enforces calendar validity so fake dates such as
+    # "2026-02-30" fail CI instead of rendering non-dates on the map.
+    if not isinstance(value, str):
+        return False
+    s = value.strip()
+    ym = re.fullmatch(r"(\d{4})-(\d{2})", s)
+    if ym:
+        year, month = int(ym[1]), int(ym[2])
+        return 1 <= year <= 9999 and 1 <= month <= 12
+    if re.fullmatch(r"\d{4}", s):
+        return True
+    m = re.fullmatch(r"(\d{4})-(\d{2})-(\d{2})", s)
+    if m:
+        try:
+            _date(int(m[1]), int(m[2]), int(m[3]))
+            return True
+        except ValueError:
+            return False
+    m = re.fullmatch(r"(\d{1,2})[-/](\d{1,2})[-/](\d{4})", s)
+    if m:
+        try:
+            _date(int(m[3]), int(m[2]), int(m[1]))
+            return True
+        except ValueError:
+            return False
+    try:
+        _datetime.fromisoformat(s)
+        return True
+    except ValueError:
+        return False
+
+
 def check_events(events: object) -> list[str]:
     issues: list[str] = []
     if not isinstance(events, list):
@@ -158,6 +194,8 @@ def check_events(events: object) -> list[str]:
             issues.append(f"events[{i}]: title must be a string")
         if not isinstance(ev.get("category"), str):
             issues.append(f"events[{i}]: category must be a string")
+        if not _valid_event_date(ev.get("date")):
+            issues.append(f"events[{i}]: date must be a parseable date string")
         geo = ev.get("geolocation")
         if not isinstance(geo, dict) or not _coord_ok(geo.get("lat"), geo.get("lon")):
             issues.append(f"events[{i}]: geolocation must be a finite lat/lon pair in range")
@@ -214,12 +252,14 @@ def check_data(data: dict, filename: str) -> list[str]:
     if filename == "world_layers.json":
         # Accept both "deployments" (new) and "fleet_movements" (legacy)
         deployments = data.get("deployments")
+        kind = "deployments"
         if deployments is None:
             deployments = data.get("fleet_movements")
+            kind = "fleet_movements"
         return (
             check_zones(data.get("conflict_zones"))
             + check_crisis_zones(data.get("crisis_zones"))
-            + check_fleets(deployments)
+            + check_fleets(deployments, kind=kind)
         )
     return [f"unsupported data file: {filename}"]
 

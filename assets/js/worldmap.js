@@ -2028,7 +2028,7 @@ const fragment = document.createDocumentFragment();
       value: e.value ?? '',
       source: e.source ?? 'Unknown',
       url: e.url ?? '',
-      date: e.date ?? ''
+      date: String(e.date ?? '')
     };
   }
 

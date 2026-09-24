@@ -23,8 +23,10 @@ class _FakeResp:
         self._body = body
         self.headers = {"Content-Encoding": encoding}
 
-    def read(self) -> bytes:
-        return self._body
+    def read(self, n: int = -1) -> bytes:
+        if n < 0:
+            return self._body
+        return self._body[:n]
 
     def __enter__(self):
         return self
@@ -245,6 +247,19 @@ class TestFetchUrl(unittest.TestCase):
         co = zlib.compressobj(wbits=-zlib.MAX_WBITS)
         body = co.compress(b"raw deflate") + co.flush()
         self.assertEqual(fz._decode_body(_FakeResp(body, "deflate")), "raw deflate")
+
+    def test_decode_truncated_by_read_cap(self):
+        # A body at/over the safety cap must fail loudly, not parse garbage.
+        oversized = b"x" * (fz._MAX_HTTP_BODY + 1)
+        with self.assertRaises(ValueError):
+            fz._decode_body(_FakeResp(oversized))
+
+    def test_decode_decompression_bomb_rejected(self):
+        # A tiny compressed stream that inflates past the cap is bounded too.
+        import zlib
+        bomb = zlib.compress(b"\x00" * (fz._MAX_HTTP_BODY + 1))
+        with self.assertRaises(ValueError):
+            fz._decode_body(_FakeResp(bomb, "deflate"))
 
 
 if __name__ == "__main__":
