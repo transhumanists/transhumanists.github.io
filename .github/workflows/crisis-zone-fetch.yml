@@ -36,10 +36,13 @@ jobs:
           python-version: "3.12"
 
       - name: Fetch crisis zones from UN OCHA / WHO / ReliefWeb
-        env:
-          DRY_RUN: ${{ inputs.dry_run == 'true' }}
         run: |
           python scripts/fetch_crisis_zones.py
+
+      - name: Validate world_layers.json
+        # Gate BEFORE the commit: a malformed candidate must never reach main.
+        # Runs on every invocation (dry_run is "fetch and validate, skip commit").
+        run: python scripts/check_data.py
 
       - name: Commit and push changes
         if: ${{ inputs.dry_run != 'true' }}
@@ -54,7 +57,3 @@ jobs:
           ts=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
           git commit -m "chore(crisis-zones): daily refresh ${ts}"
           git push origin main
-
-      - name: Validate world_layers.json after update
-        if: ${{ inputs.dry_run != 'true' }}
-        run: python scripts/check_data.py

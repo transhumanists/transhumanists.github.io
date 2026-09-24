@@ -74,6 +74,11 @@ jobs:
             python scripts/sync_layers.py --write
           fi
 
+      - name: Validate data files
+        # Gate BEFORE the commit: a malformed sync must fail the job and never
+        # reach main (the CI job only reports afterwards).
+        run: python scripts/check_data.py
+
       - name: Commit and push changes
         if: ${{ inputs.dry_run != 'true' }}
         run: |
