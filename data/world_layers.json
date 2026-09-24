@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "last_update": "2026-09-22T22:21:24Z",
+  "last_update": "2026-09-24T08:14:54+00:00",
   "conflict_zones": [
     {
       "id": "zone-ukraine",
@@ -41,72 +41,30 @@
   ],
   "crisis_zones": [
     {
-      "id": "crisis-sudan",
-      "name": "Sudan · Darfur famine",
-      "region": "East Africa",
-      "lat": 13.0,
-      "lon": 24.5,
-      "radiusDeg": 4.5,
-      "status": "active",
-      "note": "Humanitarian catastrophe, 25M+ in need",
-      "source": "UN OCHA",
-      "url": "https://www.unocha.org"
-    },
-    {
-      "id": "crisis-yemen",
-      "name": "Yemen · Cholera & famine",
-      "region": "Middle East",
-      "lat": 15.5,
-      "lon": 44.2,
-      "radiusDeg": 3.8,
-      "status": "active",
-      "note": "World's worst humanitarian crisis",
-      "source": "WHO",
-      "url": "https://www.who.int"
-    },
-    {
-      "id": "crisis-myanmar",
-      "name": "Myanmar · Rohingya displacement",
-      "region": "Southeast Asia",
-      "lat": 20.5,
-      "lon": 92.5,
-      "radiusDeg": 3.0,
-      "status": "active",
-      "note": "1M+ stateless refugees in camps",
-      "source": "UNHCR",
-      "url": "https://www.unhcr.org"
-    },
-    {
-      "id": "crisis-afghanistan",
-      "name": "Afghanistan · Winter hunger crisis",
-      "region": "Central Asia",
-      "lat": 33.5,
-      "lon": 65.5,
-      "radiusDeg": 5.0,
-      "status": "active",
-      "note": "28M+ facing acute food insecurity",
-      "source": "WFP",
-      "url": "https://www.wfp.org"
-    },
-    {
-      "id": "crisis-somalia",
-      "name": "Somalia · Drought & famine",
-      "region": "East Africa",
-      "lat": 2.5,
-      "lon": 45.5,
+      "id": "crisis-emergency",
+      "name": "emergency",
+      "region": "Unknown",
+      "lat": 0.0,
+      "lon": 0.0,
       "radiusDeg": 4.0,
       "status": "active",
-      "note": "5 consecutive failed rainy seasons",
-      "source": "FAO",
-      "url": "https://www.fao.org"
+      "note": "emergency",
+      "source": "ReliefWeb / OCHA / WHO / UNHCR / WFP / FAO",
+      "url": ""
     }
   ],
   "deployments": [
     {
       "id": "fleet-01",
       "label": "USN CVN-78 · Ford CSG",
-      "from": { "lat": 33.5, "lon": 33.5 },
-      "to": { "lat": 27.0, "lon": 52.5 },
+      "from": {
+        "lat": 33.5,
+        "lon": 33.5
+      },
+      "to": {
+        "lat": 27.0,
+        "lon": 52.5
+      },
       "kind": "fleet",
       "note": "Eastern Mediterranean → Persian Gulf",
       "source": "USNI"
@@ -114,8 +72,14 @@
     {
       "id": "fleet-02",
       "label": "USN CVN-69 · Eisenhower CSG",
-      "from": { "lat": 18.5, "lon": 39.5 },
-      "to": { "lat": 12.5, "lon": 58.5 },
+      "from": {
+        "lat": 18.5,
+        "lon": 39.5
+      },
+      "to": {
+        "lat": 12.5,
+        "lon": 58.5
+      },
       "kind": "fleet",
       "note": "Red Sea → Arabian Sea",
       "source": "USNI"
@@ -123,8 +87,14 @@
     {
       "id": "fleet-03",
       "label": "USN · America ESG (7th Fleet)",
-      "from": { "lat": 34.3, "lon": 132.4 },
-      "to": { "lat": 12.5, "lon": 115.0 },
+      "from": {
+        "lat": 34.3,
+        "lon": 132.4
+      },
+      "to": {
+        "lat": 12.5,
+        "lon": 115.0
+      },
       "kind": "fleet",
       "note": "Sasebo → South China Sea",
       "source": "USNI"
@@ -132,8 +102,14 @@
     {
       "id": "fleet-04",
       "label": "USN CVN-76 · Reagan CSG",
-      "from": { "lat": 24.5, "lon": 126.5 },
-      "to": { "lat": 25.0, "lon": 120.5 },
+      "from": {
+        "lat": 24.5,
+        "lon": 126.5
+      },
+      "to": {
+        "lat": 25.0,
+        "lon": 120.5
+      },
       "kind": "fleet",
       "note": "Philippine Sea → Taiwan Strait",
       "source": "USNI"
@@ -141,8 +117,14 @@
     {
       "id": "fleet-05",
       "label": "Royal Navy · Carrier Strike Group",
-      "from": { "lat": 50.8, "lon": -1.1 },
-      "to": { "lat": 57.0, "lon": 18.0 },
+      "from": {
+        "lat": 50.8,
+        "lon": -1.1
+      },
+      "to": {
+        "lat": 57.0,
+        "lon": 18.0
+      },
       "kind": "fleet",
       "note": "Portsmouth → Baltic (Gotland approaches)",
       "source": "RN"
@@ -150,8 +132,14 @@
     {
       "id": "fleet-06",
       "label": "Russian Baltic Fleet",
-      "from": { "lat": 54.7, "lon": 20.5 },
-      "to": { "lat": 58.0, "lon": 20.0 },
+      "from": {
+        "lat": 54.7,
+        "lon": 20.5
+      },
+      "to": {
+        "lat": 58.0,
+        "lon": 20.0
+      },
       "kind": "fleet",
       "note": "Kaliningrad → Baltic approaches",
       "source": "ISW"
@@ -159,8 +147,14 @@
     {
       "id": "fleet-07",
       "label": "Russian Pacific Fleet",
-      "from": { "lat": 43.1, "lon": 131.9 },
-      "to": { "lat": 38.7, "lon": 137.0 },
+      "from": {
+        "lat": 43.1,
+        "lon": 131.9
+      },
+      "to": {
+        "lat": 38.7,
+        "lon": 137.0
+      },
       "kind": "fleet",
       "note": "Vladivostok → Sea of Japan / Tsugaru",
       "source": "ISW"
@@ -168,8 +162,14 @@
     {
       "id": "fleet-08",
       "label": "PLAN · Type-055 task group",
-      "from": { "lat": 26.7, "lon": 114.0 },
-      "to": { "lat": 31.2, "lon": 122.5 },
+      "from": {
+        "lat": 26.7,
+        "lon": 114.0
+      },
+      "to": {
+        "lat": 31.2,
+        "lon": 122.5
+      },
       "kind": "fleet",
       "note": "South China Sea → Yangtze delta",
       "source": "IISS"
@@ -177,8 +177,14 @@
     {
       "id": "fleet-09",
       "label": "Indian Navy · task group",
-      "from": { "lat": 19.0, "lon": 72.8 },
-      "to": { "lat": 12.5, "lon": 45.0 },
+      "from": {
+        "lat": 19.0,
+        "lon": 72.8
+      },
+      "to": {
+        "lat": 12.5,
+        "lon": 45.0
+      },
       "kind": "fleet",
       "note": "Mumbai → Gulf of Aden",
       "source": "IN"
