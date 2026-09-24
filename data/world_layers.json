@@ -1,6 +1,6 @@
 {
   "version": "1.1.0",
-  "last_update": "2026-09-24T19:20:12+00:00",
+  "last_update": "2026-09-24T19:23:03+00:00",
   "conflict_zones": [
     {
       "id": "zone-ukraine",
@@ -304,6 +304,181 @@
       ],
       "status": "active",
       "start_date": "1918-01-01",
+      "end_date": "",
+      "source": "Wikipedia (List of ongoing armed conflicts)",
+      "url": "https://en.wikipedia.org/wiki/List_of_ongoing_armed_conflicts"
+    },
+    {
+      "id": "zone-cabinda-war",
+      "name": "Cabinda War",
+      "region": "Africa",
+      "lat": -12.3,
+      "lon": 17.54,
+      "radiusDeg": 3.0,
+      "tier": "conflict",
+      "countries": [
+        "Angola"
+      ],
+      "status": "active",
+      "start_date": "1975-01-01",
+      "end_date": "",
+      "source": "Wikipedia (List of ongoing armed conflicts)",
+      "url": "https://en.wikipedia.org/wiki/List_of_ongoing_armed_conflicts"
+    },
+    {
+      "id": "zone-civil-conflict-in-the-philippines",
+      "name": "Civil conflict in the Philippines",
+      "region": "Asia",
+      "lat": 12.88,
+      "lon": 121.77,
+      "radiusDeg": 3.0,
+      "tier": "conflict",
+      "countries": [
+        "Philippines"
+      ],
+      "status": "active",
+      "start_date": "1969-01-01",
+      "end_date": "",
+      "source": "Wikipedia (List of ongoing armed conflicts)",
+      "url": "https://en.wikipedia.org/wiki/List_of_ongoing_armed_conflicts"
+    },
+    {
+      "id": "zone-ethnic-violence-in-papua-new-guinea",
+      "name": "Ethnic violence in Papua New Guinea",
+      "region": "Oceania",
+      "lat": -6.31,
+      "lon": 143.96,
+      "radiusDeg": 3.0,
+      "tier": "conflict",
+      "countries": [
+        "Papua New Guinea"
+      ],
+      "status": "active",
+      "start_date": "1988-01-01",
+      "end_date": "",
+      "source": "Wikipedia (List of ongoing armed conflicts)",
+      "url": "https://en.wikipedia.org/wiki/List_of_ongoing_armed_conflicts"
+    },
+    {
+      "id": "zone-honduran-gang-crackdown",
+      "name": "Honduran gang crackdown",
+      "region": "North America",
+      "lat": 15.2,
+      "lon": -86.24,
+      "radiusDeg": 3.0,
+      "tier": "conflict",
+      "countries": [
+        "Honduras"
+      ],
+      "status": "active",
+      "start_date": "2022-01-01",
+      "end_date": "",
+      "source": "Wikipedia (List of ongoing armed conflicts)",
+      "url": "https://en.wikipedia.org/wiki/List_of_ongoing_armed_conflicts"
+    },
+    {
+      "id": "zone-insurgencies-in-turkey",
+      "name": "Insurgencies in Turkey",
+      "region": "Asia",
+      "lat": 38.96,
+      "lon": 35.24,
+      "radiusDeg": 3.0,
+      "tier": "conflict",
+      "countries": [
+        "Turkey",
+        "Syria",
+        "Iraq"
+      ],
+      "status": "active",
+      "start_date": "1921-01-01",
+      "end_date": "",
+      "source": "Wikipedia (List of ongoing armed conflicts)",
+      "url": "https://en.wikipedia.org/wiki/List_of_ongoing_armed_conflicts"
+    },
+    {
+      "id": "zone-insurgency-in-cabo-delgado",
+      "name": "Insurgency in Cabo Delgado",
+      "region": "Africa",
+      "lat": -18.67,
+      "lon": 35.53,
+      "radiusDeg": 3.0,
+      "tier": "conflict",
+      "countries": [
+        "Mozambique",
+        "Tanzania"
+      ],
+      "status": "active",
+      "start_date": "2017-01-01",
+      "end_date": "",
+      "source": "Wikipedia (List of ongoing armed conflicts)",
+      "url": "https://en.wikipedia.org/wiki/List_of_ongoing_armed_conflicts"
+    },
+    {
+      "id": "zone-iraqi-conflict",
+      "name": "Iraqi conflict",
+      "region": "Asia",
+      "lat": 33.32,
+      "lon": 43.68,
+      "radiusDeg": 3.0,
+      "tier": "conflict",
+      "countries": [
+        "Iraq"
+      ],
+      "status": "active",
+      "start_date": "2003-01-01",
+      "end_date": "",
+      "source": "Wikipedia (List of ongoing armed conflicts)",
+      "url": "https://en.wikipedia.org/wiki/List_of_ongoing_armed_conflicts"
+    },
+    {
+      "id": "zone-kashmir-conflict",
+      "name": "Kashmir conflict",
+      "region": "Asia",
+      "lat": 20.59,
+      "lon": 78.96,
+      "radiusDeg": 3.0,
+      "tier": "conflict",
+      "countries": [
+        "India",
+        "Pakistan",
+        "China"
+      ],
+      "status": "active",
+      "start_date": "1947-01-01",
+      "end_date": "",
+      "source": "Wikipedia (List of ongoing armed conflicts)",
+      "url": "https://en.wikipedia.org/wiki/List_of_ongoing_armed_conflicts"
+    },
+    {
+      "id": "zone-libyan-crisis",
+      "name": "Libyan crisis",
+      "region": "Africa",
+      "lat": 26.34,
+      "lon": 17.23,
+      "radiusDeg": 3.0,
+      "tier": "conflict",
+      "countries": [
+        "Libya"
+      ],
+      "status": "active",
+      "start_date": "2011-01-01",
+      "end_date": "",
+      "source": "Wikipedia (List of ongoing armed conflicts)",
+      "url": "https://en.wikipedia.org/wiki/List_of_ongoing_armed_conflicts"
+    },
+    {
+      "id": "zone-papua-conflict",
+      "name": "Papua conflict",
+      "region": "Oceania",
+      "lat": -0.79,
+      "lon": 113.92,
+      "radiusDeg": 3.0,
+      "tier": "conflict",
+      "countries": [
+        "Indonesia"
+      ],
+      "status": "active",
+      "start_date": "1962-01-01",
       "end_date": "",
       "source": "Wikipedia (List of ongoing armed conflicts)",
       "url": "https://en.wikipedia.org/wiki/List_of_ongoing_armed_conflicts"
