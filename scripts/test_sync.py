@@ -211,5 +211,30 @@ class TestFreshness(unittest.TestCase):
         self.assertIsNone(sm.latest_milestone_date([make_milestone(date="nope")]))
 
 
+class TestEnrichHistoric(unittest.TestCase):
+    TODAY = date(2026, 9, 15)
+
+    def test_sparse_recent_feed_is_enriched(self):
+        feed = [make_milestone(id="new", date="2026-09-10")]
+        history = feed + [make_milestone(id="h1", date="2026-01-01")]
+        out = sm.enrich_with_historic_milestones(feed, history, self.TODAY)
+        ids = {m["id"] for m in out}
+        self.assertIn("h1", ids)
+
+    def test_dense_recent_feed_is_left_alone(self):
+        feed = [make_milestone(id=f"r{i}", date=f"2026-09-{i:02d}") for i in range(1, 6)]
+        history = feed + [make_milestone(id="h1", date="2026-01-01")]
+        out = sm.enrich_with_historic_milestones(feed, history, self.TODAY)
+        self.assertEqual({m["id"] for m in out}, {m["id"] for m in feed})
+
+    def test_dupes_are_never_added_and_cap_is_twenty(self):
+        feed = [make_milestone(id="new", date="2026-09-10")]
+        history = feed + [make_milestone(id=f"h{i}", date="2025-01-01") for i in range(30)]
+        out = sm.enrich_with_historic_milestones(feed, history, self.TODAY)
+        ids = [m["id"] for m in out]
+        self.assertEqual(len(ids), 1 + 20)
+        self.assertEqual(len(set(ids)), len(ids))
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

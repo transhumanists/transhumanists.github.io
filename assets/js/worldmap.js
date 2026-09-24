@@ -2203,7 +2203,9 @@ const TIMELINE_MAX_YEAR = new Date().getFullYear();
 function filterEventsByYear(year) {
   state.events.forEach(ev => {
     if (ev.date) {
-      ev._hiddenByTimeline = parseInt(ev.date.slice(0, 4), 10) !== year;
+      // Route through parseDateToISO (same accept-surface as the 7-day filter):
+      // raw .slice(0,4) would misparse "15/03/2026" as the year 15.
+      ev._hiddenByTimeline = parseInt((parseDateToISO(ev.date) || '').slice(0, 4), 10) !== year;
     }
   });
 }
@@ -2448,6 +2450,15 @@ function initTimelineSlider() {
         renderLegend();
       },
       getLayers: () => ({ zones: state.zones, fleets: state.fleets, crises: state.crises }),
+      // Same pattern as setLayers but for milestone events (drives timeline
+      // clustering tests deterministically).
+      setEvents: (events) => {
+        state.events = (events || []).map(normalizeEvent).filter(isPlottable);
+        draw();
+        updateStatsDisplay();
+        renderLegend();
+      },
+      getEvents: () => state.events,
       // Drive the same year-clustering code path as the timeline slider.
       setTimelineYear: (year) => {
         timelineYear = Math.max(TIMELINE_MIN_YEAR, Math.min(TIMELINE_MAX_YEAR, year));

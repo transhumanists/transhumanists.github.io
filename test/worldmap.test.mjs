@@ -668,6 +668,26 @@ test('zoom controls, keyboard and double-click do not throw', () => {
     api.setLayers(LAYER_PAYLOAD.conflict_zones, LAYER_PAYLOAD.deployments, LAYER_PAYLOAD.crisis_zones);
   });
 
+  test('timeline clustering normalizes non-ISO event dates before grouping by year', () => {
+    const api = windowObj.__WORLDMAP_TEST__;
+    api.setEvents([
+      { id: 'e-iso', title: 'ISO', category: 'Biotechnology', date: '2026-03-15', geolocation: { lat: 1, lon: 1 } },
+      { id: 'e-dmy', title: 'DMY', category: 'Biotechnology', date: '15/03/2026', geolocation: { lat: 2, lon: 1 } },
+      { id: 'e-2025', title: 'Last year', category: 'Biotechnology', date: '2025-12-01', geolocation: { lat: 3, lon: 1 } },
+      { id: 'e-garbage', title: 'Garbage', category: 'Biotechnology', date: 'banana', geolocation: { lat: 4, lon: 1 } },
+    ]);
+    api.setTimelineYear(2026);
+    const events = api.getEvents();
+    const byTitle = (t) => events.find((e) => e.title === t);
+    expect(byTitle('ISO')._hiddenByTimeline).toBe(false);
+    // A DMY date grouped under the wrong year (15, via raw .slice(0,4)) was the bug.
+    expect(byTitle('DMY')._hiddenByTimeline).toBe(false);
+    expect(byTitle('Last year')._hiddenByTimeline).toBe(true);
+    expect(byTitle('Garbage')._hiddenByTimeline).toBe(true);
+    // Leave the timeline at the current year for later tests.
+    api.setTimelineYear(2026);
+  });
+
   test('stats split active vs concluded layers and labels reflect it', () => {
     const api = windowObj.__WORLDMAP_TEST__;
     api.setLayers(

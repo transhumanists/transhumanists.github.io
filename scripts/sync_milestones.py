@@ -136,6 +136,7 @@ TOKEN = os.environ.get("GITHUB_TOKEN", "")
 STALE_WARN_DAYS = int(os.environ.get("STALE_WARN_DAYS", "2"))
 STALE_ERROR_DAYS = int(os.environ.get("STALE_ERROR_DAYS", "8"))
 MAX_DAILY_DAYS = int(os.environ.get("MAX_DAILY_DAYS", "400"))
+_MAX_UPSTREAM_BYTES = 10 * 1024 * 1024  # safety cap on the mirrored upstream file
 
 # Upstream category keys -> website snake_case keys (for data file structure).
 UPSTREAM_TO_SITE_KEY = {
@@ -257,7 +258,11 @@ def fetch_upstream(repo: str, branch: str) -> dict | None:
         try:
             req = urllib.request.Request(url, headers=headers)
             with urllib.request.urlopen(req, timeout=20) as resp:
-                return json.loads(resp.read().decode("utf-8"))
+                body = resp.read(_MAX_UPSTREAM_BYTES + 1)
+                if len(body) > _MAX_UPSTREAM_BYTES:
+                    print("::error::Upstream response exceeds safety cap")
+                    return None
+                return json.loads(body.decode("utf-8"))
         except urllib.error.URLError as e:
             if attempt < 2:
                 backoff = 5 * (2 ** attempt)
@@ -600,13 +605,9 @@ def enrich_with_historic_milestones(feed: list, history: list, today: date) -> l
         
         # Sort by date descending and take up to 20 historic milestones
         historic_milestones.sort(key=lambda x: x.get("date", ""), reverse=True)
-        historic_to_add = historic_milestones[:20]
-        
-        # Add to feed if not already present
         existing_ids = {m.get("id") for m in feed}
-        for h in historic_to_add:
-            if h.get("id") not in {m.get("id") for m in feed}:
-                feed.append(h)
+        unseen = [h for h in historic_milestones if h.get("id") not in existing_ids]
+        feed.extend(unseen[:20])
     
     return feed
 
