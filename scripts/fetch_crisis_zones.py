@@ -19,10 +19,28 @@ WORLD_LAYERS_FILE = Path("data/world_layers.json")
 CRISIS_ZONES_KEY = "crisis_zones"
 
 # API endpoints (stdlib only - using public RSS/JSON feeds where available)
-OCHA_RSS = "https://reliefweb.int/rss.xml"  # ReliefWeb RSS (OCHA content syndicated)
+OCHA_RSS = "https://www.unocha.org/rss.xml"  # OCHA official RSS feed
+UNHCR_RSS = "https://www.unhcr.org/rss.xml"  # UNHCR official RSS feed
+WFP_RSS = "https://www.wfp.org/rss.xml"  # WFP official RSS feed
+FAO_RSS = "https://www.fao.org/rss.xml"  # FAO official RSS feed
 WHO_EMERGENCIES = "https://www.who.int/emergencies/disease-outbreak-news"  # WHO emergencies page
-RELIEFWEB_API = "https://api.reliefweb.int/v1/disasters"  # ReliefWeb API for humanitarian crises
-RELIEFWEB_V1 = "https://api.reliefweb.int/v1"  # ReliefWeb v1 base
+RELIEFWEB_API_V2 = "https://api.reliefweb.int/v2/disasters"  # ReliefWeb API v2
+RELIEFWEB_API_V1 = "https://api.reliefweb.int/v1/disasters"  # ReliefWeb API v1 fallback
+
+# Better headers to avoid 403/410 errors
+REQUEST_HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    "Accept": "application/json, application/xml, text/xml, */*",
+    "Accept-Language": "en-US,en;q=0.9",
+    "Accept-Encoding": "gzip, deflate, br",
+    "Connection": "keep-alive",
+    "Upgrade-Insecure-Requests": "1",
+    "Sec-Fetch-Dest": "document",
+    "Sec-Fetch-Mode": "navigate",
+    "Sec-Fetch-Site": "none",
+    "Sec-Fetch-User": "?1",
+    "Cache-Control": "max-age=0",
+}
 
 # Fallback static crisis zones (used when API unavailable)
 STATIC_CRISIS_ZONES = [
@@ -89,25 +107,30 @@ STATIC_CRISIS_ZONES = [
 ]
 
 
-def fetch_url(url: str, timeout: int = 15) -> str | None:
+def fetch_url(url: str, timeout: int = 30) -> str | None:
     """Fetch URL with retry, return text or None."""
-    headers = {
-        "User-Agent": "crisis-zone-fetcher/1.0 (+https://transhumanists.github.io)"
-    }
     for attempt in range(3):
         try:
-            req = urllib.request.Request(url, headers={"User-Agent": "crisis-zone-fetcher/1.0"})
+            req = urllib.request.Request(url, headers=REQUEST_HEADERS)
             with urllib.request.urlopen(req, timeout=timeout) as resp:
+                # Handle gzip compression
+                content_encoding = resp.headers.get('Content-Encoding', '')
+                if content_encoding == 'gzip':
+                    import gzip
+                    return gzip.decompress(resp.read()).decode("utf-8", errors="replace")
                 return resp.read().decode("utf-8", errors="replace")
+        except urllib.error.HTTPError as e:
+            print(f"  Attempt {attempt + 1}/3 failed: HTTP {e.code} - {e.reason}")
         except urllib.error.URLError as e:
-            print(f"  Attempt {attempt + 1}/3 failed: {e}")
+            print(f"  Attempt {attempt + 1}/3 failed: {e.reason}")
+        except Exception as e:
+            print(f"  Attempt {attempt + 1}/3 failed with unexpected error: {e}")
     return None
 
 
 def parse_ocha_rss(xml_text: str) -> list[dict]:
-    """Parse OCHA RSS feed for crisis mentions. Very basic extraction."""
+    """Parse OCHA/ReliefWeb RSS feed for crisis mentions."""
     crises = []
-    # Very basic RSS parsing - look for crisis-relevant items
     items = re.findall(r"<item>(.*?)</item>", xml_text, re.DOTALL)
     for item in items:
         title_match = re.search(r"<title><!\[CDATA\[(.*?)\]\]></title>|<title>(.*?)</title>", item)
@@ -118,9 +141,8 @@ def parse_ocha_rss(xml_text: str) -> list[dict]:
         link = (link_match.group(1) or link_match.group(2) or "").strip() if link_match else ""
         desc = (desc_match.group(1) or desc_match.group(2) or "").strip() if desc_match else ""
         
-        # Filter for crisis-relevant keywords
         text = (title + " " + desc).lower()
-        crisis_keywords = ["famine", "cholera", "displacement", "refugee", "drought", "hunger", "crisis", "emergency"]
+        crisis_keywords = ["famine", "cholera", "displacement", "refugee", "drought", "hunger", "crisis", "emergency", "outbreak", "epidemic"]
         if any(kw in text for kw in crisis_keywords):
             crises.append({
                 "title": title[:100],
@@ -133,16 +155,27 @@ def parse_ocha_rss(xml_text: str) -> list[dict]:
 def parse_who_page(html_text: str) -> list[dict]:
     """Parse WHO emergencies page for crisis mentions."""
     crises = []
-    # Very basic HTML parsing for WHO disease outbreak news
+    # WHO disease outbreak news - try multiple selectors
+    # Try article tags first
     items = re.findall(r'<article[^>]*>(.*?)</article>', html_text, re.DOTALL)
+    if not items:
+        # Try div with class containing 'outbreak' or 'emergency'
+        items = re.findall(r'<div[^>]*class="[^"]*(outbreak|emergency|crisis)[^"]*"[^>]*>(.*?)</div>', html_text, re.DOTALL | re.IGNORECASE)
+    if not items:
+        # Fallback: any link with emergency/outbreak in href
+        items = re.findall(r'<a[^>]*href="([^"]*)"[^>]*>(.*?)</a>', html_text, re.DOTALL)
+        items = [(m[1], m[0]) for m in items]  # swap to match expected format
+    
     for item in items:
-        title_match = re.search(r'<h[23][^>]*>(.*?)</h[23]>', item)
-        link_match = re.search(r'href="([^"]+)"', item)
+        if isinstance(item, tuple):
+            title, link = item[0].strip(), item[1].strip()
+        else:
+            title_match = re.search(r'<h[23][^>]*>(.*?)</h[23]>', item)
+            link_match = re.search(r'href="([^"]+)"', item)
+            title = title_match.group(1).strip() if title_match else ""
+            link = link_match.group(1) if link_match else ""
         
-        title = title_match.group(1).strip() if title_match else ""
-        link = link_match.group(1) if link_match else ""
-        
-        if title and any(kw in title.lower() for kw in ["outbreak", "emergency", "crisis", "cholera", "famine", "epidemic"]):
+        if title and any(kw in title.lower() for kw in ["outbreak", "emergency", "crisis", "cholera", "famine", "epidemic", "disease"]):
             crises.append({
                 "title": title[:100],
                 "link": link,
@@ -151,41 +184,39 @@ def parse_who_page(html_text: str) -> list[dict]:
 
 
 def fetch_reliefweb_crises() -> list[dict]:
-    """Fetch active crises from ReliefWeb API (v2)."""
-    # Use v2 API with proper query
-    url = "https://api.reliefweb.int/v2/disasters?appname=crisis-zone-fetcher&preset=latest&limit=50&fields[id,name,date,primary_country,url,description]"
-    data = fetch_url(url)
-    if not data:
-        # Fallback to v1
-        url = "https://api.reliefweb.int/v1/disasters?appname=crisis-zone-fetcher&preset=latest&limit=50&fields[id,name,date,primary_country,url,description]"
+    """Fetch active crises from ReliefWeb API (v2 with v1 fallback)."""
+    for base_url in [RELIEFWEB_API_V2, RELIEFWEB_API_V1]:
+        url = f"{base_url}?appname=crisis-zone-fetcher&preset=latest&limit=50&fields[id,name,date,primary_country,url,description]"
         data = fetch_url(url)
-    if not data:
-        return []
-    try:
-        resp = json.loads(data)
-        crises = []
-        for item in resp.get("data", []):
-            fields = item.get("fields", {})
-            name = fields.get("name", "")
-            url = fields.get("url", "")
-            date_str = fields.get("date", {}).get("created", "")
-            crises.append({
-                "title": name[:100],
-                "link": url,
-                "date": date_str,
-            })
-        return crises
-    except (json.JSONDecodeError, KeyError):
-        return []
+        if data:
+            try:
+                resp = json.loads(data)
+                crises = []
+                for item in resp.get("data", []):
+                    fields = item.get("fields", {})
+                    name = fields.get("name", "")
+                    url = fields.get("url", "")
+                    date_str = fields.get("date", {}).get("created", "")
+                    crises.append({
+                        "title": name[:100],
+                        "link": url,
+                        "date": date_str,
+                    })
+                if crises:
+                    return crises
+            except (json.JSONDecodeError, KeyError):
+                continue
+    return []
 
 
-def build_crisis_zones_from_sources(ocha_data: list, who_data: list, reliefweb_data: list) -> list[dict]:
+def build_crisis_zones_from_sources(ocha_data: list, who_data: list, reliefweb_data: list, 
+                                    unhcr_data: list, wfp_data: list, fao_data: list) -> list[dict]:
     """Build crisis zones from fetched sources, merging with static fallback."""
     zones = []
     seen_names = set()
     
-    # Priority: ReliefWeb (structured) > OCHA > WHO
-    for source in [reliefweb_data, ocha_data, who_data]:
+    # Priority: ReliefWeb (structured) > OCHA > UNHCR > WFP > FAO > WHO
+    for source in [reliefweb_data, ocha_data, unhcr_data, wfp_data, fao_data, who_data]:
         for item in source:
             title = item.get("title", "").strip()
             if not title or title in seen_names:
@@ -205,12 +236,12 @@ def build_crisis_zones_from_sources(ocha_data: list, who_data: list, reliefweb_d
                 "radiusDeg": 4.0,
                 "status": "active",
                 "note": item.get("description", item.get("title", ""))[:200],
-                "source": "ReliefWeb / OCHA / WHO",
+                "source": "ReliefWeb / OCHA / WHO / UNHCR / WFP / FAO",
                 "url": item.get("link", "https://www.unocha.org"),
             })
-            if len(zones) >= 10:  # Limit to 10 crisis zones
+            if len(zones) >= 15:  # Limit to 15 crisis zones
                 break
-        if len(zones) >= 10:
+        if len(zones) >= 15:
             break
     
     # Fallback to static if API failed
@@ -218,7 +249,7 @@ def build_crisis_zones_from_sources(ocha_data: list, who_data: list, reliefweb_d
         print("All APIs failed, using static crisis zones")
         return STATIC_CRISIS_ZONES
     
-    return zones[:10]
+    return zones[:15]
 
 
 def infer_location(text: str) -> tuple[float, float, str]:
@@ -287,13 +318,33 @@ def main() -> int:
     ocha = parse_ocha_rss(ocha_xml) if ocha_xml else []
     print(f"  Got {len(ocha)} OCHA items")
     
+    print("  Fetching UNHCR RSS...")
+    unhcr_xml = fetch_url(UNHCR_RSS)
+    unhcr = parse_ocha_rss(unhcr_xml) if unhcr_xml else []
+    print(f"  Got {len(unhcr)} UNHCR items")
+    
+    print("  Fetching WFP RSS...")
+    wfp_xml = fetch_url(WFP_RSS)
+    wfp = parse_ocha_rss(wfp_xml) if wfp_xml else []
+    print(f"  Got {len(wfp)} WFP items")
+    
+    print("  Fetching FAO RSS...")
+    fao_xml = fetch_url(FAO_RSS)
+    fao = parse_ocha_rss(fao_xml) if fao_xml else []
+    print(f"  Got {len(fao)} FAO items")
+    
+    print("  Fetching OCHA RSS...")
+    ocha_xml = fetch_url(OCHA_RSS)
+    ocha = parse_ocha_rss(ocha_xml) if ocha_xml else []
+    print(f"  Got {len(ocha)} OCHA items")
+    
     print("  Fetching WHO emergencies...")
     who_html = fetch_url(WHO_EMERGENCIES)
     who = parse_who_page(who_html) if who_html else []
     print(f"  Got {len(who)} WHO items")
     
     # Build crisis zones
-    crisis_zones = build_crisis_zones_from_sources(ocha, who, reliefweb)
+    crisis_zones = build_crisis_zones_from_sources(ocha, who, reliefweb, unhcr, wfp, fao)
     print(f"Built {len(crisis_zones)} crisis zones")
     
     # Load existing world_layers

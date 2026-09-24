@@ -361,19 +361,21 @@ function canonicalCategory(cat) {
   }
 
   // ---- Sample data (fallback) ----
+  // Note: Dates are kept recent (within last 7 days of typical deploy) so the "this week" filter works in local dev.
+  // For production, real data is loaded from /data/events.json via fetch.
   const SAMPLE_EVENTS = [
-    { lat: 37.7749, lon: -122.4194, title: 'CRISPR Cas-13b phase-3 trial cleared', category: 'Biotechnology', value: '50 patients', source: 'Stanford', date: '2026-08-25' },
-    { lat: 47.3769, lon: 8.5417, title: 'ETH Zurich - 137 qubit entanglement', category: 'Quantum', value: '137 qubits', source: 'ETH Zurich', date: '2026-08-26' },
-    { lat: 35.6762, lon: 139.6503, title: 'JT-60SA sustained fusion: 100 MJ', category: 'Energy', value: '100 MJ', source: 'NIFS Japan', date: '2026-08-22' },
-    { lat: 51.5074, lon: -0.1278, title: 'GCHQ cyber threat advisory - 9.8 CVSS', category: 'Cybersecurity', value: 'CVSS 9.8', source: 'NCSC UK', date: '2026-08-24' },
-    { lat: 28.5728, lon: -80.6490, title: 'SpaceX Starship: 156t to LEO', category: 'Spaceflight & Aeronautics', value: '156 tonnes', source: 'SpaceX', date: '2026-08-23' },
-    { lat: 50.4501, lon: 30.5234, title: 'NATO exercise - 12,000 troops', category: 'Defense', value: '12k troops', source: 'NATO', date: '2026-08-21' },
-    { lat: 39.9042, lon: 116.4074, title: 'Beijing hypersonic test: Mach 13', category: 'Defense', value: 'Mach 13', source: 'PLASSF', date: '2026-08-20' },
-    { lat: 31.9686, lon: 35.5064, title: 'Mossad joint cyber op with NSA', category: 'Cybersecurity', value: 'Tier-1', source: 'Mossad', date: '2026-08-27' },
-    { lat: 52.5200, lon: 13.4050, title: 'Wendelstein 7-X - 6 min plasma record', category: 'Energy', value: '6 min', source: 'IPP', date: '2026-08-19' },
-    { lat: 32.0853, lon: 34.7818, title: 'Tel Aviv biotech: in-vivo organoid', category: 'Biotechnology', value: 'patent-pending', source: 'Tel Aviv U', date: '2026-08-28' },
-    { lat: -33.8688, lon: 151.2093, title: 'CSIRO solar cell: 33.2% efficiency', category: 'Energy', value: '33.2%', source: 'CSIRO', date: '2026-08-18' },
-    { lat: 1.3521, lon: 103.8198, title: 'ST Engineering drone swarm test', category: 'Defense', value: '1000 UAVs', source: 'CSA', date: '2026-08-17' }
+    { lat: 37.7749, lon: -122.4194, title: 'CRISPR Cas-13b phase-3 trial cleared', category: 'Biotechnology', value: '50 patients', source: 'Stanford', date: '2026-09-22' },
+    { lat: 47.3769, lon: 8.5417, title: 'ETH Zurich - 137 qubit entanglement', category: 'Quantum Physics', value: '137 qubits', source: 'ETH Zurich', date: '2026-09-21' },
+    { lat: 35.6762, lon: 139.6503, title: 'JT-60SA sustained fusion: 100 MJ', category: 'Renewable Energy', value: '100 MJ', source: 'NIFS Japan', date: '2026-09-20' },
+    { lat: 51.5074, lon: -0.1278, title: 'GCHQ cyber threat advisory - 9.8 CVSS', category: 'Cybersecurity', value: 'CVSS 9.8', source: 'NCSC UK', date: '2026-09-19' },
+    { lat: 28.5728, lon: -80.6490, title: 'SpaceX Starship: 156t to LEO', category: 'Spaceflight & Aeronautics', value: '156 tonnes', source: 'SpaceX', date: '2026-09-18' },
+    { lat: 50.4501, lon: 30.5234, title: 'NATO exercise - 12,000 troops', category: 'Military & Defense', value: '12k troops', source: 'NATO', date: '2026-09-17' },
+    { lat: 39.9042, lon: 116.4074, title: 'Beijing hypersonic test: Mach 13', category: 'Military & Defense', value: 'Mach 13', source: 'PLASSF', date: '2026-09-16' },
+    { lat: 31.9686, lon: 35.5064, title: 'Mossad joint cyber op with NSA', category: 'Cybersecurity', value: 'Tier-1', source: 'Mossad', date: '2026-09-15' },
+    { lat: 52.5200, lon: 13.4050, title: 'Wendelstein 7-X - 6 min plasma record', category: 'Renewable Energy', value: '6 min', source: 'IPP', date: '2026-09-14' },
+    { lat: 32.0853, lon: 34.7818, title: 'Tel Aviv biotech: in-vivo organoid', category: 'Biotechnology', value: 'patent-pending', source: 'Tel Aviv U', date: '2026-09-13' },
+    { lat: -33.8688, lon: 151.2093, title: 'CSIRO solar cell: 33.2% efficiency', category: 'Renewable Energy', value: '33.2%', source: 'CSIRO', date: '2026-09-12' },
+    { lat: 1.3521, lon: 103.8198, title: 'ST Engineering drone swarm test', category: 'Military & Defense', value: '1000 UAVs', source: 'CSA', date: '2026-09-11' }
   ];
 
   // ---- Terminator (Day/Night boundary) ----
@@ -817,9 +819,14 @@ function canonicalCategory(cat) {
   function findEvent(px, py) {
     const hitRadius = HIT_RADIUS_BASE / state.transform.scale;
     const hitRadiusSq = hitRadius * hitRadius;
+    const todayISO = (typeof window !== 'undefined' && window.__WORLDMAP_TEST__?.getTodayISO)
+      ? window.__WORLDMAP_TEST__.getTodayISO()
+      : new Date().toISOString().slice(0, 10);
     for (let i = state.events.length - 1; i >= 0; i--) {
       const ev = state.events[i];
       if (!isCategoryVisible(ev.category)) continue;
+      // If filterRecent is active, skip events outside the 7-day window
+      if (state.filterRecent && !isInRolling7Days(ev.date, todayISO)) continue;
       const p = project(ev.lon, ev.lat);
       const dx = p.x - px;
       const dy = p.y - py;
@@ -1325,10 +1332,33 @@ function canonicalCategory(cat) {
     return { start: start.toISOString().slice(0, 10), end: end.toISOString().slice(0, 10) };
   }
 
+  function parseDateToISO(dateStr) {
+    if (!dateStr) return null;
+    const trimmed = String(dateStr).trim();
+    // Try parsing as YYYY-MM-DD first
+    const isoMatch = trimmed.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (isoMatch) {
+      return `${isoMatch[1]}-${isoMatch[2]}-${isoMatch[3]}`;
+    }
+    // Try parsing as DD-MM-YYYY or DD/MM/YYYY
+    const dmyMatch = trimmed.match(/^(\d{1,2})[-\/](\d{1,2})[-\/](\d{4})/);
+    if (dmyMatch) {
+      const day = dmyMatch[1].padStart(2, '0');
+      const month = dmyMatch[2].padStart(2, '0');
+      const year = dmyMatch[3];
+      return `${year}-${month}-${day}`;
+    }
+    // Fallback: try Date constructor
+    const parsed = new Date(trimmed);
+    if (!isNaN(parsed.getTime())) {
+      return parsed.toISOString().slice(0, 10);
+    }
+    return null;
+  }
+
   function isInRolling7Days(dateStr, todayISO) {
-    if (!dateStr) return false;
-    const iso = String(dateStr).slice(0, 10);
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return false;
+    const iso = parseDateToISO(dateStr);
+    if (!iso) return false;
     const { start, end } = rolling7DayBounds(todayISO);
     return iso >= start && iso <= end;
   }
@@ -1957,6 +1987,7 @@ const fragment = document.createDocumentFragment();
 
   // ---- Test hook (inert in production; enabled only when the harness pre-sets the flag) ----
   if (typeof window !== 'undefined' && window.__WORLDMAP_TEST__) {
+    const existingTestHook = window.__WORLDMAP_TEST__;
     window.__WORLDMAP_TEST__ = {
       canonicalCategory,
       CATEGORY_COLORS,
@@ -1971,6 +2002,9 @@ const fragment = document.createDocumentFragment();
       isFleetPlottable,
       weekBoundsISO,
       isInCurrentWeek,
+      get getTodayISO() {
+        return existingTestHook?.getTodayISO ?? (() => new Date().toISOString().slice(0, 10));
+      },
       getView: () => ({ ...state.transform }),
       setFilterRecent: (val) => { state.filterRecent = val; draw(); updateStatsDisplay(); renderLegend(); },
       setFilterMilitary: (val) => { state.filterMilitary = val; state.showZones = val; state.showFleets = val; draw(); updateStatsDisplay(); renderLegend(); }

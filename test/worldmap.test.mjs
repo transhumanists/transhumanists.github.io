@@ -192,7 +192,9 @@ const documentObj = {
 
 let load;
 beforeAll(async () => {
-  windowObj.__WORLDMAP_TEST__ = true;
+  // Set up test hook mock BEFORE import so the module can use it
+  // Use 2026-08-08 to include all test fixture events (2026-08-01 to 2026-08-08) in the 7-day window
+  windowObj.__WORLDMAP_TEST__ = { getTodayISO: () => '2026-08-08' };
 
   globalThis.window = windowObj;
   globalThis.document = documentObj;
