@@ -78,4 +78,14 @@ jobs:
           fi
           ts=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
           git commit -m "chore(milestone-check): refresh milestone & layer data ${ts}"
-          git push origin main
+          # The remote can advance while this job runs (a scheduled run collides
+          # with a manual push). Rebase onto the latest main, then retry once;
+          # fail loudly rather than silently dropping a data refresh.
+          if git push origin main; then
+            echo "Pushed data refresh to main"
+          else
+            echo "Push rejected (remote moved?) - rebasing and retrying..."
+            git pull --rebase origin main
+            git push origin main
+            echo "Pushed data refresh to main (after rebase)"
+          fi
