@@ -676,7 +676,10 @@ function canonicalCategory(cat) {
     }
   }
 
-  function drawEvent(ev) {
+function drawEvent(ev) {
+     // Skip if hidden by timeline filter
+     if (ev._hiddenByTimeline) return;
+     
      if (!isCategoryVisible(ev.category)) {
        const p = project(ev.lon, ev.lat);
        const color = CATEGORY_COLORS[canonicalCategory(ev.category)] || '#00d4ff';
@@ -1925,16 +1928,150 @@ const fragment = document.createDocumentFragment();
     }
   }
 
-  let terminatorInterval = null;
-  function startTerminatorInterval() {
-    if (prefersReducedMotion) return;
-    if (terminatorInterval) clearInterval(terminatorInterval);
-    terminatorInterval = setInterval(() => {
-      if (!document.hidden && state.showTerminator && state.events.length) draw();
-    }, TERMINATOR_UPDATE_MS);
-  }
+let terminatorInterval = null;
+function startTerminatorInterval() {
+  if (prefersReducedMotion) return;
+  if (terminatorInterval) clearInterval(terminatorInterval);
+  terminatorInterval = setInterval(() => {
+    if (!document.hidden && state.showTerminator && state.events.length) draw();
+  }, TERMINATOR_UPDATE_MS);
+}
 
-  // ---- Init ----
+// Timeline slider state
+let timelineYear = 2026; // Current year
+const TIMELINE_MIN_YEAR = 2020;
+const TIMELINE_MAX_YEAR = 2026;
+
+// Timeline slider initialization
+function initTimelineSlider() {
+  const timeline = document.getElementById('map-timeline');
+  const track = document.getElementById('map-timeline-track');
+  const handle = document.getElementById('map-timeline-handle');
+  const yearsContainer = document.getElementById('map-timeline-years');
+  
+  if (!timeline || !track || !handle) return;
+  
+  // Generate year labels
+  renderTimelineYears();
+  
+  // Set initial handle position
+  updateTimelineHandle();
+  
+  // Mouse events
+  let isDragging = false;
+  
+  function onPointerDown(e) {
+    isDragging = true;
+    e.preventDefault();
+    document.body.style.userSelect = 'none';
+    document.addEventListener('pointermove', onPointerMove);
+    document.addEventListener('pointerup', onPointerUp);
+  }
+  
+  function onPointerMove(e) {
+    if (!isDragging) return;
+    updateTimelineFromClientX(e.clientX);
+  }
+  
+  function onPointerUp() {
+    isDragging = false;
+    document.body.style.userSelect = '';
+    document.removeEventListener('pointermove', onPointerMove);
+    document.removeEventListener('pointerup', onPointerUp);
+  }
+  
+  track.addEventListener('pointerdown', onPointerDown);
+  handle.addEventListener('pointerdown', onPointerDown);
+  
+  // Click on track to jump
+  track.addEventListener('click', (e) => {
+    if (e.target === track) {
+      updateTimelineFromClientX(e.clientX);
+    }
+  });
+  
+  // Keyboard support
+  handle.addEventListener('keydown', (e) => {
+    let changed = false;
+    switch (e.key) {
+      case 'ArrowLeft':
+      case 'ArrowDown':
+        timelineYear = Math.max(TIMELINE_MIN_YEAR, timelineYear - 1);
+        changed = true;
+        break;
+      case 'ArrowRight':
+      case 'ArrowUp':
+        timelineYear = Math.min(TIMELINE_MAX_YEAR, timelineYear + 1);
+        changed = true;
+        break;
+      case 'Home':
+        timelineYear = TIMELINE_MIN_YEAR;
+        changed = true;
+        break;
+      case 'End':
+        timelineYear = TIMELINE_MAX_YEAR;
+        changed = true;
+        break;
+    }
+    if (changed) {
+      e.preventDefault();
+      updateTimelineHandle();
+      applyTimelineFilter();
+    }
+  });
+  
+  function updateTimelineFromClientX(clientX) {
+    const rect = track.getBoundingClientRect();
+    const ratio = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+    timelineYear = Math.round(TIMELINE_MIN_YEAR + ratio * (TIMELINE_MAX_YEAR - TIMELINE_MIN_YEAR));
+    updateTimelineHandle();
+    applyTimelineFilter();
+  }
+  
+  function updateTimelineHandle() {
+    const ratio = (timelineYear - TIMELINE_MIN_YEAR) / (TIMELINE_MAX_YEAR - TIMELINE_MIN_YEAR);
+    handle.style.left = `${ratio * 100}%`;
+    timeline.setAttribute('aria-valuenow', Math.round(ratio * 100));
+    // Update handle aria-label
+    handle.setAttribute('aria-label', `Year ${timelineYear}`);
+  }
+  
+  function renderTimelineYears() {
+    if (!yearsContainer) return;
+    yearsContainer.innerHTML = '';
+    for (let year = TIMELINE_MIN_YEAR; year <= TIMELINE_MAX_YEAR; year++) {
+      const label = document.createElement('span');
+      label.textContent = year.toString();
+      label.style.position = 'absolute';
+      label.style.left = `${((year - TIMELINE_MIN_YEAR) / (TIMELINE_MAX_YEAR - TIMELINE_MIN_YEAR)) * 100}%`;
+      label.style.transform = 'translateX(-50%)';
+      label.style.fontSize = '0.55rem';
+      label.style.fontFamily = 'var(--font-mono)';
+      label.style.color = 'var(--fg-subtle)';
+      label.style.whiteSpace = 'nowrap';
+      label.style.pointerEvents = 'none';
+      yearsContainer.appendChild(label);
+    }
+  }
+  
+  function applyTimelineFilter() {
+    // Filter events by year
+    state.events.forEach(ev => {
+      if (ev.date) {
+        const eventYear = parseInt(ev.date.slice(0, 4), 10);
+        if (eventYear !== timelineYear) {
+          ev._hiddenByTimeline = true;
+        } else {
+          ev._hiddenByTimeline = false;
+        }
+      }
+    });
+    draw();
+    updateStatsDisplay();
+  }
+}
+
+// ---- Init ----
   async function load() {
     await loadEvents();
     await loadLayers();
@@ -1959,6 +2096,9 @@ const fragment = document.createDocumentFragment();
       filterMilitaryBtn.style.opacity = state.filterMilitary ? '1' : '0.5';
       filterMilitaryBtn.addEventListener('click', toggleFilterMilitary);
     }
+
+    // Initialize timeline slider
+    initTimelineSlider();
 
     // Keep tooltip open while the pointer is over it so the source link is clickable
     if (tooltip) {

@@ -64,6 +64,12 @@ description: "Tracking milestones across biotech, AGI, quantum, energy, cyber, s
           </button>
         </div>
       </div>
+      <div class="map-timeline" id="map-timeline" role="slider" aria-label="Timeline" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100" tabindex="0">
+        <div class="map-timeline-track" id="map-timeline-track">
+          <div class="map-timeline-years" id="map-timeline-years"></div>
+          <div class="map-timeline-handle" id="map-timeline-handle" role="slider" aria-label="Year" tabindex="0"></div>
+        </div>
+      </div>
       <div class="map-tooltip" id="map-tooltip" role="tooltip"></div>
     </div>
   </div>

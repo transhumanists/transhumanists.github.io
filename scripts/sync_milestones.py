@@ -35,6 +35,9 @@ from pathlib import Path
 
 MILESTONES_REPO = os.environ.get("MILESTONES_REPO", "transhumanists/milestones")
 MILESTONES_BRANCH = os.environ.get("MILESTONES_BRANCH", "main")
+# Additional upstream sources for milestone data (merged in order)
+ADDITIONAL_UPSTREAM_REPOS = os.environ.get("ADDITIONAL_UPSTREAM_REPOS", "").split(",")
+ADDITIONAL_UPSTREAM_BRANCHES = os.environ.get("ADDITIONAL_UPSTREAM_BRANCHES", "").split(",")
 TOKEN = os.environ.get("GITHUB_TOKEN", "")
 STALE_WARN_DAYS = int(os.environ.get("STALE_WARN_DAYS", "2"))
 STALE_ERROR_DAYS = int(os.environ.get("STALE_ERROR_DAYS", "8"))
@@ -172,6 +175,45 @@ def fetch_upstream(repo: str, branch: str) -> dict | None:
             print(f"::error::Invalid JSON from source: {e}")
             break
     return None
+
+
+def fetch_all_upstreams() -> list[dict]:
+    """Fetch from all configured upstream repositories."""
+    upstreams = []
+    # Primary upstream
+    primary = fetch_upstream(MILESTONES_REPO, MILESTONES_BRANCH)
+    if primary:
+        upstreams.append(primary)
+    # Additional upstreams
+    for repo, branch in zip(ADDITIONAL_UPSTREAM_REPOS, ADDITIONAL_UPSTREAM_BRANCHES):
+        if repo and branch:
+            upstream = fetch_upstream(repo.strip(), branch.strip())
+            if upstream:
+                upstreams.append(upstream)
+            else:
+                print(f"::warning::Failed to fetch additional upstream: {repo}/{branch}")
+    return upstreams
+
+
+def merge_upstreams(upstreams: list[dict]) -> dict:
+    """Merge multiple upstream milestone datasets into one."""
+    if not upstreams:
+        return {}
+    # Start with the first upstream as base
+    merged = upstreams[0]
+    for upstream in upstreams[1:]:
+        # Merge categories
+        for cat_key, cat_data in upstream.get("categories", {}).items():
+            if cat_key not in merged.get("categories", {}):
+                merged.setdefault("categories", {})[cat_key] = cat_data
+            else:
+                # Merge milestones, avoiding duplicates by ID
+                existing_ids = {m.get("id") for m in merged["categories"][cat_key].get("milestones", [])}
+                for milestone in cat_data.get("milestones", []):
+                    if milestone.get("id") not in existing_ids:
+                        merged["categories"][cat_key]["milestones"].append(milestone)
+                        existing_ids.add(milestone.get("id"))
+    return merged
 
 
 def iter_milestones(data) -> list[dict]:
@@ -430,6 +472,33 @@ def build_events(milestones: list) -> dict:
     return {"last_update": now_iso(), "version": "1.0.0", "events": events}
 
 
+def enrich_with_historic_milestones(feed: list, history: list, today: date) -> list:
+    """Add historic milestones to the feed if recent milestones are sparse."""
+    # Check how many milestones in the last 30 days
+    recent_cutoff = today - timedelta(days=30)
+    recent_count = sum(1 for m in feed 
+                       if m.get("date") and m["date"] >= recent_cutoff.isoformat())
+    
+    # If fewer than 5 milestones in the last 30 days, add historic ones
+    if recent_count < 5:
+        # Get historic milestones from archive (older than 30 days)
+        historic_cutoff = today - timedelta(days=30)
+        historic_milestones = [h for h in history 
+                               if h.get("date") and h["date"] < historic_cutoff.isoformat()]
+        
+        # Sort by date descending and take up to 20 historic milestones
+        historic_milestones.sort(key=lambda x: x.get("date", ""), reverse=True)
+        historic_to_add = historic_milestones[:20]
+        
+        # Add to feed if not already present
+        existing_ids = {m.get("id") for m in feed}
+        for h in historic_to_add:
+            if h.get("id") not in {m.get("id") for m in feed}:
+                feed.append(h)
+    
+    return feed
+
+
 def latest_milestone_date(milestones: list) -> date | None:
     best = None
     for m in milestones:
@@ -493,7 +562,8 @@ def main() -> int:
             print(f"::error::Local upstream file missing or invalid: {args.upstream}")
             return 1
     else:
-        upstream = fetch_upstream(MILESTONES_REPO, MILESTONES_BRANCH)
+        upstreams = fetch_all_upstreams()
+        upstream = merge_upstreams(upstreams)
 
     if upstream is None:
         # Keep local data; do not churn. Loud so the breakage is visible.
@@ -526,6 +596,10 @@ def main() -> int:
 
     # 4. Derive outputs
     activity = build_activity(history, today)
+    
+    # Enrich feed with historic milestones if recent data is sparse
+    feed = enrich_with_historic_milestones(feed, history, today)
+    
     events = build_events(feed)
 
     # 5. Staleness gate (milestone date freshness, not data-file freshness)
