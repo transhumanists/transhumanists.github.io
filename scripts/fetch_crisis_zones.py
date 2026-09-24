@@ -20,9 +20,9 @@ WORLD_LAYERS_FILE = Path("data/world_layers.json")
 CRISIS_ZONES_KEY = "crisis_zones"
 
 # API endpoints (stdlib only - using public RSS/JSON feeds where available)
-# ReliefWeb API - requires appname parameter for identification
-RELIEFWEB_API_V2 = "https://api.reliefweb.int/v2/disasters?appname=crisis-zone-fetcher&preset=latest&limit=50&fields[id,name,date,primary_country,url,description]"
-RELIEFWEB_API_V1 = "https://api.reliefweb.int/v1/disasters?appname=crisis-zone-fetcher&preset=latest&limit=50&fields[id,name,date,primary_country,url,description]"
+# ReliefWeb API base URLs (fields are appended by fetch_reliefweb_crises)
+RELIEFWEB_API_V2 = "https://api.reliefweb.int/v2/disasters"  # ReliefWeb API v2
+RELIEFWEB_API_V1 = "https://api.reliefweb.int/v1/disasters"  # ReliefWeb API v1 fallback
 
 # RSS feeds that work (verified)
 OCHA_RSS = "https://www.unocha.org/rss.xml"  # OCHA official RSS feed
@@ -30,13 +30,6 @@ UNHCR_RSS = "https://www.unhcr.org/rss.xml"  # UNHCR official RSS feed
 WFP_RSS = "https://www.wfp.org/rss.xml"  # WFP official RSS feed
 FAO_RSS = "https://www.fao.org/rss.xml"  # FAO official RSS feed
 WHO_EMERGENCIES = "https://www.who.int/emergencies/disease-outbreak-news"  # WHO emergencies page
-RELIEFWEB_API_V2 = "https://api.reliefweb.int/v2/disasters"  # ReliefWeb API v2
-RELIEFWEB_API_V1 = "https://api.reliefweb.int/v1/disasters"  # ReliefWeb API v1 fallback
-
-# Additional crisis data sources
-UNHCR_RSS = "https://www.unhcr.org/rss.xml"  # UNHCR official RSS feed
-WFP_RSS = "https://www.wfp.org/rss.xml"  # WFP official RSS feed
-FAO_RSS = "https://www.fao.org/rss.xml"  # FAO official RSS feed
 OCHA_HAPI = "https://data.humdata.org/api/3/action/package_search?q=humanitarian+crisis&rows=50"  # HDX API
 
 # Better headers to avoid 403/410 errors
@@ -54,10 +47,9 @@ REQUEST_HEADERS = {
     "Cache-Control": "max-age=0",
 }
 
-# Create SSL context that doesn't verify certificates (for sites with cert issues)
-SSL_CONTEXT = ssl.create_default_context()
-SSL_CONTEXT.check_hostname = False
-SSL_CONTEXT.verify_mode = ssl.CERT_NONE
+# Schema version written by load_world_layers when the file is missing; keep in
+# sync with sync_layers.py's LIFECYCLE_VERSION (the authoritative value).
+SCHEMA_VERSION = "1.1.0"
 
 # Fallback static crisis zones (used when API unavailable)
 STATIC_CRISIS_ZONES = [
@@ -170,18 +162,6 @@ STATIC_CRISIS_ZONES = [
         "url": "https://www.unocha.org"
     },
     {
-        "id": "crisis-haiti",
-        "name": "Haiti · Gang violence & hunger",
-        "region": "Caribbean",
-        "lat": 18.5,
-        "lon": -72.3,
-        "radiusDeg": 3.5,
-        "status": "active",
-        "note": "5M+ in need, gang violence & cholera",
-        "source": "UN OCHA",
-        "url": "https://www.unocha.org"
-    },
-    {
         "id": "crisis-drc",
         "name": "DRC · Conflict & Ebola",
         "region": "Central Africa",
@@ -290,10 +270,16 @@ def fetch_reliefweb_crises() -> list[dict]:
                     name = fields.get("name", "")
                     url = fields.get("url", "")
                     date_str = fields.get("date", {}).get("created", "")
+                    # primary_country is authoritative geo context (better than
+                    # keyword guessing); tolerate either dict or plain string.
+                    country = fields.get("primary_country")
+                    if isinstance(country, dict):
+                        country = country.get("name", "")
                     crises.append({
                         "title": name[:100],
                         "link": url,
                         "date": date_str,
+                        "country": country if isinstance(country, str) else "",
                     })
                 if crises:
                     return crises
@@ -307,6 +293,7 @@ def build_crisis_zones_from_sources(ocha_data: list, who_data: list, reliefweb_d
     """Build crisis zones from fetched sources, merging with static fallback."""
     zones = []
     seen_names = set()
+    seen_ids = set()
     
     # Priority: ReliefWeb (structured) > OCHA > HDX > UNHCR > WFP > FAO > WHO
     for source in [reliefweb_data, ocha_data, hdx_data, unhcr_data, wfp_data, fao_data, who_data]:
@@ -315,8 +302,10 @@ def build_crisis_zones_from_sources(ocha_data: list, who_data: list, reliefweb_d
             if not title or title in seen_names:
                 continue
 
-            # Simple geo-location inference from title/keywords
-            lat, lon, region = infer_location(item.get("title", "") + " " + item.get("description", "") + " " + item.get("link", ""))
+            # Simple geo-location inference from title/keywords (the ReliefWeb
+            # primary_country field, when present, is authoritative context).
+            geo_text = " ".join(str(item.get(k, "")) for k in ("country", "title", "description", "link"))
+            lat, lon, region = infer_location(geo_text)
             # Drop items that cannot be geolocated (they would plot at 0,0
             # "Null Island" - the Gulf of Guinea - and mislead the map).
             if lat == 0.0 and lon == 0.0:
@@ -324,10 +313,15 @@ def build_crisis_zones_from_sources(ocha_data: list, who_data: list, reliefweb_d
             seen_names.add(title)
             
             crisis_id = "crisis-" + re.sub(r"[^a-z0-9]+", "-", item.get("title", "crisis").lower()).strip("-")[:50]
+            # Two source titles can slug to the same id (e.g. different word
+            # separators); skip so the saved file never carries duplicate ids.
+            if crisis_id in seen_ids:
+                continue
+            seen_ids.add(crisis_id)
             zones.append({
                 "id": crisis_id,
                 "name": item.get("title", "Crisis")[:80],
-                "region": infer_region(item.get("title", "")),
+                "region": infer_region(geo_text),
                 "lat": lat,
                 "lon": lon,
                 "radiusDeg": 4.0,
@@ -341,12 +335,30 @@ def build_crisis_zones_from_sources(ocha_data: list, who_data: list, reliefweb_d
         if len(zones) >= 15:
             break
     
-    # Fallback to static if API failed
+    # Fallback to static if API failed (dedupe ids + clamp to the 15-zone cap,
+    # the same contract the sourced path enforces; the input list is left as-is).
     if not zones:
         print("All APIs failed, using static crisis zones")
-        return STATIC_CRISIS_ZONES
-    
+        return _finalize_crisis_zones(STATIC_CRISIS_ZONES)
+
     return zones[:15]
+
+
+def _finalize_crisis_zones(zones: list[dict]) -> list[dict]:
+    """Deduplicate by id (first occurrence wins) and clamp to the 15-zone cap."""
+    out: list[dict] = []
+    seen: set[str] = set()
+    for z in zones:
+        if not isinstance(z, dict):
+            continue
+        ident = z.get("id")
+        if not isinstance(ident, str) or not ident or ident in seen:
+            continue
+        seen.add(ident)
+        out.append(z)
+        if len(out) >= 15:
+            break
+    return out
 
 
 def infer_location(text: str) -> tuple[float, float, str]:
@@ -401,7 +413,7 @@ def load_world_layers() -> dict:
             return json.loads(WORLD_LAYERS_FILE.read_text(encoding="utf-8"))
         except (json.JSONDecodeError, OSError):
             pass
-    return {"version": "1.0.0", "last_update": "", "conflict_zones": [], "crisis_zones": [], "deployments": []}
+    return {"version": SCHEMA_VERSION, "last_update": "", "conflict_zones": [], "crisis_zones": [], "deployments": []}
 
 
 def save_world_layers(data: dict) -> bool:
@@ -417,7 +429,7 @@ def fetch_hdx_crises() -> list[dict]:
     """Fetch crisis data from HDX API."""
     hdx_data = []
     try:
-        url = "https://data.humdata.org/api/3/action/package_search?q=humanitarian+crisis&rows=50"
+        url = OCHA_HAPI
         data = fetch_url(url)
         if data:
             resp = json.loads(data)

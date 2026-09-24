@@ -577,6 +577,7 @@ test('zoom controls, keyboard and double-click do not throw', () => {
     expect(api.isZonePlottable({ ...z, lon: -190 })).toBe(false);
     expect(api.isZonePlottable({ ...z, name: 42 })).toBe(false);
     expect(api.isZonePlottable({ ...z, lat: undefined })).toBe(false);
+    expect(api.isZonePlottable(api.normalizeZone({ ...z, lat: 0, lon: 0 }))).toBe(false);  // unlocated marker
   });
 
   test('isFleetPlottable requires two valid endpoints', () => {
@@ -586,6 +587,8 @@ test('zoom controls, keyboard and double-click do not throw', () => {
     expect(api.isFleetPlottable(api.normalizeFleet({ id: 'f11', from: { lat: 50, lon: 10 } }))).toBe(false);
     expect(api.isFleetPlottable(api.normalizeFleet({ id: 'f12', from: { lat: 50, lon: 999 }, to: { lat: 51, lon: 11 } }))).toBe(false);
     expect(api.isFleetPlottable(api.normalizeFleet({ id: 'f13', from: { lat: 50, lon: 10 }, to: { lat: 1e400, lon: 11 } }))).toBe(false);
+    expect(api.isFleetPlottable(api.normalizeFleet({ id: 'f14', from: { lat: 0, lon: 0 }, to: { lat: 51, lon: 11 } }))).toBe(false);  // unlocated marker
+    expect(api.isFleetPlottable(api.normalizeFleet({ id: 'f15', from: { lat: 50, lon: 10 }, to: { lat: 0, lon: 0 } }))).toBe(false);
   });
 
   test('new visitors see ALL milestones by default (breakthrough filter off)', () => {

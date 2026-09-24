@@ -42,6 +42,13 @@ def _coord_ok(lat: object, lon: object) -> bool:
     )
 
 
+def _coord_located(lat: object, lon: object) -> bool:
+    # Layers are never geocoded at load time, so "(0, 0)" — the "no location"
+    # marker used by worldmap.js normalizeEvent — must not be accepted: it would
+    # plot a glowing halo over Null Island (Gulf of Guinea) and mislead readers.
+    return _coord_ok(lat, lon) and not (float(lat) == 0.0 and float(lon) == 0.0)
+
+
 # Layer lifecycle schema (drives the fluo/dim rendering + duration tooltips in
 # the worldmap): status must be one of the known values and the date fields must
 # be sane. Empty/absent fields are allowed (active layers may have no end date).
@@ -80,12 +87,34 @@ def _check_lifecycle(kind: str, i: int, item: dict) -> list[str]:
             issues.append(f"{kind}[{i}]: {field} must be YYYY-MM-DD, YYYY-MM or YYYY")
     start = item.get("start_date")
     end = item.get("end_date")
+    # Compare dates at equal granularity only: mixing precisions (e.g. "2022-03"
+    # vs "2022-03-05") is ambiguous, and plain string ordering of a prefix/suffix
+    # pair would flag perfectly valid ranges. Same-length ISO partial dates order
+    # lexicographically just like full dates, so this is a strict superset of the
+    # old full-date-only check (also catches year- and month-level inversions).
     if (
-        isinstance(start, str) and len(start.strip()) == 10
-        and isinstance(end, str) and len(end.strip()) == 10
+        isinstance(start, str) and isinstance(end, str)
+        and start.strip() and end.strip()
+        and len(start.strip()) == len(end.strip())
         and start.strip() > end.strip()
     ):
         issues.append(f"{kind}[{i}]: start_date must not be after end_date")
+    return issues
+
+
+def _check_unique_ids(kind: str, items: list) -> list[str]:
+    issues: list[str] = []
+    seen: dict[str, int] = {}
+    for i, item in enumerate(items):
+        if isinstance(item, dict):
+            ident = item.get("id")
+            if isinstance(ident, str) and ident:
+                if ident in seen:
+                    issues.append(
+                        f"{kind}: duplicate id {ident!r} (entries {seen[ident]} and {i})"
+                    )
+                else:
+                    seen[ident] = i
     return issues
 
 
@@ -107,37 +136,45 @@ def check_events(events: object) -> list[str]:
     return issues
 
 
-def check_zones(zones: object) -> list[str]:
+def check_zones(zones: object, kind: str = "conflict_zones") -> list[str]:
     issues: list[str] = []
     if not isinstance(zones, list):
-        return ["conflict_zones must be a list"]
+        return [f"{kind} must be a list"]
     for i, z in enumerate(zones):
         if not isinstance(z, dict):
-            issues.append(f"conflict_zones[{i}]: entry must be an object")
+            issues.append(f"{kind}[{i}]: entry must be an object")
             continue
         if not isinstance(z.get("name"), str):
-            issues.append(f"conflict_zones[{i}]: name must be a string")
-        if not _coord_ok(z.get("lat"), z.get("lon")):
-            issues.append(f"conflict_zones[{i}]: lat/lon must be finite and in range")
-        issues.extend(_check_lifecycle("conflict_zones", i, z))
+            issues.append(f"{kind}[{i}]: name must be a string")
+        if not _coord_located(z.get("lat"), z.get("lon")):
+            issues.append(f"{kind}[{i}]: lat/lon must be located (finite, in range, not 0,0)")
+        issues.extend(_check_lifecycle(kind, i, z))
+    issues.extend(_check_unique_ids(kind, zones if isinstance(zones, list) else []))
     return issues
 
 
-def check_fleets(fleets: object) -> list[str]:
+def check_crisis_zones(zones: object) -> list[str]:
+    # Crisis zones share the conflict-zone contract consumed by the front end
+    # (normalizeZone/isLayerActive), so they must satisfy the same checks.
+    return check_zones(zones, kind="crisis_zones")
+
+
+def check_fleets(fleets: object, kind: str = "deployments") -> list[str]:
     issues: list[str] = []
     if not isinstance(fleets, list):
-        return ["fleet_movements must be a list"]
+        return [f"{kind} must be a list"]
     for i, f in enumerate(fleets):
         if not isinstance(f, dict):
-            issues.append(f"fleet_movements[{i}]: entry must be an object")
+            issues.append(f"{kind}[{i}]: entry must be an object")
             continue
-        if not _coord_ok(f.get("from", {}).get("lat") if isinstance(f.get("from"), dict) else None,
-                         f.get("from", {}).get("lon") if isinstance(f.get("from"), dict) else None):
-            issues.append(f"fleet_movements[{i}]: from must be a finite lat/lon pair in range")
-        if not _coord_ok(f.get("to", {}).get("lat") if isinstance(f.get("to"), dict) else None,
-                         f.get("to", {}).get("lon") if isinstance(f.get("to"), dict) else None):
-            issues.append(f"fleet_movements[{i}]: to must be a finite lat/lon pair in range")
-        issues.extend(_check_lifecycle("fleet_movements", i, f))
+        if not _coord_located(f.get("from", {}).get("lat") if isinstance(f.get("from"), dict) else None,
+                              f.get("from", {}).get("lon") if isinstance(f.get("from"), dict) else None):
+            issues.append(f"{kind}[{i}]: from must be a located lat/lon pair (finite, in range, not 0,0)")
+        if not _coord_located(f.get("to", {}).get("lat") if isinstance(f.get("to"), dict) else None,
+                              f.get("to", {}).get("lon") if isinstance(f.get("to"), dict) else None):
+            issues.append(f"{kind}[{i}]: to must be a located lat/lon pair (finite, in range, not 0,0)")
+        issues.extend(_check_lifecycle(kind, i, f))
+    issues.extend(_check_unique_ids(kind, fleets if isinstance(fleets, list) else []))
     return issues
 
 
@@ -151,7 +188,11 @@ def check_data(data: dict, filename: str) -> list[str]:
         deployments = data.get("deployments")
         if deployments is None:
             deployments = data.get("fleet_movements")
-        return check_zones(data.get("conflict_zones")) + check_fleets(deployments)
+        return (
+            check_zones(data.get("conflict_zones"))
+            + check_crisis_zones(data.get("crisis_zones"))
+            + check_fleets(deployments)
+        )
     return [f"unsupported data file: {filename}"]
 
 

@@ -278,6 +278,23 @@ class TestEndToEnd(unittest.TestCase):
             self.assertEqual(data["version"], sl.LIFECYCLE_VERSION)
             self.assertTrue(data["last_update"])
 
+    def test_legacy_fleet_movements_key_is_migrated(self):
+        # Regression: a file using the old "fleet_movements" key must not end up
+        # with an empty "deployments" array (which would hide every fleet arrow).
+        with tempfile.TemporaryDirectory() as tmp:
+            p = Path(tmp) / "world_layers.json"
+            p.write_text(json.dumps({
+                "version": "1.0.0",
+                "last_update": "",
+                "conflict_zones": [{"id": "zone-ukraine", "name": "Ukraine", "lat": 48.38, "lon": 31.17}],
+                "fleet_movements": [{"id": "fleet-01", "from": {"lat": 1, "lon": 2}, "to": {"lat": 3, "lon": 4}}],
+            }), encoding="utf-8")
+            rc = sl.main(["--offline", "--write", "--json", str(p)])
+            self.assertEqual(rc, 0)
+            data = json.loads(p.read_text(encoding="utf-8"))
+            self.assertEqual(len(data["deployments"]), 1)
+            self.assertNotIn("fleet_movements", data)
+
     def test_offline_noop_leaves_file_untouched(self):
         with tempfile.TemporaryDirectory() as tmp:
             p = self._write(Path(tmp))

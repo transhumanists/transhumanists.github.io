@@ -70,6 +70,9 @@ jobs:
       - name: Layers sync script tests
         run: python scripts/test_sync_layers.py
 
+      - name: Crisis zone script tests
+        run: python scripts/test_fetch_crisis_zones.py
+
       - name: Scratch end-to-end generation
         env:
           STALE_ERROR_DAYS: "99"

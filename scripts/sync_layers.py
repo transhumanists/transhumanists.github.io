@@ -443,9 +443,16 @@ def build_updated_layers(
     data["conflict_zones"] = [
         normalize_lifecycle_zone(z) for z in (data.get("conflict_zones") or [])
     ]
+    # Unify on the "deployments" key: honour the legacy "fleet_movements" key
+    # when present, then drop it so the file has a single source of truth (the
+    # front end and check_data fall back to the legacy key, but never both).
+    fleets = data.get("deployments")
+    if fleets is None:
+        fleets = data.get("fleet_movements")
     data["deployments"] = [
-        normalize_lifecycle_fleet(f) for f in (data.get("deployments") or [])
+        normalize_lifecycle_fleet(f) for f in (fleets or [])
     ]
+    data.pop("fleet_movements", None)
     data["version"] = LIFECYCLE_VERSION
     return data, changes
 

@@ -400,22 +400,22 @@ height: 0,
   ];
 
 function canonicalCategory(cat) {
-     return CATEGORY_ALIASES[cat] || cat;
-   }
+    return CATEGORY_ALIASES[cat] || cat;
+  }
 
   function isCategoryVisible(cat) {
-     const canonical = canonicalCategory(cat);
-     return !state.hiddenCategories.has(canonical);
-   }
+    const canonical = canonicalCategory(cat);
+    return !state.hiddenCategories.has(canonical);
+  }
 
   function toggleCategory(cat) {
-     const canonical = canonicalCategory(cat);
-     if (state.hiddenCategories.has(canonical)) {
-       state.hiddenCategories.delete(canonical);
-     } else {
-       state.hiddenCategories.add(canonical);
-     }
-draw();
+    const canonical = canonicalCategory(cat);
+    if (state.hiddenCategories.has(canonical)) {
+      state.hiddenCategories.delete(canonical);
+    } else {
+      state.hiddenCategories.add(canonical);
+    }
+    draw();
     updateStatsDisplay();
     renderLegend();
   }
@@ -2111,16 +2111,20 @@ const fragment = document.createDocumentFragment();
   function isZonePlottable(z) {
     return typeof z.name === 'string' &&
       Number.isFinite(z.lat) && z.lat >= -90 && z.lat <= 90 &&
-      Number.isFinite(z.lon) && z.lon >= -180 && z.lon <= 180;
+      Number.isFinite(z.lon) && z.lon >= -180 && z.lon <= 180 &&
+      !(z.lat === 0 && z.lon === 0); // (0,0) is the "no location" marker, not a real position
   }
 
   // A fleet arrow needs both endpoints valid; a missing/malformed endpoint
-  // drops the whole movement instead of drawing a degenerate arrow.
+  // drops the whole movement instead of drawing a degenerate arrow. (0,0) is
+  // the "unlocated" marker (same convention as normalizeEvent) and is rejected.
+  const isLocatedCoord = (c) =>
+    Number.isFinite(c?.lat) && c?.lat >= -90 && c?.lat <= 90 &&
+    Number.isFinite(c?.lon) && c?.lon >= -180 && c?.lon <= 180 &&
+    !(c?.lat === 0 && c?.lon === 0);
+
   function isFleetPlottable(f) {
-    return Number.isFinite(f.from?.lat) && f.from?.lat >= -90 && f.from?.lat <= 90 &&
-      Number.isFinite(f.from?.lon) && f.from?.lon >= -180 && f.from?.lon <= 180 &&
-      Number.isFinite(f.to?.lat) && f.to?.lat >= -90 && f.to?.lat <= 90 &&
-      Number.isFinite(f.to?.lon) && f.to?.lon >= -180 && f.to?.lon <= 180;
+    return isLocatedCoord(f?.from) && isLocatedCoord(f?.to);
   }
 
   async function loadLayers() {
