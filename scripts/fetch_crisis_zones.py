@@ -314,10 +314,14 @@ def build_crisis_zones_from_sources(ocha_data: list, who_data: list, reliefweb_d
             title = item.get("title", "").strip()
             if not title or title in seen_names:
                 continue
-            seen_names.add(title)
-            
+
             # Simple geo-location inference from title/keywords
             lat, lon, region = infer_location(item.get("title", "") + " " + item.get("description", "") + " " + item.get("link", ""))
+            # Drop items that cannot be geolocated (they would plot at 0,0
+            # "Null Island" - the Gulf of Guinea - and mislead the map).
+            if lat == 0.0 and lon == 0.0:
+                continue
+            seen_names.add(title)
             
             crisis_id = "crisis-" + re.sub(r"[^a-z0-9]+", "-", item.get("title", "crisis").lower()).strip("-")[:50]
             zones.append({
@@ -364,6 +368,17 @@ def infer_location(text: str) -> tuple[float, float, str]:
         "gaza": (31.3, 34.3, "Middle East"),
         "palestine": (31.3, 34.3, "Middle East"),
         "haiti": (18.5, -72.3, "Caribbean"),
+        "chad": (15.45, 18.73, "Central Africa"),
+        "niger": (17.61, 8.08, "West Africa"),
+        "nigeria": (9.08, 8.68, "West Africa"),
+        "mozambique": (-18.67, 35.53, "Southern Africa"),
+        "cabo delgado": (-12.5, 40.5, "Southern Africa"),
+        "mali": (17.57, -3.99, "West Africa"),
+        "kenya": (-1.29, 36.82, "East Africa"),
+        "bangladesh": (23.68, 90.36, "South Asia"),
+        "sahel": (13.0, 2.0, "West Africa"),
+        "suez": (29.96, 32.55, "Middle East"),
+        "red sea": (19.0, 38.0, "Middle East"),
         "africa": (5.0, 20.0, "Africa"),
         "middle east": (25.0, 45.0, "Middle East"),
     }

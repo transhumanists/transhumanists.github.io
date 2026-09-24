@@ -1,6 +1,6 @@
 {
   "version": "1.1.0",
-  "last_update": "2026-09-24T19:24:35+00:00",
+  "last_update": "2026-09-24T19:26:57+00:00",
   "conflict_zones": [
     {
       "id": "zone-ukraine",
@@ -486,18 +486,6 @@
   ],
   "crisis_zones": [
     {
-      "id": "crisis-humanitarian-access-dataset",
-      "name": "Humanitarian Access Dataset",
-      "region": "Unknown",
-      "lat": 0.0,
-      "lon": 0.0,
-      "radiusDeg": 4.0,
-      "status": "active",
-      "note": "ACAPS' Humanitarian Access Dataset compiles information on humanitarian access constraints across countries with active humanitarian crises. It is updated twice a year, each edition covering a six-mon",
-      "source": "ReliefWeb / OCHA / WHO / UNHCR / WFP / FAO / HDX",
-      "url": "https://data.humdata.org/dataset/acaps-humanitarian-access-dataset"
-    },
-    {
       "id": "crisis-afghanistan-humanitarian-needs",
       "name": "Afghanistan: Humanitarian Needs",
       "region": "Central Asia",
@@ -512,9 +500,9 @@
     {
       "id": "crisis-red-sea-crisis-suez-canal-traffic-impacts",
       "name": "Red Sea crisis: Suez Canal traffic impacts",
-      "region": "Unknown",
-      "lat": 0.0,
-      "lon": 0.0,
+      "region": "Middle East",
+      "lat": 29.96,
+      "lon": 32.55,
       "radiusDeg": 4.0,
       "status": "active",
       "note": "The attacks in the Red Sea are disrupting commercial and humanitarian supplies. International partners have raised alarm over the economic and humanitarian impact of the escalating attacks on ships in",
@@ -524,9 +512,9 @@
     {
       "id": "crisis-chad-humanitarian-needs",
       "name": "Chad: Humanitarian Needs",
-      "region": "Unknown",
-      "lat": 0.0,
-      "lon": 0.0,
+      "region": "Central Africa",
+      "lat": 15.45,
+      "lon": 18.73,
       "radiusDeg": 4.0,
       "status": "active",
       "note": "This dataset was compiled by the United Nations Office for the Coordination of Humanitarian Affairs (UNOCHA) on behalf of the Humanitarian Country Team and partners. It provides the Humanitarian Count",
@@ -560,9 +548,9 @@
     {
       "id": "crisis-nigeria-humanitarian-needs",
       "name": "Nigeria: Humanitarian Needs",
-      "region": "Unknown",
-      "lat": 0.0,
-      "lon": 0.0,
+      "region": "West Africa",
+      "lat": 17.61,
+      "lon": 8.08,
       "radiusDeg": 4.0,
       "status": "active",
       "note": "This data has been produced by the United Nations Office for the Coordination of Humanitarian Affairs (UNOCHA) on behalf of the Humanitarian Country Team and partners. The data provides the Humanitari",
@@ -584,9 +572,9 @@
     {
       "id": "crisis-niger-humanitarian-needs",
       "name": "Niger: Humanitarian Needs",
-      "region": "Unknown",
-      "lat": 0.0,
-      "lon": 0.0,
+      "region": "West Africa",
+      "lat": 17.61,
+      "lon": 8.08,
       "radiusDeg": 4.0,
       "status": "active",
       "note": "This dataset was compiled by the United Nations Office for the Coordination of Humanitarian Affairs (UNOCHA) on behalf of the Humanitarian Country Team and partners. It provides the Humanitarian Count",
@@ -618,30 +606,6 @@
       "url": "https://data.humdata.org/dataset/haiti-humanitarian-needs"
     },
     {
-      "id": "crisis-global-humanitarian-overview-2026",
-      "name": "Global Humanitarian Overview 2026",
-      "region": "Unknown",
-      "lat": 0.0,
-      "lon": 0.0,
-      "radiusDeg": 4.0,
-      "status": "active",
-      "note": "Through the Global Humanitarian Overview (GHO) 2026, humanitarian partners are appealing for almost US$33 billion to assist 135 million people in crisis, with the immediate priority being to mobilize ",
-      "source": "ReliefWeb / OCHA / WHO / UNHCR / WFP / FAO / HDX",
-      "url": "https://data.humdata.org/dataset/global-humanitarian-overview-2026"
-    },
-    {
-      "id": "crisis-facebook-business-activity-trends-during-crisis",
-      "name": "Facebook Business Activity Trends during Crisis",
-      "region": "Unknown",
-      "lat": 0.0,
-      "lon": 0.0,
-      "radiusDeg": 4.0,
-      "status": "active",
-      "note": "Business Activity Trends during Crisis uses the rate that businesses post on Facebook compared to pre-crisis levels to measure how crisis events are affecting different economic sectors each day.\r\n\r\nL",
-      "source": "ReliefWeb / OCHA / WHO / UNHCR / WFP / FAO / HDX",
-      "url": "https://data.humdata.org/dataset/facebook-business-activity-trends-during-crisis"
-    },
-    {
       "id": "crisis-ethiopia-humanitarian-needs",
       "name": "Ethiopia: Humanitarian Needs",
       "region": "East Africa",
@@ -656,14 +620,50 @@
     {
       "id": "crisis-mozambique-humanitarian-needs",
       "name": "Mozambique: Humanitarian Needs",
-      "region": "Unknown",
-      "lat": 0.0,
-      "lon": 0.0,
+      "region": "Southern Africa",
+      "lat": -18.67,
+      "lon": 35.53,
       "radiusDeg": 4.0,
       "status": "active",
       "note": "This dataset was compiled by the United Nations Office for the Coordination of Humanitarian Affairs (UNOCHA) on behalf of the Humanitarian Country Team and partners. It provides the Humanitarian Count",
       "source": "ReliefWeb / OCHA / WHO / UNHCR / WFP / FAO / HDX",
       "url": "https://data.humdata.org/dataset/mozambique-humanitarian-needs"
+    },
+    {
+      "id": "crisis-south-sudan-humanitarian-needs",
+      "name": "South Sudan: Humanitarian Needs",
+      "region": "East Africa",
+      "lat": 13.0,
+      "lon": 24.5,
+      "radiusDeg": 4.0,
+      "status": "active",
+      "note": "This dataset was compiled by the United Nations Office for the Coordination of Humanitarian Affairs (UNOCHA) on behalf of the Humanitarian Country Team and partners. It provides the Humanitarian Count",
+      "source": "ReliefWeb / OCHA / WHO / UNHCR / WFP / FAO / HDX",
+      "url": "https://data.humdata.org/dataset/south-sudan-humanitarian-needs"
+    },
+    {
+      "id": "crisis-mali-humanitarian-needs",
+      "name": "Mali: Humanitarian Needs",
+      "region": "West Africa",
+      "lat": 17.57,
+      "lon": -3.99,
+      "radiusDeg": 4.0,
+      "status": "active",
+      "note": "This dataset was compiled by the United Nations Office for the Coordination of Humanitarian Affairs (UNOCHA) on behalf of the Humanitarian Country Team and partners. It provides the Humanitarian Count",
+      "source": "ReliefWeb / OCHA / WHO / UNHCR / WFP / FAO / HDX",
+      "url": "https://data.humdata.org/dataset/mali-humanitarian-needs"
+    },
+    {
+      "id": "crisis-south-sudan-humanitarian-access",
+      "name": "South Sudan: Humanitarian Access",
+      "region": "East Africa",
+      "lat": 13.0,
+      "lon": 24.5,
+      "radiusDeg": 4.0,
+      "status": "active",
+      "note": "The dataset contains information on the number of humanitarian access incidents in South Sudan. Humanitarian access concerns humanitarian actors’ ability to reach people affected by the crisis, as wel",
+      "source": "ReliefWeb / OCHA / WHO / UNHCR / WFP / FAO / HDX",
+      "url": "https://data.humdata.org/dataset/south-sudan-humanitarian-access-incidents"
     }
   ],
   "deployments": [
