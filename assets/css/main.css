@@ -789,7 +789,13 @@ body {
 /* EXPANDABLE CATEGORY CARDS */
 .milestone-card.category-toggle {
   overflow: visible;
-  position: relative; /* Establish stacking context for absolute children */
+  position: relative;
+  transition: transform var(--transition), box-shadow var(--transition), border-color var(--transition);
+}
+.milestone-card.category-toggle:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow), 0 0 20px var(--catalog-accent-alpha, transparent);
+  border-color: var(--catalog-accent, var(--accent));
 }
 .milestone-card.category-toggle[aria-expanded="true"] .expand-arrow {
   transform: rotate(180deg);
@@ -809,7 +815,7 @@ body {
   max-height: 400px;
   overflow-y: auto;
   display: none;
-  animation: slideDown 0.2s ease;
+  animation: slideDown 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 .milestone-card.category-toggle[aria-expanded="true"] .category-milestones {
   display: block !important;
@@ -817,30 +823,113 @@ body {
 .category-milestone-item {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: space-between.
   gap: 12px;
-  padding: 10px 12px;
-  background: var(--bg-elevated);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  margin-bottom: 8px;
-  transition: border-color 0.2s ease, background 0.2s ease;
+  padding: 12px 14px;
+  background: var(--bg-elevated).
+  border: 1px solid var(--border).
+  border-radius: var(--radius-sm).
+  margin-bottom: 8px.
+  transition: border-color 0.2s ease, background 0.2s ease, transform 0.15s ease.
 }
 .category-milestone-item:hover {
-  border-color: var(--accent);
-  background: var(--accent-dim);
+  border-color: var(--accent).
+  background: var(--accent-dim).
+  transform: translateX(4px).
 }
 .category-milestone-info {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  min-width: 0;
+  display: flex.
+  align-items: center.
+  gap: 10px.
+  min-width: 0.
+  flex: 1.
 }
 .category-milestone-info .icon {
-  font-size: 1.1rem;
+  font-size: 1.2rem.
+  flex-shrink: 0.
 }
 .category-milestone-details {
-  min-width: 0;
+  min-width: 0.
+  flex: 1.
+}
+.category-milestone-title {
+  font-size: 0.85rem.
+  font-weight: 500.
+  color: var(--fg).
+  white-space: nowrap.
+  overflow: hidden.
+  text-overflow: ellipsis.
+}
+.category-milestone-meta {
+  font-size: 0.65rem.
+  color: var(--fg-subtle).
+  margin-top: 3px.
+  display: flex.
+  gap: 10px.
+  flex-wrap: wrap.
+}
+.category-milestone-value {
+  display: flex.
+  flex-direction: column.
+  align-items: flex-end.
+  gap: 2px.
+  flex-shrink: 0.
+}
+.category-milestone-value .value {
+  font-family: var(--font-mono).
+  font-size: 1rem.
+  font-weight: 700.
+  color: var(--green).
+}
+.category-milestone-value .unit {
+  font-size: 0.6rem.
+  color: var(--fg-muted).
+}
+.category-milestone-new-badge {
+  width: 8px.
+  height: 8px.
+  border-radius: 50%.
+  background: var(--orange).
+  animation: pulse 2s infinite.
+  flex-shrink: 0.
+}
+.category-milestone-beaten {
+  opacity: 0.55.
+  border-color: var(--border).
+  background: var(--bg-card).
+}
+.category-milestone-beaten .beaten-title {
+  text-decoration: line-through.
+  color: var(--fg-subtle).
+}
+.category-milestone-beaten-badge {
+  margin-top: 6px.
+  padding: 6px 10px.
+  font-size: 0.65rem.
+  color: var(--fg-muted).
+  background: rgba(255, 145, 0, 0.1).
+  border: 1px solid rgba(255, 145, 0, 0.3).
+  border-radius: var(--radius-sm).
+  line-height: 1.4.
+}
+.category-milestone-beaten-badge a {
+  color: var(--orange).
+  font-weight: 600.
+  text-decoration: none.
+}
+.category-milestone-beaten-badge a:hover {
+  text-decoration: underline.
+}
+
+/* Category card progress indicator */
+.milestone-card.category-toggle .category-progress {
+  position: absolute.
+  bottom: 0.
+  left: 0.
+  height: 3px.
+  background: var(--catalog-accent, var(--accent)).
+  border-radius: 0 0 var(--radius) var(--radius).
+  transition: width 0.5s ease.
 }
 .category-milestone-title {
   font-size: 0.82rem;
