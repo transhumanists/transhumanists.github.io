@@ -7,8 +7,10 @@ dedupe/cap contract shared by the sourced and static paths, and the RSS parser.
 """
 from __future__ import annotations
 
+import json
 import ssl
 import sys
+import tempfile
 import unittest
 import urllib.error
 from pathlib import Path
@@ -145,14 +147,17 @@ class TestBuildCrisisZones(unittest.TestCase):
         self.assertEqual(zones[0]["name"], "Suez · Humanitarian crisis")
         self.assertIn("live humanitarian situation", zones[0]["note"])
 
-    def test_fallback_strips_dash_and_en_dash_dataset_suffixes(self):
-        # "suez" has no curated label, so the string-cleanup fallback runs and
-        # must handle hyphen/en-dash separators, not just the colon form.
-        for raw in ("Suez - Humanitarian Access", "Suez – Humanitarian Snapshot"):
-            items = [self._item(raw)]
-            zones = fz.build_crisis_zones_from_sources(items, [], [], [], [], [], [])
-            self.assertEqual(len(zones), 1, raw)
-            self.assertEqual(zones[0]["name"], "Suez · Humanitarian crisis", raw)
+    def test_fallback_strips_dash_and_endash_suffixes(self):
+        # Feed titles may glue the generic suffix with -, – or — ; all three
+        # must be stripped (and stray separators trimmed) identically.
+        for title, expected in (
+            ("Suez - Humanitarian Access", "Suez · Humanitarian crisis"),
+            ("Suez \u2013 Humanitarian Snapshot", "Suez · Humanitarian crisis"),
+            ("Suez \u2014 Humanitarian Assessment", "Suez · Humanitarian crisis"),
+        ):
+            zones = fz.build_crisis_zones_from_sources(
+                [self._item(title)], [], [], [], [], [], [])
+            self.assertEqual(zones[0]["name"], expected, f"title {title!r}")
 
     def test_specific_keyword_wins_over_short_prefix(self):
         # "South Sudan" must geolocate to South Sudan, not be swallowed by
@@ -311,6 +316,57 @@ class TestFetchUrl(unittest.TestCase):
         bomb = zlib.compress(b"\x00" * (fz._MAX_HTTP_BODY + 1))
         with self.assertRaises(ValueError):
             fz._decode_body(_FakeResp(bomb, "deflate"))
+
+
+class TestLoadWorldLayers(unittest.TestCase):
+    def test_missing_file_bootstraps_empty_shell(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "world_layers.json"
+            out = fz.load_world_layers(path)
+            self.assertIsNotNone(out)
+            self.assertEqual(out["conflict_zones"], [])
+            self.assertEqual(out["crisis_zones"], [])
+            self.assertEqual(out["version"], fz.SCHEMA_VERSION)
+
+    def test_unparseable_file_returns_none(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "world_layers.json"
+            path.write_text("{not json", encoding="utf-8")
+            self.assertIsNone(fz.load_world_layers(path))
+
+    def test_missing_conflict_zones_returns_none(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "world_layers.json"
+            path.write_text(json.dumps({"version": "1.1.0", "last_update": "2026-09-25T00:00:00+00:00"}),
+                            encoding="utf-8")
+            self.assertIsNone(fz.load_world_layers(path))
+
+    def test_valid_file_is_returned(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "world_layers.json"
+            payload = {"version": "1.1.0", "last_update": "x",
+                       "conflict_zones": [{"id": "a"}], "crisis_zones": []}
+            path.write_text(json.dumps(payload), encoding="utf-8")
+            self.assertEqual(fz.load_world_layers(path), payload)
+
+    def test_main_refuses_to_overwrite_corrupt_file(self):
+        # A corrupt world_layers.json must abort the run (exit 1) and leave the
+        # file untouched, never write an empty-shell that loses layer data.
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "world_layers.json"
+            corrupt = "{not json"
+            path.write_text(corrupt, encoding="utf-8")
+            orig_fetch = fz.fetch_url
+            orig_argv = sys.argv
+            fz.fetch_url = lambda url, timeout=30: None  # empty feeds, full flow
+            sys.argv = ["fetch_crisis_zones.py", "--output", str(path)]
+            try:
+                rc = fz.main()
+            finally:
+                fz.fetch_url = orig_fetch
+                sys.argv = orig_argv
+            self.assertEqual(rc, 1)
+            self.assertEqual(path.read_text(encoding="utf-8"), corrupt)
 
 
 if __name__ == "__main__":

@@ -102,6 +102,18 @@ class TestCheckEvents(unittest.TestCase):
             issues = cd.check_events(payload["events"])
             self.assertTrue(any("date" in i for i in issues), f"bad date {bad!r}")
 
+    def test_basic_date_format_js_would_reject_fails(self):
+        # Python's fromisoformat accepts "20260315" (basic format), but
+        # worldmap.js's Date-constructor fallback rejects it; the validator
+        # must keep the acceptance surface identical to the map's.
+        for bad in ("20260315", "20260315T100000"):
+            payload = _events_payload(
+                {"title": "X", "category": "Energy", "date": bad,
+                 "geolocation": {"lat": 1, "lon": 1}},
+            )
+            issues = cd.check_events(payload["events"])
+            self.assertTrue(any("date" in i for i in issues), f"bad date {bad!r}")
+
     def test_frontend_accepted_date_shapes_pass(self):
         # Same acceptance surface as worldmap.js parseDateToISO.
         for good in ("2026-03-15", "15/03/2026", "15-03-2026", "2026", "2026-03",

@@ -199,7 +199,10 @@ def _valid_event_date(value: object) -> bool:
             return False
     try:
         _datetime.fromisoformat(s)
-        return True
+        # JS `new Date()` rejects separator-less basic formats (e.g. "20260315",
+        # "20260315T100000") that fromisoformat happily accepts; keep the
+        # validator aligned with what the map can actually render.
+        return "-" in s or ":" in s or "/" in s or " " in s
     except ValueError:
         return False
 

@@ -1,8 +1,12 @@
 #!/usr/bin/env python3
 """
-Fetch crisis zones from UN OCHA / WHO APIs and update world_layers.json crisis_zones.
+Fetch humanitarian crisis zones from UN feeds (ReliefWeb / OCHA / HDX / WHO /
+UNHCR / WFP / FAO), normalize them into one readable, specific zone per affected
+place (curated labels replace raw dataset titles), and refresh the crisis_zones
+list in world_layers.json.
 
-Designed for daily GitHub Actions run. Stdlib-only.
+Designed for a daily GitHub Actions run (with a read-only live-probe mode).
+Stdlib-only.
 """
 from __future__ import annotations
 
@@ -482,6 +486,10 @@ _LOCATIONS: dict[str, tuple[float, float, str]] = {
     "middle east": (25.0, 45.0, "Middle East"),
 }
 
+# Most-specific-first keyword order, computed once (a fixed table must not be
+# re-sorted on every item); used by _locate below.
+_LOCATION_KEYS = tuple(sorted(_LOCATIONS, key=len, reverse=True))
+
 # Readable, specific crisis labels in the style of the curated static list.
 # They replace raw feed titles (e.g. "Chad: Humanitarian Needs" -> a specific,
 # human-summarised crisis) so the map never shows un-parseable dataset text.
@@ -525,7 +533,7 @@ def _locate(text: str) -> tuple[float, float, str, str | None]:
     drop the un-geolocatable entry instead of plotting it at Null Island.
     """
     text_lower = text.lower()
-    for keyword in sorted(_LOCATIONS, key=len, reverse=True):
+    for keyword in _LOCATION_KEYS:
         if keyword in text_lower:
             lat, lon, region = _LOCATIONS[keyword]
             return lat, lon, region, keyword
@@ -548,22 +556,33 @@ def _crisis_title_fallback(title: str) -> tuple[str, str]:
     is precisely the boilerplate the readable style is meant to replace.
     """
     cleaned = re.sub(
-        r"(?i)\s*[::\-\u2013]\s*(humanitarian\s+(needs?|access|snapshot|assessment|situation)).*$",
+        r"(?i)\s*[::\-\u2013\u2014]\s*(humanitarian\s+(needs?|access|snapshot|assessment|situation)).*$",
         "",
         title,
-    ).strip(" :-")
+    ).strip(" :-\u2013\u2014")
     if cleaned:
         return f"{cleaned} · Humanitarian crisis", f"{cleaned} — live humanitarian situation"
     return "Humanitarian crisis", "Live humanitarian situation"
 
 
-def load_world_layers(path: Path | None = None) -> dict:
+def load_world_layers(path: Path | None = None) -> dict | None:
+    """Load world_layers.json, or a fresh bootstrap shell when it is missing.
+
+    Returns None (never a silent empty dict) when an existing file is corrupt or
+    lacks the required conflict_zones list: writing over such a file would
+    silently wipe the deployed layer data, so callers must abort instead.
+    """
     target = path or WORLD_LAYERS_FILE
     if target.exists():
         try:
-            return json.loads(target.read_text(encoding="utf-8"))
-        except (json.JSONDecodeError, OSError):
-            pass
+            data = json.loads(target.read_text(encoding="utf-8"))
+        except (json.JSONDecodeError, OSError) as exc:
+            print(f"  [error] {target}: unreadable/unparseable ({exc}); refusing to overwrite")
+            return None
+        if not isinstance(data, dict) or not isinstance(data.get("conflict_zones"), list):
+            print(f"  [error] {target}: missing required 'conflict_zones' list; refusing to overwrite")
+            return None
+        return data
     return {"version": SCHEMA_VERSION, "last_update": "", "conflict_zones": [], "crisis_zones": [], "deployments": []}
 
 
@@ -650,8 +669,12 @@ def main() -> int:
     crisis_zones = build_crisis_zones_from_sources(ocha, who, reliefweb, unhcr, wfp, fao, hdx)
     print(f"Built {len(crisis_zones)} crisis zones")
     
-    # Load existing world_layers
+    # Load existing world_layers. Abort (instead of overwriting an empty shell)
+    # when the current file is corrupt/invalid, so conflict + deployment layer
+    # data can never be silently wiped by a crisis refresh.
     data = load_world_layers(out_file)
+    if data is None:
+        return 1
     old_crisis = data.get(CRISIS_ZONES_KEY, [])
     
     # Check if content changed
