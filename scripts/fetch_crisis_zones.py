@@ -6,6 +6,7 @@ Designed for daily GitHub Actions run. Stdlib-only.
 """
 from __future__ import annotations
 
+import argparse
 import json
 import os
 import re
@@ -359,6 +360,7 @@ def build_crisis_zones_from_sources(ocha_data: list, who_data: list, reliefweb_d
     zones = []
     seen_names = set()
     seen_ids = set()
+    seen_keywords = set()
     
     # Priority: ReliefWeb (structured) > OCHA > HDX > UNHCR > WFP > FAO > WHO
     for source in [reliefweb_data, ocha_data, hdx_data, unhcr_data, wfp_data, fao_data, who_data]:
@@ -370,14 +372,32 @@ def build_crisis_zones_from_sources(ocha_data: list, who_data: list, reliefweb_d
             # Simple geo-location inference from title/keywords (the ReliefWeb
             # primary_country field, when present, is authoritative context).
             geo_text = " ".join(str(item.get(k, "")) for k in ("country", "title", "description", "link"))
-            lat, lon, region = infer_location(geo_text)
+            lat, lon, region, keyword = _locate(geo_text)
             # Drop items that cannot be geolocated (they would plot at 0,0
             # "Null Island" - the Gulf of Guinea - and mislead the map).
             if lat == 0.0 and lon == 0.0:
                 continue
+
+            # One readable, specific zone per affected place: generic datasets
+            # about the same location collapse together (e.g. two items for
+            # "South Sudan: Humanitarian Needs/Access" become a single
+            # "South Sudan · Conflict & flooding" zone).
+            if keyword and keyword in seen_keywords:
+                continue
+            if keyword:
+                seen_keywords.add(keyword)
             seen_names.add(title)
-            
-            crisis_id = "crisis-" + re.sub(r"[^a-z0-9]+", "-", item.get("title", "crisis").lower()).strip("-")[:50]
+
+            # Prefer the curated specific label; fall back to a cleaned title
+            # for places that exist in the location table but have no label.
+            label = CRISIS_LABELS.get(keyword) if keyword else None
+            if label:
+                zone_name, zone_note, zone_source = label
+            else:
+                zone_name, zone_note = _crisis_title_fallback(title)
+                zone_source = "ReliefWeb / OCHA / WHO / UNHCR / WFP / FAO / HDX"
+
+            crisis_id = "crisis-" + re.sub(r"[^a-z0-9]+", "-", zone_name.lower()).strip("-")[:50]
             # Two source titles can slug to the same id (e.g. different word
             # separators); skip so the saved file never carries duplicate ids.
             if crisis_id in seen_ids:
@@ -385,14 +405,14 @@ def build_crisis_zones_from_sources(ocha_data: list, who_data: list, reliefweb_d
             seen_ids.add(crisis_id)
             zones.append({
                 "id": crisis_id,
-                "name": item.get("title", "Crisis")[:80],
-                "region": infer_region(geo_text),
+                "name": zone_name,
+                "region": region,
                 "lat": lat,
                 "lon": lon,
                 "radiusDeg": 4.0,
                 "status": "active",
-                "note": item.get("description", item.get("title", ""))[:200],
-                "source": "ReliefWeb / OCHA / WHO / UNHCR / WFP / FAO / HDX",
+                "note": zone_note[:200],
+                "source": zone_source,
                 "url": item.get("link", "https://www.unocha.org"),
             })
             if len(zones) >= 15:  # Limit to 15 crisis zones
@@ -426,65 +446,133 @@ def _finalize_crisis_zones(zones: list[dict]) -> list[dict]:
     return out
 
 
-def infer_location(text: str) -> tuple[float, float, str]:
-    """Infer lat/lon/region from crisis text keywords."""
+# Canonical place lookup: keyword -> (lat, lon, region). Matching is longest
+# key first so that overlapping names resolve to the most specific place
+# (e.g. "south sudan" is not swallowed by "sudan"; "nigeria" by "niger").
+_LOCATIONS: dict[str, tuple[float, float, str]] = {
+    "cabo delgado": (-12.5, 40.5, "Southern Africa"),
+    "afghanistan": (33.5, 65.5, "Central Asia"),
+    "syria": (34.8, 38.9, "Middle East"),
+    "ukraine": (48.0, 31.0, "Eastern Europe"),
+    "mozambique": (-18.67, 35.53, "Southern Africa"),
+    "nigeria": (9.08, 8.68, "West Africa"),
+    "niger": (17.61, 8.08, "West Africa"),
+    "somalia": (2.5, 45.5, "East Africa"),
+    "sudan": (13.0, 24.5, "East Africa"),
+    "darfur": (13.0, 24.5, "East Africa"),
+    "south sudan": (7.86, 30.2, "East Africa"),
+    "yemen": (15.5, 44.2, "Middle East"),
+    "myanmar": (20.5, 92.5, "Southeast Asia"),
+    "rohingya": (20.5, 92.5, "Southeast Asia"),
+    "ethiopia": (9.0, 39.5, "East Africa"),
+    "tigray": (14.0, 38.5, "East Africa"),
+    "palestine": (31.3, 34.3, "Middle East"),
+    "gaza": (31.3, 34.3, "Middle East"),
+    "haiti": (18.5, -72.3, "Caribbean"),
+    "chad": (15.45, 18.73, "Central Africa"),
+    "mali": (17.57, -3.99, "West Africa"),
+    "kenya": (-1.29, 36.82, "East Africa"),
+    "bangladesh": (23.68, 90.36, "South Asia"),
+    "drc": (-1.5, 25.0, "Central Africa"),
+    "congo": (-1.5, 25.0, "Central Africa"),
+    "sahel": (13.0, 2.0, "West Africa"),
+    "suez": (29.96, 32.55, "Middle East"),
+    "red sea": (19.0, 38.0, "Middle East"),
+    "africa": (5.0, 20.0, "Africa"),
+    "middle east": (25.0, 45.0, "Middle East"),
+}
+
+# Readable, specific crisis labels in the style of the curated static list.
+# They replace raw feed titles (e.g. "Chad: Humanitarian Needs" -> a specific,
+# human-summarised crisis) so the map never shows un-parseable dataset text.
+# Keyed by the _LOCATIONS keyword the item resolved to; value is
+# (display name, note, source attribution).
+CRISIS_LABELS: dict[str, tuple[str, str, str]] = {
+    "sudan": ("Sudan · Darfur famine", "Humanitarian catastrophe, 25M+ in need", "UN OCHA"),
+    "darfur": ("Sudan · Darfur famine", "Humanitarian catastrophe, 25M+ in need", "UN OCHA"),
+    "south sudan": ("South Sudan · Conflict & flooding", "Civil conflict, displacement and food insecurity", "UN OCHA"),
+    "yemen": ("Yemen · Cholera & famine", "World's worst humanitarian crisis", "WHO"),
+    "myanmar": ("Myanmar · Rohingya displacement", "1M+ stateless refugees in camps", "UNHCR"),
+    "rohingya": ("Myanmar · Rohingya displacement", "1M+ stateless refugees in camps", "UNHCR"),
+    "afghanistan": ("Afghanistan · Winter hunger crisis", "28M+ facing acute food insecurity", "WFP"),
+    "somalia": ("Somalia · Drought & famine", "5 consecutive failed rainy seasons", "FAO"),
+    "syria": ("Syria · Humanitarian crisis", "15M+ in need of humanitarian aid", "UN OCHA"),
+    "haiti": ("Haiti · Gang violence & hunger", "5M+ in need, gang violence & cholera", "UN OCHA"),
+    "ethiopia": ("Ethiopia · Tigray conflict", "Millions displaced, famine risk", "UN OCHA"),
+    "tigray": ("Ethiopia · Tigray conflict", "Millions displaced, famine risk", "UN OCHA"),
+    "sahel": ("Sahel · Conflict & hunger", "10M+ displaced across the Sahel", "UN OCHA"),
+    "drc": ("DRC · Conflict & displacement", "Armed conflict, Ebola and displacement", "UN OCHA"),
+    "congo": ("DRC · Conflict & displacement", "Armed conflict, Ebola and displacement", "UN OCHA"),
+    "ukraine": ("Ukraine · War & civilian needs", "Full-scale invasion, millions displaced", "UN OCHA"),
+    "gaza": ("Gaza · Humanitarian emergency", "Mass displacement and famine risk", "UN OCHA"),
+    "palestine": ("Gaza · Humanitarian emergency", "Mass displacement and famine risk", "UN OCHA"),
+    "chad": ("Chad · Displacement crisis", "Hundreds of thousands displaced from Darfur", "UNHCR"),
+    "nigeria": ("Nigeria · Insurgency & hunger", "Armed conflict, displacement and food insecurity", "UN OCHA"),
+    "niger": ("Niger · Conflict & hunger", "Armed conflict, displacement and food insecurity", "UN OCHA"),
+    "mali": ("Mali · Displacement crisis", "Armed conflict, displacement and food insecurity", "UN OCHA"),
+    "mozambique": ("Mozambique · Cabo Delgado insurgency", "Insurgent attacks and internal displacement", "UN OCHA"),
+    "cabo delgado": ("Mozambique · Cabo Delgado insurgency", "Insurgent attacks and internal displacement", "UN OCHA"),
+    "kenya": ("Kenya · Floods & displacement", "Flooding, displacement and mudslides", "UN OCHA"),
+    "bangladesh": ("Bangladesh · Floods & displacement", "Flooding, displacement and health needs", "UN OCHA"),
+    "red sea": ("Red Sea · Shipping disruption", "Attacks disrupting commercial shipping routes", "UN OCHA"),
+}
+
+
+def _locate(text: str) -> tuple[float, float, str, str | None]:
+    """Infer lat/lon/region and the matched location keyword from crisis text.
+
+    Returns (0.0, 0.0, "Unknown", None) when nothing matches so callers can
+    drop the un-geolocatable entry instead of plotting it at Null Island.
+    """
     text_lower = text.lower()
-    
-    locations = {
-        "cabo delgado": (-12.5, 40.5, "Southern Africa"),
-        "afghanistan": (33.5, 65.5, "Central Asia"),
-        "syria": (34.8, 38.9, "Middle East"),
-        "ukraine": (48.0, 31.0, "Eastern Europe"),
-        "mozambique": (-18.67, 35.53, "Southern Africa"),
-        "nigeria": (9.08, 8.68, "West Africa"),
-        "niger": (17.61, 8.08, "West Africa"),
-        "somalia": (2.5, 45.5, "East Africa"),
-        "sudan": (13.0, 24.5, "East Africa"),
-        "darfur": (13.0, 24.5, "East Africa"),
-        "yemen": (15.5, 44.2, "Middle East"),
-        "myanmar": (20.5, 92.5, "Southeast Asia"),
-        "rohingya": (20.5, 92.5, "Southeast Asia"),
-        "ethiopia": (9.0, 39.5, "East Africa"),
-        "tigray": (14.0, 38.5, "East Africa"),
-        "palestine": (31.3, 34.3, "Middle East"),
-        "gaza": (31.3, 34.3, "Middle East"),
-        "haiti": (18.5, -72.3, "Caribbean"),
-        "chad": (15.45, 18.73, "Central Africa"),
-        "mali": (17.57, -3.99, "West Africa"),
-        "kenya": (-1.29, 36.82, "East Africa"),
-        "bangladesh": (23.68, 90.36, "South Asia"),
-        "sahel": (13.0, 2.0, "West Africa"),
-        "suez": (29.96, 32.55, "Middle East"),
-        "red sea": (19.0, 38.0, "Middle East"),
-        "africa": (5.0, 20.0, "Africa"),
-        "middle east": (25.0, 45.0, "Middle East"),
-    }
-    
-    for keyword, (lat, lon, region) in locations.items():
+    for keyword in sorted(_LOCATIONS, key=len, reverse=True):
         if keyword in text_lower:
-            return lat, lon, region
-    
-    return 0.0, 0.0, "Unknown"
+            lat, lon, region = _LOCATIONS[keyword]
+            return lat, lon, region, keyword
+    return 0.0, 0.0, "Unknown", None
+
+
+def infer_location(text: str) -> tuple[float, float, str]:
+    lat, lon, region, _ = _locate(text)
+    return lat, lon, region
 
 
 def infer_region(text: str) -> str:
-    _, _, region = infer_location(text)
-    return region
+    return _locate(text)[2]
 
 
-def load_world_layers() -> dict:
-    if WORLD_LAYERS_FILE.exists():
+def _crisis_title_fallback(title: str) -> tuple[str, str]:
+    """Readable name/note for a place that has no curated label.
+
+    Strips the generic "...: Humanitarian Needs/Access" dataset suffix, which
+    is precisely the boilerplate the readable style is meant to replace.
+    """
+    cleaned = re.sub(
+        r"(?i)\s*:\s*(humanitarian\s+(needs?|access|snapshot|assessment|situation)).*$",
+        "",
+        title,
+    ).strip(" :-")
+    if cleaned:
+        return f"{cleaned} · Humanitarian crisis", f"{cleaned} — live humanitarian situation"
+    return "Humanitarian crisis", "Live humanitarian situation"
+
+
+def load_world_layers(path: Path | None = None) -> dict:
+    target = path or WORLD_LAYERS_FILE
+    if target.exists():
         try:
-            return json.loads(WORLD_LAYERS_FILE.read_text(encoding="utf-8"))
+            return json.loads(target.read_text(encoding="utf-8"))
         except (json.JSONDecodeError, OSError):
             pass
     return {"version": SCHEMA_VERSION, "last_update": "", "conflict_zones": [], "crisis_zones": [], "deployments": []}
 
 
-def save_world_layers(data: dict) -> bool:
+def save_world_layers(data: dict, path: Path | None = None) -> bool:
     try:
         data["last_update"] = datetime.now(timezone.utc).isoformat(timespec="seconds")
-        WORLD_LAYERS_FILE.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
+        (path or WORLD_LAYERS_FILE).write_text(
+            json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8"
+        )
         return True
     except OSError:
         return False
@@ -514,6 +602,14 @@ def fetch_hdx_crises() -> list[dict]:
 
 
 def main() -> int:
+    ap = argparse.ArgumentParser(description=__doc__.strip().splitlines()[0] if __doc__ else None)
+    ap.add_argument("--dry-run", action="store_true",
+                    help="fetch, build and compare only - never write (live probe mode)")
+    ap.add_argument("--output", default=None,
+                    help="write to this world_layers.json path instead of the repo data dir")
+    args = ap.parse_args()
+    out_file: Path | None = Path(args.output) if args.output else None
+
     print("Fetching crisis zone data...")
     
     # Fetch from sources
@@ -555,7 +651,7 @@ def main() -> int:
     print(f"Built {len(crisis_zones)} crisis zones")
     
     # Load existing world_layers
-    data = load_world_layers()
+    data = load_world_layers(out_file)
     old_crisis = data.get(CRISIS_ZONES_KEY, [])
     
     # Check if content changed
@@ -566,10 +662,15 @@ def main() -> int:
         print("No changes to crisis zones")
         return 0
     
+    if args.dry_run:
+        print(f"[dry-run] would update {len(crisis_zones)} crisis zones "
+              f"(differs from current {len(old_crisis)})")
+        return 0
+    
     # Update and save
     data[CRISIS_ZONES_KEY] = crisis_zones
-    if save_world_layers(data):
-        print(f"Updated {WORLD_LAYERS_FILE} with {len(crisis_zones)} crisis zones")
+    if save_world_layers(data, out_file):
+        print(f"Updated {(out_file or WORLD_LAYERS_FILE)} with {len(crisis_zones)} crisis zones")
         return 0
     else:
         print("Error saving world_layers.json")

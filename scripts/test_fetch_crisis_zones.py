@@ -64,7 +64,7 @@ class TestBuildCrisisZones(unittest.TestCase):
         items = [self._item("Some unknown emergency without a location"),
                  self._item("Sudan famine emergency")]
         zones = fz.build_crisis_zones_from_sources(items, [], [], [], [], [], [])
-        self.assertEqual([z["id"] for z in zones], ["crisis-sudan-famine-emergency"])
+        self.assertEqual([z["id"] for z in zones], ["crisis-sudan-darfur-famine"])
 
     def test_all_unlocatable_falls_back_to_static(self):
         items = [self._item("Some unknown emergency without a location")]
@@ -99,9 +99,15 @@ class TestBuildCrisisZones(unittest.TestCase):
         self.assertEqual(len(zones), 1)
 
     def test_respects_fifteen_zone_cap(self):
-        items = [self._item(f"Sudan situation number {i}") for i in range(30)]
+        # Distinct places, so keyword-dedupe does not collapse them; the
+        # 15-zone cap must still apply across the merged source lists.
+        places = ["cabo delgado", "afghanistan", "syria", "ukraine", "mozambique",
+                  "nigeria", "niger", "somalia", "sudan", "darfur", "yemen",
+                  "myanmar", "rohingya", "ethiopia", "tigray", "palestine",
+                  "gaza", "haiti", "chad", "mali"]
+        items = [self._item(f"Situation report {i} for {p}", country=p)
+                 for i, p in enumerate(places)]
         zones = fz.build_crisis_zones_from_sources(items, [], [], [], [], [], [])
-        self.assertLessEqual(len(zones), 15)
         self.assertEqual(len(zones), 15)
 
     def test_priority_order_reliefweb_first(self):
@@ -110,6 +116,42 @@ class TestBuildCrisisZones(unittest.TestCase):
         zones = fz.build_crisis_zones_from_sources([], who, relief, [], [], [], [])
         self.assertEqual(len(zones), 1)
         self.assertEqual(zones[0]["url"], "https://example.org")
+
+    def test_curated_labels_replace_dataset_titles(self):
+        # A raw HDX-style title must not leak onto the map; the place resolves
+        # to its curated, specific-name crisis instead.
+        items = [self._item("Chad: Humanitarian Needs", desc="This dataset was compiled by the United Nations...")]
+        zones = fz.build_crisis_zones_from_sources(items, [], [], [], [], [], [])
+        self.assertEqual(len(zones), 1)
+        self.assertEqual(zones[0]["name"], "Chad · Displacement crisis")
+        self.assertEqual(zones[0]["note"], "Hundreds of thousands displaced from Darfur")
+        self.assertEqual(zones[0]["source"], "UNHCR")
+        self.assertEqual(zones[0]["id"], "crisis-chad-displacement-crisis")
+
+    def test_same_place_collapses_to_one_zone(self):
+        # Two different generic datasets about one place become a single zone.
+        a = [self._item("South Sudan: Humanitarian Needs")]
+        b = [self._item("South Sudan: Humanitarian Access")]
+        zones = fz.build_crisis_zones_from_sources([], [], a, [], [], [], b)
+        self.assertEqual(len(zones), 1)
+        self.assertEqual(zones[0]["name"], "South Sudan · Conflict & flooding")
+
+    def test_keyword_without_label_falls_back_to_cleaned_title(self):
+        # "suez" is a known place but has no curated label: the raw dataset
+        # suffix is stripped so the map still shows readable text.
+        items = [self._item("Suez: Humanitarian Needs")]
+        zones = fz.build_crisis_zones_from_sources(items, [], [], [], [], [], [])
+        self.assertEqual(len(zones), 1)
+        self.assertEqual(zones[0]["name"], "Suez · Humanitarian crisis")
+        self.assertIn("live humanitarian situation", zones[0]["note"])
+
+    def test_specific_keyword_wins_over_short_prefix(self):
+        # "South Sudan" must geolocate to South Sudan, not be swallowed by
+        # the shorter "sudan" keyword.
+        self.assertEqual(
+            fz.infer_location("South Sudan conflict"),
+            (7.86, 30.2, "East Africa"),
+        )
 
 
 class TestFinalizeCrisisZones(unittest.TestCase):
