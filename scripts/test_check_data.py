@@ -18,7 +18,8 @@ def _events_payload(*events: dict) -> dict:
 
 
 def _layers_payload(zones: list[dict], fleets: list[dict], crises: list[dict] | None = None) -> dict:
-    payload = {"version": "1.1.0", "conflict_zones": zones, "fleet_movements": fleets}
+    payload = {"version": "1.1.0", "last_update": "2026-09-25T00:00:00+00:00",
+               "conflict_zones": zones, "fleet_movements": fleets}
     if crises is not None:
         payload["crisis_zones"] = crises
     return payload
@@ -339,6 +340,43 @@ class TestSchemaParity(unittest.TestCase):
         # The schema's canonical statuses map to active or concluded; a value
         # that is not in the schema must not start rendering as "active".
         self.assertIn("=== 'active' || s === 'ongoing'", js)
+
+
+class TestWorldLayersHeader(unittest.TestCase):
+    def _payload(self, **overrides: object) -> dict:
+        base = {"version": "1.1.0", "last_update": "2026-09-25T00:00:00+00:00",
+                "conflict_zones": [], "crisis_zones": [], "deployments": []}
+        base.update(overrides)
+        return base
+
+    def test_valid_header_passes(self):
+        self.assertEqual(cd.check_data(self._payload(), "world_layers.json"), [])
+
+    def test_missing_version_fails(self):
+        issues = cd.check_data(self._payload(version=None), "world_layers.json")
+        self.assertTrue(any("version must be a semver string" in i for i in issues))
+
+    def test_version_mismatch_fails(self):
+        issues = cd.check_data(self._payload(version="1.0.0"), "world_layers.json")
+        self.assertTrue(any("does not match the schema's expected '1.1.0'" in i for i in issues))
+
+    def test_missing_or_empty_last_update_fails(self):
+        for value in (None, "", 42):
+            issues = cd.check_data(self._payload(last_update=value), "world_layers.json")
+            self.assertTrue(any("last_update must be a non-empty UTC timestamp" in i for i in issues), value)
+
+    def test_naive_timestamp_fails(self):
+        issues = cd.check_data(self._payload(last_update="2026-09-25T00:00:00"), "world_layers.json")
+        self.assertTrue(any("must carry a UTC offset" in i for i in issues))
+
+    def test_garbage_timestamp_fails(self):
+        issues = cd.check_data(self._payload(last_update="not-a-date"), "world_layers.json")
+        self.assertTrue(any("not parseable as an ISO-8601 timestamp" in i for i in issues))
+
+    def test_zulu_suffix_is_accepted(self):
+        payload = self._payload(last_update="2026-09-25T00:00:00Z")
+        payload["conflict_zones"] = []  # keep the rest valid
+        self.assertEqual(cd.check_data(payload, "world_layers.json"), [])
 
 
 class TestCheckFile(unittest.TestCase):

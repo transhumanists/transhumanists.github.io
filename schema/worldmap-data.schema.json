@@ -36,7 +36,7 @@
     "world_layers.json": {
       "version": "1.1.0",
       "shape": "top-level object with conflict_zones, deployments and crisis_zones lists; fleet_movements accepted as the legacy alias for deployments",
-      "rules": ["every zone/fleet entry name/label + located pair (not null island)", "lifecycle status in status_values and dates per layer_lifecycle.date_pattern", "ids unique per list"]
+      "rules": ["every zone/fleet entry name/label + located pair (not null island)", "lifecycle status in status_values and dates per layer_lifecycle.date_pattern", "ids unique per list", "top-level metadata: version equals this file's version and last_update is a non-empty ISO-8601 UTC timestamp (offset or Z)"]
     }
   }
 }

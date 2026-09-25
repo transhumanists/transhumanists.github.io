@@ -44,6 +44,10 @@ _STATUS_VALUES = set(
 )
 _DATE_RE = re.compile(_LIFECYCLE_CTRL.get("date_pattern", r"^\d{4}(-\d{2}){0,2}$"))
 
+# The schema version world_layers.json must carry (written by sync_layers.py /
+# fetch_crisis_zones.py, declared once in schema/worldmap-data.schema.json).
+_FILE_VERSION = _SCHEMA.get("files", {}).get("world_layers.json", {}).get("version", "1.1.0")
+
 
 def _is_number(v: object) -> bool:
     # JSON has no NaN/Infinity literal, but "1e400" parses to float('inf');
@@ -275,11 +279,37 @@ def check_data(data: dict, filename: str) -> list[str]:
             deployments = data.get("fleet_movements")
             kind = "fleet_movements"
         return (
-            check_zones(data.get("conflict_zones"))
+            _check_header(data)
+            + check_zones(data.get("conflict_zones"))
             + check_crisis_zones(data.get("crisis_zones"))
             + check_fleets(deployments, kind=kind)
         )
     return [f"unsupported data file: {filename}"]
+
+
+def _check_header(data: dict) -> list[str]:
+    """Top-level contract for world_layers.json: the schema version in force and
+    a parseable UTC last_update timestamp (both writers always set these)."""
+    issues: list[str] = []
+
+    version = data.get("version")
+    if not isinstance(version, str) or re.fullmatch(r"\d+\.\d+\.\d+", version) is None:
+        issues.append(f"version must be a semver string, got {version!r}")
+    elif version != _FILE_VERSION:
+        issues.append(f"version {version!r} does not match the schema's expected {_FILE_VERSION!r}")
+
+    last_update = data.get("last_update")
+    if not isinstance(last_update, str) or not last_update:
+        issues.append("last_update must be a non-empty UTC timestamp string")
+        return issues
+    try:
+        ts = _datetime.fromisoformat(last_update.replace("Z", "+00:00"))
+    except ValueError:
+        issues.append(f"last_update {last_update!r} is not parseable as an ISO-8601 timestamp")
+    else:
+        if ts.tzinfo is None or ts.tzinfo.utcoffset(ts) is None:
+            issues.append("last_update must carry a UTC offset (e.g. +00:00 or Z)")
+    return issues
 
 
 def check_file(path: Path) -> list[str]:
