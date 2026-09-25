@@ -54,9 +54,22 @@ REQUEST_HEADERS = {
     "Cache-Control": "max-age=0",
 }
 
-# Schema version written by load_world_layers when the file is missing; keep in
-# sync with sync_layers.py's LIFECYCLE_VERSION (the authoritative value).
-SCHEMA_VERSION = "1.1.0"
+# Schema version written by load_world_layers when the file is missing. The
+# schema (schema/worldmap-data.schema.json) is the single source of truth -
+# same derivation as check_data.py._FILE_VERSION, and the value sync_layers.py
+# re-exports as LIFECYCLE_VERSION.
+def _load_schema_version() -> str:
+    try:
+        schema = json.loads(Path("schema/worldmap-data.schema.json").read_text(encoding="utf-8"))
+        version = schema["files"]["world_layers.json"]["version"]
+        if isinstance(version, str) and re.fullmatch(r"\d+\.\d+\.\d+", version):
+            return version
+    except Exception:  # noqa: BLE001 - schema missing/malformed while developing locally
+        pass
+    return "1.1.0"
+
+
+SCHEMA_VERSION = _load_schema_version()
 
 # Fallback static crisis zones (used when API unavailable)
 STATIC_CRISIS_ZONES = [
@@ -353,7 +366,9 @@ def fetch_reliefweb_crises() -> list[dict]:
                     })
                 if crises:
                     return crises
-            except (json.JSONDecodeError, KeyError):
+            except (json.JSONDecodeError, KeyError, AttributeError, TypeError):
+                # Odd API shapes (fields as a string, data as a non-list) must
+                # not crash the daily run; move on to the v1 fallback.
                 continue
     return []
 

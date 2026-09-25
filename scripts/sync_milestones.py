@@ -25,6 +25,7 @@ import hashlib
 import json
 import os
 import re
+import ssl
 import sys
 import time
 import urllib.error
@@ -263,7 +264,10 @@ def fetch_upstream(repo: str, branch: str) -> dict | None:
                     print("::error::Upstream response exceeds safety cap")
                     return None
                 return json.loads(body.decode("utf-8"))
-        except urllib.error.URLError as e:
+        except (urllib.error.URLError, ssl.SSLError, OSError) as e:
+            # HTTP error responses, TLS/certificate failures and socket timeouts
+            # are all transient in practice - retry with backoff, then degrade
+            # to the keep-local path instead of crashing the pipeline.
             if attempt < 2:
                 backoff = 5 * (2 ** attempt)
                 print(f"::warning::Fetch attempt {attempt + 1} failed: {e}, retrying in {backoff}s...")

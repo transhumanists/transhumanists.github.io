@@ -2,6 +2,8 @@
 """Self-tests for scripts/sync_milestones.py (stdlib only)."""
 from __future__ import annotations
 
+import contextlib
+import ssl
 import sys
 import unittest
 from datetime import date
@@ -234,6 +236,99 @@ class TestEnrichHistoric(unittest.TestCase):
         ids = [m["id"] for m in out]
         self.assertEqual(len(ids), 1 + 20)
         self.assertEqual(len(set(ids)), len(ids))
+
+
+class _FakeResp:
+    def __init__(self, body: bytes):
+        self._body = body
+
+    def read(self, n: int = -1) -> bytes:
+        return self._body
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc):
+        return False
+
+
+@contextlib.contextmanager
+def _patched_network(fake_open):
+    """Swap urlopen AND the retry backoff sleep for deterministic unit tests."""
+    orig_open = sm.urllib.request.urlopen
+    orig_sleep = sm.time.sleep
+    sm.urllib.request.urlopen = fake_open
+    sm.time.sleep = lambda seconds: None
+    try:
+        yield
+    finally:
+        sm.urllib.request.urlopen = orig_open
+        sm.time.sleep = orig_sleep
+
+
+class TestFetchUpstream(unittest.TestCase):
+    def test_success_parses_json(self):
+        body = b'{"categories": {"Energy": {"milestones": []}}}'
+        calls = {"n": 0}
+
+        def fake_open(req, timeout):
+            calls["n"] += 1
+            return _FakeResp(body)
+
+        with _patched_network(fake_open):
+            out = sm.fetch_upstream("owner/repo", "main")
+        self.assertEqual(out, {"categories": {"Energy": {"milestones": []}}})
+        self.assertEqual(calls["n"], 1)
+
+    def test_tls_cert_failure_retries_then_returns_none(self):
+        # Certificate-verification errors must degrade to the keep-local path
+        # (return None), never crash the run with an uncaught ssl error.
+        calls = {"n": 0}
+
+        def fake_open(req, timeout):
+            calls["n"] += 1
+            raise ssl.SSLCertVerificationError("certificate verify failed")
+
+        with _patched_network(fake_open):
+            out = sm.fetch_upstream("owner/repo", "main")
+        self.assertIsNone(out)
+        self.assertEqual(calls["n"], 3)
+
+    def test_socket_timeout_retries_then_returns_none(self):
+        calls = {"n": 0}
+
+        def fake_open(req, timeout):
+            calls["n"] += 1
+            raise TimeoutError("timed out")
+
+        with _patched_network(fake_open):
+            out = sm.fetch_upstream("owner/repo", "main")
+        self.assertIsNone(out)
+        self.assertEqual(calls["n"], 3)
+
+    def test_bad_json_does_not_retry(self):
+        calls = {"n": 0}
+
+        def fake_open(req, timeout):
+            calls["n"] += 1
+            return _FakeResp(b"{not json")
+
+        with _patched_network(fake_open):
+            out = sm.fetch_upstream("owner/repo", "main")
+        self.assertIsNone(out)
+        self.assertEqual(calls["n"], 1)
+
+    def test_invalid_repo_or_branch_rejected_before_network(self):
+        calls = {"n": 0}
+
+        def fake_open(req, timeout):
+            calls["n"] += 1
+            raise AssertionError("must not hit the network")
+
+        with _patched_network(fake_open):
+            self.assertIsNone(sm.fetch_upstream("not-a-valid-repo", "main"))
+            self.assertIsNone(sm.fetch_upstream("ok/repo", "bad branch!"))
+        self.assertEqual(calls["n"], 0)
 
 
 if __name__ == "__main__":

@@ -37,7 +37,7 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
-from fetch_crisis_zones import fetch_url
+from fetch_crisis_zones import SCHEMA_VERSION as LIFECYCLE_VERSION, fetch_url
 
 WIKIPEDIA_API = (
     "https://en.wikipedia.org/w/api.php"
@@ -47,7 +47,6 @@ WIKIPEDIA_API = (
 WIKIPEDIA_REF = "https://en.wikipedia.org/wiki/List_of_ongoing_armed_conflicts"
 
 WORLD_LAYERS_FILE = Path("data/world_layers.json")
-LIFECYCLE_VERSION = "1.1.0"
 
 # Wikipedia tier -> collision radius (degrees) for the map. Skirmishes are
 # parsed but never promoted to map zones (too noisy for a planet-wide view).

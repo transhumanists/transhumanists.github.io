@@ -232,9 +232,11 @@ class TestParseOchaRss(unittest.TestCase):
 
 
 class TestSchemaVersion(unittest.TestCase):
-    def test_schema_version_is_current(self):
-        # Kept in sync with sync_layers.LIFECYCLE_VERSION (checked at runtime).
-        self.assertEqual(fz.SCHEMA_VERSION, "1.1.0")
+    def test_schema_version_parity_with_schema_file(self):
+        # The deployed contract version must come from the schema (the single
+        # source of truth), not a hand-maintained literal.
+        schema = json.loads(Path("schema/worldmap-data.schema.json").read_text(encoding="utf-8"))
+        self.assertEqual(fz.SCHEMA_VERSION, schema["files"]["world_layers.json"]["version"])
 
 
 class TestFetchUrl(unittest.TestCase):
@@ -296,6 +298,24 @@ class TestFetchUrl(unittest.TestCase):
         self.assertIsNone(out)
         self.assertEqual(calls["n"], 3)
         self.assertEqual(fz._UNVERIFIED_TLS_HOSTS, set())
+
+    def test_reliefweb_malformed_shape_falls_through(self):
+        # A non-list "data" payload (odd API shape) must not crash the daily
+        # run: fall through v2 to v1 and ultimately return [].
+        calls = {"n": 0}
+
+        def fake_open(req, timeout, context):
+            calls["n"] += 1
+            return _FakeResp(b'{"data": {"some": "non-list"}}')
+
+        orig = fz.urllib.request.urlopen
+        try:
+            fz.urllib.request.urlopen = fake_open
+            out = fz.fetch_reliefweb_crises()
+        finally:
+            fz.urllib.request.urlopen = orig
+        self.assertEqual(out, [])
+        self.assertEqual(calls["n"], 2)  # v2 then v1 fallback
 
     def test_decode_plain_text(self):
         self.assertEqual(fz._decode_body(_FakeResp(b"hello")), "hello")
