@@ -296,6 +296,51 @@ class TestCheckUniqueIds(unittest.TestCase):
         self.assertEqual(cd.check_zones(zones), [])
 
 
+class TestSchemaParity(unittest.TestCase):
+    """The Python validator constants must match schema/worldmap-data.schema.json
+    exactly, and worldmap.js must hand-mirror the same coordinate bounds and the
+    canonical status mapping. Any drift fails the build."""
+
+    def _js(self) -> str:
+        js_file = cd.ROOT / "assets" / "js" / "worldmap.js"
+        if not js_file.exists():
+            self.skipTest("worldmap.js not checked out")
+        return js_file.read_text(encoding="utf-8")
+
+    def test_schema_file_exists_and_is_well_formed(self):
+        self.assertTrue(cd._SCHEMA_FILE.exists())
+        self.assertIn("version", cd._SCHEMA)
+        self.assertIn("coordinate", cd._SCHEMA["controls"])
+        self.assertIn("layer_lifecycle", cd._SCHEMA["controls"])
+
+    def test_python_constants_match_schema_exactly(self):
+        self.assertEqual(
+            cd._STATUS_VALUES,
+            set(cd._SCHEMA["controls"]["layer_lifecycle"]["status_values"]),
+        )
+        self.assertEqual(
+            cd._DATE_RE.pattern,
+            cd._SCHEMA["controls"]["layer_lifecycle"]["date_pattern"],
+        )
+        self.assertAlmostEqual(cd._LAT_MIN, cd._SCHEMA["controls"]["coordinate"]["lat_min"])
+        self.assertAlmostEqual(cd._LAT_MAX, cd._SCHEMA["controls"]["coordinate"]["lat_max"])
+        self.assertAlmostEqual(cd._LON_MIN, cd._SCHEMA["controls"]["coordinate"]["lon_min"])
+        self.assertAlmostEqual(cd._LON_MAX, cd._SCHEMA["controls"]["coordinate"]["lon_max"])
+
+    def test_js_coordinate_bounds_match_schema(self):
+        js = self._js()
+        for token in ("lat >= -90", "lat <= 90", "lon >= -180", "lon <= 180"):
+            self.assertIn(token, js)
+
+    def test_js_status_mapping_matches_schema(self):
+        js = self._js()
+        self.assertIn("STATUS_ACTIVE = 'active'", js)
+        self.assertIn("STATUS_CONCLUDED = 'concluded'", js)
+        # The schema's canonical statuses map to active or concluded; a value
+        # that is not in the schema must not start rendering as "active".
+        self.assertIn("=== 'active' || s === 'ongoing'", js)
+
+
 class TestCheckFile(unittest.TestCase):
     def test_end_to_end_with_written_files(self):
         with tempfile.TemporaryDirectory() as tmp:

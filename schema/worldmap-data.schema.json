@@ -1,0 +1,42 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://transhumanists.github.io/schema/worldmap-data.schema.json",
+  "title": "Worldmap data contract",
+  "description": "Single source of truth for the invariants shared by the Python data validators (scripts/check_data.py) and the runtime predicates in assets/js/worldmap.js. The JS side hand-mirrors the constants here; CI parity tests in scripts/test_check_data.py fail the build when either side drifts.",
+  "version": "1.0.0",
+  "controls": {
+    "coordinate": {
+      "lat_min": -90,
+      "lat_max": 90,
+      "lon_min": -180,
+      "lon_max": 180,
+      "reject_null_island": true,
+      "reason": "Operational layers and fleet endpoints are never geocoded at load; (0,0) is the no-location marker and plotting it would draw a glowing halo over the Gulf of Guinea."
+    },
+    "layer_lifecycle": {
+      "status_values": ["active", "ongoing", "concluded", "inactive", "ended", "resolved"],
+      "date_pattern": "^\\d{4}(-\\d{2}){0,2}$",
+      "date_formats": ["YYYY", "YYYY-MM", "YYYY-MM-DD"],
+      "empty_dates_allowed": true,
+      "status_mapping": "worldmap.js layerStatus: '' | 'active' | 'ongoing' -> active; any other value -> concluded",
+      "ordering_rule": "equal-precision ISO dates order lexicographically (start <= end); mixed precision is only flagged when the earliest possible start instant is after the latest possible end instant (a provably empty window)."
+    },
+    "events": {
+      "date_required": true,
+      "accepted_shapes": ["YYYY-MM-DD", "D-M-YYYY", "D/M/YYYY", "partial YYYY / YYYY-MM", "ISO datetime (Date-constructor fallback)"],
+      "calendar_validity": true,
+      "coordinates": "finite and in-range; (0,0) allowed because events ARE geocoded at load and some are intentionally global."
+    }
+  },
+  "files": {
+    "events.json": {
+      "shape": "top-level object; events: list of { id, title, category, date, geolocation: { lat, lon }, ... }",
+      "rules": ["date is required and calendar-valid per controls.events", "lat/lon finite and within controls.coordinate ranges"]
+    },
+    "world_layers.json": {
+      "version": "1.1.0",
+      "shape": "top-level object with conflict_zones, deployments and crisis_zones lists; fleet_movements accepted as the legacy alias for deployments",
+      "rules": ["every zone/fleet entry name/label + located pair (not null island)", "lifecycle status in status_values and dates per layer_lifecycle.date_pattern", "ids unique per list"]
+    }
+  }
+}

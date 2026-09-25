@@ -26,6 +26,24 @@ ROOT = Path(__file__).resolve().parent.parent
 DATA_DIR = ROOT / "data"
 REQUIRED_FILES = ("events.json", "world_layers.json")
 
+# Single source of truth for the data contract (schema/worldmap-data.schema.json).
+# The defaults below keep this module runnable if the schema is ever removed,
+# but the parity tests in test_check_data.py fail loudly in CI on any drift.
+_SCHEMA_FILE = ROOT / "schema" / "worldmap-data.schema.json"
+_SCHEMA = json.loads(_SCHEMA_FILE.read_text(encoding="utf-8")) if _SCHEMA_FILE.exists() else {}
+
+_COORD_CTRL = _SCHEMA.get("controls", {}).get("coordinate", {})
+_LAT_MIN = float(_COORD_CTRL.get("lat_min", -90.0))
+_LAT_MAX = float(_COORD_CTRL.get("lat_max", 90.0))
+_LON_MIN = float(_COORD_CTRL.get("lon_min", -180.0))
+_LON_MAX = float(_COORD_CTRL.get("lon_max", 180.0))
+
+_LIFECYCLE_CTRL = _SCHEMA.get("controls", {}).get("layer_lifecycle", {})
+_STATUS_VALUES = set(
+    _LIFECYCLE_CTRL.get("status_values", ["active", "ongoing", "concluded", "inactive", "ended", "resolved"])
+)
+_DATE_RE = re.compile(_LIFECYCLE_CTRL.get("date_pattern", r"^\d{4}(-\d{2}){0,2}$"))
+
 
 def _is_number(v: object) -> bool:
     # JSON has no NaN/Infinity literal, but "1e400" parses to float('inf');
@@ -39,8 +57,8 @@ def _is_number(v: object) -> bool:
 
 def _coord_ok(lat: object, lon: object) -> bool:
     return (
-        _is_number(lat) and -90.0 <= float(lat) <= 90.0
-        and _is_number(lon) and -180.0 <= float(lon) <= 180.0
+        _is_number(lat) and _LAT_MIN <= float(lat) <= _LAT_MAX
+        and _is_number(lon) and _LON_MIN <= float(lon) <= _LON_MAX
     )
 
 
@@ -54,8 +72,8 @@ def _coord_located(lat: object, lon: object) -> bool:
 # Layer lifecycle schema (drives the fluo/dim rendering + duration tooltips in
 # the worldmap): status must be one of the known values and the date fields must
 # be sane. Empty/absent fields are allowed (active layers may have no end date).
-_STATUS_VALUES = {"active", "ongoing", "concluded", "inactive", "ended", "resolved"}
-_DATE_RE = re.compile(r"^\d{4}(-\d{2}){0,2}$")
+# The status list and date regex are loaded from schema/worldmap-data.schema.json
+# (see the constants computed above).
 
 
 def _valid_date(value: object) -> bool:
