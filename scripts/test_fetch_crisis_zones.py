@@ -138,6 +138,18 @@ class TestBuildCrisisZones(unittest.TestCase):
         self.assertEqual(len(zones), 1)
         self.assertEqual(zones[0]["name"], "South Sudan · Conflict & flooding")
 
+    def test_zone_order_is_deterministic_across_source_ordering(self):
+        # Feeds may reorder their item lists between runs; the committed zone
+        # order must not change, or every cron run would churn a diff.
+        chad = [self._item("Chad: Humanitarian Needs")]
+        red_sea = [self._item("Red Sea: Maritime passage disruption")]
+        direct = fz.build_crisis_zones_from_sources([], [], [], [], [], [], chad + red_sea)
+        reversed_src = fz.build_crisis_zones_from_sources([], [], [], [], [], [], red_sea + chad)
+        self.assertEqual(len(direct), 2)
+        self.assertEqual([z["id"] for z in direct], [z["id"] for z in reversed_src])
+        self.assertEqual([z["id"] for z in direct],
+                         sorted(z["id"] for z in direct))  # id-sorted contract
+
     def test_keyword_without_label_falls_back_to_cleaned_title(self):
         # "suez" is a known place but has no curated label: the raw dataset
         # suffix is stripped so the map still shows readable text.

@@ -424,17 +424,23 @@ def build_crisis_zones_from_sources(ocha_data: list, who_data: list, reliefweb_d
         if len(zones) >= 15:
             break
     
-    # Fallback to static if API failed (dedupe ids + clamp to the 15-zone cap,
-    # the same contract the sourced path enforces; the input list is left as-is).
+    # Fallback to static if API failed (drops repeated/duplicate ids + clamps
+    # to the 15-zone cap, the same contract the sourced path enforces).
     if not zones:
         print("All APIs failed, using static crisis zones")
         return _finalize_crisis_zones(STATIC_CRISIS_ZONES)
 
-    return zones[:15]
+    return _finalize_crisis_zones(zones)
 
 
 def _finalize_crisis_zones(zones: list[dict]) -> list[dict]:
-    """Deduplicate by id (first occurrence wins) and clamp to the 15-zone cap."""
+    """Deduplicate by id (first occurrence wins), clamp to the 15-zone cap,
+    then sort by id.
+
+    The sort is what makes the committed order deterministic: feeds may reorder
+    their item lists between runs, and without it the same 15 zones would flip
+    around day to day, churning the daily auto-commit with content-free diffs.
+    """
     out: list[dict] = []
     seen: set[str] = set()
     for z in zones:
@@ -447,7 +453,7 @@ def _finalize_crisis_zones(zones: list[dict]) -> list[dict]:
         out.append(z)
         if len(out) >= 15:
             break
-    return out
+    return sorted(out, key=lambda z: z.get("id", ""))
 
 
 # Canonical place lookup: keyword -> (lat, lon, region). Matching is longest
