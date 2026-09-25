@@ -1,0 +1,46 @@
+name: Live Data Probe
+
+on:
+  schedule:
+    # 04:45 UTC: after the daily crisis fetch (03:00) and clear of the
+    # milestone-check :00 hours, so a probe never contends with the writers.
+    - cron: "45 4 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read # a probe must never be able to write
+
+concurrency:
+  # Read-only, so cancelling a stale run is harmless.
+  group: "live-data-probe"
+  cancel-in-progress: true
+
+jobs:
+  probe:
+    name: Probe upstream feeds
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Milestone sync probe (network)
+        # Dry-run still fetches the upstream mirror and enforces the
+        # structure + freshness gates; exit non-zero on upstream failure.
+        run: python scripts/sync_milestones.py --dry-run
+
+      - name: Operational layers probe (network)
+        # Default mode is online print-changes-only; never writes.
+        run: python scripts/sync_layers.py
+
+      - name: Crisis zone probe (network)
+        # Dry-run fetches all feeds, builds and compares zones, never writes.
+        run: python scripts/fetch_crisis_zones.py --dry-run
+
+      - name: Validator probe (committed data)
+        run: python scripts/check_data.py

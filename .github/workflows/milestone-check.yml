@@ -20,8 +20,11 @@ permissions:
   contents: write
 
 concurrency:
-  group: "milestone-check"
-  cancel-in-progress: true
+  # Both world_layers.json writers share this group so a crisis-zone refresh
+  # and a layer sync never run concurrently; queued (not cancelled) runs are
+  # allowed so an in-flight auto-commit is never interrupted.
+  group: "map-data-writers"
+  cancel-in-progress: false
 
 jobs:
   check:

@@ -15,8 +15,11 @@ permissions:
   contents: write
 
 concurrency:
-  group: "crisis-zone-fetch"
-  cancel-in-progress: true
+  # Shared with milestone-check.yml so the two writers of world_layers.json
+  # are mutually exclusive; queued, never cancelled, so an in-flight commit is
+  # not interrupted mid-flight.
+  group: "map-data-writers"
+  cancel-in-progress: false
 
 jobs:
   fetch-crisis-zones:
