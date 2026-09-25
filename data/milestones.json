@@ -1,5 +1,5 @@
 {
-  "last_update": "2026-09-25T02:29:00+00:00",
+  "last_update": "2026-09-25T13:16:49+00:00",
   "version": "1.0.0",
   "schema": "https://transhumanists.github.io/schema/milestone-v1.json",
   "categories": {
@@ -19,6 +19,26 @@
         "multimodal"
       ],
       "milestones": [
+        {
+          "id": "ms-847b6f6830b8",
+          "title": "Forecast-Dojo: Replayable Benchmark for LLM Forecasting Agents",
+          "summary": "Forecast-Dojo introduces a replayable environment with 1,568 Polymarket events and 18.8M tokens for benchmarking and training LLM forecasting agents using historical prediction-market data.",
+          "category": "Computing & AGI",
+          "subcategory": "benchmarks",
+          "value": 1568,
+          "unit": "events",
+          "source": "arXiv preprint",
+          "date": "2026-09-25",
+          "url": "https://arxiv.org/abs/2609.28876",
+          "is_record": false,
+          "is_breakthrough": false,
+          "is_new": true,
+          "geolocation": {
+            "lat": 0.0,
+            "lon": 0.0
+          },
+          "category_key": "computing_agi"
+        },
         {
           "id": "ms-0a47a34ebd2d",
           "title": "New evaluation protocol detects sequential reappearance in diffusion model unlearning",
@@ -174,6 +194,26 @@
           "source": "Nature Biotechnology",
           "date": "2026-09-15",
           "url": "https://www.nature.com/articles/s41587-026-03322-x",
+          "is_record": true,
+          "is_breakthrough": true,
+          "is_new": false,
+          "geolocation": {
+            "lat": 32.0603,
+            "lon": 118.7969
+          },
+          "category_key": "biotechnology"
+        },
+        {
+          "id": "ms-e55c8cf4e432",
+          "title": "Engineered nanopore simultaneously identifies saccharides, amino acids, peptides, and ribonucleotides",
+          "summary": "A modified nanopore achieves simultaneous detection of four major biomolecule classes and their modifications, marking a breakthrough in multiplexed single-molecule sensing.",
+          "category": "Biotechnology",
+          "subcategory": "biosensors",
+          "value": null,
+          "unit": null,
+          "source": "Nature Biotechnology",
+          "date": "2026-09-14",
+          "url": "https://www.nature.com/articles/s41587-026-03308-9",
           "is_record": true,
           "is_breakthrough": true,
           "is_new": false,

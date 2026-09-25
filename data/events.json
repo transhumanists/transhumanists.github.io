@@ -1,7 +1,20 @@
 {
-  "last_update": "2026-09-25T02:29:00+00:00",
+  "last_update": "2026-09-25T13:16:49+00:00",
   "version": "1.0.0",
   "events": [
+    {
+      "id": "ev-ms-847b6f6830b8",
+      "title": "Forecast-Dojo: Replayable Benchmark for LLM Forecasting Agents",
+      "category": "Computing & AGI",
+      "value": "1568 events",
+      "source": "arXiv preprint",
+      "url": "https://arxiv.org/abs/2609.28876",
+      "date": "2026-09-25",
+      "geolocation": {
+        "lat": 42.444,
+        "lon": -76.5019
+      }
+    },
     {
       "id": "ev-ms-0a47a34ebd2d",
       "title": "New evaluation protocol detects sequential reappearance in diffusion model unlearning",
@@ -36,6 +49,19 @@
       "source": "Nature Biotechnology",
       "url": "https://www.nature.com/articles/s41587-026-03322-x",
       "date": "2026-09-15",
+      "geolocation": {
+        "lat": 32.0603,
+        "lon": 118.7969
+      }
+    },
+    {
+      "id": "ev-ms-e55c8cf4e432",
+      "title": "Engineered nanopore simultaneously identifies saccharides, amino acids, peptides, and ribonucleotides",
+      "category": "Biotechnology",
+      "value": "Engineered nanopore simultaneously identifies saccharides, amino acids, peptides, and ribonucleotides",
+      "source": "Nature Biotechnology",
+      "url": "https://www.nature.com/articles/s41587-026-03308-9",
+      "date": "2026-09-14",
       "geolocation": {
         "lat": 32.0603,
         "lon": 118.7969

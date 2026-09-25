@@ -1,5 +1,22 @@
 [
   {
+    "id": "ms-847b6f6830b8",
+    "category": "Computing & AGI",
+    "subcategory": "benchmarks",
+    "title": "Forecast-Dojo: Replayable Benchmark for LLM Forecasting Agents",
+    "value": 1568,
+    "unit": "events",
+    "source": "arXiv preprint",
+    "url": "https://arxiv.org/abs/2609.28876",
+    "date": "2026-09-25",
+    "geolocation": {
+      "lat": 0.0,
+      "lon": 0.0
+    },
+    "first_seen": "2026-09-25",
+    "last_seen": "2026-09-25"
+  },
+  {
     "id": "ms-0a47a34ebd2d",
     "category": "Computing & AGI",
     "subcategory": "benchmarks",
@@ -48,6 +65,23 @@
       "lon": 118.7969
     },
     "first_seen": "2026-09-22",
+    "last_seen": "2026-09-25"
+  },
+  {
+    "id": "ms-e55c8cf4e432",
+    "category": "Biotechnology",
+    "subcategory": "biosensors",
+    "title": "Engineered nanopore simultaneously identifies saccharides, amino acids, peptides, and ribonucleotides",
+    "value": null,
+    "unit": null,
+    "source": "Nature Biotechnology",
+    "url": "https://www.nature.com/articles/s41587-026-03308-9",
+    "date": "2026-09-14",
+    "geolocation": {
+      "lat": 32.0603,
+      "lon": 118.7969
+    },
+    "first_seen": "2026-09-25",
     "last_seen": "2026-09-25"
   },
   {
