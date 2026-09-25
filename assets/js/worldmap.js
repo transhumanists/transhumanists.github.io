@@ -40,11 +40,11 @@
   // Operational layers (conflict zones + tracked deployments).
   const ZONE_COLOR = '#ff6d8a';
   const ZONE_FILL = 'rgba(255, 109, 138, 0.14)';
-  const ZONE_STROKE = 'rgba(255, 109, 138, 0.9)';
+  const ZONE_STROKE = 'rgba(255, 109, 138, 1)';
   // Crisis zones (humanitarian): distinct purple to differentiate from conflict (red) and deployments (blue/amber)
   const CRISIS_COLOR = '#b388ff';
   const CRISIS_FILL = 'rgba(179, 136, 255, 0.14)';
-  const CRISIS_STROKE = 'rgba(179, 136, 255, 0.9)';
+  const CRISIS_STROKE = 'rgba(179, 136, 255, 1)';
   // Ground deployments: distinct amber/orange to avoid confusion with Biotechnology green
   const GROUND_COLOR = '#ffb347';
   const FLEET_COLOR = '#4fc3f7';
@@ -64,10 +64,11 @@
   // concluded ones render dim and expose their full duration in the tooltip.
   const STATUS_ACTIVE = 'active';
   const STATUS_CONCLUDED = 'concluded';
-  const FLUO_GLOW_BLUR = 18;        // halo radius for live area rings
+  const FLUO_GLOW_BLUR = 24;        // halo radius for live area rings
   const FLUO_LINE_GLOW_BLUR = 9;    // halo radius for vector tails + arrowheads
-  const FLUO_PULSE_RADIUS = 6;      // how much the halo breathes (px)
-  const CONCLUDED_OPACITY = 0.45;   // dimming applied to concluded markers
+  const FLUO_PULSE_RADIUS = 10;     // how much the halo breathes (px)
+  const CONCLUDED_OPACITY = 0.45;   // dimming applied to concluded vector tails
+  const CONCLUDED_ZONE_OPACITY = 0.22; // dimming applied to concluded area rings
 
   // Normalize a layer entry's lifecycle status. Missing/`active`/`ongoing`
   // mean the marker is still live (fluo glow); anything explicitly ended
@@ -814,7 +815,7 @@ function drawEvent(ev) {
       ctx.shadowBlur = FLUO_GLOW_BLUR + FLUO_PULSE_RADIUS * pulse;
       ctx.beginPath();
       ctx.arc(p.x, p.y, r * 1.14, 0, Math.PI * 2);
-      ctx.fillStyle = withOpacity(ZONE_COLOR, 0.055);
+      ctx.fillStyle = withOpacity(ZONE_COLOR, 0.09);
       ctx.fill();
       ctx.restore();
 
@@ -827,23 +828,24 @@ function drawEvent(ev) {
       ctx.shadowColor = ZONE_COLOR;
       ctx.shadowBlur = FLUO_LINE_GLOW_BLUR;
       ctx.setLineDash([4, 3]);
-      ctx.lineWidth = 1.5;
+      ctx.lineDashOffset = -Date.now() / 40; // marching dash = "live" cue
+      ctx.lineWidth = 2;
       ctx.strokeStyle = ZONE_STROKE;
       ctx.beginPath();
       ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
       ctx.stroke();
       ctx.restore();
     } else {
-      // Concluded: a frozen, dim footprint — no glow, thinner dashed ring.
+      // Concluded: a frozen, deeply dim footprint — no glow, thinner dashed ring.
       ctx.save();
-      ctx.globalAlpha = CONCLUDED_OPACITY;
+      ctx.globalAlpha = CONCLUDED_ZONE_OPACITY;
       ctx.beginPath();
       ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
       ctx.fillStyle = ZONE_FILL;
       ctx.fill();
       ctx.setLineDash([4, 3]);
       ctx.lineWidth = 1;
-      ctx.strokeStyle = withOpacity(ZONE_COLOR, 0.45);
+      ctx.strokeStyle = withOpacity(ZONE_COLOR, 0.24);
       ctx.beginPath();
       ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
       ctx.stroke();
@@ -852,7 +854,7 @@ function drawEvent(ev) {
 
     ctx.beginPath();
     ctx.arc(p.x, p.y, 2.5, 0, Math.PI * 2);
-    ctx.fillStyle = active ? ZONE_COLOR : withOpacity(ZONE_COLOR, 0.5);
+    ctx.fillStyle = active ? ZONE_COLOR : withOpacity(ZONE_COLOR, 0.3);
     ctx.fill();
   }
 
@@ -875,7 +877,7 @@ function drawEvent(ev) {
       ctx.shadowBlur = FLUO_GLOW_BLUR + FLUO_PULSE_RADIUS * pulse;
       ctx.beginPath();
       ctx.arc(p.x, p.y, r * 1.14, 0, Math.PI * 2);
-      ctx.fillStyle = withOpacity(CRISIS_COLOR, 0.055);
+      ctx.fillStyle = withOpacity(CRISIS_COLOR, 0.09);
       ctx.fill();
       ctx.restore();
 
@@ -888,7 +890,8 @@ function drawEvent(ev) {
       ctx.shadowColor = CRISIS_COLOR;
       ctx.shadowBlur = FLUO_LINE_GLOW_BLUR;
       ctx.setLineDash([4, 3]);
-      ctx.lineWidth = 1.5;
+      ctx.lineDashOffset = -Date.now() / 40; // marching dash = "live" cue
+      ctx.lineWidth = 2;
       ctx.strokeStyle = CRISIS_STROKE;
       ctx.beginPath();
       ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
@@ -896,14 +899,14 @@ function drawEvent(ev) {
       ctx.restore();
     } else {
       ctx.save();
-      ctx.globalAlpha = CONCLUDED_OPACITY;
+      ctx.globalAlpha = CONCLUDED_ZONE_OPACITY;
       ctx.beginPath();
       ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
       ctx.fillStyle = CRISIS_FILL;
       ctx.fill();
       ctx.setLineDash([4, 3]);
       ctx.lineWidth = 1;
-      ctx.strokeStyle = withOpacity(CRISIS_COLOR, 0.45);
+      ctx.strokeStyle = withOpacity(CRISIS_COLOR, 0.24);
       ctx.beginPath();
       ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
       ctx.stroke();
@@ -912,7 +915,7 @@ function drawEvent(ev) {
 
     ctx.beginPath();
     ctx.arc(p.x, p.y, 2.5, 0, Math.PI * 2);
-    ctx.fillStyle = active ? CRISIS_COLOR : withOpacity(CRISIS_COLOR, 0.5);
+    ctx.fillStyle = active ? CRISIS_COLOR : withOpacity(CRISIS_COLOR, 0.3);
     ctx.fill();
   }
 
