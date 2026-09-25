@@ -591,8 +591,8 @@ function canonicalCategory(cat) {
         const p = project(sunset[i].lon, sunset[i].lat);
         ctx.lineTo(p.x, p.y);
       }
-      // Go across bottom to sunrise terminator
-      ctx.lineTo(w, h);
+      // Go across bottom to sunrise terminator (on left side)
+      ctx.lineTo(0, h);
       // Go up sunrise terminator (left edge of night) - reverse order
       for (let i = sunrise.length - 1; i >= 0; i--) {
         const p = project(sunrise[i].lon, sunrise[i].lat);
@@ -608,8 +608,8 @@ function canonicalCategory(cat) {
         const p = project(sunrise[i].lon, sunrise[i].lat);
         ctx.lineTo(p.x, p.y);
       }
-      // Go across bottom to sunset terminator
-      ctx.lineTo(0, h);
+      // Go across bottom to sunset terminator (on right side)
+      ctx.lineTo(w, h);
       // Go up sunset terminator (right edge of night) - reverse order
       for (let i = sunset.length - 1; i >= 0; i--) {
         const p = project(sunset[i].lon, sunset[i].lat);
