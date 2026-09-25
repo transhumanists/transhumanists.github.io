@@ -145,6 +145,15 @@ class TestBuildCrisisZones(unittest.TestCase):
         self.assertEqual(zones[0]["name"], "Suez · Humanitarian crisis")
         self.assertIn("live humanitarian situation", zones[0]["note"])
 
+    def test_fallback_strips_dash_and_en_dash_dataset_suffixes(self):
+        # "suez" has no curated label, so the string-cleanup fallback runs and
+        # must handle hyphen/en-dash separators, not just the colon form.
+        for raw in ("Suez - Humanitarian Access", "Suez – Humanitarian Snapshot"):
+            items = [self._item(raw)]
+            zones = fz.build_crisis_zones_from_sources(items, [], [], [], [], [], [])
+            self.assertEqual(len(zones), 1, raw)
+            self.assertEqual(zones[0]["name"], "Suez · Humanitarian crisis", raw)
+
     def test_specific_keyword_wins_over_short_prefix(self):
         # "South Sudan" must geolocate to South Sudan, not be swallowed by
         # the shorter "sudan" keyword.

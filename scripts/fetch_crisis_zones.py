@@ -548,7 +548,7 @@ def _crisis_title_fallback(title: str) -> tuple[str, str]:
     is precisely the boilerplate the readable style is meant to replace.
     """
     cleaned = re.sub(
-        r"(?i)\s*:\s*(humanitarian\s+(needs?|access|snapshot|assessment|situation)).*$",
+        r"(?i)\s*[::\-\u2013]\s*(humanitarian\s+(needs?|access|snapshot|assessment|situation)).*$",
         "",
         title,
     ).strip(" :-")
