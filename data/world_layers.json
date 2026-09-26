@@ -1,6 +1,6 @@
 {
   "version": "1.1.0",
-  "last_update": "2026-09-25T13:29:40+00:00",
+  "last_update": "2026-09-26T08:24:11+00:00",
   "conflict_zones": [
     {
       "id": "zone-ukraine",
@@ -486,115 +486,79 @@
   ],
   "crisis_zones": [
     {
-      "id": "crisis-afghanistan-winter-hunger-crisis",
+      "id": "crisis-afghanistan",
       "name": "Afghanistan · Winter hunger crisis",
       "region": "Central Asia",
       "lat": 33.5,
       "lon": 65.5,
-      "radiusDeg": 4.0,
+      "radiusDeg": 5.0,
       "status": "active",
       "note": "28M+ facing acute food insecurity",
       "source": "WFP",
-      "url": "https://data.humdata.org/dataset/afghanistan-humanitarian-needs"
+      "url": "https://www.wfp.org"
     },
     {
-      "id": "crisis-chad-displacement-crisis",
-      "name": "Chad · Displacement crisis",
+      "id": "crisis-drc",
+      "name": "DRC · Conflict & Ebola",
       "region": "Central Africa",
-      "lat": 15.45,
-      "lon": 18.73,
-      "radiusDeg": 4.0,
+      "lat": -1.5,
+      "lon": 25.0,
+      "radiusDeg": 5.0,
       "status": "active",
-      "note": "Hundreds of thousands displaced from Darfur",
-      "source": "UNHCR",
-      "url": "https://data.humdata.org/dataset/chad-humanitarian-needs"
+      "note": "Conflict, Ebola, displacement",
+      "source": "WHO",
+      "url": "https://www.who.int"
     },
     {
-      "id": "crisis-ethiopia-tigray-conflict",
+      "id": "crisis-ethiopia",
       "name": "Ethiopia · Tigray conflict",
       "region": "East Africa",
-      "lat": 9.0,
-      "lon": 39.5,
+      "lat": 14.0,
+      "lon": 38.5,
       "radiusDeg": 4.0,
       "status": "active",
       "note": "Millions displaced, famine risk",
       "source": "UN OCHA",
-      "url": "https://data.humdata.org/dataset/ethiopia-humanitarian-needs"
+      "url": "https://www.unocha.org"
     },
     {
-      "id": "crisis-haiti-gang-violence-hunger",
+      "id": "crisis-haiti",
       "name": "Haiti · Gang violence & hunger",
       "region": "Caribbean",
       "lat": 18.5,
       "lon": -72.3,
-      "radiusDeg": 4.0,
+      "radiusDeg": 3.5,
       "status": "active",
       "note": "5M+ in need, gang violence & cholera",
       "source": "UN OCHA",
-      "url": "https://data.humdata.org/dataset/haiti-humanitarian-needs"
+      "url": "https://www.unocha.org"
     },
     {
-      "id": "crisis-mali-displacement-crisis",
-      "name": "Mali · Displacement crisis",
+      "id": "crisis-myanmar",
+      "name": "Myanmar · Rohingya displacement",
+      "region": "Southeast Asia",
+      "lat": 20.5,
+      "lon": 92.5,
+      "radiusDeg": 3.0,
+      "status": "active",
+      "note": "1M+ stateless refugees in camps",
+      "source": "UNHCR",
+      "url": "https://www.unhcr.org"
+    },
+    {
+      "id": "crisis-sahel",
+      "name": "Sahel · Conflict & hunger",
       "region": "West Africa",
-      "lat": 17.57,
-      "lon": -3.99,
-      "radiusDeg": 4.0,
+      "lat": 13.0,
+      "lon": 2.0,
+      "radiusDeg": 6.0,
       "status": "active",
-      "note": "Armed conflict, displacement and food insecurity",
+      "note": "10M+ displaced across Sahel",
       "source": "UN OCHA",
-      "url": "https://data.humdata.org/dataset/mali-humanitarian-needs"
+      "url": "https://www.unocha.org"
     },
     {
-      "id": "crisis-mozambique-cabo-delgado-insurgency",
-      "name": "Mozambique · Cabo Delgado insurgency",
-      "region": "Southern Africa",
-      "lat": -18.67,
-      "lon": 35.53,
-      "radiusDeg": 4.0,
-      "status": "active",
-      "note": "Insurgent attacks and internal displacement",
-      "source": "UN OCHA",
-      "url": "https://data.humdata.org/dataset/mozambique-humanitarian-needs"
-    },
-    {
-      "id": "crisis-niger-conflict-hunger",
-      "name": "Niger · Conflict & hunger",
-      "region": "West Africa",
-      "lat": 17.61,
-      "lon": 8.08,
-      "radiusDeg": 4.0,
-      "status": "active",
-      "note": "Armed conflict, displacement and food insecurity",
-      "source": "UN OCHA",
-      "url": "https://data.humdata.org/dataset/niger-humanitarian-needs"
-    },
-    {
-      "id": "crisis-nigeria-insurgency-hunger",
-      "name": "Nigeria · Insurgency & hunger",
-      "region": "West Africa",
-      "lat": 9.08,
-      "lon": 8.68,
-      "radiusDeg": 4.0,
-      "status": "active",
-      "note": "Armed conflict, displacement and food insecurity",
-      "source": "UN OCHA",
-      "url": "https://data.humdata.org/dataset/nigeria-humanitarian-needs"
-    },
-    {
-      "id": "crisis-red-sea-shipping-disruption",
-      "name": "Red Sea · Shipping disruption",
-      "region": "Middle East",
-      "lat": 19.0,
-      "lon": 38.0,
-      "radiusDeg": 4.0,
-      "status": "active",
-      "note": "Attacks disrupting commercial shipping routes",
-      "source": "UN OCHA",
-      "url": "https://data.humdata.org/dataset/the-red-sea-suez-canal-traffic"
-    },
-    {
-      "id": "crisis-somalia-drought-famine",
+      "id": "crisis-somalia",
       "name": "Somalia · Drought & famine",
       "region": "East Africa",
       "lat": 2.5,
@@ -603,34 +567,22 @@
       "status": "active",
       "note": "5 consecutive failed rainy seasons",
       "source": "FAO",
-      "url": "https://data.humdata.org/dataset/somalia-humanitarian-needs"
+      "url": "https://www.fao.org"
     },
     {
-      "id": "crisis-south-sudan-conflict-flooding",
-      "name": "South Sudan · Conflict & flooding",
-      "region": "East Africa",
-      "lat": 7.86,
-      "lon": 30.2,
-      "radiusDeg": 4.0,
-      "status": "active",
-      "note": "Civil conflict, displacement and food insecurity",
-      "source": "UN OCHA",
-      "url": "https://data.humdata.org/dataset/south-sudan-humanitarian-needs"
-    },
-    {
-      "id": "crisis-sudan-darfur-famine",
+      "id": "crisis-sudan",
       "name": "Sudan · Darfur famine",
       "region": "East Africa",
       "lat": 13.0,
       "lon": 24.5,
-      "radiusDeg": 4.0,
+      "radiusDeg": 4.5,
       "status": "active",
       "note": "Humanitarian catastrophe, 25M+ in need",
       "source": "UN OCHA",
-      "url": "https://data.humdata.org/dataset/sudan-humanitarian-needs"
+      "url": "https://www.unocha.org"
     },
     {
-      "id": "crisis-syria-humanitarian-crisis",
+      "id": "crisis-syria",
       "name": "Syria · Humanitarian crisis",
       "region": "Middle East",
       "lat": 34.8,
@@ -639,31 +591,19 @@
       "status": "active",
       "note": "15M+ in need of humanitarian aid",
       "source": "UN OCHA",
-      "url": "https://data.humdata.org/dataset/syrian-arab-republic-humanitarian-needs"
+      "url": "https://www.unocha.org"
     },
     {
-      "id": "crisis-ukraine-war-civilian-needs",
-      "name": "Ukraine · War & civilian needs",
-      "region": "Eastern Europe",
-      "lat": 48.0,
-      "lon": 31.0,
-      "radiusDeg": 4.0,
-      "status": "active",
-      "note": "Full-scale invasion, millions displaced",
-      "source": "UN OCHA",
-      "url": "https://data.humdata.org/dataset/ukraine-humanitarian-needs"
-    },
-    {
-      "id": "crisis-yemen-cholera-famine",
+      "id": "crisis-yemen",
       "name": "Yemen · Cholera & famine",
       "region": "Middle East",
       "lat": 15.5,
       "lon": 44.2,
-      "radiusDeg": 4.0,
+      "radiusDeg": 3.8,
       "status": "active",
       "note": "World's worst humanitarian crisis",
       "source": "WHO",
-      "url": "https://data.humdata.org/dataset/yemen-humanitarian-needs"
+      "url": "https://www.who.int"
     }
   ],
   "deployments": [
