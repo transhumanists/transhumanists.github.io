@@ -1,5 +1,39 @@
 [
   {
+    "id": "ms-84669fafeb66",
+    "category": "Cybersecurity",
+    "subcategory": "exploits",
+    "title": "Elementor WordPress Plugin CSRF Vulnerability Allows Site Takeover",
+    "value": 8.8,
+    "unit": "CVSS",
+    "source": "Security researchers",
+    "url": "https://thehackernews.com/2026/09/elementor-csrf-flaw-lets-attackers-take.html",
+    "date": "2026-09-26",
+    "geolocation": {
+      "lat": 32.0853,
+      "lon": 34.7818
+    },
+    "first_seen": "2026-09-26",
+    "last_seen": "2026-09-26"
+  },
+  {
+    "id": "ms-f9883157aeba",
+    "category": "Quantum Gravity",
+    "subcategory": "holographic_principle",
+    "title": "Gravity found to be holographic, collapsing space dimensions",
+    "value": null,
+    "unit": null,
+    "source": "Quanta Magazine",
+    "url": "https://www.quantamagazine.org/gravity-seems-holographic-what-does-that-mean-for-reality-20260925/",
+    "date": "2026-09-25",
+    "geolocation": {
+      "lat": 0.0,
+      "lon": 0.0
+    },
+    "first_seen": "2026-09-26",
+    "last_seen": "2026-09-26"
+  },
+  {
     "id": "ms-847b6f6830b8",
     "category": "Computing & AGI",
     "subcategory": "benchmarks",
@@ -48,6 +82,23 @@
       "lon": -71.2356
     },
     "first_seen": "2026-09-22",
+    "last_seen": "2026-09-26"
+  },
+  {
+    "id": "ms-2457b1872a8c",
+    "category": "Mathematics",
+    "subcategory": "graph_theory",
+    "title": "Proof of Graph Sandwich Conjecture",
+    "value": null,
+    "unit": null,
+    "source": "International mathematics collaboration",
+    "url": "https://www.quantamagazine.org/mathematicians-build-long-awaited-graph-sandwich-20260918/",
+    "date": "2026-09-18",
+    "geolocation": {
+      "lat": 0.0,
+      "lon": 0.0
+    },
+    "first_seen": "2026-09-26",
     "last_seen": "2026-09-26"
   },
   {

@@ -1,7 +1,20 @@
 {
-  "last_update": "2026-09-26T02:31:49+00:00",
+  "last_update": "2026-09-26T15:21:38+00:00",
   "version": "1.0.0",
   "events": [
+    {
+      "id": "ev-ms-84669fafeb66",
+      "title": "Elementor WordPress Plugin CSRF Vulnerability Allows Site Takeover",
+      "category": "Cybersecurity",
+      "value": "8.8 CVSS",
+      "source": "Security researchers",
+      "url": "https://thehackernews.com/2026/09/elementor-csrf-flaw-lets-attackers-take.html",
+      "date": "2026-09-26",
+      "geolocation": {
+        "lat": 32.0853,
+        "lon": 34.7818
+      }
+    },
     {
       "id": "ev-ms-847b6f6830b8",
       "title": "Forecast-Dojo: Replayable Benchmark for LLM Forecasting Agents",
