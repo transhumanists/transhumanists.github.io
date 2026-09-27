@@ -8,13 +8,14 @@
       "region": "Eastern Europe",
       "lat": 48.0,
       "lon": 37.8,
-      "radiusDeg": 5.5,
+      "radiusDeg": 2.5,
       "status": "active",
       "start_date": "2022-02-24",
       "end_date": "",
       "note": "Russia–Ukraine line of contact",
       "source": "ISW",
-      "url": "https://www.understandingwar.org"
+      "url": "https://www.understandingwar.org",
+      "last_news_year": 2022
     },
     {
       "id": "zone-gaza",
@@ -22,13 +23,14 @@
       "region": "Middle East",
       "lat": 31.3,
       "lon": 34.3,
-      "radiusDeg": 2.2,
+      "radiusDeg": 2.5,
       "status": "active",
       "start_date": "2023-10-07",
       "end_date": "",
       "note": "Gaza–Israel conflict",
       "source": "UN OCHA",
-      "url": "https://www.unocha.org"
+      "url": "https://www.unocha.org",
+      "last_news_year": 2023
     },
     {
       "id": "zone-red-sea",
@@ -36,13 +38,14 @@
       "region": "Middle East",
       "lat": 13.5,
       "lon": 43.0,
-      "radiusDeg": 4.0,
+      "radiusDeg": 2.5,
       "status": "active",
       "start_date": "2023-11-19",
       "end_date": "",
       "note": "Maritime security zone",
       "source": "IMSC",
-      "url": "https://www.maritimeglobalsecurity.org"
+      "url": "https://www.maritimeglobalsecurity.org",
+      "last_news_year": 2023
     },
     {
       "id": "zone-arab-israeli",
@@ -50,7 +53,7 @@
       "region": "Asia",
       "lat": 31.05,
       "lon": 34.85,
-      "radiusDeg": 5.0,
+      "radiusDeg": 4.0,
       "tier": "major",
       "countries": [
         "Israel",
@@ -73,7 +76,8 @@
       "start_date": "1948-01-01",
       "end_date": "",
       "source": "Wikipedia (List of ongoing armed conflicts)",
-      "url": "https://en.wikipedia.org/wiki/List_of_ongoing_armed_conflicts"
+      "url": "https://en.wikipedia.org/wiki/List_of_ongoing_armed_conflicts",
+      "last_news_year": 1948
     },
     {
       "id": "zone-congolese-conflicts",
@@ -81,7 +85,7 @@
       "region": "Africa",
       "lat": -4.04,
       "lon": 21.75,
-      "radiusDeg": 5.0,
+      "radiusDeg": 4.0,
       "tier": "major",
       "countries": [
         "Democratic Republic of the Congo",
@@ -95,7 +99,8 @@
       "start_date": "1960-01-01",
       "end_date": "",
       "source": "Wikipedia (List of ongoing armed conflicts)",
-      "url": "https://en.wikipedia.org/wiki/List_of_ongoing_armed_conflicts"
+      "url": "https://en.wikipedia.org/wiki/List_of_ongoing_armed_conflicts",
+      "last_news_year": 1960
     },
     {
       "id": "zone-islamist-insurgencies-in-the-maghreb",
@@ -103,7 +108,7 @@
       "region": "Africa",
       "lat": 12.24,
       "lon": -1.56,
-      "radiusDeg": 5.0,
+      "radiusDeg": 4.0,
       "tier": "major",
       "countries": [
         "Algeria",
@@ -125,7 +130,8 @@
       "start_date": "2002-01-01",
       "end_date": "",
       "source": "Wikipedia (List of ongoing armed conflicts)",
-      "url": "https://en.wikipedia.org/wiki/List_of_ongoing_armed_conflicts"
+      "url": "https://en.wikipedia.org/wiki/List_of_ongoing_armed_conflicts",
+      "last_news_year": 2002
     },
     {
       "id": "zone-mexican-drug-war",
@@ -133,7 +139,7 @@
       "region": "North America",
       "lat": 23.63,
       "lon": -102.55,
-      "radiusDeg": 5.0,
+      "radiusDeg": 4.0,
       "tier": "major",
       "countries": [
         "Mexico",
@@ -148,7 +154,8 @@
       "start_date": "2006-01-01",
       "end_date": "",
       "source": "Wikipedia (List of ongoing armed conflicts)",
-      "url": "https://en.wikipedia.org/wiki/List_of_ongoing_armed_conflicts"
+      "url": "https://en.wikipedia.org/wiki/List_of_ongoing_armed_conflicts",
+      "last_news_year": 2006
     },
     {
       "id": "zone-myanmar-civil-war",
@@ -156,7 +163,7 @@
       "region": "Asia",
       "lat": 21.92,
       "lon": 95.96,
-      "radiusDeg": 5.0,
+      "radiusDeg": 4.0,
       "tier": "major",
       "countries": [
         "Myanmar",
@@ -169,7 +176,8 @@
       "start_date": "1948-01-01",
       "end_date": "",
       "source": "Wikipedia (List of ongoing armed conflicts)",
-      "url": "https://en.wikipedia.org/wiki/List_of_ongoing_armed_conflicts"
+      "url": "https://en.wikipedia.org/wiki/List_of_ongoing_armed_conflicts",
+      "last_news_year": 1948
     },
     {
       "id": "zone-somali-civil-war",
@@ -177,7 +185,7 @@
       "region": "Africa",
       "lat": 5.15,
       "lon": 46.2,
-      "radiusDeg": 5.0,
+      "radiusDeg": 4.0,
       "tier": "major",
       "countries": [
         "Somalia",
@@ -189,7 +197,8 @@
       "start_date": "1978-01-01",
       "end_date": "",
       "source": "Wikipedia (List of ongoing armed conflicts)",
-      "url": "https://en.wikipedia.org/wiki/List_of_ongoing_armed_conflicts"
+      "url": "https://en.wikipedia.org/wiki/List_of_ongoing_armed_conflicts",
+      "last_news_year": 1978
     },
     {
       "id": "zone-sudanese-civil-wars",
@@ -197,7 +206,7 @@
       "region": "Africa",
       "lat": 12.86,
       "lon": 30.22,
-      "radiusDeg": 5.0,
+      "radiusDeg": 4.0,
       "tier": "major",
       "countries": [
         "Sudan",
@@ -212,7 +221,8 @@
       "start_date": "1955-01-01",
       "end_date": "",
       "source": "Wikipedia (List of ongoing armed conflicts)",
-      "url": "https://en.wikipedia.org/wiki/List_of_ongoing_armed_conflicts"
+      "url": "https://en.wikipedia.org/wiki/List_of_ongoing_armed_conflicts",
+      "last_news_year": 1955
     },
     {
       "id": "zone-afghanistan-conflict",
@@ -220,7 +230,7 @@
       "region": "Asia",
       "lat": 33.94,
       "lon": 67.71,
-      "radiusDeg": 4.0,
+      "radiusDeg": 3.0,
       "tier": "minor",
       "countries": [
         "Afghanistan",
@@ -231,7 +241,8 @@
       "start_date": "1978-01-01",
       "end_date": "",
       "source": "Wikipedia (List of ongoing armed conflicts)",
-      "url": "https://en.wikipedia.org/wiki/List_of_ongoing_armed_conflicts"
+      "url": "https://en.wikipedia.org/wiki/List_of_ongoing_armed_conflicts",
+      "last_news_year": 1978
     },
     {
       "id": "zone-cameroonian-conflicts",
@@ -239,7 +250,7 @@
       "region": "Africa",
       "lat": 7.37,
       "lon": 12.35,
-      "radiusDeg": 4.0,
+      "radiusDeg": 3.0,
       "tier": "minor",
       "countries": [
         "Cameroon",
@@ -251,7 +262,8 @@
       "start_date": "2012-01-01",
       "end_date": "",
       "source": "Wikipedia (List of ongoing armed conflicts)",
-      "url": "https://en.wikipedia.org/wiki/List_of_ongoing_armed_conflicts"
+      "url": "https://en.wikipedia.org/wiki/List_of_ongoing_armed_conflicts",
+      "last_news_year": 2012
     },
     {
       "id": "zone-colombian-conflict",
@@ -259,7 +271,7 @@
       "region": "South America",
       "lat": 4.57,
       "lon": -74.3,
-      "radiusDeg": 4.0,
+      "radiusDeg": 3.0,
       "tier": "minor",
       "countries": [
         "Colombia",
@@ -270,7 +282,8 @@
       "start_date": "1964-01-01",
       "end_date": "2016-11-24",
       "source": "Wikipedia (List of ongoing armed conflicts)",
-      "url": "https://en.wikipedia.org/wiki/List_of_ongoing_armed_conflicts"
+      "url": "https://en.wikipedia.org/wiki/List_of_ongoing_armed_conflicts",
+      "last_news_year": 1964
     },
     {
       "id": "zone-haitian-conflict",
@@ -278,7 +291,7 @@
       "region": "North America",
       "lat": 18.97,
       "lon": -72.29,
-      "radiusDeg": 4.0,
+      "radiusDeg": 3.0,
       "tier": "minor",
       "countries": [
         "Haiti"
@@ -287,7 +300,8 @@
       "start_date": "2018-01-01",
       "end_date": "",
       "source": "Wikipedia (List of ongoing armed conflicts)",
-      "url": "https://en.wikipedia.org/wiki/List_of_ongoing_armed_conflicts"
+      "url": "https://en.wikipedia.org/wiki/List_of_ongoing_armed_conflicts",
+      "last_news_year": 2018
     },
     {
       "id": "zone-insurgencies-in-iran",
@@ -295,7 +309,7 @@
       "region": "Asia",
       "lat": 32.43,
       "lon": 53.68,
-      "radiusDeg": 4.0,
+      "radiusDeg": 3.0,
       "tier": "minor",
       "countries": [
         "Iran",
@@ -306,7 +320,8 @@
       "start_date": "1918-01-01",
       "end_date": "",
       "source": "Wikipedia (List of ongoing armed conflicts)",
-      "url": "https://en.wikipedia.org/wiki/List_of_ongoing_armed_conflicts"
+      "url": "https://en.wikipedia.org/wiki/List_of_ongoing_armed_conflicts",
+      "last_news_year": 1918
     },
     {
       "id": "zone-cabinda-war",
@@ -314,7 +329,7 @@
       "region": "Africa",
       "lat": -12.3,
       "lon": 17.54,
-      "radiusDeg": 3.0,
+      "radiusDeg": 2.5,
       "tier": "conflict",
       "countries": [
         "Angola"
@@ -323,7 +338,8 @@
       "start_date": "1975-01-01",
       "end_date": "",
       "source": "Wikipedia (List of ongoing armed conflicts)",
-      "url": "https://en.wikipedia.org/wiki/List_of_ongoing_armed_conflicts"
+      "url": "https://en.wikipedia.org/wiki/List_of_ongoing_armed_conflicts",
+      "last_news_year": 1975
     },
     {
       "id": "zone-civil-conflict-in-the-philippines",
@@ -331,7 +347,7 @@
       "region": "Asia",
       "lat": 12.88,
       "lon": 121.77,
-      "radiusDeg": 3.0,
+      "radiusDeg": 2.5,
       "tier": "conflict",
       "countries": [
         "Philippines"
@@ -340,7 +356,8 @@
       "start_date": "1969-01-01",
       "end_date": "",
       "source": "Wikipedia (List of ongoing armed conflicts)",
-      "url": "https://en.wikipedia.org/wiki/List_of_ongoing_armed_conflicts"
+      "url": "https://en.wikipedia.org/wiki/List_of_ongoing_armed_conflicts",
+      "last_news_year": 1969
     },
     {
       "id": "zone-ethnic-violence-in-papua-new-guinea",
@@ -348,7 +365,7 @@
       "region": "Oceania",
       "lat": -6.31,
       "lon": 143.96,
-      "radiusDeg": 3.0,
+      "radiusDeg": 2.5,
       "tier": "conflict",
       "countries": [
         "Papua New Guinea"
@@ -357,7 +374,8 @@
       "start_date": "1988-01-01",
       "end_date": "",
       "source": "Wikipedia (List of ongoing armed conflicts)",
-      "url": "https://en.wikipedia.org/wiki/List_of_ongoing_armed_conflicts"
+      "url": "https://en.wikipedia.org/wiki/List_of_ongoing_armed_conflicts",
+      "last_news_year": 1988
     },
     {
       "id": "zone-honduran-gang-crackdown",
@@ -365,7 +383,7 @@
       "region": "North America",
       "lat": 15.2,
       "lon": -86.24,
-      "radiusDeg": 3.0,
+      "radiusDeg": 2.5,
       "tier": "conflict",
       "countries": [
         "Honduras"
@@ -374,7 +392,8 @@
       "start_date": "2022-01-01",
       "end_date": "",
       "source": "Wikipedia (List of ongoing armed conflicts)",
-      "url": "https://en.wikipedia.org/wiki/List_of_ongoing_armed_conflicts"
+      "url": "https://en.wikipedia.org/wiki/List_of_ongoing_armed_conflicts",
+      "last_news_year": 2022
     },
     {
       "id": "zone-insurgencies-in-turkey",
@@ -382,7 +401,7 @@
       "region": "Asia",
       "lat": 38.96,
       "lon": 35.24,
-      "radiusDeg": 3.0,
+      "radiusDeg": 2.5,
       "tier": "conflict",
       "countries": [
         "Turkey",
@@ -393,7 +412,8 @@
       "start_date": "1921-01-01",
       "end_date": "2025-03-01",
       "source": "Wikipedia (List of ongoing armed conflicts)",
-      "url": "https://en.wikipedia.org/wiki/List_of_ongoing_armed_conflicts"
+      "url": "https://en.wikipedia.org/wiki/List_of_ongoing_armed_conflicts",
+      "last_news_year": 1921
     },
     {
       "id": "zone-insurgency-in-cabo-delgado",
@@ -401,7 +421,7 @@
       "region": "Africa",
       "lat": -18.67,
       "lon": 35.53,
-      "radiusDeg": 3.0,
+      "radiusDeg": 2.5,
       "tier": "conflict",
       "countries": [
         "Mozambique",
@@ -411,7 +431,8 @@
       "start_date": "2017-01-01",
       "end_date": "",
       "source": "Wikipedia (List of ongoing armed conflicts)",
-      "url": "https://en.wikipedia.org/wiki/List_of_ongoing_armed_conflicts"
+      "url": "https://en.wikipedia.org/wiki/List_of_ongoing_armed_conflicts",
+      "last_news_year": 2017
     },
     {
       "id": "zone-iraqi-conflict",
@@ -419,7 +440,7 @@
       "region": "Asia",
       "lat": 33.32,
       "lon": 43.68,
-      "radiusDeg": 3.0,
+      "radiusDeg": 2.5,
       "tier": "conflict",
       "countries": [
         "Iraq"
@@ -428,7 +449,8 @@
       "start_date": "2003-01-01",
       "end_date": "",
       "source": "Wikipedia (List of ongoing armed conflicts)",
-      "url": "https://en.wikipedia.org/wiki/List_of_ongoing_armed_conflicts"
+      "url": "https://en.wikipedia.org/wiki/List_of_ongoing_armed_conflicts",
+      "last_news_year": 2003
     },
     {
       "id": "zone-kashmir-conflict",
@@ -436,7 +458,7 @@
       "region": "Asia",
       "lat": 20.59,
       "lon": 78.96,
-      "radiusDeg": 3.0,
+      "radiusDeg": 2.5,
       "tier": "conflict",
       "countries": [
         "India",
@@ -447,7 +469,8 @@
       "start_date": "1947-01-01",
       "end_date": "",
       "source": "Wikipedia (List of ongoing armed conflicts)",
-      "url": "https://en.wikipedia.org/wiki/List_of_ongoing_armed_conflicts"
+      "url": "https://en.wikipedia.org/wiki/List_of_ongoing_armed_conflicts",
+      "last_news_year": 1947
     },
     {
       "id": "zone-libyan-crisis",
@@ -455,7 +478,7 @@
       "region": "Africa",
       "lat": 26.34,
       "lon": 17.23,
-      "radiusDeg": 3.0,
+      "radiusDeg": 2.5,
       "tier": "conflict",
       "countries": [
         "Libya"
@@ -464,7 +487,8 @@
       "start_date": "2011-01-01",
       "end_date": "",
       "source": "Wikipedia (List of ongoing armed conflicts)",
-      "url": "https://en.wikipedia.org/wiki/List_of_ongoing_armed_conflicts"
+      "url": "https://en.wikipedia.org/wiki/List_of_ongoing_armed_conflicts",
+      "last_news_year": 2011
     },
     {
       "id": "zone-papua-conflict",
@@ -472,7 +496,7 @@
       "region": "Oceania",
       "lat": -0.79,
       "lon": 113.92,
-      "radiusDeg": 3.0,
+      "radiusDeg": 2.5,
       "tier": "conflict",
       "countries": [
         "Indonesia"
@@ -481,7 +505,8 @@
       "start_date": "1962-01-01",
       "end_date": "",
       "source": "Wikipedia (List of ongoing armed conflicts)",
-      "url": "https://en.wikipedia.org/wiki/List_of_ongoing_armed_conflicts"
+      "url": "https://en.wikipedia.org/wiki/List_of_ongoing_armed_conflicts",
+      "last_news_year": 1962
     }
   ],
   "crisis_zones": [
