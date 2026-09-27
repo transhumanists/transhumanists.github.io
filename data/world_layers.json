@@ -1,6 +1,6 @@
 {
   "version": "1.1.0",
-  "last_update": "2026-09-27T20:22:19+00:00",
+  "last_update": "2026-09-27T20:25:18+00:00",
   "conflict_zones": [
     {
       "id": "zone-ukraine",
@@ -585,7 +585,7 @@
         "Sudan"
       ],
       "status": "active",
-      "start_date": "1961-01-01",
+      "start_date": "1978-01-01",
       "end_date": "",
       "source": "Wikipedia (List of ongoing armed conflicts)",
       "url": "https://en.wikipedia.org/wiki/List_of_ongoing_armed_conflicts",
