@@ -13,6 +13,7 @@ import sys
 import tempfile
 import unittest
 import urllib.error
+from datetime import datetime
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -171,6 +172,34 @@ class TestBuildCrisisZones(unittest.TestCase):
                 [self._item(title)], [], [], [], [], [], [])
             self.assertEqual(zones[0]["name"], expected, f"title {title!r}")
 
+    def test_curated_label_zone_carries_start_date(self):
+        # Red Sea's curated label has a coarse onset (Oct 2023); the built zone
+        # must carry it so the timeline slider hides the zone before 2023.
+        items = [self._item("Red Sea: Maritime passage disruption")]
+        zones = fz.build_crisis_zones_from_sources(items, [], [], [], [], [], [])
+        self.assertEqual(len(zones), 1)
+        self.assertEqual(zones[0]["start_date"], "2023-01-01")
+        self.assertEqual(zones[0]["status"], "active")
+
+    def test_curated_chad_label_start_date(self):
+        items = [self._item("Chad: Humanitarian Needs")]
+        zones = fz.build_crisis_zones_from_sources(items, [], [], [], [], [], [])
+        self.assertEqual(zones[0]["start_date"], "2021-01-01")
+
+    def test_fallback_zone_has_no_start_date(self):
+        # "suez" has no curated label, so its onset is unknown; the zone stays
+        # dateless and visible on every timeline year (backwards-compatible).
+        items = [self._item("Suez: Humanitarian Needs")]
+        zones = fz.build_crisis_zones_from_sources(items, [], [], [], [], [], [])
+        self.assertNotIn("start_date", zones[0])
+
+    def test_all_label_start_years_are_sane(self):
+        now_year = datetime.now().year
+        for name, _, _, year in fz.CRISIS_LABELS.values():
+            self.assertIsInstance(year, int, name)
+            self.assertGreaterEqual(year, 1990, name)
+            self.assertLessEqual(year, now_year, name)
+
     def test_specific_keyword_wins_over_short_prefix(self):
         # "South Sudan" must geolocate to South Sudan, not be swallowed by
         # the shorter "sudan" keyword.
@@ -212,6 +241,24 @@ class TestStaticFallback(unittest.TestCase):
     def test_static_caps_at_fifteen(self):
         out = fz._finalize_crisis_zones(fz.STATIC_CRISIS_ZONES)
         self.assertLessEqual(len(out), 15)
+
+    def test_static_zones_carry_start_dates(self):
+        for z in fz.STATIC_CRISIS_ZONES:
+            sd = z.get("start_date")
+            self.assertIsNotNone(sd, z["id"])
+            year, rest = sd.split("-", 1)
+            self.assertTrue(year.isdigit() and len(year) == 4, z["id"])
+            self.assertEqual(rest, "01-01", z["id"])
+            self.assertGreaterEqual(year, "1990")
+            self.assertLessEqual(year, str(datetime.now().year))
+
+    def test_static_start_dates_agree_with_label_year(self):
+        # Static fallback twins of curated labels must share the same coarse
+        # onset year, so the timeline behaves identically in both paths.
+        name_to_year = {label[0]: label[3] for label in fz.CRISIS_LABELS.values()}
+        for z in fz.STATIC_CRISIS_ZONES:
+            if z["name"] in name_to_year:
+                self.assertEqual(z["start_date"], f"{name_to_year[z['name']]}-01-01", z["id"])
 
 
 class TestParseOchaRss(unittest.TestCase):

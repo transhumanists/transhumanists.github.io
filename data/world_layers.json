@@ -493,6 +493,7 @@
       "lon": 65.5,
       "radiusDeg": 5.0,
       "status": "active",
+      "start_date": "2021-01-01",
       "note": "28M+ facing acute food insecurity",
       "source": "WFP",
       "url": "https://www.wfp.org"
@@ -505,6 +506,7 @@
       "lon": 25.0,
       "radiusDeg": 5.0,
       "status": "active",
+      "start_date": "2017-01-01",
       "note": "Conflict, Ebola, displacement",
       "source": "WHO",
       "url": "https://www.who.int"
@@ -517,6 +519,7 @@
       "lon": 38.5,
       "radiusDeg": 4.0,
       "status": "active",
+      "start_date": "2020-01-01",
       "note": "Millions displaced, famine risk",
       "source": "UN OCHA",
       "url": "https://www.unocha.org"
@@ -529,6 +532,7 @@
       "lon": -72.3,
       "radiusDeg": 3.5,
       "status": "active",
+      "start_date": "2021-01-01",
       "note": "5M+ in need, gang violence & cholera",
       "source": "UN OCHA",
       "url": "https://www.unocha.org"
@@ -541,6 +545,7 @@
       "lon": 92.5,
       "radiusDeg": 3.0,
       "status": "active",
+      "start_date": "2017-01-01",
       "note": "1M+ stateless refugees in camps",
       "source": "UNHCR",
       "url": "https://www.unhcr.org"
@@ -553,6 +558,7 @@
       "lon": 2.0,
       "radiusDeg": 6.0,
       "status": "active",
+      "start_date": "2012-01-01",
       "note": "10M+ displaced across Sahel",
       "source": "UN OCHA",
       "url": "https://www.unocha.org"
@@ -565,6 +571,7 @@
       "lon": 45.5,
       "radiusDeg": 4.0,
       "status": "active",
+      "start_date": "2021-01-01",
       "note": "5 consecutive failed rainy seasons",
       "source": "FAO",
       "url": "https://www.fao.org"
@@ -577,6 +584,7 @@
       "lon": 24.5,
       "radiusDeg": 4.5,
       "status": "active",
+      "start_date": "2003-01-01",
       "note": "Humanitarian catastrophe, 25M+ in need",
       "source": "UN OCHA",
       "url": "https://www.unocha.org"
@@ -589,6 +597,7 @@
       "lon": 38.9,
       "radiusDeg": 4.0,
       "status": "active",
+      "start_date": "2011-01-01",
       "note": "15M+ in need of humanitarian aid",
       "source": "UN OCHA",
       "url": "https://www.unocha.org"
@@ -601,6 +610,7 @@
       "lon": 44.2,
       "radiusDeg": 3.8,
       "status": "active",
+      "start_date": "2015-01-01",
       "note": "World's worst humanitarian crisis",
       "source": "WHO",
       "url": "https://www.who.int"

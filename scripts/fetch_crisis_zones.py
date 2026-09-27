@@ -81,6 +81,7 @@ STATIC_CRISIS_ZONES = [
         "lon": 24.5,
         "radiusDeg": 4.5,
         "status": "active",
+        "start_date": "2003-01-01",
         "note": "Humanitarian catastrophe, 25M+ in need",
         "source": "UN OCHA",
         "url": "https://www.unocha.org"
@@ -93,6 +94,7 @@ STATIC_CRISIS_ZONES = [
         "lon": 44.2,
         "radiusDeg": 3.8,
         "status": "active",
+        "start_date": "2015-01-01",
         "note": "World's worst humanitarian crisis",
         "source": "WHO",
         "url": "https://www.who.int"
@@ -105,6 +107,7 @@ STATIC_CRISIS_ZONES = [
         "lon": 92.5,
         "radiusDeg": 3.0,
         "status": "active",
+        "start_date": "2017-01-01",
         "note": "1M+ stateless refugees in camps",
         "source": "UNHCR",
         "url": "https://www.unhcr.org"
@@ -117,6 +120,7 @@ STATIC_CRISIS_ZONES = [
         "lon": 65.5,
         "radiusDeg": 5.0,
         "status": "active",
+        "start_date": "2021-01-01",
         "note": "28M+ facing acute food insecurity",
         "source": "WFP",
         "url": "https://www.wfp.org"
@@ -129,6 +133,7 @@ STATIC_CRISIS_ZONES = [
         "lon": 45.5,
         "radiusDeg": 4.0,
         "status": "active",
+        "start_date": "2021-01-01",
         "note": "5 consecutive failed rainy seasons",
         "source": "FAO",
         "url": "https://www.fao.org"
@@ -141,6 +146,7 @@ STATIC_CRISIS_ZONES = [
         "lon": 38.9,
         "radiusDeg": 4.0,
         "status": "active",
+        "start_date": "2011-01-01",
         "note": "15M+ in need of humanitarian aid",
         "source": "UN OCHA",
         "url": "https://www.unocha.org"
@@ -153,6 +159,7 @@ STATIC_CRISIS_ZONES = [
         "lon": -72.3,
         "radiusDeg": 3.5,
         "status": "active",
+        "start_date": "2021-01-01",
         "note": "5M+ in need, gang violence & cholera",
         "source": "UN OCHA",
         "url": "https://www.unocha.org"
@@ -165,6 +172,7 @@ STATIC_CRISIS_ZONES = [
         "lon": 38.5,
         "radiusDeg": 4.0,
         "status": "active",
+        "start_date": "2020-01-01",
         "note": "Millions displaced, famine risk",
         "source": "UN OCHA",
         "url": "https://www.unocha.org"
@@ -177,6 +185,7 @@ STATIC_CRISIS_ZONES = [
         "lon": 2.0,
         "radiusDeg": 6.0,
         "status": "active",
+        "start_date": "2012-01-01",
         "note": "10M+ displaced across Sahel",
         "source": "UN OCHA",
         "url": "https://www.unocha.org"
@@ -189,6 +198,7 @@ STATIC_CRISIS_ZONES = [
         "lon": 25.0,
         "radiusDeg": 5.0,
         "status": "active",
+        "start_date": "2017-01-01",
         "note": "Conflict, Ebola, displacement",
         "source": "WHO",
         "url": "https://www.who.int"
@@ -410,11 +420,13 @@ def build_crisis_zones_from_sources(ocha_data: list, who_data: list, reliefweb_d
             # Prefer the curated specific label; fall back to a cleaned title
             # for places that exist in the location table but have no label.
             label = CRISIS_LABELS.get(keyword) if keyword else None
+            start_year: int | None
             if label:
-                zone_name, zone_note, zone_source = label
+                zone_name, zone_note, zone_source, start_year = label
             else:
                 zone_name, zone_note = _crisis_title_fallback(title)
                 zone_source = "ReliefWeb / OCHA / WHO / UNHCR / WFP / FAO / HDX"
+                start_year = None
 
             crisis_id = "crisis-" + re.sub(r"[^a-z0-9]+", "-", zone_name.lower()).strip("-")[:50]
             # Two source titles can slug to the same id (e.g. different word
@@ -422,7 +434,7 @@ def build_crisis_zones_from_sources(ocha_data: list, who_data: list, reliefweb_d
             if crisis_id in seen_ids:
                 continue
             seen_ids.add(crisis_id)
-            zones.append({
+            zone = {
                 "id": crisis_id,
                 "name": zone_name,
                 "region": region,
@@ -433,7 +445,13 @@ def build_crisis_zones_from_sources(ocha_data: list, who_data: list, reliefweb_d
                 "note": zone_note[:200],
                 "source": zone_source,
                 "url": item.get("link", "https://www.unocha.org"),
-            })
+            }
+            # Coarse onset so the timeline slider hides the zone before its
+            # start year (same gating conflict zones get from Wikipedia dates);
+            # unlabelled fallback zones stay dateless and always visible.
+            if start_year:
+                zone["start_date"] = f"{start_year}-01-01"
+            zones.append(zone)
             if len(zones) >= 15:  # Limit to 15 crisis zones
                 break
         if len(zones) >= 15:
@@ -515,35 +533,38 @@ _LOCATION_KEYS = tuple(sorted(_LOCATIONS, key=len, reverse=True))
 # They replace raw feed titles (e.g. "Chad: Humanitarian Needs" -> a specific,
 # human-summarised crisis) so the map never shows un-parseable dataset text.
 # Keyed by the _LOCATIONS keyword the item resolved to; value is
-# (display name, note, source attribution).
-CRISIS_LABELS: dict[str, tuple[str, str, str]] = {
-    "sudan": ("Sudan · Darfur famine", "Humanitarian catastrophe, 25M+ in need", "UN OCHA"),
-    "darfur": ("Sudan · Darfur famine", "Humanitarian catastrophe, 25M+ in need", "UN OCHA"),
-    "south sudan": ("South Sudan · Conflict & flooding", "Civil conflict, displacement and food insecurity", "UN OCHA"),
-    "yemen": ("Yemen · Cholera & famine", "World's worst humanitarian crisis", "WHO"),
-    "myanmar": ("Myanmar · Rohingya displacement", "1M+ stateless refugees in camps", "UNHCR"),
-    "rohingya": ("Myanmar · Rohingya displacement", "1M+ stateless refugees in camps", "UNHCR"),
-    "afghanistan": ("Afghanistan · Winter hunger crisis", "28M+ facing acute food insecurity", "WFP"),
-    "somalia": ("Somalia · Drought & famine", "5 consecutive failed rainy seasons", "FAO"),
-    "syria": ("Syria · Humanitarian crisis", "15M+ in need of humanitarian aid", "UN OCHA"),
-    "haiti": ("Haiti · Gang violence & hunger", "5M+ in need, gang violence & cholera", "UN OCHA"),
-    "ethiopia": ("Ethiopia · Tigray conflict", "Millions displaced, famine risk", "UN OCHA"),
-    "tigray": ("Ethiopia · Tigray conflict", "Millions displaced, famine risk", "UN OCHA"),
-    "sahel": ("Sahel · Conflict & hunger", "10M+ displaced across the Sahel", "UN OCHA"),
-    "drc": ("DRC · Conflict & displacement", "Armed conflict, Ebola and displacement", "UN OCHA"),
-    "congo": ("DRC · Conflict & displacement", "Armed conflict, Ebola and displacement", "UN OCHA"),
-    "ukraine": ("Ukraine · War & civilian needs", "Full-scale invasion, millions displaced", "UN OCHA"),
-    "gaza": ("Gaza · Humanitarian emergency", "Mass displacement and famine risk", "UN OCHA"),
-    "palestine": ("Gaza · Humanitarian emergency", "Mass displacement and famine risk", "UN OCHA"),
-    "chad": ("Chad · Displacement crisis", "Hundreds of thousands displaced from Darfur", "UNHCR"),
-    "nigeria": ("Nigeria · Insurgency & hunger", "Armed conflict, displacement and food insecurity", "UN OCHA"),
-    "niger": ("Niger · Conflict & hunger", "Armed conflict, displacement and food insecurity", "UN OCHA"),
-    "mali": ("Mali · Displacement crisis", "Armed conflict, displacement and food insecurity", "UN OCHA"),
-    "mozambique": ("Mozambique · Cabo Delgado insurgency", "Insurgent attacks and internal displacement", "UN OCHA"),
-    "cabo delgado": ("Mozambique · Cabo Delgado insurgency", "Insurgent attacks and internal displacement", "UN OCHA"),
-    "kenya": ("Kenya · Floods & displacement", "Flooding, displacement and mudslides", "UN OCHA"),
-    "bangladesh": ("Bangladesh · Floods & displacement", "Flooding, displacement and health needs", "UN OCHA"),
-    "red sea": ("Red Sea · Shipping disruption", "Attacks disrupting commercial shipping routes", "UN OCHA"),
+# (display name, note, source attribution, start year). The year is the coarse
+# onset of the crisis as it appears on the map; it drives the timeline slider
+# (an active zone is hidden for years before its start), mirroring how
+# conflict zones are gated by their Wikipedia start_date.
+CRISIS_LABELS: dict[str, tuple[str, str, str, int]] = {
+    "sudan": ("Sudan · Darfur famine", "Humanitarian catastrophe, 25M+ in need", "UN OCHA", 2003),
+    "darfur": ("Sudan · Darfur famine", "Humanitarian catastrophe, 25M+ in need", "UN OCHA", 2003),
+    "south sudan": ("South Sudan · Conflict & flooding", "Civil conflict, displacement and food insecurity", "UN OCHA", 2013),
+    "yemen": ("Yemen · Cholera & famine", "World's worst humanitarian crisis", "WHO", 2015),
+    "myanmar": ("Myanmar · Rohingya displacement", "1M+ stateless refugees in camps", "UNHCR", 2017),
+    "rohingya": ("Myanmar · Rohingya displacement", "1M+ stateless refugees in camps", "UNHCR", 2017),
+    "afghanistan": ("Afghanistan · Winter hunger crisis", "28M+ facing acute food insecurity", "WFP", 2021),
+    "somalia": ("Somalia · Drought & famine", "5 consecutive failed rainy seasons", "FAO", 2021),
+    "syria": ("Syria · Humanitarian crisis", "15M+ in need of humanitarian aid", "UN OCHA", 2011),
+    "haiti": ("Haiti · Gang violence & hunger", "5M+ in need, gang violence & cholera", "UN OCHA", 2021),
+    "ethiopia": ("Ethiopia · Tigray conflict", "Millions displaced, famine risk", "UN OCHA", 2020),
+    "tigray": ("Ethiopia · Tigray conflict", "Millions displaced, famine risk", "UN OCHA", 2020),
+    "sahel": ("Sahel · Conflict & hunger", "10M+ displaced across the Sahel", "UN OCHA", 2012),
+    "drc": ("DRC · Conflict & displacement", "Armed conflict, Ebola and displacement", "UN OCHA", 2017),
+    "congo": ("DRC · Conflict & displacement", "Armed conflict, Ebola and displacement", "UN OCHA", 2017),
+    "ukraine": ("Ukraine · War & civilian needs", "Full-scale invasion, millions displaced", "UN OCHA", 2022),
+    "gaza": ("Gaza · Humanitarian emergency", "Mass displacement and famine risk", "UN OCHA", 2023),
+    "palestine": ("Gaza · Humanitarian emergency", "Mass displacement and famine risk", "UN OCHA", 2023),
+    "chad": ("Chad · Displacement crisis", "Hundreds of thousands displaced from Darfur", "UNHCR", 2021),
+    "nigeria": ("Nigeria · Insurgency & hunger", "Armed conflict, displacement and food insecurity", "UN OCHA", 2009),
+    "niger": ("Niger · Conflict & hunger", "Armed conflict, displacement and food insecurity", "UN OCHA", 2015),
+    "mali": ("Mali · Displacement crisis", "Armed conflict, displacement and food insecurity", "UN OCHA", 2012),
+    "mozambique": ("Mozambique · Cabo Delgado insurgency", "Insurgent attacks and internal displacement", "UN OCHA", 2017),
+    "cabo delgado": ("Mozambique · Cabo Delgado insurgency", "Insurgent attacks and internal displacement", "UN OCHA", 2017),
+    "kenya": ("Kenya · Floods & displacement", "Flooding, displacement and mudslides", "UN OCHA", 2022),
+    "bangladesh": ("Bangladesh · Floods & displacement", "Flooding, displacement and health needs", "UN OCHA", 2022),
+    "red sea": ("Red Sea · Shipping disruption", "Attacks disrupting commercial shipping routes", "UN OCHA", 2023),
 }
 
 
