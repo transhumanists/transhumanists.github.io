@@ -827,6 +827,9 @@
     const grid = document.getElementById('catalog-grid');
     const filter = document.getElementById('catalog-category-filter');
     const countEl = document.getElementById('catalog-count');
+    const yearFilter = document.getElementById('catalog-year-filter');
+    const yearPrevBtn = document.getElementById('catalog-year-prev');
+    const yearNextBtn = document.getElementById('catalog-year-next');
     if (!grid) return;
 
     // Show skeleton cards while loading
@@ -863,15 +866,60 @@
     // Sort by date descending (newest first)
     allMilestones.sort((a, b) => new Date(b.date) - new Date(a.date));
 
-    function render(filterKey) {
-      const filtered = filterKey === 'all'
+    // Determine available years from milestone data
+    const yearsSet = new Set();
+    allMilestones.forEach(m => {
+      const d = m.date && m.date.slice(0, 4);
+      if (d && /^\d{4}$/.test(d)) yearsSet.add(parseInt(d, 10));
+    });
+    const availableYears = Array.from(yearsSet).sort((a, b) => b - a);
+    const currentYear = new Date().getFullYear();
+
+    // Find the best year to display: current year if it has milestones,
+    // otherwise fall back to the most recent past year that has milestones.
+    let displayYear = currentYear;
+    if (!availableYears.includes(currentYear)) {
+      const pastYears = availableYears.filter(y => y < currentYear);
+      if (pastYears.length > 0) {
+        displayYear = pastYears[0]; // most recent past year with milestones
+      } else if (availableYears.length > 0) {
+        displayYear = availableYears[0];
+      }
+    }
+
+    // Build year filter options
+    if (yearFilter) {
+      yearFilter.innerHTML = '';
+      availableYears.forEach(y => {
+        const opt = document.createElement('option');
+        opt.value = y;
+        opt.textContent = y;
+        if (y === displayYear) opt.selected = true;
+        yearFilter.appendChild(opt);
+      });
+      // Add "All years" option at the end
+      const allOpt = document.createElement('option');
+      allOpt.value = 'all';
+      allOpt.textContent = 'All years';
+      yearFilter.appendChild(allOpt);
+    }
+
+    function render(filterKey, year) {
+      const targetYear = year !== undefined ? year : displayYear;
+      let filtered = filterKey === 'all'
         ? allMilestones
         : allMilestones.filter(m => m.category_key === filterKey);
+
+      // Filter by year if not 'all'
+      if (year !== 'all') {
+        const y = String(year);
+        filtered = filtered.filter(m => m.date && m.date.startsWith(y));
+      }
 
       if (countEl) countEl.textContent = `${filtered.length} milestone${filtered.length !== 1 ? 's' : ''}`;
 
       if (filtered.length === 0) {
-        grid.replaceChildren(createEl('p', '', 'No milestones in this category'));
+        grid.replaceChildren(createEl('p', '', 'No milestones in this category/year'));
         grid.firstElementChild.style.cssText = 'color: var(--fg-muted); text-align: center; padding: 40px; width: 100%;';
         return;
       }
@@ -978,17 +1026,63 @@
       });
 
       grid.replaceChildren(frag);
+
+      // Update year navigation button states
+      if (yearPrevBtn) {
+        const hasPrev = availableYears.some(y => y > targetYear);
+        yearPrevBtn.disabled = !hasPrev;
+        yearPrevBtn.style.opacity = hasPrev ? '1' : '0.4';
+      }
+      if (yearNextBtn) {
+        const hasNext = availableYears.some(y => y < targetYear && y >= Math.min(...availableYears));
+        yearNextBtn.disabled = !hasNext;
+        yearNextBtn.style.opacity = hasNext ? '1' : '0.4';
+      }
     }
 
     // Initial render
-    render('all');
+    render('all', displayYear);
 
-    // Filter handler (debounced)
+    // Category filter handler (debounced)
     if (filter) {
       let filterTimeout = null;
       filter.addEventListener('change', e => {
         if (filterTimeout) clearTimeout(filterTimeout);
-        filterTimeout = setTimeout(() => render(e.target.value), 100);
+        filterTimeout = setTimeout(() => render(e.target.value, displayYear), 100);
+      });
+    }
+
+    // Year filter handler
+    if (yearFilter) {
+      yearFilter.addEventListener('change', e => {
+        const year = e.target.value;
+        if (year === 'all') {
+          render(filter?.value || 'all', 'all');
+        } else {
+          render(filter?.value || 'all', parseInt(year, 10));
+        }
+      });
+    }
+
+    // Year navigation buttons
+    if (yearPrevBtn) {
+      yearPrevBtn.addEventListener('click', () => {
+        const idx = availableYears.indexOf(displayYear);
+        if (idx > 0) {
+          displayYear = availableYears[idx - 1];
+          if (yearFilter) yearFilter.value = displayYear;
+          render(filter?.value || 'all', displayYear);
+        }
+      });
+    }
+    if (yearNextBtn) {
+      yearNextBtn.addEventListener('click', () => {
+        const idx = availableYears.indexOf(displayYear);
+        if (idx < availableYears.length - 1) {
+          displayYear = availableYears[idx + 1];
+          if (yearFilter) yearFilter.value = displayYear;
+          render(filter?.value || 'all', displayYear);
+        }
       });
     }
   }

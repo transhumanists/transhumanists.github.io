@@ -34,7 +34,7 @@ import hashlib
 import json
 import re
 import sys
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from pathlib import Path
 
 from fetch_crisis_zones import SCHEMA_VERSION as LIFECYCLE_VERSION, fetch_url
@@ -50,7 +50,7 @@ WORLD_LAYERS_FILE = Path("data/world_layers.json")
 
 # Wikipedia tier -> collision radius (degrees) for the map. Skirmishes are
 # parsed but never promoted to map zones (too noisy for a planet-wide view).
-TIER_RADIUS = {"major": 5.0, "minor": 4.0, "conflict": 3.0}
+TIER_RADIUS = {"major": 4.0, "minor": 3.0, "conflict": 2.5}
 TIER_ORDER = {"major": 0, "minor": 1, "conflict": 2}
 
 MAX_TOTAL_ZONES = 30
@@ -350,22 +350,39 @@ def merge_conflict_zones(
 
     matched: set[int] = set()
     for ci, czone in enumerate(curated):
-        if not czone.get("start_date"):
-            for wi, wzone in enumerate(wiki):
-                if wi not in matched and _zone_matches(czone, wzone):
-                    czone["start_date"] = wzone["start_date"]
+        # Keep track of the curated zone's start_date (the most recent one)
+        curated_start_year = _cell_year(czone.get("start_date", ""))
+        for wi, wzone in enumerate(wiki):
+            if wi not in matched and _zone_matches(czone, wzone):
+                w_start_year = _cell_year(wzone.get("start_date", ""))
+                # Only enrich if Wikipedia info is newer than curated
+                if w_start_year is not None and curated_start_year is not None:
+                    if w_start_year > curated_start_year:
+                        czone["start_date"] = f"{w_start_year:04d}-01-01"
+                        czone.setdefault("source", wzone["source"])
+                        czone.setdefault("url", wzone["url"])
+                        changes.append(f"enriched {czone.get('id')} start_date={czone['start_date']} (Wikipedia newer)")
+                    else:
+                        changes.append(f"skipped older Wikipedia data for {czone.get('id')} (curated newer)")
+                else:
+                    czone["start_date"] = f"{w_start_year:04d}-01-01" if w_start_year else czone.get("start_date", "")
                     czone.setdefault("source", wzone["source"])
                     czone.setdefault("url", wzone["url"])
-                    changes.append(f"enriched {czone.get('id')} start_date={wzone['start_date']}")
-                    matched.add(wi)
-                    break
+                    changes.append(f"enriched {czone.get('id')} start_date={czone.get('start_date')}")
+                matched.add(wi)
+                break
 
     added = 0
     for wzone in wiki:
-        if wzone.get("id") in {z.get("id") for z in curated} or any(
-            _zone_matches(z, wzone) for z in curated
-        ):
+        if wzone.get("id") in {z.get("id") for z in curated}:
             continue
+        if any(_zone_matches(z, wzone) for z in curated):
+            w_start_year = _cell_year(wzone.get("start_date", ""))
+            curated_start_year = _cell_year(next((z.get("start_date") for z in curated if _zone_matches(z, wzone)), ""))
+            # Skip older Wikipedia zones when a curated zone exists
+            if w_start_year is not None and curated_start_year is not None and w_start_year < curated_start_year:
+                changes.append(f"suppressed older Wikipedia zone {wzone['id']} ({wzone['name']}) for curated zone")
+                continue
         if len(curated) >= MAX_TOTAL_ZONES or added >= max_new_zones:
             break
         curated.append(wzone)
@@ -391,6 +408,12 @@ def normalize_lifecycle_zone(zone: dict) -> dict:
     zone.setdefault("status", "active")
     zone["start_date"] = _clean_date(zone.get("start_date"))
     zone["end_date"] = _clean_date(zone.get("end_date"))
+    # Track last news year for stale-zone detection: Wikipedia-derived zones
+    # carry the year parsed from Wikipedia's start column; curated zones
+    # (news-derived) default to current year so they stay bright.
+    if not zone.get("last_news_year"):
+        start_year = _cell_year(zone.get("start_date") or "")
+        zone["last_news_year"] = start_year if start_year else date.today().year
     return zone
 
 

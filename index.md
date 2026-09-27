@@ -122,6 +122,12 @@ description: "Tracking milestones across biotech, AGI, quantum, energy, cyber, s
         <option value="spaceflight">Spaceflight & Aeronautics</option>
         <option value="defense">Military & Defense</option>
       </select>
+      <label for="catalog-year-filter" style="font-size: 0.85rem; color: var(--fg-muted); margin-left: 16px;">Year:</label>
+      <div style="display: inline-flex; align-items: center; gap: 6px; margin-left: 8px;">
+        <button id="catalog-year-prev" aria-label="Previous year" style="padding: 6px 10px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--bg-card); color: var(--fg); font-family: var(--font-ui); font-size: 0.85rem; cursor: pointer;">‹</button>
+        <select id="catalog-year-filter" style="padding: 6px 12px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--bg-card); color: var(--fg); font-family: var(--font-ui); font-size: 0.85rem; min-width: 80px;"></select>
+        <button id="catalog-year-next" aria-label="Next year" style="padding: 6px 10px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--bg-card); color: var(--fg); font-family: var(--font-ui); font-size: 0.85rem; cursor: pointer;">›</button>
+      </div>
       <span id="catalog-count" style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--fg-subtle); margin-left: 16px;"></span>
     </div>
 

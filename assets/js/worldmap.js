@@ -68,7 +68,12 @@
   const FLUO_LINE_GLOW_BLUR = 9;    // halo radius for vector tails + arrowheads
   const FLUO_PULSE_RADIUS = 10;     // how much the halo breathes (px)
   const CONCLUDED_OPACITY = 0.45;   // dimming applied to concluded vector tails
-  const CONCLUDED_ZONE_OPACITY = 0.12; // dimming applied to concluded area rings
+  const CONCLUDED_ZONE_OPACITY = 0.08; // dimming applied to concluded area rings (darker)
+  // Stale active conflicts (no news in 5+ years) get an intermediate dimming
+  const STALE_ZONE_OPACITY = 0.22;
+  // Bright active zones get a neon glow boost
+  const BRIGHT_ZONE_FILL_OPACITY = 0.22;  // was 0.14
+  const BRIGHT_ZONE_STROKE_OPACITY = 1.0; // full opacity stroke
 
   // Normalize a layer entry's lifecycle status. Missing/`active`/`ongoing`
   // mean the marker is still live (fluo glow); anything explicitly ended
@@ -810,26 +815,34 @@ function drawEvent(ev) {
     if (zone._hiddenByTimeline) return;
     const p = project(zone.lon, zone.lat);
     const degToPx = state.height / 180;
-    const r = Math.max(4, (zone.radiusDeg || 3) * degToPx * state.transform.scale);
-    const active = isLayerActive(zone);
 
-    if (active) {
-      // Fluo halo: soft breathing glow emitted outward from the ring, plus a
-      // stronger luminous shadow on the ring itself.
+    // Auto-scale zone radii when many zones are visible (>20)
+    const visibleZones = state.zones.filter(z => !z._hiddenByTimeline);
+    const autoScale = visibleZones.length > 20 ? Math.min(1, 20 / visibleZones.length) : 1;
+    const baseRadius = Math.max(4, (zone.radiusDeg || 3) * degToPx * state.transform.scale * autoScale);
+
+    const active = isLayerActive(zone);
+    const now = new Date();
+    const currentYear = state.timelineYear !== undefined ? state.timelineYear : now.getFullYear();
+    const lastNewsYear = zone.last_news_year;
+    const isStale = active && typeof lastNewsYear === 'number' && (currentYear - lastNewsYear) > 5;
+
+    if (active && !isStale) {
+      // Bright active: neon glow, brighter fill, full opacity stroke
       const pulse = 0.5 + 0.5 * Math.sin(Date.now() / 900 + zone.lon);
       ctx.save();
       ctx.globalCompositeOperation = 'lighter';
       ctx.shadowColor = ZONE_COLOR;
       ctx.shadowBlur = FLUO_GLOW_BLUR + FLUO_PULSE_RADIUS * pulse;
       ctx.beginPath();
-      ctx.arc(p.x, p.y, r * 1.14, 0, Math.PI * 2);
-      ctx.fillStyle = withOpacity(ZONE_COLOR, 0.09);
+      ctx.arc(p.x, p.y, baseRadius * 1.14, 0, Math.PI * 2);
+      ctx.fillStyle = withOpacity(ZONE_COLOR, 0.12); // brighter halo
       ctx.fill();
       ctx.restore();
 
       ctx.beginPath();
-      ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
-      ctx.fillStyle = ZONE_FILL;
+      ctx.arc(p.x, p.y, baseRadius, 0, Math.PI * 2);
+      ctx.fillStyle = withOpacity(ZONE_COLOR, BRIGHT_ZONE_FILL_OPACITY);
       ctx.fill();
 
       ctx.save();
@@ -837,36 +850,61 @@ function drawEvent(ev) {
       ctx.shadowBlur = FLUO_LINE_GLOW_BLUR;
       ctx.setLineDash([4, 3]);
       ctx.lineDashOffset = -Date.now() / 40; // marching dash = "live" cue
-      ctx.lineWidth = 2;
-      ctx.strokeStyle = ZONE_STROKE;
+      ctx.lineWidth = 2.5;
+      ctx.strokeStyle = withOpacity(ZONE_COLOR, BRIGHT_ZONE_STROKE_OPACITY);
       ctx.beginPath();
-      ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+      ctx.arc(p.x, p.y, baseRadius, 0, Math.PI * 2);
       ctx.stroke();
       ctx.restore();
+
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
+      ctx.fillStyle = ZONE_COLOR;
+      ctx.fill();
+    } else if (active && isStale) {
+      // Stale active (ongoing but no recent news): dimmed, no pulse, thinner ring
+      ctx.save();
+      ctx.globalAlpha = STALE_ZONE_OPACITY;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, baseRadius, 0, Math.PI * 2);
+      ctx.fillStyle = ZONE_FILL;
+      ctx.fill();
+      ctx.setLineDash([4, 3]);
+      ctx.lineWidth = 1.5;
+      ctx.strokeStyle = withOpacity(ZONE_COLOR, 0.3);
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, baseRadius, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, 2.5, 0, Math.PI * 2);
+      ctx.fillStyle = withOpacity(ZONE_COLOR, 0.25);
+      ctx.fill();
     } else {
-      // Concluded: a frozen, deeply dim footprint — no glow, thinner dashed ring.
+      // Concluded: deeply dim, no glow, thinnest ring
       ctx.save();
       ctx.globalAlpha = CONCLUDED_ZONE_OPACITY;
       ctx.beginPath();
-      ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+      ctx.arc(p.x, p.y, baseRadius, 0, Math.PI * 2);
       ctx.fillStyle = ZONE_FILL;
       ctx.fill();
       ctx.setLineDash([4, 3]);
       ctx.lineWidth = 1;
-      ctx.strokeStyle = withOpacity(ZONE_COLOR, 0.14);
+      ctx.strokeStyle = withOpacity(ZONE_COLOR, 0.1);
       ctx.beginPath();
-      ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+      ctx.arc(p.x, p.y, baseRadius, 0, Math.PI * 2);
       ctx.stroke();
       ctx.restore();
-    }
 
-    ctx.beginPath();
-    ctx.arc(p.x, p.y, 2.5, 0, Math.PI * 2);
-    ctx.fillStyle = active ? ZONE_COLOR : withOpacity(ZONE_COLOR, 0.18);
-    ctx.fill();
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, 2, 0, Math.PI * 2);
+      ctx.fillStyle = withOpacity(ZONE_COLOR, 0.1);
+      ctx.fill();
+    }
   }
 
-  // Crisis zone (humanitarian): translucent area ring + dashed outline + center marker.
+// Crisis zone (humanitarian): translucent area ring + dashed outline + center marker.
   // Distinct purple color to differentiate from conflict zones (red) and deployments.
   // Same fluo/dim lifecycle split as conflict zones.
   function drawCrisis(crisis) {
@@ -874,7 +912,12 @@ function drawEvent(ev) {
     if (crisis._hiddenByTimeline) return;
     const p = project(crisis.lon, crisis.lat);
     const degToPx = state.height / 180;
-    const r = Math.max(4, (crisis.radiusDeg || 3) * degToPx * state.transform.scale);
+
+    // Auto-scale for crisis zones too
+    const visibleCrises = state.crises.filter(c => !c._hiddenByTimeline);
+    const autoScale = visibleCrises.length > 20 ? Math.min(1, 20 / visibleCrises.length) : 1;
+    const baseRadius = Math.max(4, (crisis.radiusDeg || 3) * degToPx * state.transform.scale * autoScale);
+
     const active = isLayerActive(crisis);
 
     if (active) {
@@ -884,41 +927,51 @@ function drawEvent(ev) {
       ctx.shadowColor = CRISIS_COLOR;
       ctx.shadowBlur = FLUO_GLOW_BLUR + FLUO_PULSE_RADIUS * pulse;
       ctx.beginPath();
-      ctx.arc(p.x, p.y, r * 1.14, 0, Math.PI * 2);
-      ctx.fillStyle = withOpacity(CRISIS_COLOR, 0.09);
+      ctx.arc(p.x, p.y, baseRadius * 1.14, 0, Math.PI * 2);
+      ctx.fillStyle = withOpacity(CRISIS_COLOR, 0.12);
       ctx.fill();
       ctx.restore();
 
       ctx.beginPath();
-      ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
-      ctx.fillStyle = CRISIS_FILL;
+      ctx.arc(p.x, p.y, baseRadius, 0, Math.PI * 2);
+      ctx.fillStyle = withOpacity(CRISIS_COLOR, BRIGHT_ZONE_FILL_OPACITY);
       ctx.fill();
 
       ctx.save();
       ctx.shadowColor = CRISIS_COLOR;
       ctx.shadowBlur = FLUO_LINE_GLOW_BLUR;
       ctx.setLineDash([4, 3]);
-      ctx.lineDashOffset = -Date.now() / 40; // marching dash = "live" cue
-      ctx.lineWidth = 2;
-      ctx.strokeStyle = CRISIS_STROKE;
+      ctx.lineDashOffset = -Date.now() / 40;
+      ctx.lineWidth = 2.5;
+      ctx.strokeStyle = withOpacity(CRISIS_COLOR, BRIGHT_ZONE_STROKE_OPACITY);
       ctx.beginPath();
-      ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+      ctx.arc(p.x, p.y, baseRadius, 0, Math.PI * 2);
       ctx.stroke();
       ctx.restore();
+
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
+      ctx.fillStyle = CRISIS_COLOR;
+      ctx.fill();
     } else {
       ctx.save();
       ctx.globalAlpha = CONCLUDED_ZONE_OPACITY;
       ctx.beginPath();
-      ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+      ctx.arc(p.x, p.y, baseRadius, 0, Math.PI * 2);
       ctx.fillStyle = CRISIS_FILL;
       ctx.fill();
       ctx.setLineDash([4, 3]);
       ctx.lineWidth = 1;
-      ctx.strokeStyle = withOpacity(CRISIS_COLOR, 0.14);
+      ctx.strokeStyle = withOpacity(CRISIS_COLOR, 0.1);
       ctx.beginPath();
-      ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+      ctx.arc(p.x, p.y, baseRadius, 0, Math.PI * 2);
       ctx.stroke();
       ctx.restore();
+
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, 2, 0, Math.PI * 2);
+      ctx.fillStyle = withOpacity(CRISIS_COLOR, 0.1);
+      ctx.fill();
     }
 
     ctx.beginPath();
@@ -945,21 +998,35 @@ function drawEvent(ev) {
     const headLen = 8;
     const color = fleet.kind === 'ground' ? GROUND_COLOR : FLEET_COLOR;
     const active = isLayerActive(fleet);
+    const now = new Date();
+    const currentYear = state.timelineYear !== undefined ? state.timelineYear : now.getFullYear();
+    const lastNewsYear = fleet.last_news_year;
+    const isStale = active && typeof lastNewsYear === 'number' && (currentYear - lastNewsYear) > 5;
 
     // Very transparent arrow tail line (barely visible); very active movements
     // get a luminous second pass over the tail so the whole vector reads live.
     ctx.save();
-    ctx.strokeStyle = withOpacity(color, ARROW_TAIL_OPACITY * (active ? 1 : 0.35));
+    const tailOpacity = active ? (isStale ? ARROW_TAIL_OPACITY * 0.4 : ARROW_TAIL_OPACITY) : ARROW_TAIL_OPACITY * 0.25;
+    ctx.strokeStyle = withOpacity(color, tailOpacity);
     ctx.lineWidth = 1.2;
     ctx.beginPath();
     ctx.moveTo(a.x, a.y);
     ctx.lineTo(b.x, b.y);
     ctx.stroke();
-    if (active) {
+    if (active && !isStale) {
       ctx.shadowColor = color;
       ctx.shadowBlur = FLUO_LINE_GLOW_BLUR;
       ctx.strokeStyle = withOpacity(color, 0.3);
       ctx.lineWidth = 2.2;
+      ctx.beginPath();
+      ctx.moveTo(a.x, a.y);
+      ctx.lineTo(b.x, b.y);
+      ctx.stroke();
+    } else if (active && isStale) {
+      ctx.shadowColor = color;
+      ctx.shadowBlur = FLUO_LINE_GLOW_BLUR / 2;
+      ctx.strokeStyle = withOpacity(color, 0.15);
+      ctx.lineWidth = 1.5;
       ctx.beginPath();
       ctx.moveTo(a.x, a.y);
       ctx.lineTo(b.x, b.y);
@@ -969,9 +1036,12 @@ function drawEvent(ev) {
 
     // Solid arrowhead; the halo makes active heads breathe slightly.
     ctx.save();
-    if (active) {
+    if (active && !isStale) {
       ctx.shadowColor = color;
       ctx.shadowBlur = FLUO_LINE_GLOW_BLUR + 5 * (0.5 + 0.5 * Math.sin(Date.now() / 650 + a.x));
+    } else if (active && isStale) {
+      ctx.shadowColor = color;
+      ctx.shadowBlur = FLUO_LINE_GLOW_BLUR / 2;
     } else {
       ctx.globalAlpha = CONCLUDED_OPACITY;
     }
@@ -1664,12 +1734,17 @@ function drawEvent(ev) {
     if (name === 'zones') {
       state.showZones = !state.showZones;
       try { localStorage.setItem(STORAGE_KEY_SHOW_ZONES, String(state.showZones)); } catch (_) {}
+      // Also update filter-military button opacity based on whether any military layer is visible
+      updateFilterButton('filter-military', state.filterMilitary && (state.showZones || state.showFleets));
     } else if (name === 'fleets' || name === 'deployments') {
       state.showFleets = !state.showFleets;
       try { localStorage.setItem(STORAGE_KEY_SHOW_FLEETS, String(state.showFleets)); } catch (_) {}
+      updateFilterButton('filter-military', state.filterMilitary && (state.showZones || state.showFleets));
     } else if (name === 'crises') {
       state.showCrises = !state.showCrises;
       try { localStorage.setItem(STORAGE_KEY_SHOW_CRISES, String(state.showCrises)); } catch (_) {}
+      // Update filter-crisis button opacity
+      updateFilterButton('filter-crisis', state.filterCrisis && state.showCrises);
     }
     // If enabling a military layer, also enable the military filter
     if ((name === 'zones' && state.showZones) || (name === 'fleets' && state.showFleets) || (name === 'deployments' && state.showFleets)) {

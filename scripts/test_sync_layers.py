@@ -154,9 +154,9 @@ class TestConflictZonesFromWikipedia(unittest.TestCase):
     def test_radius_by_tier(self):
         zones = sl.conflict_zones_from_wikipedia(self.items)
         by_name = {z["name"]: z for z in zones}
-        self.assertEqual(by_name["Russo-Ukrainian War"]["radiusDeg"], 5.0)
-        self.assertEqual(by_name["Mali War"]["radiusDeg"], 4.0)
-        self.assertEqual(by_name["Haitian crisis"]["radiusDeg"], 3.0)
+        self.assertEqual(by_name["Russo-Ukrainian War"]["radiusDeg"], 4.0)
+        self.assertEqual(by_name["Mali War"]["radiusDeg"], 3.0)
+        self.assertEqual(by_name["Haitian crisis"]["radiusDeg"], 2.5)
 
     def test_lifecycle_fields_present(self):
         zones = sl.conflict_zones_from_wikipedia(self.items)
@@ -206,7 +206,7 @@ class TestMergeConflictZones(unittest.TestCase):
         wiki = sl.conflict_zones_from_wikipedia(sl.parse_wikipedia_conflicts(_wikitext_fixture()))
         merged, _ = sl.merge_conflict_zones(curated, wiki, max_new_zones=2)
         self.assertEqual(len(merged), 2)
-        self.assertEqual([z["radiusDeg"] for z in merged], [5.0, 5.0])
+        self.assertEqual([z["radiusDeg"] for z in merged], [4.0, 4.0])
 
 
 class TestNormalization(unittest.TestCase):
