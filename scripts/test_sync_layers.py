@@ -183,6 +183,17 @@ class TestMergeConflictZones(unittest.TestCase):
         merged, _ = sl.merge_conflict_zones(curated, wiki)
         self.assertEqual(merged[0]["start_date"], "2022-02-24")
 
+    def test_keeps_curated_concluded_status_and_end_date(self):
+        # A curator-concluded zone must never be flipped back to active by the
+        # wiki merge — wiki only enriches/updates start_date.
+        curated = [{"id": "zone-colombian-conflict", "name": "Colombian conflict", "region": "South America",
+                    "status": "concluded", "start_date": "1964-01-01", "end_date": "2016-11-24"}]
+        wiki = sl.conflict_zones_from_wikipedia(sl.parse_wikipedia_conflicts(_wikitext_fixture()))
+        merged, _ = sl.merge_conflict_zones(curated, wiki)
+        self.assertEqual(merged[0]["status"], "concluded")
+        self.assertEqual(merged[0]["end_date"], "2016-11-24")
+        self.assertEqual(merged[0]["start_date"], "1964-01-01")
+
     def test_tracks_added_zones(self):
         curated = []
         wiki = sl.conflict_zones_from_wikipedia(sl.parse_wikipedia_conflicts(_wikitext_fixture()))
@@ -221,6 +232,13 @@ class TestNormalization(unittest.TestCase):
         self.assertEqual(out["status"], "active")
         self.assertEqual(out["start_date"], "")
         self.assertEqual(out["end_date"], "")
+
+    def test_zone_preserves_explicit_concluded_status_and_end(self):
+        out = sl.normalize_lifecycle_zone({"id": "zone-x", "name": "X",
+                                           "status": "concluded", "start_date": "2020-01-01",
+                                           "end_date": "2024-06-01"})
+        self.assertEqual(out["status"], "concluded")
+        self.assertEqual(out["end_date"], "2024-06-01")
 
 
 class TestFingerprint(unittest.TestCase):

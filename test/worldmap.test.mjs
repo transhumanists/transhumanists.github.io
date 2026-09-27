@@ -114,16 +114,24 @@ function makeCtx() {
   const ctx = {
     listeners: [],
     counters: { fills: 0, strokes: 0, lineTos: 0, arcs: 0, moves: 0 },
-    resetCounters() { for (const k in this.counters) this.counters[k] = 0; },
+    // Fill log: { style: ctx.fillStyle, path: [{x,y},...] } for every fill(),
+    // so tests can assert exactly what shade covered which polygon (used by
+    // the day/night terminator tests).
+    fillsLog: [],
+    _path: [],
+    resetCounters() { for (const k in this.counters) this.counters[k] = 0; this.fillsLog.length = 0; },
   };
   ctx.createLinearGradient = () => ({ addColorStop() {} });
   for (const m of ['fillRect', 'beginPath', 'moveTo', 'lineTo', 'stroke', 'fill', 'closePath', 'setLineDash', 'arc', 'fillText', 'save', 'restore', 'setTransform']) {
-    ctx[m] = () => {
-      if (m === 'fill') ctx.counters.fills++;
-      else if (m === 'stroke') ctx.counters.strokes++;
-      else if (m === 'lineTo') ctx.counters.lineTos++;
-      else if (m === 'moveTo') ctx.counters.moves++;
+    ctx[m] = (...args) => {
+      if (m === 'fill') {
+        ctx.counters.fills++;
+        ctx.fillsLog.push({ style: ctx.fillStyle, path: ctx._path.map((p) => ({ x: p.x, y: p.y })) });
+      } else if (m === 'stroke') ctx.counters.strokes++;
+      else if (m === 'lineTo') { ctx.counters.lineTos++; ctx._path.push({ x: args[0], y: args[1] }); }
+      else if (m === 'moveTo') { ctx.counters.moves++; ctx._path.push({ x: args[0], y: args[1] }); }
       else if (m === 'arc') ctx.counters.arcs++;
+      else if (m === 'beginPath') ctx._path = [];
     };
   }
   return ctx;
@@ -538,6 +546,79 @@ test('zoom controls, keyboard and double-click do not throw', () => {
     expect(strokesOn).toBeGreaterThan(strokesOff);
     registeredEls['terminator-toggle'].fire('click', {}); // restore for later tests
     expect(registeredEls['terminator-toggle'].getAttribute('aria-pressed')).toBe('true');
+  });
+
+  test('night band shading: sun overhead stays bright, the antipode is dark', () => {
+    const api = windowObj.__WORLDMAP_TEST__;
+    // Point-in-polygon (ray casting) over the band's equirectangular coords.
+    const pip = (pt, poly) => {
+      let inside = false;
+      for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+        const xi = poly[i].lon, yi = poly[i].lat, xj = poly[j].lon, yj = poly[j].lat;
+        const hit = ((yi > pt.y) !== (yj > pt.y)) &&
+          (pt.x < (xj - xi) * (pt.y - yi) / (yj - yi) + xi);
+        if (hit) inside = !inside;
+      }
+      return inside;
+    };
+    const nightAt = (sunLat, sunLon, qLat, qLon) => {
+      const sunset = api.buildTerminatorGeo(sunLat, sunLon, 0);
+      const band = api.buildNightBand(sunset);
+      const q = { x: qLon, y: qLat };
+      // The band is one 180deg-wide hemisphere; test each lon-shifted copy
+      // (spaced 360deg apart, so a point can sit in at most one).
+      for (const shift of [-360, 0, 360]) {
+        if (pip(q, band.map((pt) => ({ lon: pt.lon + shift, lat: pt.lat })))) return true;
+      }
+      return false;
+    };
+    // Equinox noon, sun over Greenwich. Night straddles the dateline — the
+    // mid-day meridian must stay bright (corner-sewn bug painted it dark).
+    expect(nightAt(0, 0, 0, 0)).toBe(false);       // sub-solar point: noon
+    expect(nightAt(0, 0, 0, 180)).toBe(true);      // 180E is midnight
+    expect(nightAt(0, 0, 0, 40)).toBe(false);      // Europe/Africa at midday
+    expect(nightAt(0, 0, 0, -91)).toBe(true);      // Americas just past sunset
+    // Offset sun at 90E.
+    expect(nightAt(0, 90, 0, 180)).toBe(true);
+    expect(nightAt(0, 90, 0, -90)).toBe(true);
+    expect(nightAt(0, 90, 0, 90)).toBe(false);
+    // Declined sun (−20° over the Atlantic) — antipode shifts to (20, 120).
+    expect(nightAt(-20, -60, -20, -60)).toBe(false);
+    expect(nightAt(-20, -60, 20, 120)).toBe(true);
+  });
+
+  test('night band is painted from 3 longitude-shifted copies, never screen corners', () => {
+    const api = windowObj.__WORLDMAP_TEST__;
+    api.setSunPosition(0, 0); // deterministic noon over Greenwich
+    ctx.resetCounters();
+    registeredEls['reset-view'].fire('click', {});
+    const nightFills = ctx.fillsLog.filter((f) => f.style === api.NIGHT_FILL);
+    // Exactly three copies of the unwrapped band get painted per draw.
+    expect(nightFills.length).toBe(3);
+    const xs = nightFills.flatMap((f) => f.path.map((p) => p.x));
+    // Together the copies cover the full canvas width at the default view.
+    expect(Math.min(...xs)).toBeLessThanOrEqual(0);
+    expect(Math.max(...xs)).toBeGreaterThanOrEqual(800);
+    // No band may start by sewing to a screen corner (the old bug's shape).
+    const corners = [[0, 0], [800, 0], [0, 520], [800, 520]];
+    for (const f of nightFills) {
+      const first = f.path[0];
+      corners.forEach(([x, y]) => expect(first.x === x && first.y === y).toBe(false));
+    }
+    api.setSunPosition(null, null); // restore the live clock
+    registeredEls['reset-view'].fire('click', {});
+  });
+
+  test('legend no longer carries the lifecycle note row', () => {
+    const flat = (node, out = []) => {
+      for (const c of node.children || []) { out.push(c); flat(c, out); }
+      return out;
+    };
+    const notes = flat(registeredEls['map-legend'])
+      .filter((c) => (c.className || '').split(' ').includes('map-legend-note'));
+    // The note was removed both to declutter and to shrink the bottom-left
+    // frame back to its previous footprint.
+    expect(notes.length).toBe(0);
   });
 
   test('zoom clamps to [0.5, 8] and keyboard 0 resets the view', () => {

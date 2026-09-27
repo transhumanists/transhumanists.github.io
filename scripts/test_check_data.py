@@ -206,11 +206,11 @@ class TestCheckLayerLifecycle(unittest.TestCase):
         self.assertTrue(any("start_date must not be after end_date" in i for i in issues))
 
     def test_mixed_granularity_is_not_a_false_positive(self):
-        # "2022-03" (month of March) ends after the 2022-03-05 start; the range is
+        # "2099-03" (month of March) ends after the 2099-03-05 start; the range is
         # valid even though a naive string compare of prefix/suffix trips.
         zones = [
-            self._zone(start_date="2022-03-05", end_date="2022-03"),
-            self._zone(start_date="2021", end_date="2021-06-01"),
+            self._zone(start_date="2099-03-05", end_date="2099-03"),
+            self._zone(start_date="2099", end_date="2099-06-01"),
         ]
         self.assertEqual(cd.check_zones(zones), [])
 
@@ -227,26 +227,72 @@ class TestCheckLayerLifecycle(unittest.TestCase):
         self.assertTrue(any("start_date is after end_date" in i for i in issues))
 
     def test_mixed_granularity_partial_month_end_is_valid(self):
-        # start "2024-05" earliest is 2024-05-01; end "2024-06" latest is
-        # 2024-06-30 -> overlaps, so it must stay valid.
-        zones = [self._zone(start_date="2024-05", end_date="2024-06")]
+        # start "2099-05" earliest is 2099-05-01; end "2099-06" latest is
+        # 2099-06-30 -> overlaps, so it must stay valid.
+        zones = [self._zone(start_date="2099-05", end_date="2099-06")]
         self.assertEqual(cd.check_zones(zones), [])
 
     def test_mixed_granularity_year_brackets_month_is_valid(self):
         zones = [
-            self._zone(start_date="2024", end_date="2024-06-30"),
-            self._zone(start_date="2024", end_date="2024-12"),
+            self._zone(start_date="2099", end_date="2099-06-30"),
+            self._zone(start_date="2099", end_date="2099-12"),
         ]
         self.assertEqual(cd.check_zones(zones), [])
 
     def test_malformed_dates_never_crash_bounds_detection(self):
         # Invalid month/day strings are flagged, not compared (must not crash).
         zones = [
-            self._zone(start_date="2024-13", end_date="2023"),
+            self._zone(start_date="2024-13", end_date=""),
             self._zone(start_date="2023", end_date="2024-02-30"),
         ]
         issues = cd.check_zones(zones)
         self.assertEqual(len(issues), 2)
+
+    def test_concluded_zone_requires_end_date(self):
+        # A concluded/ended zone without an end_date would stay on the timeline
+        # forever; it must name the day it dropped off the map.
+        for status in ("concluded", "inactive", "ended", "resolved"):
+            zones = [self._zone(status=status)]
+            issues = cd.check_zones(zones)
+            self.assertTrue(any("must carry an end_date" in i for i in issues), status)
+
+    def test_concluded_zone_with_end_date_is_valid(self):
+        for status in ("concluded", "inactive", "ended", "resolved"):
+            zones = [self._zone(status=status, start_date="2020-01-01", end_date="2024-06-01")]
+            self.assertEqual(cd.check_zones(zones), [], status)
+
+    def test_active_zone_with_past_end_date_fails(self):
+        # An 'active' zone whose end_date has already passed is a contradiction
+        # the writers must resolve by flipping it to concluded.
+        zones = [
+            self._zone(status="active", end_date="2016-11-24"),
+            self._zone(status="ongoing", end_date="2025-03-01"),
+        ]
+        issues = cd.check_zones(zones)
+        self.assertEqual(len(issues), 2)
+        self.assertTrue(all("has already passed" in i for i in issues))
+
+    def test_active_zone_with_future_end_date_is_valid(self):
+        zones = [self._zone(status="active", start_date="2026-01-01", end_date="2099-01-01")]
+        self.assertEqual(cd.check_zones(zones), [])
+
+    def test_status_absent_with_past_end_date_fails(self):
+        # A bare end_date with no status also reads as an active zone whose
+        # window has already closed.
+        zones = [self._zone(end_date="2023-12-31")]
+        issues = cd.check_zones(zones)
+        self.assertTrue(any("has already passed" in i for i in issues))
+
+    def test_semantic_rules_do_not_apply_to_fleets(self):
+        # Deployments keep their own (CSS-coloured) lifecycle contract, so an
+        # ended deployment must not trip the zone semantic rules.
+        fleets = [
+            {"from": {"lat": 0, "lon": 1}, "to": {"lat": 1, "lon": 1},
+             "status": "concluded", "start_date": "2022", "end_date": "2022-12"},
+            {"from": {"lat": 0, "lon": 1}, "to": {"lat": 1, "lon": 1},
+             "status": "concluded", "start_date": "2022"},
+        ]
+        self.assertEqual(cd.check_fleets(fleets), [])
 
     def test_lifecycle_is_checked_on_fleets_too(self):
         fleets = [

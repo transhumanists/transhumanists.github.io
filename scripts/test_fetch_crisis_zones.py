@@ -181,10 +181,34 @@ class TestBuildCrisisZones(unittest.TestCase):
         self.assertEqual(zones[0]["start_date"], "2023-01-01")
         self.assertEqual(zones[0]["status"], "active")
 
+    def test_curated_label_zone_carries_amplified_radius(self):
+        # Label-driven zones must get the impact-proportional ring, not the
+        # old uniform 4.0 (Chad's base 3.5 -> 2.7).
+        items = [self._item("Chad: Humanitarian Needs")]
+        zones = fz.build_crisis_zones_from_sources(items, [], [], [], [], [], [])
+        self.assertEqual(len(zones), 1)
+        self.assertEqual(zones[0]["radiusDeg"], fz.crisisRadiusDeg("Chad · Displacement crisis"))
+        self.assertEqual(zones[0]["radiusDeg"], 2.7)
+
     def test_curated_chad_label_start_date(self):
         items = [self._item("Chad: Humanitarian Needs")]
         zones = fz.build_crisis_zones_from_sources(items, [], [], [], [], [], [])
         self.assertEqual(zones[0]["start_date"], "2021-01-01")
+
+    def test_curated_conclusion_survives_feed_mentions(self):
+        # Feed builds hardcode "active"; a concluded crisis (Ethiopia/Tigray) must
+        # stay concluded with its end_date when a feed mentions it, so it keeps
+        # its dim ring and drops off the timeline after 2022.
+        items = [self._item("Tigray emergency conditions persist")]
+        zones = fz.build_crisis_zones_from_sources(items, [], [], [], [], [], [])
+        self.assertEqual(len(zones), 1)
+        self.assertEqual(zones[0]["status"], "concluded")
+        self.assertEqual(zones[0]["end_date"], "2022-11-02")
+
+    def test_curated_conclusion_is_noop_for_other_zones(self):
+        items = [self._item("Chad: Humanitarian Needs")]
+        zones = fz.build_crisis_zones_from_sources(items, [], [], [], [], [], [])
+        self.assertEqual(zones[0]["status"], "active")
 
     def test_fallback_zone_has_no_start_date(self):
         # "suez" has no curated label, so its onset is unknown; the zone stays
@@ -259,6 +283,81 @@ class TestStaticFallback(unittest.TestCase):
         for z in fz.STATIC_CRISIS_ZONES:
             if z["name"] in name_to_year:
                 self.assertEqual(z["start_date"], f"{name_to_year[z['name']]}-01-01", z["id"])
+
+    def test_static_concluded_entry_carries_end_date(self):
+        # Ethiopia/Tigray is concluded (Pretoria ceasefire); the static fallback
+        # and the finalized output must both say so, never "active".
+        eth = next(z for z in fz.STATIC_CRISIS_ZONES if z["id"] == "crisis-ethiopia")
+        self.assertEqual(eth["status"], "concluded")
+        self.assertEqual(eth["end_date"], "2022-11-02")
+        out = fz._finalize_crisis_zones(fz.STATIC_CRISIS_ZONES)
+        eth_out = next(z for z in out if z["id"] == "crisis-ethiopia")
+        self.assertEqual(eth_out["status"], "concluded")
+        self.assertEqual(eth_out["end_date"], "2022-11-02")
+
+
+class TestCrisisRadius(unittest.TestCase):
+    """Impact-proportional ring sizes: smaller crises shrink, the largest keeps
+    the 6.0 cap, and nothing ever renders bigger than CRISIS_MAX_RADIUS_DEG."""
+
+    def test_every_label_and_static_name_has_a_base(self):
+        names = [label[0] for label in fz.CRISIS_LABELS.values()]
+        names += [z["name"] for z in fz.STATIC_CRISIS_ZONES]
+        for name in names:
+            self.assertIn(name, fz.CRISIS_RADIUS_BASE, name)
+
+    def test_amplified_values_match_spec(self):
+        cases = {
+            "Sahel · Conflict & hunger": 6.0,
+            "Afghanistan · Winter hunger crisis": 4.6,
+            "DRC · Conflict & displacement": 4.6,
+            "DRC · Conflict & Ebola": 4.6,
+            "Sudan · Darfur famine": 3.9,
+            "South Sudan · Conflict & flooding": 3.9,
+            "Ukraine · War & civilian needs": 3.9,
+            "Nigeria · Insurgency & hunger": 3.9,
+            "Syria · Humanitarian crisis": 3.3,
+            "Ethiopia · Tigray conflict": 3.3,
+            "Somalia · Drought & famine": 3.3,
+            "Mali · Displacement crisis": 3.3,
+            "Yemen · Cholera & famine": 3.0,
+            "Gaza · Humanitarian emergency": 2.7,
+            "Haiti · Gang violence & hunger": 2.7,
+            "Chad · Displacement crisis": 2.7,
+            "Niger · Conflict & hunger": 2.7,
+            "Mozambique · Cabo Delgado insurgency": 2.7,
+            "Myanmar · Rohingya displacement": 2.1,
+            "Kenya · Floods & displacement": 2.1,
+            "Bangladesh · Floods & displacement": 2.1,
+            "Red Sea · Shipping disruption": 2.1,
+        }
+        for name, expected in cases.items():
+            self.assertEqual(fz.crisisRadiusDeg(name), expected, name)
+
+    def test_no_zone_outgrows_the_cap(self):
+        names = [label[0] for label in fz.CRISIS_LABELS.values()]
+        names += [z["name"] for z in fz.STATIC_CRISIS_ZONES]
+        for name in names:
+            self.assertLessEqual(fz.crisisRadiusDeg(name), fz.CRISIS_MAX_RADIUS_DEG, name)
+
+    def test_smaller_base_never_renders_bigger(self):
+        # Monotonic in the base radius: a smaller crisis must not render larger.
+        pairs = sorted((base, name) for name, base in fz.CRISIS_RADIUS_BASE.items())
+        rendered = [fz.crisisRadiusDeg(name) for _, name in pairs]
+        self.assertEqual(rendered, sorted(rendered))
+        # ...and the literal sanity: max stays exactly at the cap.
+        self.assertEqual(fz.crisisRadiusDeg("Sahel · Conflict & hunger"), fz.CRISIS_MAX_RADIUS_DEG)
+
+    def test_unknown_names_fall_back_to_default(self):
+        expected = round(fz.CRISIS_MAX_RADIUS_DEG
+                         * (fz.CRISIS_DEFAULT_RADIUS_BASE / fz.CRISIS_MAX_RADIUS_DEG) ** fz.CRISIS_RADIUS_EXP, 1)
+        self.assertEqual(fz.crisisRadiusDeg("Suez · Humanitarian crisis"), expected)
+
+    def test_static_radii_match_amplified_bases(self):
+        # The committed fallback list must carry exactly what crisisRadiusDeg
+        # would amplify, so both the sourced and static paths render identically.
+        for z in fz.STATIC_CRISIS_ZONES:
+            self.assertEqual(z["radiusDeg"], fz.crisisRadiusDeg(z["name"]), z["id"])
 
 
 class TestParseOchaRss(unittest.TestCase):

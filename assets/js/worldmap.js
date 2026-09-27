@@ -68,7 +68,7 @@
   const FLUO_LINE_GLOW_BLUR = 9;    // halo radius for vector tails + arrowheads
   const FLUO_PULSE_RADIUS = 10;     // how much the halo breathes (px)
   const CONCLUDED_OPACITY = 0.45;   // dimming applied to concluded vector tails
-  const CONCLUDED_ZONE_OPACITY = 0.22; // dimming applied to concluded area rings
+  const CONCLUDED_ZONE_OPACITY = 0.12; // dimming applied to concluded area rings
 
   // Normalize a layer entry's lifecycle status. Missing/`active`/`ongoing`
   // mean the marker is still live (fluo glow); anything explicitly ended
@@ -331,6 +331,9 @@ height: 0,
       pressY: null,
       events: [],
       showTerminator: true,
+      // Test/demo override for the sun position (set via the __WORLDMAP_TEST__
+      // hook so day/night rendering is deterministic in the test suite).
+      sunPositionOverride: null,
       hiddenCategories: new Set(),
       foldedCategories: false,  // whether the entire categories section is folded
       zones: [],
@@ -459,6 +462,7 @@ function canonicalCategory(cat) {
 
   // ---- Terminator (Day/Night boundary) ----
   function getSunPosition() {
+    if (state.sunPositionOverride) return state.sunPositionOverride;
     const now = new Date();
     const year = now.getUTCFullYear();
     const month = now.getUTCMonth();
@@ -532,6 +536,39 @@ function canonicalCategory(cat) {
     return { sunset: cache.sunsetGeo, sunrise: cache.sunriseGeo };
   }
 
+  // Night-shade polygon spanning the whole night hemisphere (the region between
+  // the evening terminator and the morning terminator). The sunrise terminator
+  // is always exactly 180deg east of the sunset one at every latitude, so the
+  // band is built purely from the (unwrapped) sunset longitudes — no dependence
+  // on the sun's declination or the current pan/zoom transform. The result is a
+  // closed strip from the north pole down the evening edge and back up the
+  // morning edge; when painted in longitude-shifted copies (see drawTerminator)
+  // the correct half of the map always falls dark, including at sun lon ~0 where
+  // the older corner-sewn polygon painted the daylit side.
+  function buildNightBand(sunset) {
+    const n = sunset.length;
+    const band = new Array(n * 2);
+
+    // Unwrap the evening edge into a continuous lon curve (each step < 180deg).
+    let offset = 0;
+    for (let i = 0; i < n; i++) {
+      if (i > 0) {
+        const prev = sunset[i - 1].lon + offset;
+        const cur = sunset[i].lon + offset;
+        if (cur - prev > 180) offset -= 360;
+        else if (cur - prev < -180) offset += 360;
+      }
+      band[i] = { lon: sunset[i].lon + offset, lat: sunset[i].lat };
+    }
+
+    // Morning edge mirrors the evening edge 180deg east, walked back up from
+    // the south pole so the strip closes along both polar rows.
+    for (let i = 0; i < n; i++) {
+      band[n + i] = { lon: band[n - 1 - i].lon + 180, lat: band[n - 1 - i].lat };
+    }
+    return band;
+  }
+
   // Draw one terminator boundary as a few stacked translucent passes (widest
   // first) so the day/night edge reads as a gentle, highly transparent gradient
   // band instead of a hard line. Both boundaries get identical treatment so they
@@ -571,58 +608,27 @@ function canonicalCategory(cat) {
     ctx.save();
     ctx.globalCompositeOperation = 'source-over';
 
-    // Determine which side is night for sunset terminator
-    const sunLonNorm = normalizeLon(sun.lon);
-    const sunOnLeft = sunLonNorm < 0;
-
     // Brighten the sunlit side of the map beneath the night shade so daytime
     // hemispheres read clearly brighter than the night side.
     ctx.fillStyle = DAY_TINT;
     ctx.fillRect(0, 0, w, h);
 
-    // ---- Night shading: area between sunset and sunrise terminators ----
-    // Night is the region between the two terminators on the side opposite the sun.
-    ctx.beginPath();
-    
-    if (sunOnLeft) {
-      // Sun is on left: night is on the right side (between sunset on right, sunrise on left)
-      // Start at top-right, go down sunset terminator (right edge of night)
-      ctx.moveTo(w, 0);
-      for (let i = 0; i < sunset.length; i++) {
-        const p = project(sunset[i].lon, sunset[i].lat);
-        ctx.lineTo(p.x, p.y);
-      }
-      // Go across bottom to sunrise terminator (on left side)
-      ctx.lineTo(0, h);
-      // Go up sunrise terminator (left edge of night) - reverse order
-      for (let i = sunrise.length - 1; i >= 0; i--) {
-        const p = project(sunrise[i].lon, sunrise[i].lat);
-        ctx.lineTo(p.x, p.y);
-      }
-      // Close at top
-      ctx.lineTo(0, 0);
-    } else {
-      // Sun is on right: night is on the left side
-      // Start at top-left, go down sunrise terminator (left edge of night)
-      ctx.moveTo(0, 0);
-      for (let i = 0; i < sunrise.length; i++) {
-        const p = project(sunrise[i].lon, sunrise[i].lat);
-        ctx.lineTo(p.x, p.y);
-      }
-      // Go across bottom to sunset terminator (on right side)
-      ctx.lineTo(w, h);
-      // Go up sunset terminator (right edge of night) - reverse order
-      for (let i = sunset.length - 1; i >= 0; i--) {
-        const p = project(sunset[i].lon, sunset[i].lat);
-        ctx.lineTo(p.x, p.y);
-      }
-      // Close at top
-      ctx.lineTo(w, 0);
-    }
-
-    ctx.closePath();
+    // ---- Night shading: region between the sunset and sunrise terminators ----
+    // Painted as three longitude-shifted copies of the unwrapped band so the
+    // night side covers the map correctly under any pan/zoom; project() is
+    // linear, so shifted longitudes land off-canvas and clip away cleanly.
+    const band = buildNightBand(sunset);
     ctx.fillStyle = NIGHT_FILL;
-    ctx.fill();
+    for (const lonShift of [-360, 0, 360]) {
+      ctx.beginPath();
+      band.forEach((pt, i) => {
+        const p = project(pt.lon + lonShift, pt.lat);
+        if (i === 0) ctx.moveTo(p.x, p.y);
+        else ctx.lineTo(p.x, p.y);
+      });
+      ctx.closePath();
+      ctx.fill();
+    }
 
     // ---- Day/night boundary lines: soft, blended and very transparent ----
     strokeSoftBoundary(sunset, SUNSET_BOUNDARY);
@@ -845,7 +851,7 @@ function drawEvent(ev) {
       ctx.fill();
       ctx.setLineDash([4, 3]);
       ctx.lineWidth = 1;
-      ctx.strokeStyle = withOpacity(ZONE_COLOR, 0.24);
+      ctx.strokeStyle = withOpacity(ZONE_COLOR, 0.14);
       ctx.beginPath();
       ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
       ctx.stroke();
@@ -854,7 +860,7 @@ function drawEvent(ev) {
 
     ctx.beginPath();
     ctx.arc(p.x, p.y, 2.5, 0, Math.PI * 2);
-    ctx.fillStyle = active ? ZONE_COLOR : withOpacity(ZONE_COLOR, 0.3);
+    ctx.fillStyle = active ? ZONE_COLOR : withOpacity(ZONE_COLOR, 0.18);
     ctx.fill();
   }
 
@@ -906,7 +912,7 @@ function drawEvent(ev) {
       ctx.fill();
       ctx.setLineDash([4, 3]);
       ctx.lineWidth = 1;
-      ctx.strokeStyle = withOpacity(CRISIS_COLOR, 0.24);
+      ctx.strokeStyle = withOpacity(CRISIS_COLOR, 0.14);
       ctx.beginPath();
       ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
       ctx.stroke();
@@ -915,7 +921,7 @@ function drawEvent(ev) {
 
     ctx.beginPath();
     ctx.arc(p.x, p.y, 2.5, 0, Math.PI * 2);
-    ctx.fillStyle = active ? CRISIS_COLOR : withOpacity(CRISIS_COLOR, 0.3);
+    ctx.fillStyle = active ? CRISIS_COLOR : withOpacity(CRISIS_COLOR, 0.18);
     ctx.fill();
   }
 
@@ -1902,13 +1908,6 @@ const fragment = document.createDocumentFragment();
         title: layerCountTitle(state.crises)
       });
 
-      // Explain the lifecycle glyphs without cluttering the toggleable rows.
-      const note = document.createElement('div');
-      note.className = 'map-legend-note';
-      note.setAttribute('aria-hidden', 'true');
-      note.textContent = '● glow = still active · ○ dim = concluded (hover shows duration)';
-      fragment.appendChild(note);
-
     if (unknown > 0) {
       const row = document.createElement('div');
       row.className = 'map-legend-row map-legend-row--static';
@@ -2470,7 +2469,18 @@ function initTimelineSlider() {
         draw();
         updateStatsDisplay();
       },
-      getTimelineYear: () => timelineYear
+      getTimelineYear: () => timelineYear,
+      // Pure geometry for the day/night terminator (deterministic tests): the
+      // shared sunrise/sunset curve plus the unwrapped night band it feeds.
+      buildTerminatorGeo,
+      buildNightBand,
+      get NIGHT_FILL() { return NIGHT_FILL; },
+      // Pin the sun position (lat, lon) so day/night rendering is deterministic;
+      // pass (null, null) to restore the live clock.
+      setSunPosition: (lat, lon) => {
+        state.sunPositionOverride = (lat === null && lon === null) ? null : { lat: lat || 0, lon: lon || 0 };
+        draw();
+      }
     };
   }
 

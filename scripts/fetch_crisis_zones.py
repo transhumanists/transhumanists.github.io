@@ -79,7 +79,7 @@ STATIC_CRISIS_ZONES = [
         "region": "East Africa",
         "lat": 13.0,
         "lon": 24.5,
-        "radiusDeg": 4.5,
+        "radiusDeg": 3.9,
         "status": "active",
         "start_date": "2003-01-01",
         "note": "Humanitarian catastrophe, 25M+ in need",
@@ -92,7 +92,7 @@ STATIC_CRISIS_ZONES = [
         "region": "Middle East",
         "lat": 15.5,
         "lon": 44.2,
-        "radiusDeg": 3.8,
+        "radiusDeg": 3.0,
         "status": "active",
         "start_date": "2015-01-01",
         "note": "World's worst humanitarian crisis",
@@ -105,7 +105,7 @@ STATIC_CRISIS_ZONES = [
         "region": "Southeast Asia",
         "lat": 20.5,
         "lon": 92.5,
-        "radiusDeg": 3.0,
+        "radiusDeg": 2.1,
         "status": "active",
         "start_date": "2017-01-01",
         "note": "1M+ stateless refugees in camps",
@@ -118,7 +118,7 @@ STATIC_CRISIS_ZONES = [
         "region": "Central Asia",
         "lat": 33.5,
         "lon": 65.5,
-        "radiusDeg": 5.0,
+        "radiusDeg": 4.6,
         "status": "active",
         "start_date": "2021-01-01",
         "note": "28M+ facing acute food insecurity",
@@ -131,7 +131,7 @@ STATIC_CRISIS_ZONES = [
         "region": "East Africa",
         "lat": 2.5,
         "lon": 45.5,
-        "radiusDeg": 4.0,
+        "radiusDeg": 3.3,
         "status": "active",
         "start_date": "2021-01-01",
         "note": "5 consecutive failed rainy seasons",
@@ -144,7 +144,7 @@ STATIC_CRISIS_ZONES = [
         "region": "Middle East",
         "lat": 34.8,
         "lon": 38.9,
-        "radiusDeg": 4.0,
+        "radiusDeg": 3.3,
         "status": "active",
         "start_date": "2011-01-01",
         "note": "15M+ in need of humanitarian aid",
@@ -157,7 +157,7 @@ STATIC_CRISIS_ZONES = [
         "region": "Caribbean",
         "lat": 18.5,
         "lon": -72.3,
-        "radiusDeg": 3.5,
+        "radiusDeg": 2.7,
         "status": "active",
         "start_date": "2021-01-01",
         "note": "5M+ in need, gang violence & cholera",
@@ -170,9 +170,10 @@ STATIC_CRISIS_ZONES = [
         "region": "East Africa",
         "lat": 14.0,
         "lon": 38.5,
-        "radiusDeg": 4.0,
-        "status": "active",
+        "radiusDeg": 3.3,
+        "status": "concluded",
         "start_date": "2020-01-01",
+        "end_date": "2022-11-02",
         "note": "Millions displaced, famine risk",
         "source": "UN OCHA",
         "url": "https://www.unocha.org"
@@ -196,7 +197,7 @@ STATIC_CRISIS_ZONES = [
         "region": "Central Africa",
         "lat": -1.5,
         "lon": 25.0,
-        "radiusDeg": 5.0,
+        "radiusDeg": 4.6,
         "status": "active",
         "start_date": "2017-01-01",
         "note": "Conflict, Ebola, displacement",
@@ -204,6 +205,70 @@ STATIC_CRISIS_ZONES = [
         "url": "https://www.who.int"
     },
 ]
+
+
+# Curated conclusions: crisis zone NAME -> end_date. The feed pipeline always
+# writes status "active", so without this override a concluded crisis would
+# silently resume glowing (and stay on the timeline forever) every time a feed
+# mentions the place again. Zones listed here render concluded in BOTH the
+# sourced and static paths; they come back by removing them from this map.
+CONCLUDED_CRISIS_DATES: dict[str, str] = {
+    "Ethiopia · Tigray conflict": "2022-11-02",  # Pretoria Agreement ceasefire
+}
+
+
+# Base area radius (degrees) per crisis zone NAME, roughly proportional to the
+# scale of people affected (larger displacement/food insecurity -> bigger ring).
+# The final displayed radius is amplified non-linearly from this base so that
+# small crises read clearly smaller while the largest crisis (Sahel) keeps its
+# 6.0° cap — nothing ever grows beyond CRISIS_MAX_RADIUS_DEG.
+#
+# Every entry in STATIC_CRISIS_ZONES and every CRISIS_LABELS display name must
+# have a base here (see test_fetch_crisis_zones.py which enforces it); unknown
+# names fall back to CRISIS_DEFAULT_RADIUS_BASE.
+CRISIS_RADIUS_BASE: dict[str, float] = {
+    "Afghanistan · Winter hunger crisis": 5.0,
+    "DRC · Conflict & displacement": 5.0,
+    "DRC · Conflict & Ebola": 5.0,
+    "Sudan · Darfur famine": 4.5,
+    "South Sudan · Conflict & flooding": 4.5,
+    "Ukraine · War & civilian needs": 4.5,
+    "Nigeria · Insurgency & hunger": 4.5,
+    "Syria · Humanitarian crisis": 4.0,
+    "Sahel · Conflict & hunger": 6.0,
+    "Ethiopia · Tigray conflict": 4.0,
+    "Somalia · Drought & famine": 4.0,
+    "Mali · Displacement crisis": 4.0,
+    "Yemen · Cholera & famine": 3.8,
+    "Gaza · Humanitarian emergency": 3.5,
+    "Haiti · Gang violence & hunger": 3.5,
+    "Chad · Displacement crisis": 3.5,
+    "Niger · Conflict & hunger": 3.5,
+    "Mozambique · Cabo Delgado insurgency": 3.5,
+    "Myanmar · Rohingya displacement": 3.0,
+    "Kenya · Floods & displacement": 3.0,
+    "Bangladesh · Floods & displacement": 3.0,
+    "Red Sea · Shipping disruption": 3.0,
+}
+
+CRISIS_MAX_RADIUS_DEG = 6.0  # largest crisis ring (Sahel); hard cap
+CRISIS_RADIUS_EXP = 1.5  # >1 amplifies the gap between big and small zones
+CRISIS_DEFAULT_RADIUS_BASE = 3.5  # unlabelled/unknown zones
+
+
+def crisisRadiusDeg(name: str) -> float:
+    """Amplified ring radius for a crisis zone by display name.
+
+    r' = R * (base / R) ** EXP with R = CRISIS_MAX_RADIUS_DEG leaves the
+    largest zone untouched while pulling every smaller zone further down, so
+    size differences read clearly on the map (r' <= R always).
+    """
+    base = CRISIS_RADIUS_BASE.get(name, CRISIS_DEFAULT_RADIUS_BASE)
+    base = max(0.0, min(base, CRISIS_MAX_RADIUS_DEG))
+    return round(
+        CRISIS_MAX_RADIUS_DEG * (base / CRISIS_MAX_RADIUS_DEG) ** CRISIS_RADIUS_EXP,
+        1,
+    )
 
 
 # Hosts that served broken certificate chains from the runner and were thereby
@@ -440,7 +505,7 @@ def build_crisis_zones_from_sources(ocha_data: list, who_data: list, reliefweb_d
                 "region": region,
                 "lat": lat,
                 "lon": lon,
-                "radiusDeg": 4.0,
+                "radiusDeg": crisisRadiusDeg(zone_name),
                 "status": "active",
                 "note": zone_note[:200],
                 "source": zone_source,
@@ -486,7 +551,19 @@ def _finalize_crisis_zones(zones: list[dict]) -> list[dict]:
         out.append(z)
         if len(out) >= 15:
             break
-    return sorted(out, key=lambda z: z.get("id", ""))
+    # Force curated conclusions through so feed mentions can't revive a zone
+    # that has verifiably ended (see CONCLUDED_CRISIS_DATES). Copies any zone
+    # the override touches, never mutating the caller's dicts.
+    fixed: list[dict] = []
+    for z in sorted(out, key=lambda z: z.get("id", "")):
+        end = CONCLUDED_CRISIS_DATES.get(z.get("name"))
+        if end:
+            z = dict(z)
+            z["status"] = "concluded"
+            if not (isinstance(z.get("end_date"), str) and z["end_date"].strip()):
+                z["end_date"] = end
+        fixed.append(z)
+    return fixed
 
 
 # Canonical place lookup: keyword -> (lat, lon, region). Matching is longest

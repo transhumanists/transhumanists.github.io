@@ -150,6 +150,22 @@ def _check_lifecycle(kind: str, i: int, item: dict) -> list[str]:
             _, end_max = _date_bounds(e)
             if start_min > end_max:
                 issues.append(f"{kind}[{i}]: start_date is after end_date (empty window)")
+    # Semantic rules for ZONES (not fleets, which keep their own lifecycle):
+    # a concluded/ended zone without an end_date would stay on the timeline
+    # forever (violating the "drops off after its end year" contract), and an
+    # active zone whose end_date has already passed is a contradiction the
+    # writers must resolve by flipping it to concluded instead.
+    if kind in ("conflict_zones", "crisis_zones"):
+        status_norm = (status.strip().lower() if isinstance(status, str) else "" )
+        concluded_family = status_norm in {"concluded", "inactive", "ended", "resolved"}
+        if concluded_family and not (isinstance(end, str) and end.strip()):
+            issues.append(f"{kind}[{i}]: {status_norm!r} zone must carry an end_date")
+        if not concluded_family and status_norm in {"active", "ongoing", ""}:
+            if (
+                isinstance(end, str) and end.strip()
+                and _valid_date(end) and _date_bounds(end)[1] < _date.today().isoformat()
+            ):
+                issues.append(f"{kind}[{i}]: status {status_norm!r} but end_date {end.strip()} has already passed")
     return issues
 
 
