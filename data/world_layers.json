@@ -1,6 +1,6 @@
 {
   "version": "1.1.0",
-  "last_update": "2026-09-26T08:24:11+00:00",
+  "last_update": "2026-09-27T20:25:18+00:00",
   "conflict_zones": [
     {
       "id": "zone-ukraine",
@@ -194,11 +194,11 @@
         "Ethiopia"
       ],
       "status": "active",
-      "start_date": "1978-01-01",
+      "start_date": "2002-01-01",
       "end_date": "",
       "source": "Wikipedia (List of ongoing armed conflicts)",
       "url": "https://en.wikipedia.org/wiki/List_of_ongoing_armed_conflicts",
-      "last_news_year": 1978
+      "last_news_year": 2002
     },
     {
       "id": "zone-sudanese-civil-wars",
@@ -409,11 +409,11 @@
         "Iraq"
       ],
       "status": "concluded",
-      "start_date": "1921-01-01",
+      "start_date": "2011-01-01",
       "end_date": "2025-03-01",
       "source": "Wikipedia (List of ongoing armed conflicts)",
       "url": "https://en.wikipedia.org/wiki/List_of_ongoing_armed_conflicts",
-      "last_news_year": 1921
+      "last_news_year": 2011
     },
     {
       "id": "zone-insurgency-in-cabo-delgado",
@@ -507,6 +507,108 @@
       "source": "Wikipedia (List of ongoing armed conflicts)",
       "url": "https://en.wikipedia.org/wiki/List_of_ongoing_armed_conflicts",
       "last_news_year": 1962
+    },
+    {
+      "id": "zone-aftermath",
+      "name": "Aftermath",
+      "region": "Asia",
+      "lat": 34.8,
+      "lon": 39.0,
+      "radiusDeg": 3.0,
+      "tier": "minor",
+      "countries": [
+        "Syria",
+        "Israel",
+        "Lebanon",
+        "Iraq",
+        "Turkey"
+      ],
+      "status": "active",
+      "start_date": "2011-01-01",
+      "end_date": "",
+      "source": "Wikipedia (List of ongoing armed conflicts)",
+      "url": "https://en.wikipedia.org/wiki/List_of_ongoing_armed_conflicts",
+      "last_news_year": 2011
+    },
+    {
+      "id": "zone-central-african-republic-civil-war",
+      "name": "Central African Republic Civil War",
+      "region": "Africa",
+      "lat": 7.37,
+      "lon": 12.35,
+      "radiusDeg": 3.0,
+      "tier": "minor",
+      "countries": [
+        "Central African Republic",
+        "Cameroon",
+        "Democratic Republic of the Congo",
+        "South Sudan"
+      ],
+      "status": "active",
+      "start_date": "2012-01-01",
+      "end_date": "",
+      "source": "Wikipedia (List of ongoing armed conflicts)",
+      "url": "https://en.wikipedia.org/wiki/List_of_ongoing_armed_conflicts",
+      "last_news_year": 2012
+    },
+    {
+      "id": "zone-ecuadorian-conflict",
+      "name": "Ecuadorian conflict",
+      "region": "South America",
+      "lat": -1.83,
+      "lon": -78.18,
+      "radiusDeg": 3.0,
+      "tier": "minor",
+      "countries": [
+        "Ecuador",
+        "Colombia"
+      ],
+      "status": "active",
+      "start_date": "1993-01-01",
+      "end_date": "",
+      "source": "Wikipedia (List of ongoing armed conflicts)",
+      "url": "https://en.wikipedia.org/wiki/List_of_ongoing_armed_conflicts",
+      "last_news_year": 1993
+    },
+    {
+      "id": "zone-ethiopian-civil-wars",
+      "name": "Ethiopian civil wars",
+      "region": "Africa",
+      "lat": 9.15,
+      "lon": 40.49,
+      "radiusDeg": 3.0,
+      "tier": "minor",
+      "countries": [
+        "Ethiopia",
+        "Eritrea",
+        "Somalia",
+        "Sudan"
+      ],
+      "status": "active",
+      "start_date": "1978-01-01",
+      "end_date": "",
+      "source": "Wikipedia (List of ongoing armed conflicts)",
+      "url": "https://en.wikipedia.org/wiki/List_of_ongoing_armed_conflicts",
+      "last_news_year": 1961
+    },
+    {
+      "id": "zone-venezuelan-conflict",
+      "name": "Venezuelan conflict",
+      "region": "South America",
+      "lat": 6.42,
+      "lon": -66.59,
+      "radiusDeg": 3.0,
+      "tier": "minor",
+      "countries": [
+        "Venezuela",
+        "Colombia"
+      ],
+      "status": "active",
+      "start_date": "2010-01-01",
+      "end_date": "",
+      "source": "Wikipedia (List of ongoing armed conflicts)",
+      "url": "https://en.wikipedia.org/wiki/List_of_ongoing_armed_conflicts",
+      "last_news_year": 2010
     }
   ],
   "crisis_zones": [
