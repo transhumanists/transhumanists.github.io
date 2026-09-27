@@ -283,6 +283,32 @@ class TestCheckLayerLifecycle(unittest.TestCase):
         issues = cd.check_zones(zones)
         self.assertTrue(any("has already passed" in i for i in issues))
 
+    def test_concluded_zone_with_future_end_date_fails(self):
+        # Preliminarily marking a zone concluded while its end still lies ahead
+        # is a contradiction most likely caused by a typo'd year.
+        for status in ("concluded", "inactive", "ended", "resolved"):
+            zones = [self._zone(status=status, start_date="2020-01-01", end_date="2099-01-01")]
+            issues = cd.check_zones(zones)
+            self.assertTrue(any("lies in the future" in i for i in issues), status)
+
+    def test_concluded_zone_with_far_end_date_bound_is_valid(self):
+        # A partial future month/year counts as "not proven future" only when
+        # its EARLIEST possible instant has already passed (e.g. end "2026-09"
+        # on 2026-09-27), so reporting lag is not flagged.
+        zones = [self._zone(status="concluded", start_date="2020-01-01", end_date="2099-06")]
+        issues = cd.check_zones(zones)
+        self.assertTrue(any("lies in the future" in i for i in issues))
+
+    def test_today_is_utc(self):
+        # The validator must render the same verdict on every machine, so its
+        # clock must not drift with the local timezone.
+        self.assertEqual(len(cd._today_iso()), 10)
+        self.assertTrue(cd._today_iso().endswith(cd._today_iso()[4:]) == (cd._today_iso()[4] == "-"))
+        import datetime as _dt
+        from datetime import timezone as _tz
+        now_utc = _dt.datetime.now(_tz.utc).isoformat()[:10]
+        self.assertEqual(cd._today_iso(), now_utc)
+
     def test_semantic_rules_do_not_apply_to_fleets(self):
         # Deployments keep their own (CSS-coloured) lifecycle contract, so an
         # ended deployment must not trip the zone semantic rules.

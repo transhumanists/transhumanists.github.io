@@ -20,6 +20,7 @@ import sys
 from datetime import date as _date
 from datetime import datetime as _datetime
 from datetime import timedelta as _timedelta
+from datetime import timezone as _timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -118,6 +119,12 @@ def _date_bounds(value: str) -> tuple[str, str]:
     return s, s
 
 
+def _today_iso() -> str:
+    # UTC so validation is identical on every machine/CI runner: a date that just
+    # rolled over locally must not flip a "has already passed" verdict elsewhere.
+    return _datetime.now(_timezone.utc).replace(microsecond=0).isoformat()[:10]
+
+
 def _check_lifecycle(kind: str, i: int, item: dict) -> list[str]:
     issues: list[str] = []
     status = item.get("status")
@@ -152,20 +159,27 @@ def _check_lifecycle(kind: str, i: int, item: dict) -> list[str]:
                 issues.append(f"{kind}[{i}]: start_date is after end_date (empty window)")
     # Semantic rules for ZONES (not fleets, which keep their own lifecycle):
     # a concluded/ended zone without an end_date would stay on the timeline
-    # forever (violating the "drops off after its end year" contract), and an
+    # forever (violating the "drops off after its end year" contract), an
     # active zone whose end_date has already passed is a contradiction the
-    # writers must resolve by flipping it to concluded instead.
+    # writers must resolve by flipping it to concluded instead, and a
+    # concluded zone with a future end_date was concluded prematurely.
     if kind in ("conflict_zones", "crisis_zones"):
-        status_norm = (status.strip().lower() if isinstance(status, str) else "" )
+        status_norm = status.strip().lower() if isinstance(status, str) else ""
         concluded_family = status_norm in {"concluded", "inactive", "ended", "resolved"}
         if concluded_family and not (isinstance(end, str) and end.strip()):
             issues.append(f"{kind}[{i}]: {status_norm!r} zone must carry an end_date")
         if not concluded_family and status_norm in {"active", "ongoing", ""}:
             if (
                 isinstance(end, str) and end.strip()
-                and _valid_date(end) and _date_bounds(end)[1] < _date.today().isoformat()
+                and _valid_date(end) and _date_bounds(end)[1] < _today_iso()
             ):
                 issues.append(f"{kind}[{i}]: status {status_norm!r} but end_date {end.strip()} has already passed")
+        elif concluded_family:
+            if (
+                isinstance(end, str) and end.strip()
+                and _valid_date(end) and _date_bounds(end)[0] > _today_iso()
+            ):
+                issues.append(f"{kind}[{i}]: concluded zone end_date {end.strip()} lies in the future")
     return issues
 
 

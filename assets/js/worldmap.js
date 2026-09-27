@@ -355,6 +355,7 @@ height: 0,
         sunLat: null,
         sunsetGeo: null,
         sunriseGeo: null,
+        nightBand: null,
         computedAt: 0
       }
     };
@@ -529,11 +530,12 @@ function canonicalCategory(cat) {
     if (!cache.sunsetGeo || sunMoved || cacheExpired) {
       cache.sunsetGeo = buildTerminatorGeo(sunLat, sunLon, 0);
       cache.sunriseGeo = buildTerminatorGeo(sunLat, sunLon, 180);
+      cache.nightBand = buildNightBand(cache.sunsetGeo);
       cache.sunLon = sunLon;
       cache.sunLat = sunLat;
       cache.computedAt = now;
     }
-    return { sunset: cache.sunsetGeo, sunrise: cache.sunriseGeo };
+    return { sunset: cache.sunsetGeo, sunrise: cache.sunriseGeo, nightBand: cache.nightBand };
   }
 
   // Night-shade polygon spanning the whole night hemisphere (the region between
@@ -603,7 +605,7 @@ function canonicalCategory(cat) {
 
     // Geo-space terminator (cached by sun angle), projected to screen now so
     // the boundary tracks every pan/zoom.
-    const { sunset, sunrise } = getCachedTerminatorGeo(sun.lat, sun.lon);
+    const { sunset, sunrise, nightBand } = getCachedTerminatorGeo(sun.lat, sun.lon);
 
     ctx.save();
     ctx.globalCompositeOperation = 'source-over';
@@ -617,7 +619,7 @@ function canonicalCategory(cat) {
     // Painted as three longitude-shifted copies of the unwrapped band so the
     // night side covers the map correctly under any pan/zoom; project() is
     // linear, so shifted longitudes land off-canvas and clip away cleanly.
-    const band = buildNightBand(sunset);
+    const band = nightBand;
     ctx.fillStyle = NIGHT_FILL;
     for (const lonShift of [-360, 0, 360]) {
       ctx.beginPath();
