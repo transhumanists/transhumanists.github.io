@@ -1,5 +1,5 @@
 {
-  "last_update": "2026-09-27T02:29:39+00:00",
+  "last_update": "2026-09-27T16:00:28+00:00",
   "version": "1.0.0",
   "events": [
     {
@@ -55,19 +55,6 @@
       }
     },
     {
-      "id": "ev-ms-e5275443e851",
-      "title": "Nanopore sensor simultaneously identifies four analyte classes with 98.7% accuracy",
-      "category": "Biotechnology",
-      "value": "98.7 %",
-      "source": "Nature Biotechnology",
-      "url": "https://www.nature.com/articles/s41587-026-03322-x",
-      "date": "2026-09-15",
-      "geolocation": {
-        "lat": 32.0603,
-        "lon": 118.7969
-      }
-    },
-    {
       "id": "ev-ms-e55c8cf4e432",
       "title": "Engineered nanopore simultaneously identifies saccharides, amino acids, peptides, and ribonucleotides",
       "category": "Biotechnology",
@@ -91,6 +78,19 @@
       "geolocation": {
         "lat": 39.0555,
         "lon": -77.038
+      }
+    },
+    {
+      "id": "ev-ms-0a279b32fda4",
+      "title": "Biomimetic cells enable new platform for T cell mechanotransduction studies",
+      "category": "Biotechnology",
+      "value": "Biomimetic cells enable new platform for T cell mechanotransduction studies",
+      "source": "Nature Biotechnology",
+      "url": "https://www.nature.com/articles/s41587-026-03312-z",
+      "date": "2026-09-10",
+      "geolocation": {
+        "lat": 32.0603,
+        "lon": 118.7969
       }
     },
     {
@@ -481,6 +481,32 @@
       "geolocation": {
         "lat": 51.0504,
         "lon": 13.7373
+      }
+    },
+    {
+      "id": "ev-ms-cede87aeb630",
+      "title": "Seed2.0 model series achieves world-leading reasoning and visual understanding for real-world tasks",
+      "category": "Computing & AGI",
+      "value": "Seed2.0 model series achieves world-leading reasoning and visual understanding for real-world tasks",
+      "source": "ByteDance",
+      "url": "http://arxiv.org/abs/2607.00248v1",
+      "date": "2026-06-30",
+      "geolocation": {
+        "lat": 39.9042,
+        "lon": 116.4074
+      }
+    },
+    {
+      "id": "ev-ms-fc6083e0cc69",
+      "title": "ORACLE-2 achieves 0.73 macro F1 for real-time transient classification using multimodal data",
+      "category": "Computing & AGI",
+      "value": "0.73 macro F1 score",
+      "source": "Zwicky Transient Facility (ZTF)",
+      "url": "http://arxiv.org/abs/2607.00228v1",
+      "date": "2026-06-30",
+      "geolocation": {
+        "lat": 34.1377,
+        "lon": -118.1253
       }
     },
     {

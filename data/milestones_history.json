@@ -105,15 +105,15 @@
     "id": "ms-e5275443e851",
     "category": "Biotechnology",
     "subcategory": "biosensors",
-    "title": "Nanopore sensor simultaneously identifies four analyte classes with 98.7% accuracy",
+    "title": "Versatile nanopore sensor simultaneously identifies four analyte classes with 98.7% accuracy",
     "value": 98.7,
-    "unit": "%",
-    "source": "Nature Biotechnology",
+    "unit": "percent",
+    "source": "Unknown",
     "url": "https://www.nature.com/articles/s41587-026-03322-x",
     "date": "2026-09-15",
     "geolocation": {
-      "lat": 32.0603,
-      "lon": 118.7969
+      "lat": 0.0,
+      "lon": 0.0
     },
     "first_seen": "2026-09-22",
     "last_seen": "2026-09-27"
@@ -150,6 +150,23 @@
       "lon": -77.038
     },
     "first_seen": "2026-09-22",
+    "last_seen": "2026-09-27"
+  },
+  {
+    "id": "ms-0a279b32fda4",
+    "category": "Biotechnology",
+    "subcategory": "synthetic_biology",
+    "title": "Biomimetic cells enable new platform for T cell mechanotransduction studies",
+    "value": null,
+    "unit": null,
+    "source": "Nature Biotechnology",
+    "url": "https://www.nature.com/articles/s41587-026-03312-z",
+    "date": "2026-09-10",
+    "geolocation": {
+      "lat": 32.0603,
+      "lon": 118.7969
+    },
+    "first_seen": "2026-09-27",
     "last_seen": "2026-09-27"
   },
   {
@@ -660,6 +677,108 @@
       "lon": -77.0364
     },
     "first_seen": "2026-09-22",
+    "last_seen": "2026-09-27"
+  },
+  {
+    "id": "ms-cede87aeb630",
+    "category": "Computing & AGI",
+    "subcategory": "frontier_models",
+    "title": "Seed2.0 model series achieves world-leading reasoning and visual understanding for real-world tasks",
+    "value": null,
+    "unit": null,
+    "source": "ByteDance",
+    "url": "http://arxiv.org/abs/2607.00248v1",
+    "date": "2026-06-30",
+    "geolocation": {
+      "lat": 39.9042,
+      "lon": 116.4074
+    },
+    "first_seen": "2026-09-27",
+    "last_seen": "2026-09-27"
+  },
+  {
+    "id": "ms-fc6083e0cc69",
+    "category": "Computing & AGI",
+    "subcategory": "multimodal",
+    "title": "ORACLE-2 achieves 0.73 macro F1 for real-time transient classification using multimodal data",
+    "value": 0.73,
+    "unit": "macro F1 score",
+    "source": "Zwicky Transient Facility (ZTF)",
+    "url": "http://arxiv.org/abs/2607.00228v1",
+    "date": "2026-06-30",
+    "geolocation": {
+      "lat": 34.1377,
+      "lon": -118.1253
+    },
+    "first_seen": "2026-09-27",
+    "last_seen": "2026-09-27"
+  },
+  {
+    "id": "ms-46a7d8543058",
+    "category": "Computing & AGI",
+    "subcategory": "agentic_ai",
+    "title": "Mnemosyne introduces Agentic Transaction Processing with formal safety guarantees for AI workflows",
+    "value": 5.9,
+    "unit": "% throughput overhead",
+    "source": "Unknown",
+    "url": "http://arxiv.org/abs/2607.00269v3",
+    "date": "2026-06-30",
+    "geolocation": {
+      "lat": 0.0,
+      "lon": 0.0
+    },
+    "first_seen": "2026-09-27",
+    "last_seen": "2026-09-27"
+  },
+  {
+    "id": "ms-fb74b2202f85",
+    "category": "Computational Archaeology",
+    "subcategory": "ml_structural_analysis",
+    "title": "ML pipeline achieves 0.86 F1 classifying Inka khipu provenance and validates Santa Valley moiety structure",
+    "value": 0.86,
+    "unit": "F1 score",
+    "source": "Academic researchers (Open Khipu Repository)",
+    "url": "http://arxiv.org/abs/2607.00185v1",
+    "date": "2026-06-30",
+    "geolocation": {
+      "lat": 0.0,
+      "lon": 0.0
+    },
+    "first_seen": "2026-09-27",
+    "last_seen": "2026-09-27"
+  },
+  {
+    "id": "ms-f41cd2fc2342",
+    "category": "Quantum Physics",
+    "subcategory": "quantum_resource_theory",
+    "title": "First certificate-checked solution for quantum-advantage resource extraction from two-mode Gaussian states",
+    "value": null,
+    "unit": null,
+    "source": "Unknown",
+    "url": "http://arxiv.org/abs/2607.00266v1",
+    "date": "2026-06-30",
+    "geolocation": {
+      "lat": 0.0,
+      "lon": 0.0
+    },
+    "first_seen": "2026-09-27",
+    "last_seen": "2026-09-27"
+  },
+  {
+    "id": "ms-d6824a356960",
+    "category": "Computing & AGI",
+    "subcategory": "benchmarks",
+    "title": "EgoSafetyBench: Egocentric Video Benchmark for VLM Safety Guards",
+    "value": 1200,
+    "unit": "scenarios",
+    "source": "Research authors",
+    "url": "http://arxiv.org/abs/2607.00218v1",
+    "date": "2026-06-30",
+    "geolocation": {
+      "lat": 0.0,
+      "lon": 0.0
+    },
+    "first_seen": "2026-09-27",
     "last_seen": "2026-09-27"
   },
   {

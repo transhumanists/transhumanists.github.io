@@ -1,9 +1,9 @@
 {
-  "last_update": "2026-09-27T02:29:39+00:00",
+  "last_update": "2026-09-27T16:00:28+00:00",
   "bucket": "day",
   "first": "2026-04-01",
   "last": "2026-09-27",
-  "total": 46,
+  "total": 53,
   "days": [
     {
       "date": "2026-04-01",
@@ -367,7 +367,7 @@
     },
     {
       "date": "2026-06-30",
-      "count": 0
+      "count": 6
     },
     {
       "date": "2026-07-01",
@@ -655,7 +655,7 @@
     },
     {
       "date": "2026-09-10",
-      "count": 1
+      "count": 2
     },
     {
       "date": "2026-09-11",
@@ -728,6 +728,11 @@
   ],
   "spikes": [
     {
+      "date": "2026-06-30",
+      "count": 6,
+      "reason": "Seed2.0 model series achieves world-leading reasoning and visual understanding for real-world tasks; ORACLE-2 achieves 0.73 macro F1 for real-time transient classification using multimodal data; Mnemosyne introduces Agentic Transaction Processing with formal safety guarantees for AI workflows"
+    },
+    {
       "date": "2026-08-18",
       "count": 3,
       "reason": "Perovskite-silicon tandem cell; Logical qubit fidelity; Electron microscope resolution"
@@ -736,11 +741,6 @@
       "date": "2026-08-15",
       "count": 3,
       "reason": "Post-quantum TLS deployment (Top 100); NATO rapid reaction force size; HumanEval pass@1"
-    },
-    {
-      "date": "2026-07-15",
-      "count": 3,
-      "reason": "Max lifespan extension (mouse); Falcon Heavy lift to GTO; Entangled link distance"
     }
   ]
 }
