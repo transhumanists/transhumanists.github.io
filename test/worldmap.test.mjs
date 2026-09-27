@@ -672,6 +672,15 @@ test('zoom controls, keyboard and double-click do not throw', () => {
     expect(api.isFleetPlottable(api.normalizeFleet({ id: 'f15', from: { lat: 50, lon: 10 }, to: { lat: 0, lon: 0 } }))).toBe(false);
   });
 
+  test('isFleetPlottable accepts infantry deployments with lat/lon', () => {
+    const api = windowObj.__WORLDMAP_TEST__;
+    const ok = api.normalizeFleet({ id: 'inf-01', kind: 'mobilization', lat: 50, lon: 10 });
+    expect(api.isFleetPlottable(ok)).toBe(true);
+    expect(api.isFleetPlottable(api.normalizeFleet({ id: 'inf-02', kind: 'deployment', lat: 999, lon: 10 }))).toBe(false);
+    expect(api.isFleetPlottable(api.normalizeFleet({ id: 'inf-03', kind: 'rotation', lat: 50, lon: 1e400 }))).toBe(false);
+    expect(api.isFleetPlottable(api.normalizeFleet({ id: 'inf-04', kind: 'infantry', lat: 0, lon: 0 }))).toBe(false);  // unlocated marker
+  });
+
   test('new visitors see ALL milestones by default (breakthrough filter off)', () => {
     expect(registeredEls['filter-recent'].getAttribute('aria-pressed')).toBe('false');
     const api = windowObj.__WORLDMAP_TEST__;

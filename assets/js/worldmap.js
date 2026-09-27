@@ -48,6 +48,7 @@
   // Ground deployments: distinct amber/orange to avoid confusion with Biotechnology green
   const GROUND_COLOR = '#ffb347';
   const FLEET_COLOR = '#4fc3f7';
+  const INFANTRY_COLOR = '#e67e22';  // distinct orange-brown for ground troops
   // Very transparent arrow tail line (barely visible) — 8% opacity
   const ARROW_TAIL_OPACITY = 0.08;
   
@@ -986,7 +987,105 @@ function drawEvent(ev) {
   // dotted, and the arrowhead matches the line colour. Arrow tail is barely visible.
   // Still-active movements glow ("fluo"); concluded ones are dimmed and their
   // arrowhead stays flat. Movements outside the timeline year are skipped.
+  // Infantry deployments (mobilizations, ground troops) render as circles at their location.
   function drawFleet(fleet) {
+    if (!state.showFleets) return;
+    if (fleet._hiddenByTimeline) return;
+    
+    const isInfantry = fleet.kind === 'infantry' || fleet.kind === 'mobilization' || fleet.kind === 'deployment' || fleet.kind === 'rotation';
+    const isGround = fleet.kind === 'ground';
+    
+    if (isInfantry) {
+      // Infantry deployments render as circles at their location (like conflict zones)
+      const p = project(fleet.lon, fleet.lat);
+      const degToPx = state.height / 180;
+      const baseRadius = Math.max(4, (fleet.radiusDeg || 2) * degToPx * state.transform.scale);
+      const active = isLayerActive(fleet);
+      const now = new Date();
+      const currentYear = state.timelineYear !== undefined ? state.timelineYear : now.getFullYear();
+      const lastNewsYear = fleet.last_news_year;
+      const isStale = active && typeof lastNewsYear === 'number' && (currentYear - lastNewsYear) > 5;
+      const color = INFANTRY_COLOR;
+
+      if (active && !isStale) {
+        // Bright active: neon glow
+        const pulse = 0.5 + 0.5 * Math.sin(Date.now() / 900 + fleet.lon);
+        ctx.save();
+        ctx.globalCompositeOperation = 'lighter';
+        ctx.shadowColor = color;
+        ctx.shadowBlur = FLUO_GLOW_BLUR + FLUO_PULSE_RADIUS * pulse;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, baseRadius * 1.14, 0, Math.PI * 2);
+        ctx.fillStyle = withOpacity(color, 0.12);
+        ctx.fill();
+        ctx.restore();
+
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, baseRadius, 0, Math.PI * 2);
+        ctx.fillStyle = withOpacity(color, BRIGHT_ZONE_FILL_OPACITY);
+        ctx.fill();
+
+        ctx.save();
+        ctx.shadowColor = color;
+        ctx.shadowBlur = FLUO_LINE_GLOW_BLUR;
+        ctx.setLineDash([4, 3]);
+        ctx.lineDashOffset = -Date.now() / 40;
+        ctx.lineWidth = 2.5;
+        ctx.strokeStyle = withOpacity(color, BRIGHT_ZONE_STROKE_OPACITY);
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, baseRadius, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.restore();
+
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
+        ctx.fillStyle = color;
+        ctx.fill();
+      } else if (active && isStale) {
+        // Stale active: dimmed
+        ctx.save();
+        ctx.globalAlpha = STALE_ZONE_OPACITY;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, baseRadius, 0, Math.PI * 2);
+        ctx.fillStyle = withOpacity(color, 0.2);
+        ctx.fill();
+        ctx.setLineDash([4, 3]);
+        ctx.lineWidth = 1.5;
+        ctx.strokeStyle = withOpacity(color, 0.3);
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, baseRadius, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.restore();
+
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 2.5, 0, Math.PI * 2);
+        ctx.fillStyle = withOpacity(color, 0.25);
+        ctx.fill();
+      } else {
+        // Concluded: deeply dim
+        ctx.save();
+        ctx.globalAlpha = CONCLUDED_ZONE_OPACITY;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, baseRadius, 0, Math.PI * 2);
+        ctx.fillStyle = withOpacity(color, 0.1);
+        ctx.fill();
+        ctx.setLineDash([4, 3]);
+        ctx.lineWidth = 1;
+        ctx.strokeStyle = withOpacity(color, 0.1);
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, baseRadius, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.restore();
+
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 2, 0, Math.PI * 2);
+        ctx.fillStyle = withOpacity(color, 0.1);
+        ctx.fill();
+      }
+      return;
+    }
+
+    // Fleet/naval movements: arrow from A to B
     if (!state.showFleets) return;
     if (fleet._hiddenByTimeline) return;
     const a = project(fleet.from.lon, fleet.from.lat);
@@ -996,7 +1095,7 @@ function drawEvent(ev) {
     if (Math.abs(dx) < 0.5 && Math.abs(dy) < 0.5) return;
     const ang = Math.atan2(dy, dx);
     const headLen = 8;
-    const color = fleet.kind === 'ground' ? GROUND_COLOR : FLEET_COLOR;
+    const color = isGround ? GROUND_COLOR : FLEET_COLOR;
     const active = isLayerActive(fleet);
     const now = new Date();
     const currentYear = state.timelineYear !== undefined ? state.timelineYear : now.getFullYear();
@@ -1970,7 +2069,7 @@ const fragment = document.createDocumentFragment();
         key: 'deployments',
         label: 'Deployments',
         visible: deploymentsVisible,
-        splitColors: [GROUND_COLOR, FLEET_COLOR],
+        splitColors: [GROUND_COLOR, FLEET_COLOR, INFANTRY_COLOR],
         count: String(state.fleets.length),
         diamond: true,
         title: layerCountTitle(state.fleets)
@@ -2171,6 +2270,27 @@ const fragment = document.createDocumentFragment();
   }
 
   function normalizeFleet(f) {
+    const isInfantry = f.kind === 'infantry' || f.kind === 'mobilization' || f.kind === 'deployment' || f.kind === 'rotation';
+    if (isInfantry) {
+      // Infantry deployments have lat/lon instead of from/to
+      return {
+        id: f.id || '',
+        label: f.name || f.label || 'Infantry Deployment',
+        kind: f.kind,
+        lat: f.lat,
+        lon: f.lon,
+        status: f.status || 'active',
+        start_date: f.start_date || '',
+        end_date: f.end_date || '',
+        note: f.note || '',
+        source: f.source || '',
+        troops: f.troops,
+        direction: f.direction,
+        last_news_year: f.last_news_year,
+        radiusDeg: f.radiusDeg || 2
+      };
+    }
+    // Fleet/ground movements have from/to
     return {
       id: f.id || '',
       label: f.label || 'Deployment',
@@ -2203,6 +2323,10 @@ const fragment = document.createDocumentFragment();
     !(c?.lat === 0 && c?.lon === 0);
 
   function isFleetPlottable(f) {
+    const isInfantry = f.kind === 'infantry' || f.kind === 'mobilization' || f.kind === 'deployment' || f.kind === 'rotation';
+    if (isInfantry) {
+      return isLocatedCoord({ lat: f.lat, lon: f.lon });
+    }
     return isLocatedCoord(f?.from) && isLocatedCoord(f?.to);
   }
 

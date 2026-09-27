@@ -1181,6 +1181,169 @@
       }
     }
     
+    // Populate carousel with recent milestones
+    async function populateCarousel() {
+      try {
+        const data = await getMilestonesData();
+        if (!data || !data.categories) return;
+        
+        // Flatten and sort milestones by date (newest first)
+        let allMilestones = [];
+        for (const [catKey, catData] of Object.entries(data.categories)) {
+          (catData.milestones || []).forEach(m => {
+            allMilestones.push({
+              ...m,
+              category_key: catKey,
+              category_name: catData.name,
+              category_icon: catData.icon,
+              category_color: catData.color
+            });
+          });
+        }
+        
+        allMilestones.sort((a, b) => new Date(b.date) - new Date(a.date));
+        
+        // Take the 10 most recent milestones
+        const recentMilestones = allMilestones.slice(0, 10);
+        
+        // Clear track and populate with milestone cards
+        track.innerHTML = '';
+        recentMilestones.forEach(m => {
+          const catConfig = CATEGORY_CONFIG[m.category_key] || { name: m.category_name, icon: '📌', color: '#00d4ff' };
+          
+          const card = document.createElement('div');
+          card.className = 'milestone-card';
+          card.style.setProperty('--catalog-accent', catConfig.color);
+          card.style.setProperty('--catalog-accent-alpha', catConfig.color + '33');
+          
+          const header = document.createElement('div');
+          header.className = 'milestone-card-header';
+          
+          const icon = document.createElement('span');
+          icon.className = 'milestone-card-icon';
+          icon.textContent = catConfig.icon;
+          icon.setAttribute('aria-hidden', 'true');
+          
+          const catInfo = document.createElement('div');
+          catInfo.className = 'milestone-card-cat-info';
+          const catName = document.createElement('div');
+          catName.className = 'milestone-card-cat-name';
+          catName.textContent = catConfig.name;
+          catName.style.color = catConfig.color;
+          const title = document.createElement('h4');
+          title.className = 'milestone-card-title';
+          title.textContent = m.title;
+          catInfo.appendChild(catName);
+          catInfo.appendChild(title);
+          header.appendChild(icon);
+          header.appendChild(catInfo);
+          card.appendChild(header);
+          
+          const meta = document.createElement('div');
+          meta.className = 'milestone-card-meta';
+          const sourceSpan = document.createElement('span');
+          sourceSpan.textContent = m.source;
+          const dotSpan = document.createElement('span');
+          dotSpan.textContent = ' · ';
+          const dateSpan = document.createElement('span');
+          dateSpan.textContent = m.date;
+          meta.appendChild(sourceSpan);
+          meta.appendChild(dotSpan);
+          meta.appendChild(dateSpan);
+          card.appendChild(meta);
+          
+          card.style.cursor = 'pointer';
+          card.setAttribute('role', 'button');
+          card.setAttribute('tabindex', '0');
+          card.addEventListener('click', () => openMilestoneModal(m));
+          card.addEventListener('keydown', e => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              openMilestoneModal(m);
+            }
+          });
+          
+          track.appendChild(card);
+        });
+        
+        return true;
+      } catch (e) {
+        console.warn('Failed to populate highlights carousel:', e);
+        return false;
+      }
+    }
+    
+    function updateCarousel() {
+      if (!items.length) return;
+      
+      // Update track position
+      const itemWidth = track.children[0]?.offsetWidth || 0;
+      if (itemWidth > 0) {
+        track.style.transform = `translateX(-${currentIndex * (items[0].offsetWidth + 16)}px)`;
+      }
+      
+      // Update indicators
+      indicators.forEach((indicator, i) => {
+        indicator.classList.toggle('active', i === currentIndex);
+        indicator.setAttribute('aria-current', i === currentIndex ? 'true' : 'false');
+      });
+      
+      // Update button states
+      if (prevBtn) prevBtn.disabled = currentIndex === 0;
+      if (nextBtn) nextBtn.disabled = currentIndex >= items.length - 1;
+    }
+    
+    function goToSlide(index) {
+      if (index < 0 || index >= items.length) return;
+      currentIndex = index;
+      updateCarousel();
+    }
+    
+    function nextSlide() {
+      if (currentIndex < items.length - 1) {
+        goToSlide(currentIndex + 1);
+      } else {
+        goToSlide(0); // Loop back to start
+      }
+    }
+    
+    function prevSlide() {
+      if (currentIndex > 0) {
+        goToSlide(currentIndex - 1);
+      } else {
+        goToSlide(items.length - 1); // Loop to end
+      }
+    }
+    
+    function startAutoSlide() {
+      stopAutoSlide();
+      autoSlideTimer = setInterval(() => {
+        nextSlide();
+      }, AUTO_SLIDE_INTERVAL);
+    }
+    
+    function stopAutoSlide() {
+      if (autoSlideTimer) {
+        clearInterval(autoSlideTimer);
+        autoSlideTimer = null;
+      }
+    }
+    
+    function renderIndicators() {
+      if (!indicatorsContainer || !items.length) return;
+      indicatorsContainer.innerHTML = '';
+      indicators = [];
+      for (let i = 0; i < items.length; i++) {
+        const indicator = document.createElement('button');
+        indicator.className = 'highlights-carousel-indicator';
+        indicator.setAttribute('aria-label', `Go to slide ${i + 1}`);
+        indicator.setAttribute('aria-current', i === 0 ? 'true' : 'false');
+        indicator.addEventListener('click', () => goToSlide(i));
+        indicators.push(indicator);
+        indicatorsContainer.appendChild(indicator);
+      }
+    }
+    
     // Pause auto-slide on hover
     carousel.addEventListener('mouseenter', stopAutoSlide);
     carousel.addEventListener('mouseleave', startAutoSlide);
@@ -1217,7 +1380,13 @@
     });
     
     // Initialize
-    function init() {
+    async function init() {
+      const populated = await populateCarousel();
+      if (!populated) {
+        carousel.style.display = 'none';
+        return;
+      }
+      
       // Get the milestone cards from the track
       items = Array.from(track.children).filter(el => el.classList.contains('milestone-card'));
       

@@ -288,12 +288,20 @@ def check_fleets(fleets: object, kind: str = "deployments") -> list[str]:
         if not isinstance(f, dict):
             issues.append(f"{kind}[{i}]: entry must be an object")
             continue
-        if not _coord_located(f.get("from", {}).get("lat") if isinstance(f.get("from"), dict) else None,
-                              f.get("from", {}).get("lon") if isinstance(f.get("from"), dict) else None):
-            issues.append(f"{kind}[{i}]: from must be a located lat/lon pair (finite, in range, not 0,0)")
-        if not _coord_located(f.get("to", {}).get("lat") if isinstance(f.get("to"), dict) else None,
-                              f.get("to", {}).get("lon") if isinstance(f.get("to"), dict) else None):
-            issues.append(f"{kind}[{i}]: to must be a located lat/lon pair (finite, in range, not 0,0)")
+        dep_kind = f.get("kind", "")
+        is_infantry = dep_kind in ("infantry", "mobilization", "deployment", "rotation")
+        if is_infantry:
+            # Infantry deployments use lat/lon instead of from/to
+            if not _coord_located(f.get("lat"), f.get("lon")):
+                issues.append(f"{kind}[{i}]: lat/lon must be a located coordinate (finite, in range, not 0,0)")
+        else:
+            # Fleet/ground movements use from/to
+            if not _coord_located(f.get("from", {}).get("lat") if isinstance(f.get("from"), dict) else None,
+                                  f.get("from", {}).get("lon") if isinstance(f.get("from"), dict) else None):
+                issues.append(f"{kind}[{i}]: from must be a located lat/lon pair (finite, in range, not 0,0)")
+            if not _coord_located(f.get("to", {}).get("lat") if isinstance(f.get("to"), dict) else None,
+                                  f.get("to", {}).get("lon") if isinstance(f.get("to"), dict) else None):
+                issues.append(f"{kind}[{i}]: to must be a located lat/lon pair (finite, in range, not 0,0)")
         issues.extend(_check_lifecycle(kind, i, f))
     issues.extend(_check_unique_ids(kind, fleets if isinstance(fleets, list) else []))
     return issues
