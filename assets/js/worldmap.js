@@ -987,107 +987,116 @@ function drawEvent(ev) {
   // dotted, and the arrowhead matches the line colour. Arrow tail is barely visible.
   // Still-active movements glow ("fluo"); concluded ones are dimmed and their
   // arrowhead stays flat. Movements outside the timeline year are skipped.
-  // Infantry deployments (mobilizations, ground troops) render as circles at their location.
   function drawFleet(fleet) {
     if (!state.showFleets) return;
     if (fleet._hiddenByTimeline) return;
-    
+
     const isInfantry = fleet.kind === 'infantry' || fleet.kind === 'mobilization' || fleet.kind === 'deployment' || fleet.kind === 'rotation';
     const isGround = fleet.kind === 'ground';
-    
+    const now = new Date();
+    const currentYear = state.timelineYear !== undefined ? state.timelineYear : now.getFullYear();
+    const lastNewsYear = fleet.last_news_year;
+    const isStale = isLayerActive(fleet) && typeof lastNewsYear === 'number' && (currentYear - lastNewsYear) > 5;
+
     if (isInfantry) {
-      // Infantry deployments render as circles at their location (like conflict zones)
-      const p = project(fleet.lon, fleet.lat);
-      const degToPx = state.height / 180;
-      const baseRadius = Math.max(4, (fleet.radiusDeg || 2) * degToPx * state.transform.scale);
-      const active = isLayerActive(fleet);
-      const now = new Date();
-      const currentYear = state.timelineYear !== undefined ? state.timelineYear : now.getFullYear();
-      const lastNewsYear = fleet.last_news_year;
-      const isStale = active && typeof lastNewsYear === 'number' && (currentYear - lastNewsYear) > 5;
+      // For infantry deployments, create an arrow from a from-point to the lat/lon location
+      // based on the deployment direction
+      const destLon = fleet.lon;
+      const destLat = fleet.lat;
+
+      // Convert direction to angle for calculating the from-point
+      let fromLon = destLon;
+      let fromLat = destLat;
+      const deploymentDirection = fleet.direction ? fleet.direction.toLowerCase() : 'global';
+
+      if (deploymentDirection === 'east') {
+        // Moving east: from 5 degrees west of destination
+        fromLon = destLon - 5;
+        fromLat = destLat;
+      } else if (deploymentDirection === 'west') {
+        // Moving west: from 5 degrees east of destination
+        fromLon = destLon + 5;
+        fromLat = destLat;
+      } else if (deploymentDirection === 'north') {
+        // Moving north: from 5 degrees south of destination
+        fromLon = destLon;
+        fromLat = destLat + 5;
+      } else if (deploymentDirection === 'south') {
+        // Moving south: from 5 degrees north of destination
+        fromLon = destLon;
+        fromLat = destLat - 5;
+      } else if (deploymentDirection === 'global') {
+        // Global/no direction: use random offset or just show a small arrow from center
+        fromLon = destLon - 3 + Math.random() * 6;
+        fromLat = destLat - 3 + Math.random() * 6;
+      }
+
+      const fromPoint = { lat: fromLat, lon: fromLon };
+      const toPoint = { lat: destLat, lon: destLon };
+      const a = project(fromPoint.lon, fromPoint.lat);
+      const b = project(toPoint.lon, toPoint.lat);
+      const dx = b.x - a.x;
+      const dy = b.y - a.y;
+      if (Math.abs(dx) < 0.5 && Math.abs(dy) < 0.5) return;
+      const ang = Math.atan2(dy, dx);
+      const headLen = 8;
       const color = INFANTRY_COLOR;
+      const active = isLayerActive(fleet);
 
+      // Very transparent arrow tail line (barely visible); very active movements
+      // get a luminous second pass over the tail so the whole vector reads live.
+      ctx.save();
+      const tailOpacity = active ? (isStale ? ARROW_TAIL_OPACITY * 0.4 : ARROW_TAIL_OPACITY) : ARROW_TAIL_OPACITY * 0.25;
+      ctx.strokeStyle = withOpacity(color, tailOpacity);
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.moveTo(a.x, a.y);
+      ctx.lineTo(b.x, b.y);
+      ctx.stroke();
       if (active && !isStale) {
-        // Bright active: neon glow
-        const pulse = 0.5 + 0.5 * Math.sin(Date.now() / 900 + fleet.lon);
-        ctx.save();
-        ctx.globalCompositeOperation = 'lighter';
-        ctx.shadowColor = color;
-        ctx.shadowBlur = FLUO_GLOW_BLUR + FLUO_PULSE_RADIUS * pulse;
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, baseRadius * 1.14, 0, Math.PI * 2);
-        ctx.fillStyle = withOpacity(color, 0.12);
-        ctx.fill();
-        ctx.restore();
-
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, baseRadius, 0, Math.PI * 2);
-        ctx.fillStyle = withOpacity(color, BRIGHT_ZONE_FILL_OPACITY);
-        ctx.fill();
-
-        ctx.save();
         ctx.shadowColor = color;
         ctx.shadowBlur = FLUO_LINE_GLOW_BLUR;
-        ctx.setLineDash([4, 3]);
-        ctx.lineDashOffset = -Date.now() / 40;
-        ctx.lineWidth = 2.5;
-        ctx.strokeStyle = withOpacity(color, BRIGHT_ZONE_STROKE_OPACITY);
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, baseRadius, 0, Math.PI * 2);
-        ctx.stroke();
-        ctx.restore();
-
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
-        ctx.fillStyle = color;
-        ctx.fill();
-      } else if (active && isStale) {
-        // Stale active: dimmed
-        ctx.save();
-        ctx.globalAlpha = STALE_ZONE_OPACITY;
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, baseRadius, 0, Math.PI * 2);
-        ctx.fillStyle = withOpacity(color, 0.2);
-        ctx.fill();
-        ctx.setLineDash([4, 3]);
-        ctx.lineWidth = 1.5;
         ctx.strokeStyle = withOpacity(color, 0.3);
+        ctx.lineWidth = 2.2;
         ctx.beginPath();
-        ctx.arc(p.x, p.y, baseRadius, 0, Math.PI * 2);
+        ctx.moveTo(a.x, a.y);
+        ctx.lineTo(b.x, b.y);
         ctx.stroke();
-        ctx.restore();
-
+      } else if (active && isStale) {
+        ctx.shadowColor = color;
+        ctx.shadowBlur = FLUO_LINE_GLOW_BLUR / 2;
+        ctx.strokeStyle = withOpacity(color, 0.15);
+        ctx.lineWidth = 1.5;
         ctx.beginPath();
-        ctx.arc(p.x, p.y, 2.5, 0, Math.PI * 2);
-        ctx.fillStyle = withOpacity(color, 0.25);
-        ctx.fill();
-      } else {
-        // Concluded: deeply dim
-        ctx.save();
-        ctx.globalAlpha = CONCLUDED_ZONE_OPACITY;
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, baseRadius, 0, Math.PI * 2);
-        ctx.fillStyle = withOpacity(color, 0.1);
-        ctx.fill();
-        ctx.setLineDash([4, 3]);
-        ctx.lineWidth = 1;
-        ctx.strokeStyle = withOpacity(color, 0.1);
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, baseRadius, 0, Math.PI * 2);
+        ctx.moveTo(a.x, a.y);
+        ctx.lineTo(b.x, b.y);
         ctx.stroke();
-        ctx.restore();
-
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, 2, 0, Math.PI * 2);
-        ctx.fillStyle = withOpacity(color, 0.1);
-        ctx.fill();
       }
+      ctx.restore();
+
+      // Solid arrowhead; the halo makes active heads breathe slightly.
+      ctx.save();
+      if (active && !isStale) {
+        ctx.shadowColor = color;
+        ctx.shadowBlur = FLUO_LINE_GLOW_BLUR + 5 * (0.5 + 0.5 * Math.sin(Date.now() / 650 + a.x));
+      } else if (active && isStale) {
+        ctx.shadowColor = color;
+        ctx.shadowBlur = FLUO_LINE_GLOW_BLUR / 2;
+      } else {
+        ctx.globalAlpha = CONCLUDED_OPACITY;
+      }
+      ctx.beginPath();
+      ctx.moveTo(b.x, b.y);
+      ctx.lineTo(b.x - headLen * Math.cos(ang - 0.4), b.y - headLen * Math.sin(ang - 0.4));
+      ctx.lineTo(b.x - headLen * Math.cos(ang + 0.4), b.y - headLen * Math.sin(ang + 0.4));
+      ctx.closePath();
+      ctx.fillStyle = color;
+      ctx.fill();
+      ctx.restore();
       return;
     }
 
     // Fleet/naval movements: arrow from A to B
-    if (!state.showFleets) return;
-    if (fleet._hiddenByTimeline) return;
     const a = project(fleet.from.lon, fleet.from.lat);
     const b = project(fleet.to.lon, fleet.to.lat);
     const dx = b.x - a.x;
@@ -1097,10 +1106,6 @@ function drawEvent(ev) {
     const headLen = 8;
     const color = isGround ? GROUND_COLOR : FLEET_COLOR;
     const active = isLayerActive(fleet);
-    const now = new Date();
-    const currentYear = state.timelineYear !== undefined ? state.timelineYear : now.getFullYear();
-    const lastNewsYear = fleet.last_news_year;
-    const isStale = active && typeof lastNewsYear === 'number' && (currentYear - lastNewsYear) > 5;
 
     // Very transparent arrow tail line (barely visible); very active movements
     // get a luminous second pass over the tail so the whole vector reads live.
