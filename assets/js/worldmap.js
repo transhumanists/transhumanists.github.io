@@ -45,10 +45,9 @@
   const CRISIS_COLOR = '#b388ff';
   const CRISIS_FILL = 'rgba(179, 136, 255, 0.14)';
   const CRISIS_STROKE = 'rgba(179, 136, 255, 1)';
-  // Ground deployments: distinct amber/orange to avoid confusion with Biotechnology green
+  // Ground deployments (mobilizations, troop movements): distinct amber/orange
   const GROUND_COLOR = '#ffb347';
   const FLEET_COLOR = '#4fc3f7';
-  const INFANTRY_COLOR = '#e67e22';  // distinct orange-brown for ground troops
   // Very transparent arrow tail line (barely visible) — 8% opacity
   const ARROW_TAIL_OPACITY = 0.08;
   
@@ -1040,7 +1039,7 @@ function drawEvent(ev) {
       if (Math.abs(dx) < 0.5 && Math.abs(dy) < 0.5) return;
       const ang = Math.atan2(dy, dx);
       const headLen = 8;
-      const color = INFANTRY_COLOR;
+      const color = GROUND_COLOR;
       const active = isLayerActive(fleet);
 
       // Very transparent arrow tail line (barely visible); very active movements
@@ -2074,7 +2073,7 @@ const fragment = document.createDocumentFragment();
         key: 'deployments',
         label: 'Deployments',
         visible: deploymentsVisible,
-        splitColors: [GROUND_COLOR, FLEET_COLOR, INFANTRY_COLOR],
+        splitColors: [GROUND_COLOR, FLEET_COLOR],
         count: String(state.fleets.length),
         diamond: true,
         title: layerCountTitle(state.fleets)
