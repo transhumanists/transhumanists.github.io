@@ -1,5 +1,5 @@
 {
-  "last_update": "2026-09-28T23:18:48+00:00",
+  "last_update": "2026-09-28T23:24:24+00:00",
   "version": "1.0.0",
   "events": [
     {
@@ -637,6 +637,71 @@
       "geolocation": {
         "lat": 32.0853,
         "lon": 34.7818
+      }
+    },
+    {
+      "id": "ev-his-1983-04-01-pcr",
+      "title": "Kary Mullis conceives the polymerase chain reaction (PCR)",
+      "category": "Biotechnology",
+      "value": "Kary Mullis conceives the polymerase chain reaction (PCR)",
+      "source": "Cetus Corporation",
+      "url": "https://en.wikipedia.org/wiki/Polymerase_chain_reaction",
+      "date": "1983-04-01",
+      "geolocation": {
+        "lat": 37.8313,
+        "lon": -122.2853
+      }
+    },
+    {
+      "id": "ev-his-1983-03-23-sdi-announced",
+      "title": "US announces the Strategic Defense Initiative (SDI)",
+      "category": "Military & Defense",
+      "value": "US announces the Strategic Defense Initiative (SDI)",
+      "source": "White House",
+      "url": "https://en.wikipedia.org/wiki/Strategic_Defense_Initiative",
+      "date": "1983-03-23",
+      "geolocation": {
+        "lat": 38.9072,
+        "lon": -77.0369
+      }
+    },
+    {
+      "id": "ev-his-1981-05-06-feynman-quantum",
+      "title": "Feynman proposes computers built from quantum mechanical principles",
+      "category": "Quantum Physics",
+      "value": "Feynman proposes computers built from quantum mechanical principles",
+      "source": "Caltech / MIT",
+      "url": "https://en.wikipedia.org/wiki/Quantum_computing",
+      "date": "1981-05-06",
+      "geolocation": {
+        "lat": 34.1377,
+        "lon": -118.1253
+      }
+    },
+    {
+      "id": "ev-his-1981-04-12-sts-1",
+      "title": "STS-1 Columbia - first launch of the Space Shuttle",
+      "category": "Spaceflight & Aeronautics",
+      "value": "STS-1 Columbia - first launch of the Space Shuttle",
+      "source": "NASA",
+      "url": "https://en.wikipedia.org/wiki/STS-1",
+      "date": "1981-04-12",
+      "geolocation": {
+        "lat": 28.5728,
+        "lon": -80.649
+      }
+    },
+    {
+      "id": "ev-his-1976-07-01-four-color-theorem",
+      "title": "Four color theorem proven with the aid of a computer",
+      "category": "Mathematics",
+      "value": "Four color theorem proven with the aid of a computer",
+      "source": "University of Illinois Urbana-Champaign",
+      "url": "https://en.wikipedia.org/wiki/Four_color_theorem",
+      "date": "1976-07-01",
+      "geolocation": {
+        "lat": 40.102,
+        "lon": -88.2272
       }
     },
     {

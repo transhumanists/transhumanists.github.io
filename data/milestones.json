@@ -1,5 +1,5 @@
 {
-  "last_update": "2026-09-28T23:18:48+00:00",
+  "last_update": "2026-09-28T23:24:24+00:00",
   "version": "1.0.0",
   "schema": "https://transhumanists.github.io/schema/milestone-v1.json",
   "categories": {
@@ -328,6 +328,22 @@
           },
           "category": "Biotechnology",
           "is_new": false,
+          "category_key": "biotechnology"
+        },
+        {
+          "id": "his-1983-04-01-pcr",
+          "category": "Biotechnology",
+          "subcategory": "synthetic_biology",
+          "title": "Kary Mullis conceives the polymerase chain reaction (PCR)",
+          "value": null,
+          "unit": null,
+          "source": "Cetus Corporation",
+          "url": "https://en.wikipedia.org/wiki/Polymerase_chain_reaction",
+          "date": "1983-04-01",
+          "geolocation": {
+            "lat": 37.8313,
+            "lon": -122.2853
+          },
           "category_key": "biotechnology"
         },
         {
@@ -788,6 +804,22 @@
             "lon": 0.0
           },
           "category_key": "mathematics"
+        },
+        {
+          "id": "his-1976-07-01-four-color-theorem",
+          "category": "Mathematics",
+          "subcategory": "graph_theory",
+          "title": "Four color theorem proven with the aid of a computer",
+          "value": null,
+          "unit": null,
+          "source": "University of Illinois Urbana-Champaign",
+          "url": "https://en.wikipedia.org/wiki/Four_color_theorem",
+          "date": "1976-07-01",
+          "geolocation": {
+            "lat": 40.102,
+            "lon": -88.2272
+          },
+          "category_key": "mathematics"
         }
       ]
     },
@@ -871,6 +903,22 @@
           },
           "category": "Spaceflight & Aeronautics",
           "is_new": false,
+          "category_key": "spaceflight"
+        },
+        {
+          "id": "his-1981-04-12-sts-1",
+          "category": "Spaceflight & Aeronautics",
+          "subcategory": "launch",
+          "title": "STS-1 Columbia - first launch of the Space Shuttle",
+          "value": null,
+          "unit": null,
+          "source": "NASA",
+          "url": "https://en.wikipedia.org/wiki/STS-1",
+          "date": "1981-04-12",
+          "geolocation": {
+            "lat": 28.5728,
+            "lon": -80.649
+          },
           "category_key": "spaceflight"
         },
         {
@@ -1160,6 +1208,22 @@
             "lon": 0.0
           },
           "category_key": "quantum"
+        },
+        {
+          "id": "his-1981-05-06-feynman-quantum",
+          "category": "Quantum Physics",
+          "subcategory": "quantum_resource_theory",
+          "title": "Feynman proposes computers built from quantum mechanical principles",
+          "value": null,
+          "unit": null,
+          "source": "Caltech / MIT",
+          "url": "https://en.wikipedia.org/wiki/Quantum_computing",
+          "date": "1981-05-06",
+          "geolocation": {
+            "lat": 34.1377,
+            "lon": -118.1253
+          },
+          "category_key": "quantum"
         }
       ]
     },
@@ -1262,6 +1326,22 @@
           },
           "category": "Military & Defense",
           "is_new": false,
+          "category_key": "defense"
+        },
+        {
+          "id": "his-1983-03-23-sdi-announced",
+          "category": "Military & Defense",
+          "subcategory": "air_defense",
+          "title": "US announces the Strategic Defense Initiative (SDI)",
+          "value": null,
+          "unit": null,
+          "source": "White House",
+          "url": "https://en.wikipedia.org/wiki/Strategic_Defense_Initiative",
+          "date": "1983-03-23",
+          "geolocation": {
+            "lat": 38.9072,
+            "lon": -77.0369
+          },
           "category_key": "defense"
         },
         {
