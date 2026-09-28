@@ -1,5 +1,5 @@
 {
-  "last_update": "2026-09-28T23:24:24+00:00",
+  "last_update": "2026-09-28T23:29:34+00:00",
   "version": "1.0.0",
   "schema": "https://transhumanists.github.io/schema/milestone-v1.json",
   "categories": {
@@ -331,6 +331,22 @@
           "category_key": "biotechnology"
         },
         {
+          "id": "his-1996-07-05-dolly",
+          "category": "Biotechnology",
+          "subcategory": "synthetic_biology",
+          "title": "Dolly - the first mammal cloned from an adult somatic cell",
+          "value": null,
+          "unit": null,
+          "source": "Roslin Institute",
+          "url": "https://en.wikipedia.org/wiki/Dolly_(sheep)",
+          "date": "1996-07-05",
+          "geolocation": {
+            "lat": 55.9533,
+            "lon": -3.1883
+          },
+          "category_key": "biotechnology"
+        },
+        {
           "id": "his-1983-04-01-pcr",
           "category": "Biotechnology",
           "subcategory": "synthetic_biology",
@@ -464,6 +480,22 @@
           },
           "category": "Cybersecurity",
           "is_new": false,
+          "category_key": "cybersecurity"
+        },
+        {
+          "id": "his-1988-11-02-morris-worm",
+          "category": "Cybersecurity",
+          "subcategory": "exploits",
+          "title": "Morris worm infects roughly a tenth of the early internet",
+          "value": null,
+          "unit": null,
+          "source": "MIT / Cornell",
+          "url": "https://en.wikipedia.org/wiki/Morris_worm",
+          "date": "1988-11-02",
+          "geolocation": {
+            "lat": 42.3601,
+            "lon": -71.0942
+          },
           "category_key": "cybersecurity"
         }
       ]
@@ -730,6 +762,22 @@
           "geolocation": {
             "lat": 0.0,
             "lon": 0.0
+          },
+          "category_key": "computing_agi"
+        },
+        {
+          "id": "his-1997-05-11-deep-blue",
+          "category": "Computing & AGI",
+          "subcategory": "machine_learning",
+          "title": "Deep Blue becomes the first computer to beat a world chess champion in a match",
+          "value": null,
+          "unit": null,
+          "source": "IBM",
+          "url": "https://en.wikipedia.org/wiki/Deep_Blue_(chess_computer)",
+          "date": "1997-05-11",
+          "geolocation": {
+            "lat": 40.758,
+            "lon": -73.9683
           },
           "category_key": "computing_agi"
         },
@@ -1210,6 +1258,22 @@
           "category_key": "quantum"
         },
         {
+          "id": "his-1994-10-01-shor-algorithm",
+          "category": "Quantum Physics",
+          "subcategory": "quantum_resource_theory",
+          "title": "Shor's algorithm shows quantum computers can factor integers in polynomial time",
+          "value": null,
+          "unit": null,
+          "source": "AT&T Bell Labs",
+          "url": "https://en.wikipedia.org/wiki/Shor%27s_algorithm",
+          "date": "1994-10-01",
+          "geolocation": {
+            "lat": 40.69,
+            "lon": -74.401
+          },
+          "category_key": "quantum"
+        },
+        {
           "id": "his-1981-05-06-feynman-quantum",
           "category": "Quantum Physics",
           "subcategory": "quantum_resource_theory",
@@ -1326,6 +1390,22 @@
           },
           "category": "Military & Defense",
           "is_new": false,
+          "category_key": "defense"
+        },
+        {
+          "id": "his-1991-01-18-patriot-scud",
+          "category": "Military & Defense",
+          "subcategory": "air_defense",
+          "title": "Patriot system performs its first combat intercept of a Scud missile",
+          "value": null,
+          "unit": null,
+          "source": "US Army",
+          "url": "https://en.wikipedia.org/wiki/MIM-104_Patriot",
+          "date": "1991-01-18",
+          "geolocation": {
+            "lat": 24.7136,
+            "lon": 46.6753
+          },
           "category_key": "defense"
         },
         {

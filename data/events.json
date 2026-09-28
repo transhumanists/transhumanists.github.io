@@ -1,5 +1,5 @@
 {
-  "last_update": "2026-09-28T23:24:24+00:00",
+  "last_update": "2026-09-28T23:29:34+00:00",
   "version": "1.0.0",
   "events": [
     {
@@ -637,6 +637,71 @@
       "geolocation": {
         "lat": 32.0853,
         "lon": 34.7818
+      }
+    },
+    {
+      "id": "ev-his-1997-05-11-deep-blue",
+      "title": "Deep Blue becomes the first computer to beat a world chess champion in a match",
+      "category": "Computing & AGI",
+      "value": "Deep Blue becomes the first computer to beat a world chess champion in a match",
+      "source": "IBM",
+      "url": "https://en.wikipedia.org/wiki/Deep_Blue_(chess_computer)",
+      "date": "1997-05-11",
+      "geolocation": {
+        "lat": 40.758,
+        "lon": -73.9683
+      }
+    },
+    {
+      "id": "ev-his-1996-07-05-dolly",
+      "title": "Dolly - the first mammal cloned from an adult somatic cell",
+      "category": "Biotechnology",
+      "value": "Dolly - the first mammal cloned from an adult somatic cell",
+      "source": "Roslin Institute",
+      "url": "https://en.wikipedia.org/wiki/Dolly_(sheep)",
+      "date": "1996-07-05",
+      "geolocation": {
+        "lat": 55.9533,
+        "lon": -3.1883
+      }
+    },
+    {
+      "id": "ev-his-1994-10-01-shor-algorithm",
+      "title": "Shor's algorithm shows quantum computers can factor integers in polynomial time",
+      "category": "Quantum Physics",
+      "value": "Shor's algorithm shows quantum computers can factor integers in polynomial time",
+      "source": "AT&T Bell Labs",
+      "url": "https://en.wikipedia.org/wiki/Shor%27s_algorithm",
+      "date": "1994-10-01",
+      "geolocation": {
+        "lat": 40.69,
+        "lon": -74.401
+      }
+    },
+    {
+      "id": "ev-his-1991-01-18-patriot-scud",
+      "title": "Patriot system performs its first combat intercept of a Scud missile",
+      "category": "Military & Defense",
+      "value": "Patriot system performs its first combat intercept of a Scud missile",
+      "source": "US Army",
+      "url": "https://en.wikipedia.org/wiki/MIM-104_Patriot",
+      "date": "1991-01-18",
+      "geolocation": {
+        "lat": 24.7136,
+        "lon": 46.6753
+      }
+    },
+    {
+      "id": "ev-his-1988-11-02-morris-worm",
+      "title": "Morris worm infects roughly a tenth of the early internet",
+      "category": "Cybersecurity",
+      "value": "Morris worm infects roughly a tenth of the early internet",
+      "source": "MIT / Cornell",
+      "url": "https://en.wikipedia.org/wiki/Morris_worm",
+      "date": "1988-11-02",
+      "geolocation": {
+        "lat": 42.3601,
+        "lon": -71.0942
       }
     },
     {
