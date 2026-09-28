@@ -1,5 +1,39 @@
 [
   {
+    "id": "ms-8644b2a34d60",
+    "category": "Biotechnology",
+    "subcategory": "gene_therapy",
+    "title": "New ionizable lipid LC-1 enables efficient LNP delivery of large gene editors to multiple tissues",
+    "value": null,
+    "unit": null,
+    "source": "Nature Biotechnology",
+    "url": "https://www.nature.com/articles/s41587-026-03297-9",
+    "date": "2026-09-28",
+    "geolocation": {
+      "lat": 32.0603,
+      "lon": 118.7969
+    },
+    "first_seen": "2026-09-28",
+    "last_seen": "2026-09-28"
+  },
+  {
+    "id": "ms-e0d7fb1f057f",
+    "category": "Biotechnology",
+    "subcategory": "gene_editing",
+    "title": "Lipid nanoparticles optimized for large RNA cargo and tissue targeting enhance in vivo genome editing",
+    "value": null,
+    "unit": null,
+    "source": "Nature Biotechnology",
+    "url": "https://www.nature.com/articles/s41587-026-03298-8",
+    "date": "2026-09-28",
+    "geolocation": {
+      "lat": 32.0603,
+      "lon": 118.7969
+    },
+    "first_seen": "2026-09-28",
+    "last_seen": "2026-09-28"
+  },
+  {
     "id": "ms-84669fafeb66",
     "category": "Cybersecurity",
     "subcategory": "exploits",
@@ -683,7 +717,7 @@
     "id": "ms-cede87aeb630",
     "category": "Computing & AGI",
     "subcategory": "frontier_models",
-    "title": "Seed2.0 model series achieves world-leading reasoning and visual understanding for real-world tasks",
+    "title": "Seed2.0 model achieves world-leading reasoning and multimodal capabilities",
     "value": null,
     "unit": null,
     "source": "ByteDance",
@@ -700,10 +734,10 @@
     "id": "ms-fc6083e0cc69",
     "category": "Computing & AGI",
     "subcategory": "multimodal",
-    "title": "ORACLE-2 achieves 0.73 macro F1 for real-time transient classification using multimodal data",
+    "title": "ORACLE-2 Omni achieves 0.73 macro F1 for real-time transient classification using multimodal data",
     "value": 0.73,
     "unit": "macro F1 score",
-    "source": "Zwicky Transient Facility (ZTF)",
+    "source": "Zwicky Transient Facility (ZTF) collaboration",
     "url": "http://arxiv.org/abs/2607.00228v1",
     "date": "2026-06-30",
     "geolocation": {
@@ -728,6 +762,23 @@
       "lon": 0.0
     },
     "first_seen": "2026-09-27",
+    "last_seen": "2026-09-28"
+  },
+  {
+    "id": "ms-10f19d45d95b",
+    "category": "Computational Archaeology",
+    "subcategory": "pattern_mining",
+    "title": "ML-driven Structural Pattern Mining of Inka Khipus",
+    "value": 0.86,
+    "unit": "F1 score",
+    "source": "Open Khipu Repository",
+    "url": "http://arxiv.org/abs/2607.00185v1",
+    "date": "2026-06-30",
+    "geolocation": {
+      "lat": 0.0,
+      "lon": 0.0
+    },
+    "first_seen": "2026-09-28",
     "last_seen": "2026-09-28"
   },
   {
@@ -762,6 +813,23 @@
       "lon": 0.0
     },
     "first_seen": "2026-09-27",
+    "last_seen": "2026-09-28"
+  },
+  {
+    "id": "ms-09edac1db332",
+    "category": "Computing & AGI",
+    "subcategory": "benchmarks",
+    "title": "Evaluation-as-Search adaptive probing finds 2.5× more grounding failures in meeting assistants",
+    "value": 2.5,
+    "unit": "x",
+    "source": "Research Team",
+    "url": "http://arxiv.org/abs/2608.20392v1",
+    "date": "2026-06-30",
+    "geolocation": {
+      "lat": 0.0,
+      "lon": 0.0
+    },
+    "first_seen": "2026-09-28",
     "last_seen": "2026-09-28"
   },
   {

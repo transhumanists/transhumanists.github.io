@@ -1,7 +1,33 @@
 {
-  "last_update": "2026-09-28T02:33:10+00:00",
+  "last_update": "2026-09-28T22:44:47+00:00",
   "version": "1.0.0",
   "events": [
+    {
+      "id": "ev-ms-8644b2a34d60",
+      "title": "New ionizable lipid LC-1 enables efficient LNP delivery of large gene editors to multiple tissues",
+      "category": "Biotechnology",
+      "value": "New ionizable lipid LC-1 enables efficient LNP delivery of large gene editors to multiple tissues",
+      "source": "Nature Biotechnology",
+      "url": "https://www.nature.com/articles/s41587-026-03297-9",
+      "date": "2026-09-28",
+      "geolocation": {
+        "lat": 32.0603,
+        "lon": 118.7969
+      }
+    },
+    {
+      "id": "ev-ms-e0d7fb1f057f",
+      "title": "Lipid nanoparticles optimized for large RNA cargo and tissue targeting enhance in vivo genome editing",
+      "category": "Biotechnology",
+      "value": "Lipid nanoparticles optimized for large RNA cargo and tissue targeting enhance in vivo genome editing",
+      "source": "Nature Biotechnology",
+      "url": "https://www.nature.com/articles/s41587-026-03298-8",
+      "date": "2026-09-28",
+      "geolocation": {
+        "lat": 32.0603,
+        "lon": 118.7969
+      }
+    },
     {
       "id": "ev-ms-84669fafeb66",
       "title": "Elementor WordPress Plugin CSRF Vulnerability Allows Site Takeover",
@@ -485,9 +511,9 @@
     },
     {
       "id": "ev-ms-cede87aeb630",
-      "title": "Seed2.0 model series achieves world-leading reasoning and visual understanding for real-world tasks",
+      "title": "Seed2.0 model achieves world-leading reasoning and multimodal capabilities",
       "category": "Computing & AGI",
-      "value": "Seed2.0 model series achieves world-leading reasoning and visual understanding for real-world tasks",
+      "value": "Seed2.0 model achieves world-leading reasoning and multimodal capabilities",
       "source": "ByteDance",
       "url": "http://arxiv.org/abs/2607.00248v1",
       "date": "2026-06-30",
@@ -498,15 +524,28 @@
     },
     {
       "id": "ev-ms-fc6083e0cc69",
-      "title": "ORACLE-2 achieves 0.73 macro F1 for real-time transient classification using multimodal data",
+      "title": "ORACLE-2 Omni achieves 0.73 macro F1 for real-time transient classification using multimodal data",
       "category": "Computing & AGI",
       "value": "0.73 macro F1 score",
-      "source": "Zwicky Transient Facility (ZTF)",
+      "source": "Zwicky Transient Facility (ZTF) collaboration",
       "url": "http://arxiv.org/abs/2607.00228v1",
       "date": "2026-06-30",
       "geolocation": {
         "lat": 34.1377,
         "lon": -118.1253
+      }
+    },
+    {
+      "id": "ev-ms-09edac1db332",
+      "title": "Evaluation-as-Search adaptive probing finds 2.5× more grounding failures in meeting assistants",
+      "category": "Computing & AGI",
+      "value": "2.5 x",
+      "source": "Research Team",
+      "url": "http://arxiv.org/abs/2608.20392v1",
+      "date": "2026-06-30",
+      "geolocation": {
+        "lat": 19.0,
+        "lon": 72.8
       }
     },
     {

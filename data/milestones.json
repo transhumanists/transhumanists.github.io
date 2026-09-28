@@ -1,343 +1,8 @@
 {
-  "last_update": "2026-09-28T02:33:10+00:00",
+  "last_update": "2026-09-28T22:44:46+00:00",
   "version": "1.0.0",
   "schema": "https://transhumanists.github.io/schema/milestone-v1.json",
   "categories": {
-    "cybersecurity": {
-      "name": "Cybersecurity",
-      "icon": "🛡️",
-      "color": "#ff5252",
-      "subcategories": [
-        "exploits",
-        "mitigations",
-        "encryption",
-        "threat_intelligence",
-        "defense_scores",
-        "zero_day",
-        "ransomware",
-        "supply_chain"
-      ],
-      "milestones": [
-        {
-          "id": "ms-84669fafeb66",
-          "title": "Elementor WordPress Plugin CSRF Vulnerability Allows Site Takeover",
-          "summary": "High-severity CSRF flaw in Elementor plugin (CVSS 8.8) enables unauthenticated attackers to create admin accounts via crafted links.",
-          "category": "Cybersecurity",
-          "subcategory": "exploits",
-          "value": 8.8,
-          "unit": "CVSS",
-          "source": "Security researchers",
-          "date": "2026-09-26",
-          "url": "https://thehackernews.com/2026/09/elementor-csrf-flaw-lets-attackers-take.html",
-          "is_record": false,
-          "is_breakthrough": false,
-          "is_new": false,
-          "geolocation": {
-            "lat": 32.0853,
-            "lon": 34.7818
-          },
-          "category_key": "cybersecurity"
-        },
-        {
-          "id": "cyber-001",
-          "subcategory": "exploits",
-          "title": "Highest active CVSS score (0day)",
-          "value": 10.0,
-          "unit": "CRITICAL",
-          "source": "NVD / CISA",
-          "date": "2026-08-24",
-          "url": "https://nvd.nist.gov",
-          "geolocation": {
-            "lat": 38.8951,
-            "lon": -77.0364
-          },
-          "category": "Cybersecurity",
-          "is_new": false,
-          "category_key": "cybersecurity"
-        },
-        {
-          "id": "cyber-002",
-          "subcategory": "encryption",
-          "title": "Post-quantum TLS deployment (Top 100)",
-          "value": 34,
-          "unit": "%",
-          "source": "Google Transparency",
-          "date": "2026-08-15",
-          "url": "https://transparencyreport.google.com",
-          "geolocation": {
-            "lat": 37.4219,
-            "lon": -122.084
-          },
-          "category": "Cybersecurity",
-          "is_new": false,
-          "category_key": "cybersecurity"
-        },
-        {
-          "id": "cyber-003",
-          "subcategory": "encryption",
-          "title": "NIST PQC standard (CRYSTALS-Kyber)",
-          "value": 256,
-          "unit": "bit security",
-          "source": "NIST",
-          "date": "2026-06-01",
-          "url": "https://csrc.nist.gov",
-          "geolocation": {
-            "lat": 38.8951,
-            "lon": -77.0364
-          },
-          "category": "Cybersecurity",
-          "is_new": false,
-          "category_key": "cybersecurity"
-        }
-      ]
-    },
-    "quantum_gravity": {
-      "name": "Quantum Gravity",
-      "icon": "📌",
-      "color": "#00d4ff",
-      "subcategories": [],
-      "milestones": [
-        {
-          "id": "ms-f9883157aeba",
-          "category": "Quantum Gravity",
-          "subcategory": "holographic_principle",
-          "title": "Gravity found to be holographic, collapsing space dimensions",
-          "value": null,
-          "unit": null,
-          "source": "Quanta Magazine",
-          "url": "https://www.quantamagazine.org/gravity-seems-holographic-what-does-that-mean-for-reality-20260925/",
-          "date": "2026-09-25",
-          "geolocation": {
-            "lat": 0.0,
-            "lon": 0.0
-          },
-          "category_key": "quantum_gravity"
-        }
-      ]
-    },
-    "computing_agi": {
-      "name": "Computing & AGI",
-      "icon": "🧠",
-      "color": "#448aff",
-      "subcategories": [
-        "frontier_models",
-        "agentic_ai",
-        "gpu_efficiency",
-        "benchmarks",
-        "time_to_train",
-        "inference_cost",
-        "code_generation",
-        "math_reasoning",
-        "multimodal"
-      ],
-      "milestones": [
-        {
-          "id": "ms-847b6f6830b8",
-          "title": "Forecast-Dojo: Replayable Benchmark for LLM Forecasting Agents",
-          "summary": "Forecast-Dojo introduces a replayable environment with 1,568 Polymarket events and 18.8M tokens for benchmarking and training LLM forecasting agents using historical prediction-market data.",
-          "category": "Computing & AGI",
-          "subcategory": "benchmarks",
-          "value": 1568,
-          "unit": "events",
-          "source": "arXiv preprint",
-          "date": "2026-09-25",
-          "url": "https://arxiv.org/abs/2609.28876",
-          "is_record": false,
-          "is_breakthrough": false,
-          "is_new": false,
-          "geolocation": {
-            "lat": 0.0,
-            "lon": 0.0
-          },
-          "category_key": "computing_agi"
-        },
-        {
-          "id": "ms-0a47a34ebd2d",
-          "title": "New evaluation protocol detects sequential reappearance in diffusion model unlearning",
-          "summary": "Researchers identify sequential reappearance in diffusion data-point unlearning and propose a target-level evaluation protocol to track forgetting persistence across sequential deletion requests.",
-          "category": "Computing & AGI",
-          "subcategory": "benchmarks",
-          "value": null,
-          "unit": null,
-          "source": "arXiv (Cornell University)",
-          "date": "2026-09-23",
-          "url": "https://arxiv.org/abs/2609.25166",
-          "is_record": false,
-          "is_breakthrough": true,
-          "is_new": false,
-          "geolocation": {
-            "lat": 0.0,
-            "lon": 0.0
-          },
-          "category_key": "computing_agi"
-        },
-        {
-          "id": "ai-001",
-          "subcategory": "frontier_models",
-          "title": "MMLU benchmark",
-          "value": 94.7,
-          "unit": "%",
-          "source": "OpenAI GPT-6",
-          "date": "2026-08-19",
-          "url": "https://openai.com",
-          "geolocation": {
-            "lat": 37.7749,
-            "lon": -122.4194
-          },
-          "category": "Computing & AGI",
-          "is_new": false,
-          "category_key": "computing_agi"
-        },
-        {
-          "id": "ai-002",
-          "subcategory": "agentic_ai",
-          "title": "HumanEval pass@1",
-          "value": 98.4,
-          "unit": "%",
-          "source": "Anthropic Claude-4",
-          "date": "2026-08-15",
-          "url": "https://anthropic.com",
-          "geolocation": {
-            "lat": 37.7749,
-            "lon": -122.4194
-          },
-          "category": "Computing & AGI",
-          "is_new": false,
-          "category_key": "computing_agi"
-        },
-        {
-          "id": "ai-003",
-          "subcategory": "frontier_models",
-          "title": "Training compute (FLOP)",
-          "value": 2.4e+25,
-          "unit": "FLOP",
-          "source": "Google Gemini-Ultra",
-          "date": "2026-08-01",
-          "url": "https://deepmind.google",
-          "geolocation": {
-            "lat": 37.4219,
-            "lon": -122.084
-          },
-          "category": "Computing & AGI",
-          "is_new": false,
-          "category_key": "computing_agi"
-        },
-        {
-          "id": "ai-004",
-          "subcategory": "gpu_efficiency",
-          "title": "Training TFLOPS/W",
-          "value": 2.1,
-          "unit": "TFLOPS/W",
-          "source": "NVIDIA GB300",
-          "date": "2026-07-28",
-          "url": "https://nvidia.com",
-          "geolocation": {
-            "lat": 37.3688,
-            "lon": -122.0363
-          },
-          "category": "Computing & AGI",
-          "is_new": false,
-          "category_key": "computing_agi"
-        },
-        {
-          "id": "ai-005",
-          "subcategory": "agentic_ai",
-          "title": "Autonomous task completion rate",
-          "value": 87.3,
-          "unit": "%",
-          "source": "AutoGPT v4",
-          "date": "2026-07-20",
-          "url": "https://github.com/Significant-Gravitas/AutoGPT",
-          "geolocation": {
-            "lat": 37.7749,
-            "lon": -122.4194
-          },
-          "category": "Computing & AGI",
-          "is_new": false,
-          "category_key": "computing_agi"
-        },
-        {
-          "id": "ms-cede87aeb630",
-          "title": "Seed2.0 model series achieves world-leading reasoning and visual understanding for real-world tasks",
-          "summary": "Seed2.0 introduces a new model series with world-leading reasoning intelligence, visual understanding, and search capabilities, substantially improving reliability on complex, long-horizon tasks for h",
-          "category": "Computing & AGI",
-          "subcategory": "frontier_models",
-          "value": null,
-          "unit": null,
-          "source": "ByteDance",
-          "date": "2026-06-30",
-          "url": "http://arxiv.org/abs/2607.00248v1",
-          "is_record": false,
-          "is_breakthrough": true,
-          "is_new": false,
-          "geolocation": {
-            "lat": 39.9042,
-            "lon": 116.4074
-          },
-          "category_key": "computing_agi"
-        },
-        {
-          "id": "ms-fc6083e0cc69",
-          "title": "ORACLE-2 achieves 0.73 macro F1 for real-time transient classification using multimodal data",
-          "summary": "The ORACLE-2 Omni model combines light curves, metadata, and images to improve real-time classification of astronomical transients by up to 40% over light-curve-only models.",
-          "category": "Computing & AGI",
-          "subcategory": "multimodal",
-          "value": 0.73,
-          "unit": "macro F1 score",
-          "source": "Zwicky Transient Facility (ZTF)",
-          "date": "2026-06-30",
-          "url": "http://arxiv.org/abs/2607.00228v1",
-          "is_record": true,
-          "is_breakthrough": true,
-          "is_new": true,
-          "geolocation": {
-            "lat": 34.1377,
-            "lon": -118.1253
-          },
-          "category_key": "computing_agi"
-        },
-        {
-          "id": "ms-46a7d8543058",
-          "title": "Mnemosyne introduces Agentic Transaction Processing with formal safety guarantees for AI workflows",
-          "summary": "New Agentic Transaction Processing framework proves four safety properties and achieves 5.2-6.6% throughput overhead while rejecting all targeted violations in benchmarks.",
-          "category": "Computing & AGI",
-          "subcategory": "agentic_ai",
-          "value": 5.9,
-          "unit": "% throughput overhead",
-          "source": "Unknown",
-          "date": "2026-06-30",
-          "url": "http://arxiv.org/abs/2607.00269v3",
-          "is_record": false,
-          "is_breakthrough": true,
-          "is_new": false,
-          "geolocation": {
-            "lat": 0.0,
-            "lon": 0.0
-          },
-          "category_key": "computing_agi"
-        },
-        {
-          "id": "ms-d6824a356960",
-          "title": "EgoSafetyBench: Egocentric Video Benchmark for VLM Safety Guards",
-          "summary": "Introduces EgoSafetyBench, a 1,200-scenario egocentric video benchmark to evaluate vision-language models as runtime safety guards for embodied agents.",
-          "category": "Computing & AGI",
-          "subcategory": "benchmarks",
-          "value": 1200,
-          "unit": "scenarios",
-          "source": "Research authors",
-          "date": "2026-06-30",
-          "url": "http://arxiv.org/abs/2607.00218v1",
-          "is_record": false,
-          "is_breakthrough": true,
-          "is_new": false,
-          "geolocation": {
-            "lat": 0.0,
-            "lon": 0.0
-          },
-          "category_key": "computing_agi"
-        }
-      ]
-    },
     "biotechnology": {
       "name": "Biotechnology",
       "icon": "🧬",
@@ -355,6 +20,46 @@
         "biosensors"
       ],
       "milestones": [
+        {
+          "id": "ms-8644b2a34d60",
+          "title": "New ionizable lipid LC-1 enables efficient LNP delivery of large gene editors to multiple tissues",
+          "summary": "Screening identified lipid LC-1 that enhances endosomal escape and achieves efficient genome editing in liver, lung, and brain of mice using lipid nanoparticles for large gene-editor mRNAs.",
+          "category": "Biotechnology",
+          "subcategory": "gene_therapy",
+          "value": null,
+          "unit": null,
+          "source": "Nature Biotechnology",
+          "date": "2026-09-28",
+          "url": "https://www.nature.com/articles/s41587-026-03297-9",
+          "is_record": false,
+          "is_breakthrough": true,
+          "is_new": false,
+          "geolocation": {
+            "lat": 32.0603,
+            "lon": 118.7969
+          },
+          "category_key": "biotechnology"
+        },
+        {
+          "id": "ms-e0d7fb1f057f",
+          "title": "Lipid nanoparticles optimized for large RNA cargo and tissue targeting enhance in vivo genome editing",
+          "summary": "Researchers improved lipid nanoparticle design by incorporating RNA cargo size, enabling more efficient delivery of large RNA payloads for in vivo genome editing.",
+          "category": "Biotechnology",
+          "subcategory": "gene_editing",
+          "value": null,
+          "unit": null,
+          "source": "Nature Biotechnology",
+          "date": "2026-09-28",
+          "url": "https://www.nature.com/articles/s41587-026-03298-8",
+          "is_record": false,
+          "is_breakthrough": true,
+          "is_new": false,
+          "geolocation": {
+            "lat": 32.0603,
+            "lon": 118.7969
+          },
+          "category_key": "biotechnology"
+        },
         {
           "id": "ms-1d88f31518db",
           "title": "Alkermes reports pioneering ADHD data for orexin agonist",
@@ -624,6 +329,361 @@
           "category": "Biotechnology",
           "is_new": false,
           "category_key": "biotechnology"
+        }
+      ]
+    },
+    "cybersecurity": {
+      "name": "Cybersecurity",
+      "icon": "🛡️",
+      "color": "#ff5252",
+      "subcategories": [
+        "exploits",
+        "mitigations",
+        "encryption",
+        "threat_intelligence",
+        "defense_scores",
+        "zero_day",
+        "ransomware",
+        "supply_chain"
+      ],
+      "milestones": [
+        {
+          "id": "ms-84669fafeb66",
+          "title": "Elementor WordPress Plugin CSRF Vulnerability Allows Site Takeover",
+          "summary": "High-severity CSRF flaw in Elementor plugin (CVSS 8.8) enables unauthenticated attackers to create admin accounts via crafted links.",
+          "category": "Cybersecurity",
+          "subcategory": "exploits",
+          "value": 8.8,
+          "unit": "CVSS",
+          "source": "Security researchers",
+          "date": "2026-09-26",
+          "url": "https://thehackernews.com/2026/09/elementor-csrf-flaw-lets-attackers-take.html",
+          "is_record": false,
+          "is_breakthrough": false,
+          "is_new": false,
+          "geolocation": {
+            "lat": 32.0853,
+            "lon": 34.7818
+          },
+          "category_key": "cybersecurity"
+        },
+        {
+          "id": "cyber-001",
+          "subcategory": "exploits",
+          "title": "Highest active CVSS score (0day)",
+          "value": 10.0,
+          "unit": "CRITICAL",
+          "source": "NVD / CISA",
+          "date": "2026-08-24",
+          "url": "https://nvd.nist.gov",
+          "geolocation": {
+            "lat": 38.8951,
+            "lon": -77.0364
+          },
+          "category": "Cybersecurity",
+          "is_new": false,
+          "category_key": "cybersecurity"
+        },
+        {
+          "id": "cyber-002",
+          "subcategory": "encryption",
+          "title": "Post-quantum TLS deployment (Top 100)",
+          "value": 34,
+          "unit": "%",
+          "source": "Google Transparency",
+          "date": "2026-08-15",
+          "url": "https://transparencyreport.google.com",
+          "geolocation": {
+            "lat": 37.4219,
+            "lon": -122.084
+          },
+          "category": "Cybersecurity",
+          "is_new": false,
+          "category_key": "cybersecurity"
+        },
+        {
+          "id": "cyber-003",
+          "subcategory": "encryption",
+          "title": "NIST PQC standard (CRYSTALS-Kyber)",
+          "value": 256,
+          "unit": "bit security",
+          "source": "NIST",
+          "date": "2026-06-01",
+          "url": "https://csrc.nist.gov",
+          "geolocation": {
+            "lat": 38.8951,
+            "lon": -77.0364
+          },
+          "category": "Cybersecurity",
+          "is_new": false,
+          "category_key": "cybersecurity"
+        }
+      ]
+    },
+    "quantum_gravity": {
+      "name": "Quantum Gravity",
+      "icon": "📌",
+      "color": "#00d4ff",
+      "subcategories": [],
+      "milestones": [
+        {
+          "id": "ms-f9883157aeba",
+          "category": "Quantum Gravity",
+          "subcategory": "holographic_principle",
+          "title": "Gravity found to be holographic, collapsing space dimensions",
+          "value": null,
+          "unit": null,
+          "source": "Quanta Magazine",
+          "url": "https://www.quantamagazine.org/gravity-seems-holographic-what-does-that-mean-for-reality-20260925/",
+          "date": "2026-09-25",
+          "geolocation": {
+            "lat": 0.0,
+            "lon": 0.0
+          },
+          "category_key": "quantum_gravity"
+        }
+      ]
+    },
+    "computing_agi": {
+      "name": "Computing & AGI",
+      "icon": "🧠",
+      "color": "#448aff",
+      "subcategories": [
+        "frontier_models",
+        "agentic_ai",
+        "gpu_efficiency",
+        "benchmarks",
+        "time_to_train",
+        "inference_cost",
+        "code_generation",
+        "math_reasoning",
+        "multimodal"
+      ],
+      "milestones": [
+        {
+          "id": "ms-847b6f6830b8",
+          "title": "Forecast-Dojo: Replayable Benchmark for LLM Forecasting Agents",
+          "summary": "Forecast-Dojo introduces a replayable environment with 1,568 Polymarket events and 18.8M tokens for benchmarking and training LLM forecasting agents using historical prediction-market data.",
+          "category": "Computing & AGI",
+          "subcategory": "benchmarks",
+          "value": 1568,
+          "unit": "events",
+          "source": "arXiv preprint",
+          "date": "2026-09-25",
+          "url": "https://arxiv.org/abs/2609.28876",
+          "is_record": false,
+          "is_breakthrough": false,
+          "is_new": false,
+          "geolocation": {
+            "lat": 0.0,
+            "lon": 0.0
+          },
+          "category_key": "computing_agi"
+        },
+        {
+          "id": "ms-0a47a34ebd2d",
+          "title": "New evaluation protocol detects sequential reappearance in diffusion model unlearning",
+          "summary": "Researchers identify sequential reappearance in diffusion data-point unlearning and propose a target-level evaluation protocol to track forgetting persistence across sequential deletion requests.",
+          "category": "Computing & AGI",
+          "subcategory": "benchmarks",
+          "value": null,
+          "unit": null,
+          "source": "arXiv (Cornell University)",
+          "date": "2026-09-23",
+          "url": "https://arxiv.org/abs/2609.25166",
+          "is_record": false,
+          "is_breakthrough": true,
+          "is_new": false,
+          "geolocation": {
+            "lat": 0.0,
+            "lon": 0.0
+          },
+          "category_key": "computing_agi"
+        },
+        {
+          "id": "ai-001",
+          "subcategory": "frontier_models",
+          "title": "MMLU benchmark",
+          "value": 94.7,
+          "unit": "%",
+          "source": "OpenAI GPT-6",
+          "date": "2026-08-19",
+          "url": "https://openai.com",
+          "geolocation": {
+            "lat": 37.7749,
+            "lon": -122.4194
+          },
+          "category": "Computing & AGI",
+          "is_new": false,
+          "category_key": "computing_agi"
+        },
+        {
+          "id": "ai-002",
+          "subcategory": "agentic_ai",
+          "title": "HumanEval pass@1",
+          "value": 98.4,
+          "unit": "%",
+          "source": "Anthropic Claude-4",
+          "date": "2026-08-15",
+          "url": "https://anthropic.com",
+          "geolocation": {
+            "lat": 37.7749,
+            "lon": -122.4194
+          },
+          "category": "Computing & AGI",
+          "is_new": false,
+          "category_key": "computing_agi"
+        },
+        {
+          "id": "ai-003",
+          "subcategory": "frontier_models",
+          "title": "Training compute (FLOP)",
+          "value": 2.4e+25,
+          "unit": "FLOP",
+          "source": "Google Gemini-Ultra",
+          "date": "2026-08-01",
+          "url": "https://deepmind.google",
+          "geolocation": {
+            "lat": 37.4219,
+            "lon": -122.084
+          },
+          "category": "Computing & AGI",
+          "is_new": false,
+          "category_key": "computing_agi"
+        },
+        {
+          "id": "ai-004",
+          "subcategory": "gpu_efficiency",
+          "title": "Training TFLOPS/W",
+          "value": 2.1,
+          "unit": "TFLOPS/W",
+          "source": "NVIDIA GB300",
+          "date": "2026-07-28",
+          "url": "https://nvidia.com",
+          "geolocation": {
+            "lat": 37.3688,
+            "lon": -122.0363
+          },
+          "category": "Computing & AGI",
+          "is_new": false,
+          "category_key": "computing_agi"
+        },
+        {
+          "id": "ai-005",
+          "subcategory": "agentic_ai",
+          "title": "Autonomous task completion rate",
+          "value": 87.3,
+          "unit": "%",
+          "source": "AutoGPT v4",
+          "date": "2026-07-20",
+          "url": "https://github.com/Significant-Gravitas/AutoGPT",
+          "geolocation": {
+            "lat": 37.7749,
+            "lon": -122.4194
+          },
+          "category": "Computing & AGI",
+          "is_new": false,
+          "category_key": "computing_agi"
+        },
+        {
+          "id": "ms-cede87aeb630",
+          "title": "Seed2.0 model achieves world-leading reasoning and multimodal capabilities",
+          "summary": "Seed2.0 model series demonstrates world-leading reasoning, visual understanding, and search capabilities for complex real-world tasks, serving hundreds of millions of users.",
+          "category": "Computing & AGI",
+          "subcategory": "frontier_models",
+          "value": null,
+          "unit": null,
+          "source": "ByteDance",
+          "date": "2026-06-30",
+          "url": "http://arxiv.org/abs/2607.00248v1",
+          "is_record": true,
+          "is_breakthrough": true,
+          "is_new": false,
+          "geolocation": {
+            "lat": 39.9042,
+            "lon": 116.4074
+          },
+          "category_key": "computing_agi"
+        },
+        {
+          "id": "ms-fc6083e0cc69",
+          "title": "ORACLE-2 Omni achieves 0.73 macro F1 for real-time transient classification using multimodal data",
+          "summary": "A new multimodal AI model combining light curves, metadata, and images improves real-time classification of astronomical transients by up to 40% over light-curve-only methods, deployed on the ZTF aler",
+          "category": "Computing & AGI",
+          "subcategory": "multimodal",
+          "value": 0.73,
+          "unit": "macro F1 score",
+          "source": "Zwicky Transient Facility (ZTF) collaboration",
+          "date": "2026-06-30",
+          "url": "http://arxiv.org/abs/2607.00228v1",
+          "is_record": true,
+          "is_breakthrough": true,
+          "is_new": true,
+          "geolocation": {
+            "lat": 34.1377,
+            "lon": -118.1253
+          },
+          "category_key": "computing_agi"
+        },
+        {
+          "id": "ms-46a7d8543058",
+          "title": "Mnemosyne introduces Agentic Transaction Processing with formal safety guarantees for AI workflows",
+          "summary": "New Agentic Transaction Processing framework proves four safety properties and achieves 5.2-6.6% throughput overhead while rejecting all targeted violations in benchmarks.",
+          "category": "Computing & AGI",
+          "subcategory": "agentic_ai",
+          "value": 5.9,
+          "unit": "% throughput overhead",
+          "source": "Unknown",
+          "date": "2026-06-30",
+          "url": "http://arxiv.org/abs/2607.00269v3",
+          "is_record": false,
+          "is_breakthrough": true,
+          "is_new": false,
+          "geolocation": {
+            "lat": 0.0,
+            "lon": 0.0
+          },
+          "category_key": "computing_agi"
+        },
+        {
+          "id": "ms-09edac1db332",
+          "title": "Evaluation-as-Search adaptive probing finds 2.5× more grounding failures in meeting assistants",
+          "summary": "A new adaptive evaluation framework (EaS) and MeetingProbe benchmark reveal LLM meeting assistants fail on 7.1% of targeted queries versus 2.9% for random probing, identifying eight discourse-pragmati",
+          "category": "Computing & AGI",
+          "subcategory": "benchmarks",
+          "value": 2.5,
+          "unit": "x",
+          "source": "Research Team",
+          "date": "2026-06-30",
+          "url": "http://arxiv.org/abs/2608.20392v1",
+          "is_record": true,
+          "is_breakthrough": true,
+          "is_new": false,
+          "geolocation": {
+            "lat": 0.0,
+            "lon": 0.0
+          },
+          "category_key": "computing_agi"
+        },
+        {
+          "id": "ms-d6824a356960",
+          "title": "EgoSafetyBench: Egocentric Video Benchmark for VLM Safety Guards",
+          "summary": "Introduces EgoSafetyBench, a 1,200-scenario egocentric video benchmark to evaluate vision-language models as runtime safety guards for embodied agents.",
+          "category": "Computing & AGI",
+          "subcategory": "benchmarks",
+          "value": 1200,
+          "unit": "scenarios",
+          "source": "Research authors",
+          "date": "2026-06-30",
+          "url": "http://arxiv.org/abs/2607.00218v1",
+          "is_record": false,
+          "is_breakthrough": true,
+          "is_new": false,
+          "geolocation": {
+            "lat": 0.0,
+            "lon": 0.0
+          },
+          "category_key": "computing_agi"
         }
       ]
     },
@@ -950,7 +1010,7 @@
           "url": "http://arxiv.org/abs/2607.00266v1",
           "is_record": true,
           "is_breakthrough": true,
-          "is_new": true,
+          "is_new": false,
           "geolocation": {
             "lat": 0.0,
             "lon": 0.0
@@ -1067,9 +1127,30 @@
       "icon": "📌",
       "color": "#aaaaaa",
       "subcategories": [
+        "pattern_mining",
         "ml_structural_analysis"
       ],
       "milestones": [
+        {
+          "id": "ms-10f19d45d95b",
+          "title": "ML-driven Structural Pattern Mining of Inka Khipus",
+          "summary": "A machine-learning pipeline achieved an F1 score of 0.86 in classifying Inka Late Horizon imperial style khipus using structural feature mining.",
+          "category": "Computational Archaeology",
+          "subcategory": "pattern_mining",
+          "value": 0.86,
+          "unit": "F1 score",
+          "source": "Open Khipu Repository",
+          "date": "2026-06-30",
+          "url": "http://arxiv.org/abs/2607.00185v1",
+          "is_record": false,
+          "is_breakthrough": true,
+          "is_new": true,
+          "geolocation": {
+            "lat": 0.0,
+            "lon": 0.0
+          },
+          "category_key": "computational_archaeology"
+        },
         {
           "id": "ms-fb74b2202f85",
           "title": "ML pipeline achieves 0.86 F1 classifying Inka khipu provenance and validates Santa Valley moiety structure",
@@ -1083,7 +1164,7 @@
           "url": "http://arxiv.org/abs/2607.00185v1",
           "is_record": false,
           "is_breakthrough": true,
-          "is_new": true,
+          "is_new": false,
           "geolocation": {
             "lat": 0.0,
             "lon": 0.0

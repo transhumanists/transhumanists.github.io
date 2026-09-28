@@ -1,9 +1,9 @@
 {
-  "last_update": "2026-09-28T02:33:10+00:00",
+  "last_update": "2026-09-28T22:44:47+00:00",
   "bucket": "day",
   "first": "2026-04-01",
   "last": "2026-09-28",
-  "total": 53,
+  "total": 57,
   "days": [
     {
       "date": "2026-04-01",
@@ -367,7 +367,7 @@
     },
     {
       "date": "2026-06-30",
-      "count": 6
+      "count": 8
     },
     {
       "date": "2026-07-01",
@@ -727,14 +727,14 @@
     },
     {
       "date": "2026-09-28",
-      "count": 0
+      "count": 2
     }
   ],
   "spikes": [
     {
       "date": "2026-06-30",
-      "count": 6,
-      "reason": "Seed2.0 model series achieves world-leading reasoning and visual understanding for real-world tasks; ORACLE-2 achieves 0.73 macro F1 for real-time transient classification using multimodal data; Mnemosyne introduces Agentic Transaction Processing with formal safety guarantees for AI workflows"
+      "count": 8,
+      "reason": "Seed2.0 model achieves world-leading reasoning and multimodal capabilities; ORACLE-2 Omni achieves 0.73 macro F1 for real-time transient classification using multimodal data; Mnemosyne introduces Agentic Transaction Processing with formal safety guarantees for AI workflows"
     },
     {
       "date": "2026-08-18",
