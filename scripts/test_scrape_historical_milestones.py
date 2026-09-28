@@ -86,6 +86,169 @@ class TestValidateCatalog(unittest.TestCase):
         self.assertFalse(ok)
         self.assertGreaterEqual(len(errors), 2)
 
+    def test_duplicate_ids(self):
+        catalog = {"milestones": [
+            make_catalog_entry(id="dup"),
+            make_catalog_entry(id="dup"),
+        ]}
+        ok, errors = shm.validate_catalog(catalog)
+        self.assertFalse(ok)
+        self.assertTrue(any("duplicate id" in e for e in errors))
+
+    def test_value_unit_consistency(self):
+        entry = make_catalog_entry(value=100, unit=None)
+        ok, errors = shm.validate_catalog({"milestones": [entry]})
+        self.assertFalse(ok)
+        self.assertTrue(any("value and unit" in e for e in errors))
+
+    def test_value_unit_both_null(self):
+        entry = make_catalog_entry(value=None, unit=None)
+        ok, errors = shm.validate_catalog({"milestones": [entry]})
+        self.assertTrue(ok, errors)
+
+    def test_non_numeric_value(self):
+        entry = make_catalog_entry(value="high")
+        ok, errors = shm.validate_catalog({"milestones": [entry]})
+        self.assertFalse(ok)
+        self.assertTrue(any("value must be numeric" in e for e in errors))
+
+    def test_non_string_unit(self):
+        entry = make_catalog_entry(unit=123)
+        ok, errors = shm.validate_catalog({"milestones": [entry]})
+        self.assertFalse(ok)
+        self.assertTrue(any("unit must be a string" in e for e in errors))
+
+    def test_url_must_be_http(self):
+        entry = make_catalog_entry(url="ftp://example.com")
+        ok, errors = shm.validate_catalog({"milestones": [entry]})
+        self.assertFalse(ok)
+        self.assertTrue(any("url must start with" in e for e in errors))
+
+    def test_geolocation_zero_zero_rejected(self):
+        entry = make_catalog_entry(geolocation={"lat": 0, "lon": 0})
+        ok, errors = shm.validate_catalog({"milestones": [entry]})
+        self.assertFalse(ok)
+        self.assertTrue(any("(0, 0)" in e for e in errors))
+
+    def test_empty_title(self):
+        entry = make_catalog_entry(title="")
+        ok, errors = shm.validate_catalog({"milestones": [entry]})
+        self.assertFalse(ok)
+        self.assertTrue(any("empty title" in e for e in errors))
+
+    def test_empty_source(self):
+        entry = make_catalog_entry(source="")
+        ok, errors = shm.validate_catalog({"milestones": [entry]})
+        self.assertFalse(ok)
+        self.assertTrue(any("empty source" in e for e in errors))
+
+
+class TestMainFunction(unittest.TestCase):
+    """Integration tests that call main() with mocked args."""
+
+    def setUp(self):
+        self.tmpdir = tempfile.TemporaryDirectory()
+        self.catalog_path = Path(self.tmpdir.name) / "catalog.json"
+        self.history_path = Path(self.tmpdir.name) / "history.json"
+        self.catalog_path.write_text(
+            json.dumps({"milestones": [
+                make_catalog_entry(id="a", date="2019-01-01"),
+                make_catalog_entry(id="b", date="2020-01-01"),
+            ]}), encoding="utf-8"
+        )
+
+    def tearDown(self):
+        self.tmpdir.cleanup()
+
+    def _run_main(self, *args):
+        import io
+        from contextlib import redirect_stdout
+        old_argv = sys.argv
+        sys.argv = ["scrape_historical_milestones.py"] + list(args)
+        buf = io.StringIO()
+        try:
+            with redirect_stdout(buf):
+                rc = shm.main()
+        finally:
+            sys.argv = old_argv
+        return rc, buf.getvalue()
+
+    def test_validate_only(self):
+        rc, out = self._run_main(
+            "--validate-only",
+            "--catalog", str(self.catalog_path),
+            "--history", str(self.history_path),
+        )
+        self.assertEqual(rc, 0)
+        self.assertIn("catalog valid", out)
+
+    def test_validate_only_fails_on_bad_catalog(self):
+        self.catalog_path.write_text(json.dumps({"milestones": [
+            make_catalog_entry(id="a", date="bad"),
+        ]}), encoding="utf-8")
+        rc, out = self._run_main(
+            "--validate-only",
+            "--catalog", str(self.catalog_path),
+            "--history", str(self.history_path),
+        )
+        self.assertEqual(rc, 1)
+        self.assertIn("malformed date", out)
+
+    def test_dry_run_flag(self):
+        rc, out = self._run_main(
+            "--dry-run",
+            "--catalog", str(self.catalog_path),
+            "--history", str(self.history_path),
+        )
+        self.assertEqual(rc, 0)
+        self.assertIn("[dry-run]", out)
+        self.assertFalse(self.history_path.exists())
+
+    def test_today_flag(self):
+        rc, out = self._run_main(
+            "--today", "2026-09-29",
+            "--catalog", str(self.catalog_path),
+            "--history", str(self.history_path),
+        )
+        self.assertEqual(rc, 0)
+        result = json.loads(self.history_path.read_text(encoding="utf-8"))
+        self.assertEqual(result[0]["first_seen"], "2026-09-29")
+
+    def test_invalid_today_date(self):
+        rc, out = self._run_main(
+            "--today", "not-a-date",
+            "--catalog", str(self.catalog_path),
+            "--history", str(self.history_path),
+        )
+        self.assertEqual(rc, 1)
+        self.assertIn("Invalid --today", out)
+
+    def test_negative_limit(self):
+        rc, out = self._run_main(
+            "--limit", "-1",
+            "--catalog", str(self.catalog_path),
+            "--history", str(self.history_path),
+        )
+        self.assertEqual(rc, 1)
+        self.assertIn("--limit must be a positive", out)
+
+    def test_missing_catalog_file(self):
+        rc, out = self._run_main(
+            "--catalog", str(Path(self.tmpdir.name) / "nonexistent.json"),
+            "--history", str(self.history_path),
+        )
+        self.assertEqual(rc, 1)
+        self.assertIn("Failed to load catalog", out)
+
+    def test_malformed_history_file(self):
+        self.history_path.write_text("not json", encoding="utf-8")
+        rc, out = self._run_main(
+            "--catalog", str(self.catalog_path),
+            "--history", str(self.history_path),
+        )
+        self.assertEqual(rc, 1)
+        self.assertIn("malformed", out)
+
 
 class TestPickNextBatch(unittest.TestCase):
     def test_oldest_first(self):
@@ -140,13 +303,6 @@ class TestIntegration(unittest.TestCase):
 
     def test_dry_run_writes_nothing(self):
         self._write_catalog([make_catalog_entry(id="a", date="2020-01-01")])
-        import io
-        from contextlib import redirect_stdout
-
-        buf = io.StringIO()
-        with redirect_stdout(buf):
-            rc = shm.main.__wrapped__() if hasattr(shm.main, "__wrapped__") else None
-        # We can't easily call main() with args, so test the logic directly
         catalog = shm.load_catalog(self.catalog_path)
         existing = shm.load_history(self.history_path)
         batch = shm.pick_next_batch(catalog, set(), 5)

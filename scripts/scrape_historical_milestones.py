@@ -46,6 +46,14 @@ def validate_catalog_entry(entry: dict, index: int) -> list[str]:
     for field in REQUIRED_CATALOG_FIELDS:
         if field not in entry:
             errors.append(f"Entry {index}: missing required field '{field}'")
+    if "id" in entry and not str(entry["id"]).strip():
+        errors.append(f"Entry {index}: empty id")
+    if "title" in entry and not str(entry["title"]).strip():
+        errors.append(f"Entry {index}: empty title")
+    if "source" in entry and not str(entry["source"]).strip():
+        errors.append(f"Entry {index}: empty source")
+    if "subcategory" in entry and not str(entry["subcategory"]).strip():
+        errors.append(f"Entry {index}: empty subcategory")
     if "date" in entry:
         ds = str(entry["date"])
         if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", ds):
@@ -64,10 +72,26 @@ def validate_catalog_entry(entry: dict, index: int) -> list[str]:
                 lat, lon = float(geo["lat"]), float(geo["lon"])
                 if not (-90 <= lat <= 90) or not (-180 <= lon <= 180):
                     errors.append(f"Entry {index}: geolocation out of bounds")
+                elif lat == 0.0 and lon == 0.0:
+                    errors.append(f"Entry {index}: geolocation is (0, 0) - will be skipped by build_events")
             except (ValueError, TypeError):
                 errors.append(f"Entry {index}: geolocation not numeric")
-    if "id" in entry and not str(entry["id"]).strip():
-        errors.append(f"Entry {index}: empty id")
+    if "value" in entry:
+        v = entry["value"]
+        if v is not None and not isinstance(v, (int, float)):
+            errors.append(f"Entry {index}: value must be numeric or null")
+    if "unit" in entry:
+        u = entry["unit"]
+        if u is not None and not isinstance(u, str):
+            errors.append(f"Entry {index}: unit must be a string or null")
+    if "value" in entry and "unit" in entry:
+        v, u = entry["value"], entry["unit"]
+        if (v is None) != (u is None):
+            errors.append(f"Entry {index}: value and unit must both be set or both be null")
+    if "url" in entry:
+        url = str(entry["url"])
+        if not re.match(r"^https?://", url):
+            errors.append(f"Entry {index}: url must start with http:// or https://")
     return errors
 
 
@@ -79,11 +103,17 @@ def validate_catalog(catalog: dict) -> tuple[bool, list[str]]:
     milestones = catalog.get("milestones")
     if not isinstance(milestones, list):
         return False, ["Catalog missing 'milestones' array"]
+    seen_ids: set[str] = set()
     for i, entry in enumerate(milestones):
         if not isinstance(entry, dict):
             errors.append(f"Entry {i}: not an object")
             continue
         errors.extend(validate_catalog_entry(entry, i))
+        entry_id = str(entry.get("id", "")).strip()
+        if entry_id:
+            if entry_id in seen_ids:
+                errors.append(f"Entry {i}: duplicate id '{entry_id}'")
+            seen_ids.add(entry_id)
     return len(errors) == 0, errors
 
 
@@ -94,14 +124,16 @@ def load_catalog(path: Path) -> dict:
 
 
 def load_history(path: Path) -> list:
-    if path.exists():
-        try:
-            data = json.loads(path.read_text(encoding="utf-8"))
-            if isinstance(data, list):
-                return data
-        except (OSError, json.JSONDecodeError):
-            pass
-    return []
+    """Load the archive file. Raises on malformed data to prevent silent data loss."""
+    if not path.exists():
+        return []
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as e:
+        raise ValueError(f"History file {path} is malformed: {e}") from e
+    if not isinstance(data, list):
+        raise ValueError(f"History file {path} must contain a JSON array")
+    return data
 
 
 def pick_next_batch(catalog: dict, existing_ids: set[str], limit: int) -> list[dict]:
@@ -131,6 +163,17 @@ def main() -> int:
                     help="Validate the catalog schema and exit")
     args = ap.parse_args()
 
+    if args.limit <= 0:
+        print("::error::--limit must be a positive integer")
+        return 1
+
+    if args.today:
+        try:
+            date.fromisoformat(args.today)
+        except ValueError:
+            print(f"::error::Invalid --today date: {args.today!r} (expected YYYY-MM-DD)")
+            return 1
+
     try:
         catalog = load_catalog(args.catalog)
     except (FileNotFoundError, json.JSONDecodeError) as e:
@@ -150,7 +193,12 @@ def main() -> int:
     today = date.fromisoformat(args.today) if args.today else date.today()
     seen_on = today.isoformat()
 
-    existing = load_history(args.history)
+    try:
+        existing = load_history(args.history)
+    except ValueError as e:
+        print(f"::error::{e}")
+        return 1
+
     existing_ids = {str(r.get("id", "")).strip() for r in existing if isinstance(r, dict)}
 
     batch = pick_next_batch(catalog, existing_ids, args.limit)
