@@ -496,7 +496,8 @@
     series.forEach((d, i) => {
       const bar = createEl('div', 'chart-bar');
       bar.style.height = (4 + (d.count / max) * 116) + 'px';
-      bar.title = `${bucket === 'week' ? 'Week of ' : ''}${d.date}: ${d.count} milestone${d.count !== 1 ? 's' : ''}`;
+      const prefix = bucket === 'week' ? 'Week of ' : bucket === 'month' ? 'Month of ' : bucket === 'year' ? '' : '';
+      bar.title = `${prefix}${d.date}: ${d.count} milestone${d.count !== 1 ? 's' : ''}`;
       barsFrag.appendChild(bar);
 
       const lbl = createEl('div', 'chart-label');
@@ -904,6 +905,9 @@
       yearFilter.appendChild(allOpt);
     }
 
+    const CATALOG_PAGE_SIZE = 250;
+    let allYearsPage = 1;
+
     function render(filterKey, year) {
       const targetYear = year !== undefined ? year : displayYear;
       let filtered = filterKey === 'all'
@@ -924,8 +928,12 @@
         return;
       }
 
+      const isAllYears = year === 'all';
+      const visibleCount = isAllYears ? Math.min(filtered.length, allYearsPage * CATALOG_PAGE_SIZE) : filtered.length;
+      const visible = filtered.slice(0, visibleCount);
+
       const frag = document.createDocumentFragment();
-      filtered.forEach(m => {
+      visible.forEach(m => {
         const isBeaten = beatenMapAll.has(m.id);
         const catConfig = CATEGORY_CONFIG[m.category_key] || { name: m.category_name, icon: '📌', color: '#00d4ff' };
 
@@ -1027,6 +1035,17 @@
 
       grid.replaceChildren(frag);
 
+      // "Load more" pagination for the All-years view
+      if (isAllYears && visibleCount < filtered.length) {
+        const loadMoreBtn = createEl('button', 'catalog-load-more');
+        loadMoreBtn.textContent = `Load more (${filtered.length - visibleCount} remaining)`;
+        loadMoreBtn.addEventListener('click', () => {
+          allYearsPage++;
+          render(filterKey, year);
+        });
+        grid.appendChild(loadMoreBtn);
+      }
+
       // Update year navigation button states
       if (yearPrevBtn) {
         const hasPrev = availableYears.some(y => y > targetYear);
@@ -1057,8 +1076,10 @@
       yearFilter.addEventListener('change', e => {
         const year = e.target.value;
         if (year === 'all') {
+          allYearsPage = 1;
           render(filter?.value || 'all', 'all');
         } else {
+          allYearsPage = 1;
           render(filter?.value || 'all', parseInt(year, 10));
         }
       });

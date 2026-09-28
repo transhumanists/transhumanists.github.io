@@ -15,6 +15,8 @@ on:
       - ".github/workflows/milestone-check.yml"
       - "scripts/sync_milestones.py"
       - "scripts/sync_layers.py"
+      - "scripts/scrape_historical_milestones.py"
+      - "data/historical_milestones.json"
 
 permissions:
   contents: write
@@ -51,7 +53,13 @@ jobs:
           if [ "$DRY_RUN" = "true" ]; then
             python scripts/sync_milestones.py --dry-run
           else
-            python scripts/sync_milestones.py
+            OUT=$(python scripts/sync_milestones.py 2>&1)
+            echo "$OUT"
+            if echo "$OUT" | grep -q "No content changes"; then
+              echo "No new upstream milestones - backfilling historical archive"
+              python scripts/scrape_historical_milestones.py --limit "${HISTORICAL_BACKFILL_LIMIT:-5}"
+              python scripts/sync_milestones.py
+            fi
           fi
 
       - name: Sync operational layers (conflicts + deployments)

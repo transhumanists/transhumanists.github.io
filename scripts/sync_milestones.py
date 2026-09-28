@@ -137,6 +137,8 @@ TOKEN = os.environ.get("GITHUB_TOKEN", "")
 STALE_WARN_DAYS = int(os.environ.get("STALE_WARN_DAYS", "2"))
 STALE_ERROR_DAYS = int(os.environ.get("STALE_ERROR_DAYS", "8"))
 MAX_DAILY_DAYS = int(os.environ.get("MAX_DAILY_DAYS", "400"))
+MAX_WEEKLY_DAYS = int(os.environ.get("MAX_WEEKLY_DAYS", "3650"))
+MAX_MONTHLY_DAYS = int(os.environ.get("MAX_MONTHLY_DAYS", "36500"))
 _MAX_UPSTREAM_BYTES = 10 * 1024 * 1024  # safety cap on the mirrored upstream file
 
 # Upstream category keys -> website snake_case keys (for data file structure).
@@ -479,7 +481,9 @@ def build_activity(history: list, today: date, include_spikes: bool = True) -> d
     """Full-range activity series from the archive.
 
     Daily buckets from the earliest milestone date to today; weekly buckets
-    when the span exceeds MAX_DAILY_DAYS so the graph never overflows.
+    when the span exceeds MAX_DAILY_DAYS; monthly when it exceeds
+    MAX_WEEKLY_DAYS; yearly when it exceeds MAX_MONTHLY_DAYS. This keeps the
+    chart readable no matter how far back the archive reaches.
     """
     counts: Counter = Counter()
     for rec in history:
@@ -495,8 +499,8 @@ def build_activity(history: list, today: date, include_spikes: bool = True) -> d
         return {
             "last_update": now_iso(),
             "bucket": "day",
-            "first": today_iso(),
-            "last": today_iso(),
+            "first": today.isoformat(),
+            "last": today.isoformat(),
             "total": 0,
             "days": [{"date": (today - timedelta(days=i)).isoformat(), "count": 0} for i in range(29, -1, -1)],
             "spikes": [],
@@ -504,11 +508,18 @@ def build_activity(history: list, today: date, include_spikes: bool = True) -> d
 
     earliest = min(counts)
     span_days = (today - earliest).days
-    bucket = "week" if span_days > MAX_DAILY_DAYS else "day"
+    if span_days > MAX_MONTHLY_DAYS:
+        bucket = "year"
+    elif span_days > MAX_WEEKLY_DAYS:
+        bucket = "month"
+    elif span_days > MAX_DAILY_DAYS:
+        bucket = "week"
+    else:
+        bucket = "day"
 
     if bucket == "day":
-        buckets: dict[date, int] = {d.isoformat(): counts.get(d, 0) for d in date_range(earliest, today)}
-    else:
+        buckets: dict[str, int] = {d.isoformat(): counts.get(d, 0) for d in date_range(earliest, today)}
+    elif bucket == "week":
         # ISO week buckets: key = Monday of each week.
         week_counts: Counter = Counter()
         for d, c in counts.items():
@@ -519,6 +530,29 @@ def build_activity(history: list, today: date, include_spikes: bool = True) -> d
         while cursor <= today:
             buckets[cursor.isoformat()] = week_counts.get(cursor, 0)
             cursor += timedelta(days=7)
+    elif bucket == "month":
+        # Monthly buckets: key = first day of each month.
+        month_counts: Counter = Counter()
+        for d, c in counts.items():
+            month_counts[d.replace(day=1)] += c
+        buckets = {}
+        cursor = earliest.replace(day=1)
+        while cursor <= today:
+            buckets[cursor.isoformat()] = month_counts.get(cursor, 0)
+            if cursor.month == 12:
+                cursor = cursor.replace(year=cursor.year + 1, month=1)
+            else:
+                cursor = cursor.replace(month=cursor.month + 1)
+    else:
+        # Yearly buckets: key = January 1 of each year.
+        year_counts: Counter = Counter()
+        for d, c in counts.items():
+            year_counts[d.replace(month=1, day=1)] += c
+        buckets = {}
+        cursor = earliest.replace(month=1, day=1)
+        while cursor <= today:
+            buckets[cursor.isoformat()] = year_counts.get(cursor, 0)
+            cursor = cursor.replace(year=cursor.year + 1)
 
     series = [{"date": k, "count": v} for k, v in sorted(buckets.items())]
     spikes = []

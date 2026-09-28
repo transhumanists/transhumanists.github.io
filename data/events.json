@@ -1,5 +1,5 @@
 {
-  "last_update": "2026-09-28T22:44:47+00:00",
+  "last_update": "2026-09-28T23:18:48+00:00",
   "version": "1.0.0",
   "events": [
     {
@@ -637,6 +637,136 @@
       "geolocation": {
         "lat": 32.0853,
         "lon": 34.7818
+      }
+    },
+    {
+      "id": "ev-his-1973-01-01-recombinant-dna",
+      "title": "Cohen & Boyer pioneer recombinant DNA technology",
+      "category": "Biotechnology",
+      "value": "Cohen & Boyer pioneer recombinant DNA technology",
+      "source": "Stanford University",
+      "url": "https://en.wikipedia.org/wiki/Recombinant_DNA",
+      "date": "1973-01-01",
+      "geolocation": {
+        "lat": 37.4275,
+        "lon": -122.1697
+      }
+    },
+    {
+      "id": "ev-his-1971-11-15-intel-4004",
+      "title": "Intel 4004 - the first commercially available microprocessor",
+      "category": "Computing & AGI",
+      "value": "Intel 4004 - the first commercially available microprocessor",
+      "source": "Intel",
+      "url": "https://en.wikipedia.org/wiki/Intel_4004",
+      "date": "1971-11-15",
+      "geolocation": {
+        "lat": 37.3541,
+        "lon": -121.9552
+      }
+    },
+    {
+      "id": "ev-his-1969-10-29-arpanet",
+      "title": "ARPANET sends its first host-to-host message",
+      "category": "Computing & AGI",
+      "value": "ARPANET sends its first host-to-host message",
+      "source": "UCLA / SRI International",
+      "url": "https://en.wikipedia.org/wiki/ARPANET",
+      "date": "1969-10-29",
+      "geolocation": {
+        "lat": 34.0689,
+        "lon": -118.4452
+      }
+    },
+    {
+      "id": "ev-his-1969-07-20-apollo-11",
+      "title": "Apollo 11 - first crewed Moon landing (Sea of Tranquility)",
+      "category": "Spaceflight & Aeronautics",
+      "value": "Apollo 11 - first crewed Moon landing (Sea of Tranquility)",
+      "source": "NASA",
+      "url": "https://en.wikipedia.org/wiki/Apollo_11",
+      "date": "1969-07-20",
+      "geolocation": {
+        "lat": -0.674,
+        "lon": 23.473
+      }
+    },
+    {
+      "id": "ev-his-1961-04-12-vostok-1",
+      "title": "Vostok 1 - Yuri Gagarin becomes the first human in space",
+      "category": "Spaceflight & Aeronautics",
+      "value": "Vostok 1 - Yuri Gagarin becomes the first human in space",
+      "source": "Roscosmos",
+      "url": "https://en.wikipedia.org/wiki/Vostok_1",
+      "date": "1961-04-12",
+      "geolocation": {
+        "lat": 45.965,
+        "lon": 63.305
+      }
+    },
+    {
+      "id": "ev-his-1957-10-04-sputnik-1",
+      "title": "Sputnik 1 - humanity's first artificial satellite reaches orbit",
+      "category": "Spaceflight & Aeronautics",
+      "value": "Sputnik 1 - humanity's first artificial satellite reaches orbit",
+      "source": "Roscosmos",
+      "url": "https://en.wikipedia.org/wiki/Sputnik_1",
+      "date": "1957-10-04",
+      "geolocation": {
+        "lat": 45.965,
+        "lon": 63.305
+      }
+    },
+    {
+      "id": "ev-his-1954-04-25-silicon-solar-cell",
+      "title": "Bell Labs builds the first practical silicon solar cell (6% efficiency)",
+      "category": "Renewable Energy",
+      "value": "6 %",
+      "source": "Bell Labs",
+      "url": "https://en.wikipedia.org/wiki/Solar_cell",
+      "date": "1954-04-25",
+      "geolocation": {
+        "lat": 40.69,
+        "lon": -74.401
+      }
+    },
+    {
+      "id": "ev-his-1953-04-25-dna-double-helix",
+      "title": "Watson & Crick publish the structure of DNA (double helix)",
+      "category": "Biotechnology",
+      "value": "Watson & Crick publish the structure of DNA (double helix)",
+      "source": "Nature",
+      "url": "https://en.wikipedia.org/wiki/Molecular_structure_of_Nucleic_Acids",
+      "date": "1953-04-25",
+      "geolocation": {
+        "lat": 52.2053,
+        "lon": 0.1218
+      }
+    },
+    {
+      "id": "ev-his-1945-11-15-eniac",
+      "title": "ENIAC becomes operational - the first general-purpose electronic computer",
+      "category": "Computing & AGI",
+      "value": "ENIAC becomes operational - the first general-purpose electronic computer",
+      "source": "University of Pennsylvania",
+      "url": "https://en.wikipedia.org/wiki/ENIAC",
+      "date": "1945-11-15",
+      "geolocation": {
+        "lat": 39.9526,
+        "lon": -75.1652
+      }
+    },
+    {
+      "id": "ev-his-1945-07-16-trinity-test",
+      "title": "Trinity nuclear test - the first nuclear explosion",
+      "category": "Military & Defense",
+      "value": "Trinity nuclear test - the first nuclear explosion",
+      "source": "Los Alamos National Laboratory",
+      "url": "https://en.wikipedia.org/wiki/Trinity_(nuclear_test)",
+      "date": "1945-07-16",
+      "geolocation": {
+        "lat": 33.6772,
+        "lon": -106.4754
       }
     }
   ]

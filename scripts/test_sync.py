@@ -149,6 +149,46 @@ class TestActivity(unittest.TestCase):
         self.assertEqual(activity["first"], "2019-12-30")
         self.assertTrue("2026-09-21" in [d["date"] for d in activity["days"]])
 
+    def test_monthly_when_span_very_large(self):
+        history = [make_milestone(id="1", date="1980-01-01")]
+        activity = sm.build_activity(history, date(2026, 9, 21))
+        self.assertEqual(activity["bucket"], "month")
+        self.assertEqual(activity["first"], "1980-01-01")
+        self.assertEqual(activity["last"], "2026-09-01")
+        self.assertEqual(activity["total"], 1)
+
+    def test_yearly_when_span_huge(self):
+        history = [make_milestone(id="1", date="1800-01-01")]
+        activity = sm.build_activity(history, date(2026, 9, 21))
+        self.assertEqual(activity["bucket"], "year")
+        self.assertEqual(activity["first"], "1800-01-01")
+        self.assertEqual(activity["last"], "2026-01-01")
+        self.assertEqual(activity["total"], 1)
+
+    def test_monthly_buckets_are_first_of_month(self):
+        history = [
+            make_milestone(id="1", date="1980-01-15"),
+            make_milestone(id="2", date="1980-01-20"),
+            make_milestone(id="3", date="1980-02-01"),
+        ]
+        activity = sm.build_activity(history, date(2026, 9, 21))
+        self.assertEqual(activity["bucket"], "month")
+        counts = {d["date"]: d["count"] for d in activity["days"]}
+        self.assertEqual(counts["1980-01-01"], 2)
+        self.assertEqual(counts["1980-02-01"], 1)
+
+    def test_yearly_buckets_are_jan_first(self):
+        history = [
+            make_milestone(id="1", date="1800-06-15"),
+            make_milestone(id="2", date="1800-12-01"),
+            make_milestone(id="3", date="1801-01-01"),
+        ]
+        activity = sm.build_activity(history, date(2026, 9, 21))
+        self.assertEqual(activity["bucket"], "year")
+        counts = {d["date"]: d["count"] for d in activity["days"]}
+        self.assertEqual(counts["1800-01-01"], 2)
+        self.assertEqual(counts["1801-01-01"], 1)
+
 
 class TestEvents(unittest.TestCase):
     def test_events_mapping(self):

@@ -1,5 +1,5 @@
 {
-  "last_update": "2026-09-28T22:44:46+00:00",
+  "last_update": "2026-09-28T23:18:48+00:00",
   "version": "1.0.0",
   "schema": "https://transhumanists.github.io/schema/milestone-v1.json",
   "categories": {
@@ -328,6 +328,38 @@
           },
           "category": "Biotechnology",
           "is_new": false,
+          "category_key": "biotechnology"
+        },
+        {
+          "id": "his-1973-01-01-recombinant-dna",
+          "category": "Biotechnology",
+          "subcategory": "gene_editing",
+          "title": "Cohen & Boyer pioneer recombinant DNA technology",
+          "value": null,
+          "unit": null,
+          "source": "Stanford University",
+          "url": "https://en.wikipedia.org/wiki/Recombinant_DNA",
+          "date": "1973-01-01",
+          "geolocation": {
+            "lat": 37.4275,
+            "lon": -122.1697
+          },
+          "category_key": "biotechnology"
+        },
+        {
+          "id": "his-1953-04-25-dna-double-helix",
+          "category": "Biotechnology",
+          "subcategory": "synthetic_biology",
+          "title": "Watson & Crick publish the structure of DNA (double helix)",
+          "value": null,
+          "unit": null,
+          "source": "Nature",
+          "url": "https://en.wikipedia.org/wiki/Molecular_structure_of_Nucleic_Acids",
+          "date": "1953-04-25",
+          "geolocation": {
+            "lat": 52.2053,
+            "lon": 0.1218
+          },
           "category_key": "biotechnology"
         }
       ]
@@ -684,6 +716,54 @@
             "lon": 0.0
           },
           "category_key": "computing_agi"
+        },
+        {
+          "id": "his-1971-11-15-intel-4004",
+          "category": "Computing & AGI",
+          "subcategory": "computing_power",
+          "title": "Intel 4004 - the first commercially available microprocessor",
+          "value": null,
+          "unit": null,
+          "source": "Intel",
+          "url": "https://en.wikipedia.org/wiki/Intel_4004",
+          "date": "1971-11-15",
+          "geolocation": {
+            "lat": 37.3541,
+            "lon": -121.9552
+          },
+          "category_key": "computing_agi"
+        },
+        {
+          "id": "his-1969-10-29-arpanet",
+          "category": "Computing & AGI",
+          "subcategory": "networking",
+          "title": "ARPANET sends its first host-to-host message",
+          "value": null,
+          "unit": null,
+          "source": "UCLA / SRI International",
+          "url": "https://en.wikipedia.org/wiki/ARPANET",
+          "date": "1969-10-29",
+          "geolocation": {
+            "lat": 34.0689,
+            "lon": -118.4452
+          },
+          "category_key": "computing_agi"
+        },
+        {
+          "id": "his-1945-11-15-eniac",
+          "category": "Computing & AGI",
+          "subcategory": "computing_power",
+          "title": "ENIAC becomes operational - the first general-purpose electronic computer",
+          "value": null,
+          "unit": null,
+          "source": "University of Pennsylvania",
+          "url": "https://en.wikipedia.org/wiki/ENIAC",
+          "date": "1945-11-15",
+          "geolocation": {
+            "lat": 39.9526,
+            "lon": -75.1652
+          },
+          "category_key": "computing_agi"
         }
       ]
     },
@@ -792,6 +872,54 @@
           "category": "Spaceflight & Aeronautics",
           "is_new": false,
           "category_key": "spaceflight"
+        },
+        {
+          "id": "his-1969-07-20-apollo-11",
+          "category": "Spaceflight & Aeronautics",
+          "subcategory": "deep_space",
+          "title": "Apollo 11 - first crewed Moon landing (Sea of Tranquility)",
+          "value": null,
+          "unit": null,
+          "source": "NASA",
+          "url": "https://en.wikipedia.org/wiki/Apollo_11",
+          "date": "1969-07-20",
+          "geolocation": {
+            "lat": -0.674,
+            "lon": 23.473
+          },
+          "category_key": "spaceflight"
+        },
+        {
+          "id": "his-1961-04-12-vostok-1",
+          "category": "Spaceflight & Aeronautics",
+          "subcategory": "launch",
+          "title": "Vostok 1 - Yuri Gagarin becomes the first human in space",
+          "value": null,
+          "unit": null,
+          "source": "Roscosmos",
+          "url": "https://en.wikipedia.org/wiki/Vostok_1",
+          "date": "1961-04-12",
+          "geolocation": {
+            "lat": 45.965,
+            "lon": 63.305
+          },
+          "category_key": "spaceflight"
+        },
+        {
+          "id": "his-1957-10-04-sputnik-1",
+          "category": "Spaceflight & Aeronautics",
+          "subcategory": "launch",
+          "title": "Sputnik 1 - humanity's first artificial satellite reaches orbit",
+          "value": null,
+          "unit": null,
+          "source": "Roscosmos",
+          "url": "https://en.wikipedia.org/wiki/Sputnik_1",
+          "date": "1957-10-04",
+          "geolocation": {
+            "lat": 45.965,
+            "lon": 63.305
+          },
+          "category_key": "spaceflight"
         }
       ]
     },
@@ -892,6 +1020,22 @@
           },
           "category": "Renewable Energy",
           "is_new": false,
+          "category_key": "energy"
+        },
+        {
+          "id": "his-1954-04-25-silicon-solar-cell",
+          "category": "Renewable Energy",
+          "subcategory": "solar_efficiency",
+          "title": "Bell Labs builds the first practical silicon solar cell (6% efficiency)",
+          "value": 6,
+          "unit": "%",
+          "source": "Bell Labs",
+          "url": "https://en.wikipedia.org/wiki/Solar_cell",
+          "date": "1954-04-25",
+          "geolocation": {
+            "lat": 40.69,
+            "lon": -74.401
+          },
           "category_key": "energy"
         }
       ]
@@ -1118,6 +1262,22 @@
           },
           "category": "Military & Defense",
           "is_new": false,
+          "category_key": "defense"
+        },
+        {
+          "id": "his-1945-07-16-trinity-test",
+          "category": "Military & Defense",
+          "subcategory": "range",
+          "title": "Trinity nuclear test - the first nuclear explosion",
+          "value": null,
+          "unit": null,
+          "source": "Los Alamos National Laboratory",
+          "url": "https://en.wikipedia.org/wiki/Trinity_(nuclear_test)",
+          "date": "1945-07-16",
+          "geolocation": {
+            "lat": 33.6772,
+            "lon": -106.4754
+          },
           "category_key": "defense"
         }
       ]

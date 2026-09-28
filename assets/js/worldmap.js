@@ -2398,10 +2398,10 @@ function startTerminatorInterval() {
 // Timeline slider state. The floor is a deliberate UI/perf choice: a first-time
 // visitor sees the full set and the slider clusters within a recent window, so a
 // layer concluded wholly before TIMELINE_MIN_YEAR would never be reachable at any
-// position. Current data has no such entry (the oldest layer, Papua 1962, is
-// still active); if one ever appears it will need a data-level decision.
+// position. The floor is set to 1945 to cover the full historical milestone
+// archive (Trinity test, ENIAC, etc.).
 let timelineYear = new Date().getFullYear(); // current year by default
-const TIMELINE_MIN_YEAR = 2020;
+const TIMELINE_MIN_YEAR = 1945;
 const TIMELINE_MAX_YEAR = new Date().getFullYear();
 
 // Cluster milestone events by year: only events dated in that year stay visible.
@@ -2530,7 +2530,10 @@ function initTimelineSlider() {
   function renderTimelineYears() {
     if (!yearsContainer) return;
     yearsContainer.innerHTML = '';
+    const totalYears = TIMELINE_MAX_YEAR - TIMELINE_MIN_YEAR + 1;
+    const step = Math.max(1, Math.ceil(totalYears / 25));
     for (let year = TIMELINE_MIN_YEAR; year <= TIMELINE_MAX_YEAR; year++) {
+      if ((year - TIMELINE_MIN_YEAR) % step !== 0 && year !== TIMELINE_MAX_YEAR) continue;
       const label = document.createElement('span');
       label.textContent = year.toString();
       label.style.position = 'absolute';
