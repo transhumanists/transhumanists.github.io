@@ -1,5 +1,5 @@
 {
-  "last_update": "2026-09-29T03:15:50+00:00",
+  "last_update": "2026-09-29T11:47:41+00:00",
   "version": "1.0.0",
   "events": [
     {
@@ -637,6 +637,71 @@
       "geolocation": {
         "lat": 32.0853,
         "lon": 34.7818
+      }
+    },
+    {
+      "id": "ev-his-2015-12-21-falcon9-landing",
+      "title": "Falcon 9 performs the first orbital-class booster landing",
+      "category": "Spaceflight & Aeronautics",
+      "value": "Falcon 9 performs the first orbital-class booster landing",
+      "source": "SpaceX",
+      "url": "https://en.wikipedia.org/wiki/Falcon_9_full_thrust",
+      "date": "2015-12-21",
+      "geolocation": {
+        "lat": 28.4882,
+        "lon": -80.5774
+      }
+    },
+    {
+      "id": "ev-his-2014-04-07-heartbleed",
+      "title": "Heartbleed vulnerability in OpenSSL disclosed publicly",
+      "category": "Cybersecurity",
+      "value": "Heartbleed vulnerability in OpenSSL disclosed publicly",
+      "source": "Codenomicon / Google Security",
+      "url": "https://en.wikipedia.org/wiki/Heartbleed",
+      "date": "2014-04-07",
+      "geolocation": {
+        "lat": 47.3769,
+        "lon": 8.5417
+      }
+    },
+    {
+      "id": "ev-his-2012-09-30-alexnet",
+      "title": "AlexNet wins ImageNet and ignites the deep-learning era",
+      "category": "Computing & AGI",
+      "value": "15.3 top-5 error %",
+      "source": "University of Toronto",
+      "url": "https://en.wikipedia.org/wiki/AlexNet",
+      "date": "2012-09-30",
+      "geolocation": {
+        "lat": 43.6532,
+        "lon": -79.3832
+      }
+    },
+    {
+      "id": "ev-his-2012-06-28-crispr",
+      "title": "CRISPR-Cas9 programmable genome editing is published",
+      "category": "Biotechnology",
+      "value": "CRISPR-Cas9 programmable genome editing is published",
+      "source": "UC Berkeley / Umeå University",
+      "url": "https://en.wikipedia.org/wiki/CRISPR",
+      "date": "2012-06-28",
+      "geolocation": {
+        "lat": 37.8719,
+        "lon": -122.2585
+      }
+    },
+    {
+      "id": "ev-his-2012-05-25-dragon-iss",
+      "title": "Dragon becomes the first commercial spacecraft to berth with the ISS",
+      "category": "Spaceflight & Aeronautics",
+      "value": "Dragon becomes the first commercial spacecraft to berth with the ISS",
+      "source": "SpaceX",
+      "url": "https://en.wikipedia.org/wiki/Dragon_C2%2B",
+      "date": "2012-05-25",
+      "geolocation": {
+        "lat": 33.9204,
+        "lon": -118.3279
       }
     },
     {
