@@ -1,5 +1,5 @@
 {
-  "last_update": "2026-09-29T17:15:13+00:00",
+  "last_update": "2026-09-29T21:38:49+00:00",
   "version": "1.0.0",
   "schema": "https://transhumanists.github.io/schema/milestone-v1.json",
   "categories": {
@@ -531,6 +531,22 @@
           "category_key": "cybersecurity"
         },
         {
+          "id": "his-2020-12-13-solarwinds",
+          "category": "Cybersecurity",
+          "subcategory": "exploits",
+          "title": "SolarWinds supply-chain compromise disclosed",
+          "value": null,
+          "unit": null,
+          "source": "FireEye / Microsoft",
+          "url": "https://en.wikipedia.org/wiki/SolarWinds_attack",
+          "date": "2020-12-13",
+          "geolocation": {
+            "lat": 30.2672,
+            "lon": -97.7431
+          },
+          "category_key": "cybersecurity"
+        },
+        {
           "id": "his-2014-04-07-heartbleed",
           "category": "Cybersecurity",
           "subcategory": "encryption",
@@ -878,6 +894,22 @@
           "category_key": "computing_agi"
         },
         {
+          "id": "his-2022-11-30-chatgpt",
+          "category": "Computing & AGI",
+          "subcategory": "language_models",
+          "title": "ChatGPT launches and reaches 100 million users faster than any previous app",
+          "value": 100,
+          "unit": "M users in 2 months",
+          "source": "OpenAI",
+          "url": "https://en.wikipedia.org/wiki/ChatGPT",
+          "date": "2022-11-30",
+          "geolocation": {
+            "lat": 37.7749,
+            "lon": -122.4194
+          },
+          "category_key": "computing_agi"
+        },
+        {
           "id": "his-2020-06-11-gpt3",
           "category": "Computing & AGI",
           "subcategory": "language_models",
@@ -1130,6 +1162,22 @@
           "category_key": "spaceflight"
         },
         {
+          "id": "his-2021-12-25-jwst",
+          "category": "Spaceflight & Aeronautics",
+          "subcategory": "deep_space",
+          "title": "James Webb Space Telescope lifts off from Kourou",
+          "value": null,
+          "unit": null,
+          "source": "NASA / ESA / CSA",
+          "url": "https://en.wikipedia.org/wiki/James_Webb_Space_Telescope",
+          "date": "2021-12-25",
+          "geolocation": {
+            "lat": 5.2372,
+            "lon": -52.7608
+          },
+          "category_key": "spaceflight"
+        },
+        {
           "id": "his-2015-12-21-falcon9-landing",
           "category": "Spaceflight & Aeronautics",
           "subcategory": "launch",
@@ -1327,6 +1375,22 @@
           "category_key": "energy"
         },
         {
+          "id": "his-2022-12-05-nif-ignition",
+          "category": "Renewable Energy",
+          "subcategory": "fusion",
+          "title": "NIF achieves fusion ignition - more energy out than the laser put in (3.15 MJ)",
+          "value": 3.15,
+          "unit": "MJ output",
+          "source": "LLNL NIF",
+          "url": "https://en.wikipedia.org/wiki/National_Ignition_Facility",
+          "date": "2022-12-05",
+          "geolocation": {
+            "lat": 37.6881,
+            "lon": -121.7045
+          },
+          "category_key": "energy"
+        },
+        {
           "id": "his-1954-04-25-silicon-solar-cell",
           "category": "Renewable Energy",
           "subcategory": "solar_efficiency",
@@ -1462,6 +1526,22 @@
           "geolocation": {
             "lat": 0.0,
             "lon": 0.0
+          },
+          "category_key": "quantum"
+        },
+        {
+          "id": "his-2021-11-16-ibm-eagle",
+          "category": "Quantum Physics",
+          "subcategory": "qubit_count",
+          "title": "IBM Eagle - the first 127-qubit quantum processor",
+          "value": 127,
+          "unit": "qubits",
+          "source": "IBM Quantum",
+          "url": "https://en.wikipedia.org/wiki/IBM_Q_System_One",
+          "date": "2021-11-16",
+          "geolocation": {
+            "lat": 41.2115,
+            "lon": -73.8532
           },
           "category_key": "quantum"
         },

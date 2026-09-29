@@ -1,5 +1,5 @@
 {
-  "last_update": "2026-09-29T17:15:13+00:00",
+  "last_update": "2026-09-29T21:38:49+00:00",
   "version": "1.0.0",
   "events": [
     {
@@ -637,6 +637,71 @@
       "geolocation": {
         "lat": 32.0853,
         "lon": 34.7818
+      }
+    },
+    {
+      "id": "ev-his-2022-12-05-nif-ignition",
+      "title": "NIF achieves fusion ignition - more energy out than the laser put in (3.15 MJ)",
+      "category": "Renewable Energy",
+      "value": "3.15 MJ output",
+      "source": "LLNL NIF",
+      "url": "https://en.wikipedia.org/wiki/National_Ignition_Facility",
+      "date": "2022-12-05",
+      "geolocation": {
+        "lat": 37.6881,
+        "lon": -121.7045
+      }
+    },
+    {
+      "id": "ev-his-2022-11-30-chatgpt",
+      "title": "ChatGPT launches and reaches 100 million users faster than any previous app",
+      "category": "Computing & AGI",
+      "value": "100 M users in 2 months",
+      "source": "OpenAI",
+      "url": "https://en.wikipedia.org/wiki/ChatGPT",
+      "date": "2022-11-30",
+      "geolocation": {
+        "lat": 37.7749,
+        "lon": -122.4194
+      }
+    },
+    {
+      "id": "ev-his-2021-12-25-jwst",
+      "title": "James Webb Space Telescope lifts off from Kourou",
+      "category": "Spaceflight & Aeronautics",
+      "value": "James Webb Space Telescope lifts off from Kourou",
+      "source": "NASA / ESA / CSA",
+      "url": "https://en.wikipedia.org/wiki/James_Webb_Space_Telescope",
+      "date": "2021-12-25",
+      "geolocation": {
+        "lat": 5.2372,
+        "lon": -52.7608
+      }
+    },
+    {
+      "id": "ev-his-2021-11-16-ibm-eagle",
+      "title": "IBM Eagle - the first 127-qubit quantum processor",
+      "category": "Quantum Physics",
+      "value": "127 qubits",
+      "source": "IBM Quantum",
+      "url": "https://en.wikipedia.org/wiki/IBM_Q_System_One",
+      "date": "2021-11-16",
+      "geolocation": {
+        "lat": 41.2115,
+        "lon": -73.8532
+      }
+    },
+    {
+      "id": "ev-his-2020-12-13-solarwinds",
+      "title": "SolarWinds supply-chain compromise disclosed",
+      "category": "Cybersecurity",
+      "value": "SolarWinds supply-chain compromise disclosed",
+      "source": "FireEye / Microsoft",
+      "url": "https://en.wikipedia.org/wiki/SolarWinds_attack",
+      "date": "2020-12-13",
+      "geolocation": {
+        "lat": 30.2672,
+        "lon": -97.7431
       }
     },
     {
