@@ -1,5 +1,5 @@
 {
-  "last_update": "2026-09-29T11:47:41+00:00",
+  "last_update": "2026-09-29T17:15:13+00:00",
   "version": "1.0.0",
   "events": [
     {
@@ -637,6 +637,71 @@
       "geolocation": {
         "lat": 32.0853,
         "lon": 34.7818
+      }
+    },
+    {
+      "id": "ev-his-2020-12-11-mrna-vaccine",
+      "title": "First mRNA vaccine granted emergency use authorisation (COVID-19)",
+      "category": "Biotechnology",
+      "value": "First mRNA vaccine granted emergency use authorisation (COVID-19)",
+      "source": "Pfizer / BioNTech / FDA",
+      "url": "https://en.wikipedia.org/wiki/History_of_COVID-19_vaccine_development",
+      "date": "2020-12-11",
+      "geolocation": {
+        "lat": 40.8075,
+        "lon": -73.9626
+      }
+    },
+    {
+      "id": "ev-his-2020-06-11-gpt3",
+      "title": "GPT-3 demonstrates few-shot learning at 175 billion parameters",
+      "category": "Computing & AGI",
+      "value": "175 B parameters",
+      "source": "OpenAI",
+      "url": "https://en.wikipedia.org/wiki/GPT-3",
+      "date": "2020-06-11",
+      "geolocation": {
+        "lat": 37.7749,
+        "lon": -122.4194
+      }
+    },
+    {
+      "id": "ev-his-2019-10-23-quantum-supremacy",
+      "title": "Google's Sycamore processor claims quantum supremacy (53 qubits)",
+      "category": "Quantum Physics",
+      "value": "53 qubits",
+      "source": "Google Quantum AI",
+      "url": "https://en.wikipedia.org/wiki/Quantum_supremacy",
+      "date": "2019-10-23",
+      "geolocation": {
+        "lat": 34.414,
+        "lon": -119.695
+      }
+    },
+    {
+      "id": "ev-his-2017-06-12-transformer",
+      "title": "The Transformer architecture is introduced in 'Attention Is All You Need'",
+      "category": "Computing & AGI",
+      "value": "The Transformer architecture is introduced in 'Attention Is All You Need'",
+      "source": "Google Brain",
+      "url": "https://en.wikipedia.org/wiki/Transformer_(deep_learning_architecture)",
+      "date": "2017-06-12",
+      "geolocation": {
+        "lat": 43.6532,
+        "lon": -79.3832
+      }
+    },
+    {
+      "id": "ev-his-2016-03-15-alphago",
+      "title": "AlphaGo defeats Lee Sedol in the ancient game of Go",
+      "category": "Computing & AGI",
+      "value": "AlphaGo defeats Lee Sedol in the ancient game of Go",
+      "source": "DeepMind",
+      "url": "https://en.wikipedia.org/wiki/AlphaGo",
+      "date": "2016-03-15",
+      "geolocation": {
+        "lat": 37.5665,
+        "lon": 126.978
       }
     },
     {
