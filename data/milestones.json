@@ -1,5 +1,5 @@
 {
-  "last_update": "2026-09-28T23:29:34+00:00",
+  "last_update": "2026-09-29T03:15:50+00:00",
   "version": "1.0.0",
   "schema": "https://transhumanists.github.io/schema/milestone-v1.json",
   "categories": {
@@ -331,6 +331,22 @@
           "category_key": "biotechnology"
         },
         {
+          "id": "his-2003-04-14-human-genome",
+          "category": "Biotechnology",
+          "subcategory": "synthetic_biology",
+          "title": "Human Genome Project announces completion of the human genome sequence",
+          "value": null,
+          "unit": null,
+          "source": "NIH / Wellcome Trust",
+          "url": "https://en.wikipedia.org/wiki/Human_Genome_Project",
+          "date": "2003-04-14",
+          "geolocation": {
+            "lat": 38.9847,
+            "lon": -77.0947
+          },
+          "category_key": "biotechnology"
+        },
+        {
           "id": "his-1996-07-05-dolly",
           "category": "Biotechnology",
           "subcategory": "synthetic_biology",
@@ -483,6 +499,38 @@
           "category_key": "cybersecurity"
         },
         {
+          "id": "his-2010-06-17-stuxnet",
+          "category": "Cybersecurity",
+          "subcategory": "exploits",
+          "title": "Stuxnet - a cyber weapon targeting Iranian nuclear enrichment - is publicly identified",
+          "value": null,
+          "unit": null,
+          "source": "Symantec / VirusBlokAda",
+          "url": "https://en.wikipedia.org/wiki/Stuxnet",
+          "date": "2010-06-17",
+          "geolocation": {
+            "lat": 33.5066,
+            "lon": 51.9163
+          },
+          "category_key": "cybersecurity"
+        },
+        {
+          "id": "his-2007-04-27-estonia-cyber",
+          "category": "Cybersecurity",
+          "subcategory": "exploits",
+          "title": "Estonia suffers a coordinated cyberattack against state infrastructure",
+          "value": null,
+          "unit": null,
+          "source": "Estonian Ministry of Defence",
+          "url": "https://en.wikipedia.org/wiki/Cyberattacks_on_Estonia_(2007)",
+          "date": "2007-04-27",
+          "geolocation": {
+            "lat": 59.437,
+            "lon": 24.7536
+          },
+          "category_key": "cybersecurity"
+        },
+        {
           "id": "his-1988-11-02-morris-worm",
           "category": "Cybersecurity",
           "subcategory": "exploits",
@@ -519,6 +567,22 @@
           "geolocation": {
             "lat": 0.0,
             "lon": 0.0
+          },
+          "category_key": "quantum_gravity"
+        },
+        {
+          "id": "his-1997-12-01-ads-cft",
+          "category": "Quantum Gravity",
+          "subcategory": "holographic_principle",
+          "title": "Maldacena formulates the AdS/CFT correspondence (holographic duality)",
+          "value": null,
+          "unit": null,
+          "source": "Institute for Advanced Study",
+          "url": "https://en.wikipedia.org/wiki/AdS/CFT_correspondence",
+          "date": "1997-12-01",
+          "geolocation": {
+            "lat": 40.3487,
+            "lon": -74.6564
           },
           "category_key": "quantum_gravity"
         }
@@ -1390,6 +1454,22 @@
           },
           "category": "Military & Defense",
           "is_new": false,
+          "category_key": "defense"
+        },
+        {
+          "id": "his-2011-04-05-iron-dome",
+          "category": "Military & Defense",
+          "subcategory": "air_defense",
+          "title": "Iron Dome carries out its first operational interception of a rocket",
+          "value": null,
+          "unit": null,
+          "source": "Rafael / IDF",
+          "url": "https://en.wikipedia.org/wiki/Iron_Dome",
+          "date": "2011-04-05",
+          "geolocation": {
+            "lat": 32.0853,
+            "lon": 34.7818
+          },
           "category_key": "defense"
         },
         {

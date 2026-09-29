@@ -1,5 +1,5 @@
 {
-  "last_update": "2026-09-28T23:29:34+00:00",
+  "last_update": "2026-09-29T03:15:50+00:00",
   "version": "1.0.0",
   "events": [
     {
@@ -637,6 +637,71 @@
       "geolocation": {
         "lat": 32.0853,
         "lon": 34.7818
+      }
+    },
+    {
+      "id": "ev-his-2011-04-05-iron-dome",
+      "title": "Iron Dome carries out its first operational interception of a rocket",
+      "category": "Military & Defense",
+      "value": "Iron Dome carries out its first operational interception of a rocket",
+      "source": "Rafael / IDF",
+      "url": "https://en.wikipedia.org/wiki/Iron_Dome",
+      "date": "2011-04-05",
+      "geolocation": {
+        "lat": 32.0853,
+        "lon": 34.7818
+      }
+    },
+    {
+      "id": "ev-his-2010-06-17-stuxnet",
+      "title": "Stuxnet - a cyber weapon targeting Iranian nuclear enrichment - is publicly identified",
+      "category": "Cybersecurity",
+      "value": "Stuxnet - a cyber weapon targeting Iranian nuclear enrichment - is publicly identified",
+      "source": "Symantec / VirusBlokAda",
+      "url": "https://en.wikipedia.org/wiki/Stuxnet",
+      "date": "2010-06-17",
+      "geolocation": {
+        "lat": 33.5066,
+        "lon": 51.9163
+      }
+    },
+    {
+      "id": "ev-his-2007-04-27-estonia-cyber",
+      "title": "Estonia suffers a coordinated cyberattack against state infrastructure",
+      "category": "Cybersecurity",
+      "value": "Estonia suffers a coordinated cyberattack against state infrastructure",
+      "source": "Estonian Ministry of Defence",
+      "url": "https://en.wikipedia.org/wiki/Cyberattacks_on_Estonia_(2007)",
+      "date": "2007-04-27",
+      "geolocation": {
+        "lat": 59.437,
+        "lon": 24.7536
+      }
+    },
+    {
+      "id": "ev-his-2003-04-14-human-genome",
+      "title": "Human Genome Project announces completion of the human genome sequence",
+      "category": "Biotechnology",
+      "value": "Human Genome Project announces completion of the human genome sequence",
+      "source": "NIH / Wellcome Trust",
+      "url": "https://en.wikipedia.org/wiki/Human_Genome_Project",
+      "date": "2003-04-14",
+      "geolocation": {
+        "lat": 38.9847,
+        "lon": -77.0947
+      }
+    },
+    {
+      "id": "ev-his-1997-12-01-ads-cft",
+      "title": "Maldacena formulates the AdS/CFT correspondence (holographic duality)",
+      "category": "Quantum Gravity",
+      "value": "Maldacena formulates the AdS/CFT correspondence (holographic duality)",
+      "source": "Institute for Advanced Study",
+      "url": "https://en.wikipedia.org/wiki/AdS/CFT_correspondence",
+      "date": "1997-12-01",
+      "geolocation": {
+        "lat": 40.3487,
+        "lon": -74.6564
       }
     },
     {
