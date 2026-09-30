@@ -1,5 +1,5 @@
 {
-  "last_update": "2026-09-30T17:13:23+00:00",
+  "last_update": "2026-09-30T19:43:13+00:00",
   "version": "1.0.0",
   "events": [
     {
@@ -55,6 +55,19 @@
       }
     },
     {
+      "id": "ev-ms-f9883157aeba",
+      "title": "Gravity found to be holographic, collapsing space dimensions",
+      "category": "Quantum Gravity",
+      "value": "Gravity found to be holographic, collapsing space dimensions",
+      "source": "Quanta Magazine",
+      "url": "https://www.quantamagazine.org/gravity-seems-holographic-what-does-that-mean-for-reality-20260925/",
+      "date": "2026-09-25",
+      "geolocation": {
+        "lat": 40.758,
+        "lon": -73.9683
+      }
+    },
+    {
       "id": "ev-ms-847b6f6830b8",
       "title": "Forecast-Dojo: Replayable Benchmark for LLM Forecasting Agents",
       "category": "Computing & AGI",
@@ -104,6 +117,19 @@
       "geolocation": {
         "lat": 42.3765,
         "lon": -71.2356
+      }
+    },
+    {
+      "id": "ev-ms-2457b1872a8c",
+      "title": "Proof of Graph Sandwich Conjecture",
+      "category": "Mathematics",
+      "value": "Proof of Graph Sandwich Conjecture",
+      "source": "International mathematics collaboration",
+      "url": "https://www.quantamagazine.org/mathematicians-build-long-awaited-graph-sandwich-20260918/",
+      "date": "2026-09-18",
+      "geolocation": {
+        "lat": 48.8566,
+        "lon": 2.3522
       }
     },
     {
@@ -536,6 +562,19 @@
       }
     },
     {
+      "id": "ev-ms-0ef07b4ce70b",
+      "title": "ImmigrationReason: 12,375 USCIS AAO decisions dataset for legal reasoning",
+      "category": "Legal AI",
+      "value": "12375 decisions",
+      "source": "Academic researchers",
+      "url": "http://arxiv.org/abs/2608.20391v1",
+      "date": "2026-06-30",
+      "geolocation": {
+        "lat": 0.0,
+        "lon": 0.0
+      }
+    },
+    {
       "id": "ev-ms-cede87aeb630",
       "title": "Seed2.0 model achieves world-leading reasoning and multimodal capabilities",
       "category": "Computing & AGI",
@@ -572,6 +611,45 @@
       "geolocation": {
         "lat": 19.0,
         "lon": 72.8
+      }
+    },
+    {
+      "id": "ev-ms-110c8b5371e0",
+      "title": "ASPIRE achieves up to 77% improvement on robot manipulation benchmarks via autonomous skill discovery",
+      "category": "Computing & AGI",
+      "value": "77 percent improvement",
+      "source": "ASPIRE research team",
+      "url": "http://arxiv.org/abs/2607.00272v1",
+      "date": "2026-06-30",
+      "geolocation": {
+        "lat": 0.0,
+        "lon": 0.0
+      }
+    },
+    {
+      "id": "ev-ms-10f19d45d95b",
+      "title": "ML-driven Structural Pattern Mining of Inka Khipus",
+      "category": "Computational Archaeology",
+      "value": "0.86 F1 score",
+      "source": "Open Khipu Repository",
+      "url": "http://arxiv.org/abs/2607.00185v1",
+      "date": "2026-06-30",
+      "geolocation": {
+        "lat": -13.5,
+        "lon": -71.9
+      }
+    },
+    {
+      "id": "ev-ms-fb74b2202f85",
+      "title": "ML pipeline achieves 0.86 F1 classifying Inka khipu provenance and validates Santa Valley moiety structure",
+      "category": "Computational Archaeology",
+      "value": "0.86 F1 score",
+      "source": "Academic researchers (Open Khipu Repository)",
+      "url": "http://arxiv.org/abs/2607.00185v1",
+      "date": "2026-06-30",
+      "geolocation": {
+        "lat": -13.5,
+        "lon": -71.9
       }
     },
     {

@@ -256,6 +256,28 @@
     'csir': { lat: 51.2323, lon: 13.6830 },
     'significant-gravitas': { lat: 37.7749, lon: -122.4194 },
     'github': { lat: 37.7749, lon: -122.4194 },
+    // Additional entries for better geocoding coverage
+    'quanta magazine': { lat: 40.7580, lon: -73.9683 }, // NYC
+    'nature biotechnology': { lat: 51.5074, lon: -0.1278 }, // London (Nature Publishing)
+    'nature': { lat: 51.5074, lon: -0.1278 },
+    'fiercebiotech': { lat: 42.3601, lon: -71.0942 }, // Boston area
+    'open khipu repository': { lat: -13.5, lon: -71.9 }, // Cusco, Peru (Inca region)
+    'research team': { lat: 0.0, lon: 0.0 }, // Will not match - generic
+    'research authors': { lat: 0.0, lon: 0.0 }, // Will not match - generic
+    'academic researchers': { lat: 0.0, lon: 0.0 }, // Will not match - generic
+    'international mathematics collaboration': { lat: 48.8566, lon: 2.3522 }, // Paris (IMU)
+    'quantamagazine': { lat: 40.7580, lon: -73.9683 }, // NYC (Quanta Magazine)
+    'ieee': { lat: 40.7580, lon: -73.9683 }, // NYC
+    'acm': { lat: 40.7580, lon: -73.9683 }, // NYC
+    'usenix': { lat: 37.7749, lon: -122.4194 }, // Berkeley/SF
+    'siggraph': { lat: 34.0522, lon: -118.2437 }, // LA
+    'neurips': { lat: 37.7749, lon: -122.4194 }, // Usually virtual/varied
+    'icml': { lat: 37.7749, lon: -122.4194 },
+    'aaai': { lat: 37.7749, lon: -122.4194 },
+    'cvpr': { lat: 37.7749, lon: -122.4194 },
+    'iclr': { lat: 37.7749, lon: -122.4194 },
+    'ijcai': { lat: 37.7749, lon: -122.4194 },
+    'aaai': { lat: 37.7749, lon: -122.4194 },
   };
 
   function geocodeInstitution(source, title, category) {
