@@ -1,6 +1,6 @@
 {
   "version": "1.1.0",
-  "last_update": "2026-09-28T09:29:33+00:00",
+  "last_update": "2026-09-30T09:26:18+00:00",
   "conflict_zones": [
     {
       "id": "zone-ukraine",
@@ -666,6 +666,19 @@
       "start_date": "2021-01-01"
     },
     {
+      "id": "crisis-kenya-floods-displacement",
+      "name": "Kenya · Floods & displacement",
+      "region": "East Africa",
+      "lat": -1.29,
+      "lon": 36.82,
+      "radiusDeg": 2.1,
+      "status": "active",
+      "note": "Flooding, displacement and mudslides",
+      "source": "UN OCHA",
+      "url": "https://www.unocha.org/news/kenya-survival-choice-how-cash-assistance-helps-refugees-dadaab",
+      "start_date": "2022-01-01"
+    },
+    {
       "id": "crisis-mali-displacement-crisis",
       "name": "Mali · Displacement crisis",
       "region": "West Africa",
@@ -768,19 +781,6 @@
       "source": "UN OCHA",
       "url": "https://data.humdata.org/dataset/sudan-humanitarian-needs",
       "start_date": "2003-01-01"
-    },
-    {
-      "id": "crisis-syria-humanitarian-crisis",
-      "name": "Syria · Humanitarian crisis",
-      "region": "Middle East",
-      "lat": 34.8,
-      "lon": 38.9,
-      "radiusDeg": 3.3,
-      "status": "active",
-      "note": "15M+ in need of humanitarian aid",
-      "source": "UN OCHA",
-      "url": "https://data.humdata.org/dataset/syrian-arab-republic-humanitarian-needs",
-      "start_date": "2011-01-01"
     },
     {
       "id": "crisis-ukraine-war-civilian-needs",
