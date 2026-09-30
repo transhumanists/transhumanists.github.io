@@ -1,9 +1,9 @@
 {
-  "last_update": "2026-09-30T02:58:30+00:00",
+  "last_update": "2026-09-30T17:13:23+00:00",
   "bucket": "month",
   "first": "1945-07-01",
   "last": "2026-09-01",
-  "total": 100,
+  "total": 105,
   "days": [
     {
       "date": "1945-07-01",
@@ -3871,7 +3871,7 @@
     },
     {
       "date": "2026-01-01",
-      "count": 0
+      "count": 1
     },
     {
       "date": "2026-02-01",
@@ -3891,7 +3891,7 @@
     },
     {
       "date": "2026-06-01",
-      "count": 12
+      "count": 14
     },
     {
       "date": "2026-07-01",
@@ -3903,24 +3903,24 @@
     },
     {
       "date": "2026-09-01",
-      "count": 12
+      "count": 14
     }
   ],
   "spikes": [
     {
       "date": "2026-06-30",
-      "count": 8,
+      "count": 10,
       "reason": "Seed2.0 model achieves world-leading reasoning and multimodal capabilities; ORACLE-2 Omni achieves 0.73 macro F1 for real-time transient classification using multimodal data; Mnemosyne introduces Agentic Transaction Processing with formal safety guarantees for AI workflows"
     },
     {
-      "date": "2026-08-18",
+      "date": "2026-09-28",
       "count": 3,
-      "reason": "Perovskite-silicon tandem cell; Logical qubit fidelity; Electron microscope resolution"
+      "reason": "New ionizable lipid LC-1 enables efficient LNP delivery of large gene editors to multiple tissues; Lipid nanoparticles optimized for large RNA cargo and tissue targeting enhance in vivo genome editing; AI-guided optimization yields thermostable mRNA vaccines stable at 37°C for 2 months"
     },
     {
-      "date": "2026-08-15",
+      "date": "2026-09-25",
       "count": 3,
-      "reason": "Post-quantum TLS deployment (Top 100); NATO rapid reaction force size; HumanEval pass@1"
+      "reason": "Photolabile oligonucleotides enable spatially resolved single-cell transcriptomics and epigenomics; Gravity found to be holographic, collapsing space dimensions; Forecast-Dojo: Replayable Benchmark for LLM Forecasting Agents"
     }
   ]
 }

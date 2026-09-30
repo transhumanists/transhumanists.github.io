@@ -34,6 +34,23 @@
     "last_seen": "2026-09-30"
   },
   {
+    "id": "ms-bc2c513b6177",
+    "category": "Biotechnology",
+    "subcategory": "gene_therapy",
+    "title": "AI-guided optimization yields thermostable mRNA vaccines stable at 37°C for 2 months",
+    "value": 37,
+    "unit": "°C",
+    "source": "Nature Biotechnology",
+    "url": "https://www.nature.com/articles/s41587-026-03330-x",
+    "date": "2026-09-28",
+    "geolocation": {
+      "lat": 32.0603,
+      "lon": 118.7969
+    },
+    "first_seen": "2026-09-30",
+    "last_seen": "2026-09-30"
+  },
+  {
     "id": "ms-84669fafeb66",
     "category": "Cybersecurity",
     "subcategory": "exploits",
@@ -48,6 +65,23 @@
       "lon": 34.7818
     },
     "first_seen": "2026-09-26",
+    "last_seen": "2026-09-30"
+  },
+  {
+    "id": "ms-76a6862f54e8",
+    "category": "Biotechnology",
+    "subcategory": "microscopy",
+    "title": "Photolabile oligonucleotides enable spatially resolved single-cell transcriptomics and epigenomics",
+    "value": null,
+    "unit": null,
+    "source": "Nature Biotechnology",
+    "url": "https://www.nature.com/articles/s41587-026-03328-5",
+    "date": "2026-09-25",
+    "geolocation": {
+      "lat": 32.0603,
+      "lon": 118.7969
+    },
+    "first_seen": "2026-09-30",
     "last_seen": "2026-09-30"
   },
   {
@@ -799,6 +833,23 @@
     "last_seen": "2026-09-30"
   },
   {
+    "id": "ms-0ef07b4ce70b",
+    "category": "Legal AI",
+    "subcategory": "legal_datasets",
+    "title": "ImmigrationReason: 12,375 USCIS AAO decisions dataset for legal reasoning",
+    "value": 12375,
+    "unit": "decisions",
+    "source": "Academic researchers",
+    "url": "http://arxiv.org/abs/2608.20391v1",
+    "date": "2026-06-30",
+    "geolocation": {
+      "lat": 0.0,
+      "lon": 0.0
+    },
+    "first_seen": "2026-09-30",
+    "last_seen": "2026-09-30"
+  },
+  {
     "id": "ms-f41cd2fc2342",
     "category": "Quantum Physics",
     "subcategory": "quantum_resource_theory",
@@ -836,10 +887,10 @@
     "id": "ms-d6824a356960",
     "category": "Computing & AGI",
     "subcategory": "benchmarks",
-    "title": "EgoSafetyBench: Egocentric Video Benchmark for VLM Safety Guards",
+    "title": "EgoSafetyBench: Egocentric Video Benchmark for Embodied VLM Safety Guards",
     "value": 1200,
     "unit": "scenarios",
-    "source": "Research authors",
+    "source": "Research institution",
     "url": "http://arxiv.org/abs/2607.00218v1",
     "date": "2026-06-30",
     "geolocation": {
@@ -847,6 +898,23 @@
       "lon": 0.0
     },
     "first_seen": "2026-09-27",
+    "last_seen": "2026-09-30"
+  },
+  {
+    "id": "ms-110c8b5371e0",
+    "category": "Computing & AGI",
+    "subcategory": "agentic_ai",
+    "title": "ASPIRE achieves up to 77% improvement on robot manipulation benchmarks via autonomous skill discovery",
+    "value": 77,
+    "unit": "percent improvement",
+    "source": "ASPIRE research team",
+    "url": "http://arxiv.org/abs/2607.00272v1",
+    "date": "2026-06-30",
+    "geolocation": {
+      "lat": 0.0,
+      "lon": 0.0
+    },
+    "first_seen": "2026-09-30",
     "last_seen": "2026-09-30"
   },
   {
@@ -966,6 +1034,23 @@
       "lon": 34.7818
     },
     "first_seen": "2026-09-22",
+    "last_seen": "2026-09-30"
+  },
+  {
+    "id": "ms-6a684b1bc5a3",
+    "category": "Computer Vision",
+    "subcategory": "ocr",
+    "title": "LV-ROVER-MLT achieves record-low CER 0.0074 in Maltese OCR competition",
+    "value": 0.0074,
+    "unit": "CER",
+    "source": "LV-ROVER-MLT researchers",
+    "url": "http://arxiv.org/abs/2607.00250v5",
+    "date": "2026-01-01",
+    "geolocation": {
+      "lat": 0.0,
+      "lon": 0.0
+    },
+    "first_seen": "2026-09-30",
     "last_seen": "2026-09-30"
   },
   {

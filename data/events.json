@@ -1,5 +1,5 @@
 {
-  "last_update": "2026-09-30T02:58:30+00:00",
+  "last_update": "2026-09-30T17:13:23+00:00",
   "version": "1.0.0",
   "events": [
     {
@@ -22,6 +22,19 @@
       "value": "Lipid nanoparticles optimized for large RNA cargo and tissue targeting enhance in vivo genome editing",
       "source": "Nature Biotechnology",
       "url": "https://www.nature.com/articles/s41587-026-03298-8",
+      "date": "2026-09-28",
+      "geolocation": {
+        "lat": 32.0603,
+        "lon": 118.7969
+      }
+    },
+    {
+      "id": "ev-ms-bc2c513b6177",
+      "title": "AI-guided optimization yields thermostable mRNA vaccines stable at 37°C for 2 months",
+      "category": "Biotechnology",
+      "value": "37 °C",
+      "source": "Nature Biotechnology",
+      "url": "https://www.nature.com/articles/s41587-026-03330-x",
       "date": "2026-09-28",
       "geolocation": {
         "lat": 32.0603,
@@ -52,6 +65,19 @@
       "geolocation": {
         "lat": 42.444,
         "lon": -76.5019
+      }
+    },
+    {
+      "id": "ev-ms-76a6862f54e8",
+      "title": "Photolabile oligonucleotides enable spatially resolved single-cell transcriptomics and epigenomics",
+      "category": "Biotechnology",
+      "value": "Photolabile oligonucleotides enable spatially resolved single-cell transcriptomics and epigenomics",
+      "source": "Nature Biotechnology",
+      "url": "https://www.nature.com/articles/s41587-026-03328-5",
+      "date": "2026-09-25",
+      "geolocation": {
+        "lat": 32.0603,
+        "lon": 118.7969
       }
     },
     {
@@ -637,6 +663,19 @@
       "geolocation": {
         "lat": 32.0853,
         "lon": 34.7818
+      }
+    },
+    {
+      "id": "ev-ms-6a684b1bc5a3",
+      "title": "LV-ROVER-MLT achieves record-low CER 0.0074 in Maltese OCR competition",
+      "category": "Computer Vision",
+      "value": "0.0074 CER",
+      "source": "LV-ROVER-MLT researchers",
+      "url": "http://arxiv.org/abs/2607.00250v5",
+      "date": "2026-01-01",
+      "geolocation": {
+        "lat": 19.0,
+        "lon": 72.8
       }
     },
     {
