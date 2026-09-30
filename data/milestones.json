@@ -1,5 +1,5 @@
 {
-  "last_update": "2026-09-29T21:38:49+00:00",
+  "last_update": "2026-09-30T02:58:30+00:00",
   "version": "1.0.0",
   "schema": "https://transhumanists.github.io/schema/milestone-v1.json",
   "categories": {
@@ -894,6 +894,22 @@
           "category_key": "computing_agi"
         },
         {
+          "id": "his-2023-03-14-gpt4",
+          "category": "Computing & AGI",
+          "subcategory": "language_models",
+          "title": "GPT-4 stabilises frontier multimodal reasoning",
+          "value": null,
+          "unit": null,
+          "source": "OpenAI",
+          "url": "https://en.wikipedia.org/wiki/GPT-4",
+          "date": "2023-03-14",
+          "geolocation": {
+            "lat": 37.7749,
+            "lon": -122.4194
+          },
+          "category_key": "computing_agi"
+        },
+        {
           "id": "his-2022-11-30-chatgpt",
           "category": "Computing & AGI",
           "subcategory": "language_models",
@@ -1530,6 +1546,22 @@
           "category_key": "quantum"
         },
         {
+          "id": "his-2023-12-04-ibm-condor",
+          "category": "Quantum Physics",
+          "subcategory": "qubit_count",
+          "title": "IBM Condor - the first 1,000+ qubit quantum processor (1,121 qubits)",
+          "value": 1121,
+          "unit": "qubits",
+          "source": "IBM Quantum",
+          "url": "https://en.wikipedia.org/wiki/IBM_Q_System_One",
+          "date": "2023-12-04",
+          "geolocation": {
+            "lat": 41.2115,
+            "lon": -73.8532
+          },
+          "category_key": "quantum"
+        },
+        {
           "id": "his-2021-11-16-ibm-eagle",
           "category": "Quantum Physics",
           "subcategory": "qubit_count",
@@ -1808,6 +1840,22 @@
           "geolocation": {
             "lat": 0.0,
             "lon": 0.0
+          },
+          "category_key": "computational_archaeology"
+        },
+        {
+          "id": "his-2023-10-12-vesuvius-challenge",
+          "category": "Computational Archaeology",
+          "subcategory": "ml_structural_analysis",
+          "title": "Vesuvius Challenge - machine learning deciphers the first word from a charred Herculaneum papyrus",
+          "value": null,
+          "unit": null,
+          "source": "Vesuvius Challenge",
+          "url": "https://en.wikipedia.org/wiki/Herculaneum_papyri",
+          "date": "2023-10-12",
+          "geolocation": {
+            "lat": 40.8518,
+            "lon": 14.2681
           },
           "category_key": "computational_archaeology"
         }
