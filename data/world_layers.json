@@ -48,9 +48,9 @@
       "last_news_year": 2023
     },
     {
-      "id": "zone-arab-israeli",
-      "name": "Arab–Israeli",
-      "region": "Asia",
+      "id": "zone-israel-palestine",
+      "name": "Israel–Palestine conflict",
+      "region": "Middle East",
       "lat": 31.05,
       "lon": 34.85,
       "radiusDeg": 4.0,
@@ -103,8 +103,8 @@
       "last_news_year": 1960
     },
     {
-      "id": "zone-islamist-insurgencies-in-the-maghreb",
-      "name": "Islamist insurgencies in the Maghreb",
+      "id": "zone-sahel-insurgency",
+      "name": "Sahel insurgency",
       "region": "Africa",
       "lat": 12.24,
       "lon": -1.56,
@@ -509,9 +509,9 @@
       "last_news_year": 1962
     },
     {
-      "id": "zone-aftermath",
-      "name": "Aftermath",
-      "region": "Asia",
+      "id": "zone-syria-aftermath",
+      "name": "Syria conflict aftermath",
+      "region": "Middle East",
       "lat": 34.8,
       "lon": 39.0,
       "radiusDeg": 3.0,
@@ -1128,18 +1128,24 @@
     {
       "id": "inf-un-peacekeeping",
       "name": "UN Peacekeeping Operations",
+      "label": "UN Peacekeeping Operations",
       "country": "Multiple",
       "region": "Global",
-      "lat": 46.23,
-      "lon": 2.21,
-      "troops": 87000,
-      "kind": "deployment",
+      "kind": "fleet",
       "status": "active",
       "start_date": "1948-01-01",
       "end_date": "",
-      "direction": "global",
+      "note": "Global peacekeeping deployments since 1948",
       "source": "UN DPKO",
       "url": "https://peacekeeping.un.org/",
+      "from": {
+        "lat": 40.7580,
+        "lon": -73.9683
+      },
+      "to": {
+        "lat": 46.23,
+        "lon": 2.21
+      },
       "last_news_year": 2024
     }
   ]

@@ -4,6 +4,10 @@ title: transhumanists — Human Progress Dashboard
 description: "Tracking milestones across biotech, AGI, quantum, energy, cyber, space & defense. Live world map of human progress."
 ---
 
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://api.github.com https://raw.githubusercontent.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'">
+
+<a class="skip-link" href="#main" style="position:absolute;top:-100%;left:50%;transform:translateX(-50%);background:var(--accent);color:#000;padding:8px 16px;border-radius:var(--radius-sm);z-index:1000;text-decoration:none;font-weight:600;">Skip to main content</a>
+
 <div class="hero" id="home">
   <div class="container">
     <div class="hero-content">
@@ -93,11 +97,8 @@ description: "Tracking milestones across biotech, AGI, quantum, energy, cyber, s
       <p class="section-subtitle">Latest breakthroughs across all categories</p>
     </header>
 
-    <div class="highlights-carousel" id="highlights-carousel" role="region" aria-label="Recent highlights carousel">
+    <div class="highlights-carousel" id="highlights-carousel" role="region" aria-label="Recent highlights marquee">
       <div class="highlights-carousel-track" id="highlights-carousel-track"></div>
-      <button class="highlights-carousel-btn highlights-carousel-prev" id="highlights-carousel-prev" aria-label="Previous highlight" aria-controls="highlights-carousel-track" tabindex="0">‹</button>
-      <button class="highlights-carousel-btn highlights-carousel-next" id="highlights-carousel-next" aria-label="Next highlight" aria-controls="highlights-carousel-track" tabindex="0">›</button>
-      <div class="highlights-carousel-indicators" id="highlights-carousel-indicators" aria-label="Slide indicators"></div>
     </div>
   </div>
 </section>
@@ -270,6 +271,12 @@ description: "Tracking milestones across biotech, AGI, quantum, energy, cyber, s
     </header>
 
     <div class="activity-chart">
+      <div class="activity-controls">
+        <label for="activity-year-filter" style="font-size: 0.85rem; color: var(--fg-muted);">Year:</label>
+        <select id="activity-year-filter" aria-label="Select year for activity timeline" style="padding: 6px 12px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--bg-card); color: var(--fg); font-family: var(--font-ui); font-size: 0.85rem;">
+          <option value="all">All years</option>
+        </select>
+      </div>
       <h3>📈 Milestones recorded per day<span class="activity-update-time" id="activity-update-time">—</span></h3>
       <div class="chart-bars" id="activity-bars"></div>
       <div class="chart-labels" id="activity-labels"></div>
@@ -281,6 +288,10 @@ description: "Tracking milestones across biotech, AGI, quantum, energy, cyber, s
         <label for="metric-select">Metric timeline:</label>
         <select id="metric-select" aria-label="Pick a metric to see its full timeline">
           <option value="">— choose a metric —</option>
+        </select>
+        <label for="metric-year-filter" style="font-size: 0.85rem; color: var(--fg-muted); margin-left: 16px;">Year:</label>
+        <select id="metric-year-filter" aria-label="Select year for metric timeline" style="padding: 6px 12px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--bg-card); color: var(--fg); font-family: var(--font-ui); font-size: 0.85rem;">
+          <option value="all">All years</option>
         </select>
         <span class="metric-staleness" id="metric-staleness" hidden></span>
       </div>
@@ -352,7 +363,7 @@ description: "Tracking milestones across biotech, AGI, quantum, energy, cyber, s
         <h3>Open Stage Island</h3>
         <p>Free 24/7 open-air music stage in Second Life &mdash; no booking, no fee</p>
       </a>
-      <a class="network-card" href="https://neohiro.github.io/frenzypenguin-media/" rel="noopener" style="text-decoration: none; color: inherit;">
+      <a class="network-card" href="https://frenzypenguin-media.github.io/" rel="noopener" style="text-decoration: none; color: inherit;">
         <div class="network-card-icon" aria-hidden="true">🐧</div>
         <h3>FrenzyPenguin Media</h3>
         <p>Indie media & creative studio behind all of this</p>

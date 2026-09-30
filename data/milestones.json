@@ -1,5 +1,5 @@
 {
-  "last_update": "2026-09-30T17:13:23+00:00",
+  "last_update": "2026-09-28T23:24:24+00:00",
   "version": "1.0.0",
   "schema": "https://transhumanists.github.io/schema/milestone-v1.json",
   "categories": {
@@ -54,46 +54,6 @@
           "is_record": false,
           "is_breakthrough": true,
           "is_new": false,
-          "geolocation": {
-            "lat": 32.0603,
-            "lon": 118.7969
-          },
-          "category_key": "biotechnology"
-        },
-        {
-          "id": "ms-bc2c513b6177",
-          "title": "AI-guided optimization yields thermostable mRNA vaccines stable at 37°C for 2 months",
-          "summary": "AI-driven framework AGENT enables mRNA vaccines retaining full bioactivity after 2 months at 37°C, allowing cold-chain-free delivery via microneedle patches.",
-          "category": "Biotechnology",
-          "subcategory": "gene_therapy",
-          "value": 37,
-          "unit": "°C",
-          "source": "Nature Biotechnology",
-          "date": "2026-09-28",
-          "url": "https://www.nature.com/articles/s41587-026-03330-x",
-          "is_record": true,
-          "is_breakthrough": true,
-          "is_new": true,
-          "geolocation": {
-            "lat": 32.0603,
-            "lon": 118.7969
-          },
-          "category_key": "biotechnology"
-        },
-        {
-          "id": "ms-76a6862f54e8",
-          "title": "Photolabile oligonucleotides enable spatially resolved single-cell transcriptomics and epigenomics",
-          "summary": "A new photolabile oligonucleotide system uses topological light gradients to achieve spatially resolved single-cell measurements linking epigenome regulation to gene expression.",
-          "category": "Biotechnology",
-          "subcategory": "microscopy",
-          "value": null,
-          "unit": null,
-          "source": "Nature Biotechnology",
-          "date": "2026-09-25",
-          "url": "https://www.nature.com/articles/s41587-026-03328-5",
-          "is_record": false,
-          "is_breakthrough": true,
-          "is_new": true,
           "geolocation": {
             "lat": 32.0603,
             "lon": 118.7969
@@ -371,70 +331,6 @@
           "category_key": "biotechnology"
         },
         {
-          "id": "his-2020-12-11-mrna-vaccine",
-          "category": "Biotechnology",
-          "subcategory": "immunotherapy",
-          "title": "First mRNA vaccine granted emergency use authorisation (COVID-19)",
-          "value": null,
-          "unit": null,
-          "source": "Pfizer / BioNTech / FDA",
-          "url": "https://en.wikipedia.org/wiki/History_of_COVID-19_vaccine_development",
-          "date": "2020-12-11",
-          "geolocation": {
-            "lat": 40.8075,
-            "lon": -73.9626
-          },
-          "category_key": "biotechnology"
-        },
-        {
-          "id": "his-2012-06-28-crispr",
-          "category": "Biotechnology",
-          "subcategory": "gene_editing",
-          "title": "CRISPR-Cas9 programmable genome editing is published",
-          "value": null,
-          "unit": null,
-          "source": "UC Berkeley / Umeå University",
-          "url": "https://en.wikipedia.org/wiki/CRISPR",
-          "date": "2012-06-28",
-          "geolocation": {
-            "lat": 37.8719,
-            "lon": -122.2585
-          },
-          "category_key": "biotechnology"
-        },
-        {
-          "id": "his-2003-04-14-human-genome",
-          "category": "Biotechnology",
-          "subcategory": "synthetic_biology",
-          "title": "Human Genome Project announces completion of the human genome sequence",
-          "value": null,
-          "unit": null,
-          "source": "NIH / Wellcome Trust",
-          "url": "https://en.wikipedia.org/wiki/Human_Genome_Project",
-          "date": "2003-04-14",
-          "geolocation": {
-            "lat": 38.9847,
-            "lon": -77.0947
-          },
-          "category_key": "biotechnology"
-        },
-        {
-          "id": "his-1996-07-05-dolly",
-          "category": "Biotechnology",
-          "subcategory": "synthetic_biology",
-          "title": "Dolly - the first mammal cloned from an adult somatic cell",
-          "value": null,
-          "unit": null,
-          "source": "Roslin Institute",
-          "url": "https://en.wikipedia.org/wiki/Dolly_(sheep)",
-          "date": "1996-07-05",
-          "geolocation": {
-            "lat": 55.9533,
-            "lon": -3.1883
-          },
-          "category_key": "biotechnology"
-        },
-        {
           "id": "his-1983-04-01-pcr",
           "category": "Biotechnology",
           "subcategory": "synthetic_biology",
@@ -569,126 +465,6 @@
           "category": "Cybersecurity",
           "is_new": false,
           "category_key": "cybersecurity"
-        },
-        {
-          "id": "his-2020-12-13-solarwinds",
-          "category": "Cybersecurity",
-          "subcategory": "exploits",
-          "title": "SolarWinds supply-chain compromise disclosed",
-          "value": null,
-          "unit": null,
-          "source": "FireEye / Microsoft",
-          "url": "https://en.wikipedia.org/wiki/SolarWinds_attack",
-          "date": "2020-12-13",
-          "geolocation": {
-            "lat": 30.2672,
-            "lon": -97.7431
-          },
-          "category_key": "cybersecurity"
-        },
-        {
-          "id": "his-2014-04-07-heartbleed",
-          "category": "Cybersecurity",
-          "subcategory": "encryption",
-          "title": "Heartbleed vulnerability in OpenSSL disclosed publicly",
-          "value": null,
-          "unit": null,
-          "source": "Codenomicon / Google Security",
-          "url": "https://en.wikipedia.org/wiki/Heartbleed",
-          "date": "2014-04-07",
-          "geolocation": {
-            "lat": 47.3769,
-            "lon": 8.5417
-          },
-          "category_key": "cybersecurity"
-        },
-        {
-          "id": "his-2010-06-17-stuxnet",
-          "category": "Cybersecurity",
-          "subcategory": "exploits",
-          "title": "Stuxnet - a cyber weapon targeting Iranian nuclear enrichment - is publicly identified",
-          "value": null,
-          "unit": null,
-          "source": "Symantec / VirusBlokAda",
-          "url": "https://en.wikipedia.org/wiki/Stuxnet",
-          "date": "2010-06-17",
-          "geolocation": {
-            "lat": 33.5066,
-            "lon": 51.9163
-          },
-          "category_key": "cybersecurity"
-        },
-        {
-          "id": "his-2007-04-27-estonia-cyber",
-          "category": "Cybersecurity",
-          "subcategory": "exploits",
-          "title": "Estonia suffers a coordinated cyberattack against state infrastructure",
-          "value": null,
-          "unit": null,
-          "source": "Estonian Ministry of Defence",
-          "url": "https://en.wikipedia.org/wiki/Cyberattacks_on_Estonia_(2007)",
-          "date": "2007-04-27",
-          "geolocation": {
-            "lat": 59.437,
-            "lon": 24.7536
-          },
-          "category_key": "cybersecurity"
-        },
-        {
-          "id": "his-1988-11-02-morris-worm",
-          "category": "Cybersecurity",
-          "subcategory": "exploits",
-          "title": "Morris worm infects roughly a tenth of the early internet",
-          "value": null,
-          "unit": null,
-          "source": "MIT / Cornell",
-          "url": "https://en.wikipedia.org/wiki/Morris_worm",
-          "date": "1988-11-02",
-          "geolocation": {
-            "lat": 42.3601,
-            "lon": -71.0942
-          },
-          "category_key": "cybersecurity"
-        }
-      ]
-    },
-    "quantum_gravity": {
-      "name": "Quantum Gravity",
-      "icon": "📌",
-      "color": "#00d4ff",
-      "subcategories": [],
-      "milestones": [
-        {
-          "id": "ms-f9883157aeba",
-          "category": "Quantum Gravity",
-          "subcategory": "holographic_principle",
-          "title": "Gravity found to be holographic, collapsing space dimensions",
-          "value": null,
-          "unit": null,
-          "source": "Quanta Magazine",
-          "url": "https://www.quantamagazine.org/gravity-seems-holographic-what-does-that-mean-for-reality-20260925/",
-          "date": "2026-09-25",
-          "geolocation": {
-            "lat": 0.0,
-            "lon": 0.0
-          },
-          "category_key": "quantum_gravity"
-        },
-        {
-          "id": "his-1997-12-01-ads-cft",
-          "category": "Quantum Gravity",
-          "subcategory": "holographic_principle",
-          "title": "Maldacena formulates the AdS/CFT correspondence (holographic duality)",
-          "value": null,
-          "unit": null,
-          "source": "Institute for Advanced Study",
-          "url": "https://en.wikipedia.org/wiki/AdS/CFT_correspondence",
-          "date": "1997-12-01",
-          "geolocation": {
-            "lat": 40.3487,
-            "lon": -74.6564
-          },
-          "category_key": "quantum_gravity"
         }
       ]
     },
@@ -705,7 +481,11 @@
         "inference_cost",
         "code_generation",
         "math_reasoning",
-        "multimodal"
+        "multimodal",
+        "graph_theory",
+        "pattern_mining",
+        "ml_structural_analysis",
+        "holographic_principle"
       ],
       "milestones": [
         {
@@ -866,7 +646,7 @@
           "url": "http://arxiv.org/abs/2607.00228v1",
           "is_record": true,
           "is_breakthrough": true,
-          "is_new": false,
+          "is_new": true,
           "geolocation": {
             "lat": 34.1377,
             "lon": -118.1253
@@ -915,13 +695,13 @@
         },
         {
           "id": "ms-d6824a356960",
-          "title": "EgoSafetyBench: Egocentric Video Benchmark for Embodied VLM Safety Guards",
-          "summary": "New 1,200-scenario egocentric video benchmark evaluates vision-language models as streaming safety guards for embodied agents using contrastive ladders at half-second granularity.",
+          "title": "EgoSafetyBench: Egocentric Video Benchmark for VLM Safety Guards",
+          "summary": "Introduces EgoSafetyBench, a 1,200-scenario egocentric video benchmark to evaluate vision-language models as runtime safety guards for embodied agents.",
           "category": "Computing & AGI",
           "subcategory": "benchmarks",
           "value": 1200,
           "unit": "scenarios",
-          "source": "Research institution",
+          "source": "Research authors",
           "date": "2026-06-30",
           "url": "http://arxiv.org/abs/2607.00218v1",
           "is_record": false,
@@ -930,138 +710,6 @@
           "geolocation": {
             "lat": 0.0,
             "lon": 0.0
-          },
-          "category_key": "computing_agi"
-        },
-        {
-          "id": "ms-110c8b5371e0",
-          "title": "ASPIRE achieves up to 77% improvement on robot manipulation benchmarks via autonomous skill discovery",
-          "summary": "ASPIRE, a continual learning system for autonomous robot skill programming, surpasses prior methods by up to 77% on LIBERO-Pro, 72% on Robosuite bimanual handover, and 32% on BEHAVIOR-1K household tas",
-          "category": "Computing & AGI",
-          "subcategory": "agentic_ai",
-          "value": 77,
-          "unit": "percent improvement",
-          "source": "ASPIRE research team",
-          "date": "2026-06-30",
-          "url": "http://arxiv.org/abs/2607.00272v1",
-          "is_record": true,
-          "is_breakthrough": true,
-          "is_new": true,
-          "geolocation": {
-            "lat": 0.0,
-            "lon": 0.0
-          },
-          "category_key": "computing_agi"
-        },
-        {
-          "id": "his-2023-03-14-gpt4",
-          "category": "Computing & AGI",
-          "subcategory": "language_models",
-          "title": "GPT-4 stabilises frontier multimodal reasoning",
-          "value": null,
-          "unit": null,
-          "source": "OpenAI",
-          "url": "https://en.wikipedia.org/wiki/GPT-4",
-          "date": "2023-03-14",
-          "geolocation": {
-            "lat": 37.7749,
-            "lon": -122.4194
-          },
-          "category_key": "computing_agi"
-        },
-        {
-          "id": "his-2022-11-30-chatgpt",
-          "category": "Computing & AGI",
-          "subcategory": "language_models",
-          "title": "ChatGPT launches and reaches 100 million users faster than any previous app",
-          "value": 100,
-          "unit": "M users in 2 months",
-          "source": "OpenAI",
-          "url": "https://en.wikipedia.org/wiki/ChatGPT",
-          "date": "2022-11-30",
-          "geolocation": {
-            "lat": 37.7749,
-            "lon": -122.4194
-          },
-          "category_key": "computing_agi"
-        },
-        {
-          "id": "his-2020-06-11-gpt3",
-          "category": "Computing & AGI",
-          "subcategory": "language_models",
-          "title": "GPT-3 demonstrates few-shot learning at 175 billion parameters",
-          "value": 175,
-          "unit": "B parameters",
-          "source": "OpenAI",
-          "url": "https://en.wikipedia.org/wiki/GPT-3",
-          "date": "2020-06-11",
-          "geolocation": {
-            "lat": 37.7749,
-            "lon": -122.4194
-          },
-          "category_key": "computing_agi"
-        },
-        {
-          "id": "his-2017-06-12-transformer",
-          "category": "Computing & AGI",
-          "subcategory": "language_models",
-          "title": "The Transformer architecture is introduced in 'Attention Is All You Need'",
-          "value": null,
-          "unit": null,
-          "source": "Google Brain",
-          "url": "https://en.wikipedia.org/wiki/Transformer_(deep_learning_architecture)",
-          "date": "2017-06-12",
-          "geolocation": {
-            "lat": 43.6532,
-            "lon": -79.3832
-          },
-          "category_key": "computing_agi"
-        },
-        {
-          "id": "his-2016-03-15-alphago",
-          "category": "Computing & AGI",
-          "subcategory": "machine_learning",
-          "title": "AlphaGo defeats Lee Sedol in the ancient game of Go",
-          "value": null,
-          "unit": null,
-          "source": "DeepMind",
-          "url": "https://en.wikipedia.org/wiki/AlphaGo",
-          "date": "2016-03-15",
-          "geolocation": {
-            "lat": 37.5665,
-            "lon": 126.978
-          },
-          "category_key": "computing_agi"
-        },
-        {
-          "id": "his-2012-09-30-alexnet",
-          "category": "Computing & AGI",
-          "subcategory": "machine_learning",
-          "title": "AlexNet wins ImageNet and ignites the deep-learning era",
-          "value": 15.3,
-          "unit": "top-5 error %",
-          "source": "University of Toronto",
-          "url": "https://en.wikipedia.org/wiki/AlexNet",
-          "date": "2012-09-30",
-          "geolocation": {
-            "lat": 43.6532,
-            "lon": -79.3832
-          },
-          "category_key": "computing_agi"
-        },
-        {
-          "id": "his-1997-05-11-deep-blue",
-          "category": "Computing & AGI",
-          "subcategory": "machine_learning",
-          "title": "Deep Blue becomes the first computer to beat a world chess champion in a match",
-          "value": null,
-          "unit": null,
-          "source": "IBM",
-          "url": "https://en.wikipedia.org/wiki/Deep_Blue_(chess_computer)",
-          "date": "1997-05-11",
-          "geolocation": {
-            "lat": 40.758,
-            "lon": -73.9683
           },
           "category_key": "computing_agi"
         },
@@ -1112,18 +760,10 @@
             "lon": -75.1652
           },
           "category_key": "computing_agi"
-        }
-      ]
-    },
-    "mathematics": {
-      "name": "Mathematics",
-      "icon": "📌",
-      "color": "#00d4ff",
-      "subcategories": [],
-      "milestones": [
+        },
         {
           "id": "ms-2457b1872a8c",
-          "category": "Mathematics",
+          "category": "Computing & AGI",
           "subcategory": "graph_theory",
           "title": "Proof of Graph Sandwich Conjecture",
           "value": null,
@@ -1135,11 +775,11 @@
             "lat": 0.0,
             "lon": 0.0
           },
-          "category_key": "mathematics"
+          "category_key": "computing_agi"
         },
         {
           "id": "his-1976-07-01-four-color-theorem",
-          "category": "Mathematics",
+          "category": "Computing & AGI",
           "subcategory": "graph_theory",
           "title": "Four color theorem proven with the aid of a computer",
           "value": null,
@@ -1151,7 +791,47 @@
             "lat": 40.102,
             "lon": -88.2272
           },
-          "category_key": "mathematics"
+          "category_key": "computing_agi"
+        },
+        {
+          "id": "ms-10f19d45d95b",
+          "title": "ML-driven Structural Pattern Mining of Inka Khipus",
+          "summary": "A machine-learning pipeline achieved an F1 score of 0.86 in classifying Inka Late Horizon imperial style khipus using structural feature mining.",
+          "category": "Computing & AGI",
+          "subcategory": "pattern_mining",
+          "value": 0.86,
+          "unit": "F1 score",
+          "source": "Open Khipu Repository",
+          "date": "2026-06-30",
+          "url": "http://arxiv.org/abs/2607.00185v1",
+          "is_record": false,
+          "is_breakthrough": true,
+          "is_new": true,
+          "geolocation": {
+            "lat": 0.0,
+            "lon": 0.0
+          },
+          "category_key": "computing_agi"
+        },
+        {
+          "id": "ms-fb74b2202f85",
+          "title": "ML pipeline achieves 0.86 F1 classifying Inka khipu provenance and validates Santa Valley moiety structure",
+          "summary": "First reproducible ML pipeline for khipu analysis achieves strong provenance classification (F1=0.86) and computationally verifies the recto/verso moiety structure of Santa Valley khipus, revealing co",
+          "category": "Computing & AGI",
+          "subcategory": "ml_structural_analysis",
+          "value": 0.86,
+          "unit": "F1 score",
+          "source": "Academic researchers (Open Khipu Repository)",
+          "date": "2026-06-30",
+          "url": "http://arxiv.org/abs/2607.00185v1",
+          "is_record": false,
+          "is_breakthrough": true,
+          "is_new": false,
+          "geolocation": {
+            "lat": 0.0,
+            "lon": 0.0
+          },
+          "category_key": "computing_agi"
         }
       ]
     },
@@ -1235,54 +915,6 @@
           },
           "category": "Spaceflight & Aeronautics",
           "is_new": false,
-          "category_key": "spaceflight"
-        },
-        {
-          "id": "his-2021-12-25-jwst",
-          "category": "Spaceflight & Aeronautics",
-          "subcategory": "deep_space",
-          "title": "James Webb Space Telescope lifts off from Kourou",
-          "value": null,
-          "unit": null,
-          "source": "NASA / ESA / CSA",
-          "url": "https://en.wikipedia.org/wiki/James_Webb_Space_Telescope",
-          "date": "2021-12-25",
-          "geolocation": {
-            "lat": 5.2372,
-            "lon": -52.7608
-          },
-          "category_key": "spaceflight"
-        },
-        {
-          "id": "his-2015-12-21-falcon9-landing",
-          "category": "Spaceflight & Aeronautics",
-          "subcategory": "launch",
-          "title": "Falcon 9 performs the first orbital-class booster landing",
-          "value": null,
-          "unit": null,
-          "source": "SpaceX",
-          "url": "https://en.wikipedia.org/wiki/Falcon_9_full_thrust",
-          "date": "2015-12-21",
-          "geolocation": {
-            "lat": 28.4882,
-            "lon": -80.5774
-          },
-          "category_key": "spaceflight"
-        },
-        {
-          "id": "his-2012-05-25-dragon-iss",
-          "category": "Spaceflight & Aeronautics",
-          "subcategory": "launch",
-          "title": "Dragon becomes the first commercial spacecraft to berth with the ISS",
-          "value": null,
-          "unit": null,
-          "source": "SpaceX",
-          "url": "https://en.wikipedia.org/wiki/Dragon_C2%2B",
-          "date": "2012-05-25",
-          "geolocation": {
-            "lat": 33.9204,
-            "lon": -118.3279
-          },
           "category_key": "spaceflight"
         },
         {
@@ -1451,22 +1083,6 @@
           "category_key": "energy"
         },
         {
-          "id": "his-2022-12-05-nif-ignition",
-          "category": "Renewable Energy",
-          "subcategory": "fusion",
-          "title": "NIF achieves fusion ignition - more energy out than the laser put in (3.15 MJ)",
-          "value": 3.15,
-          "unit": "MJ output",
-          "source": "LLNL NIF",
-          "url": "https://en.wikipedia.org/wiki/National_Ignition_Facility",
-          "date": "2022-12-05",
-          "geolocation": {
-            "lat": 37.6881,
-            "lon": -121.7045
-          },
-          "category_key": "energy"
-        },
-        {
           "id": "his-1954-04-25-silicon-solar-cell",
           "category": "Renewable Energy",
           "subcategory": "solar_efficiency",
@@ -1497,7 +1113,8 @@
         "gate_fidelity",
         "coherence",
         "trapped_ions",
-        "quantum_resource_theory"
+        "quantum_resource_theory",
+        "holographic_principle"
       ],
       "milestones": [
         {
@@ -1606,70 +1223,6 @@
           "category_key": "quantum"
         },
         {
-          "id": "his-2023-12-04-ibm-condor",
-          "category": "Quantum Physics",
-          "subcategory": "qubit_count",
-          "title": "IBM Condor - the first 1,000+ qubit quantum processor (1,121 qubits)",
-          "value": 1121,
-          "unit": "qubits",
-          "source": "IBM Quantum",
-          "url": "https://en.wikipedia.org/wiki/IBM_Q_System_One",
-          "date": "2023-12-04",
-          "geolocation": {
-            "lat": 41.2115,
-            "lon": -73.8532
-          },
-          "category_key": "quantum"
-        },
-        {
-          "id": "his-2021-11-16-ibm-eagle",
-          "category": "Quantum Physics",
-          "subcategory": "qubit_count",
-          "title": "IBM Eagle - the first 127-qubit quantum processor",
-          "value": 127,
-          "unit": "qubits",
-          "source": "IBM Quantum",
-          "url": "https://en.wikipedia.org/wiki/IBM_Q_System_One",
-          "date": "2021-11-16",
-          "geolocation": {
-            "lat": 41.2115,
-            "lon": -73.8532
-          },
-          "category_key": "quantum"
-        },
-        {
-          "id": "his-2019-10-23-quantum-supremacy",
-          "category": "Quantum Physics",
-          "subcategory": "quantum_supremacy",
-          "title": "Google's Sycamore processor claims quantum supremacy (53 qubits)",
-          "value": 53,
-          "unit": "qubits",
-          "source": "Google Quantum AI",
-          "url": "https://en.wikipedia.org/wiki/Quantum_supremacy",
-          "date": "2019-10-23",
-          "geolocation": {
-            "lat": 34.414,
-            "lon": -119.695
-          },
-          "category_key": "quantum"
-        },
-        {
-          "id": "his-1994-10-01-shor-algorithm",
-          "category": "Quantum Physics",
-          "subcategory": "quantum_resource_theory",
-          "title": "Shor's algorithm shows quantum computers can factor integers in polynomial time",
-          "value": null,
-          "unit": null,
-          "source": "AT&T Bell Labs",
-          "url": "https://en.wikipedia.org/wiki/Shor%27s_algorithm",
-          "date": "1994-10-01",
-          "geolocation": {
-            "lat": 40.69,
-            "lon": -74.401
-          },
-          "category_key": "quantum"
-        },
-        {
           "id": "his-1981-05-06-feynman-quantum",
           "category": "Quantum Physics",
           "subcategory": "quantum_resource_theory",
@@ -1682,6 +1235,22 @@
           "geolocation": {
             "lat": 34.1377,
             "lon": -118.1253
+          },
+          "category_key": "quantum"
+        },
+        {
+          "id": "ms-f9883157aeba",
+          "category": "Quantum Physics",
+          "subcategory": "holographic_principle",
+          "title": "Gravity found to be holographic, collapsing space dimensions",
+          "value": null,
+          "unit": null,
+          "source": "Quanta Magazine",
+          "url": "https://www.quantamagazine.org/gravity-seems-holographic-what-does-that-mean-for-reality-20260925/",
+          "date": "2026-09-25",
+          "geolocation": {
+            "lat": 0.0,
+            "lon": 0.0
           },
           "category_key": "quantum"
         }
@@ -1789,38 +1358,6 @@
           "category_key": "defense"
         },
         {
-          "id": "his-2011-04-05-iron-dome",
-          "category": "Military & Defense",
-          "subcategory": "air_defense",
-          "title": "Iron Dome carries out its first operational interception of a rocket",
-          "value": null,
-          "unit": null,
-          "source": "Rafael / IDF",
-          "url": "https://en.wikipedia.org/wiki/Iron_Dome",
-          "date": "2011-04-05",
-          "geolocation": {
-            "lat": 32.0853,
-            "lon": 34.7818
-          },
-          "category_key": "defense"
-        },
-        {
-          "id": "his-1991-01-18-patriot-scud",
-          "category": "Military & Defense",
-          "subcategory": "air_defense",
-          "title": "Patriot system performs its first combat intercept of a Scud missile",
-          "value": null,
-          "unit": null,
-          "source": "US Army",
-          "url": "https://en.wikipedia.org/wiki/MIM-104_Patriot",
-          "date": "1991-01-18",
-          "geolocation": {
-            "lat": 24.7136,
-            "lon": 46.6753
-          },
-          "category_key": "defense"
-        },
-        {
           "id": "his-1983-03-23-sdi-announced",
           "category": "Military & Defense",
           "subcategory": "air_defense",
@@ -1851,122 +1388,6 @@
             "lon": -106.4754
           },
           "category_key": "defense"
-        }
-      ]
-    },
-    "legal_ai": {
-      "name": "Legal AI",
-      "icon": "📌",
-      "color": "#aaaaaa",
-      "subcategories": [
-        "legal_datasets"
-      ],
-      "milestones": [
-        {
-          "id": "ms-0ef07b4ce70b",
-          "title": "ImmigrationReason: 12,375 USCIS AAO decisions dataset for legal reasoning",
-          "summary": "A new structured dataset of 12,375 U.S. immigration appeals decisions spanning 2005–2026 enables legal reasoning research with per-criterion evidence labels, adjudicator critiques, and citations.",
-          "category": "Legal AI",
-          "subcategory": "legal_datasets",
-          "value": 12375,
-          "unit": "decisions",
-          "source": "Academic researchers",
-          "date": "2026-06-30",
-          "url": "http://arxiv.org/abs/2608.20391v1",
-          "is_record": true,
-          "is_breakthrough": true,
-          "is_new": true,
-          "geolocation": {
-            "lat": 0.0,
-            "lon": 0.0
-          },
-          "category_key": "legal_ai"
-        }
-      ]
-    },
-    "computational_archaeology": {
-      "name": "Computational Archaeology",
-      "icon": "📌",
-      "color": "#00d4ff",
-      "subcategories": [],
-      "milestones": [
-        {
-          "id": "ms-10f19d45d95b",
-          "category": "Computational Archaeology",
-          "subcategory": "pattern_mining",
-          "title": "ML-driven Structural Pattern Mining of Inka Khipus",
-          "value": 0.86,
-          "unit": "F1 score",
-          "source": "Open Khipu Repository",
-          "url": "http://arxiv.org/abs/2607.00185v1",
-          "date": "2026-06-30",
-          "geolocation": {
-            "lat": 0.0,
-            "lon": 0.0
-          },
-          "category_key": "computational_archaeology"
-        },
-        {
-          "id": "ms-fb74b2202f85",
-          "category": "Computational Archaeology",
-          "subcategory": "ml_structural_analysis",
-          "title": "ML pipeline achieves 0.86 F1 classifying Inka khipu provenance and validates Santa Valley moiety structure",
-          "value": 0.86,
-          "unit": "F1 score",
-          "source": "Academic researchers (Open Khipu Repository)",
-          "url": "http://arxiv.org/abs/2607.00185v1",
-          "date": "2026-06-30",
-          "geolocation": {
-            "lat": 0.0,
-            "lon": 0.0
-          },
-          "category_key": "computational_archaeology"
-        },
-        {
-          "id": "his-2023-10-12-vesuvius-challenge",
-          "category": "Computational Archaeology",
-          "subcategory": "ml_structural_analysis",
-          "title": "Vesuvius Challenge - machine learning deciphers the first word from a charred Herculaneum papyrus",
-          "value": null,
-          "unit": null,
-          "source": "Vesuvius Challenge",
-          "url": "https://en.wikipedia.org/wiki/Herculaneum_papyri",
-          "date": "2023-10-12",
-          "geolocation": {
-            "lat": 40.8518,
-            "lon": 14.2681
-          },
-          "category_key": "computational_archaeology"
-        }
-      ]
-    },
-    "computer_vision": {
-      "name": "Computer Vision",
-      "icon": "📌",
-      "color": "#aaaaaa",
-      "subcategories": [
-        "ocr"
-      ],
-      "milestones": [
-        {
-          "id": "ms-6a684b1bc5a3",
-          "title": "LV-ROVER-MLT achieves record-low CER 0.0074 in Maltese OCR competition",
-          "summary": "LV-ROVER-MLT wins DocEng 2026 Maltese OCR competition with held-out character error rate 0.0074, halving the next-best score and demonstrating synthetic fine-tuning plus multi-stream arbitration for l",
-          "category": "Computer Vision",
-          "subcategory": "ocr",
-          "value": 0.0074,
-          "unit": "CER",
-          "source": "LV-ROVER-MLT researchers",
-          "date": "2026-01-01",
-          "url": "http://arxiv.org/abs/2607.00250v5",
-          "is_record": true,
-          "is_breakthrough": true,
-          "is_new": true,
-          "geolocation": {
-            "lat": 0.0,
-            "lon": 0.0
-          },
-          "category_key": "computer_vision"
         }
       ]
     }

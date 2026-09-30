@@ -395,7 +395,10 @@ height: 0,
     'Quantum Physics': 'Quantum Physics',
     'Renewable Energy': 'Renewable Energy',
     'Military & Defense': 'Military & Defense',
-    'Spaceflight & Aeronautics': 'Spaceflight & Aeronautics'
+    'Spaceflight & Aeronautics': 'Spaceflight & Aeronautics',
+    'Quantum Gravity': 'Quantum Physics',
+    'Mathematics': 'Computing & AGI',
+    'Computational Archaeology': 'Computing & AGI'
   };
 
   // Canonical category order used by the legend (color, label).
@@ -1588,8 +1591,9 @@ function drawEvent(ev) {
     const wrapper = document.createElement('div');
     const cat = document.createElement('div');
     cat.className = 'tt-category';
-    cat.style.color = fleet.kind === 'ground' ? GROUND_COLOR : FLEET_COLOR;
-    cat.textContent = fleet.kind === 'ground' ? 'Ground Deployment' : 'Fleet Deployment';
+    const isInfantry = fleet.kind === 'infantry' || fleet.kind === 'mobilization' || fleet.kind === 'deployment' || fleet.kind === 'rotation';
+    cat.style.color = isInfantry ? GROUND_COLOR : (fleet.kind === 'ground' ? GROUND_COLOR : FLEET_COLOR);
+    cat.textContent = isInfantry ? 'Ground Deployment' : (fleet.kind === 'ground' ? 'Ground Deployment' : 'Fleet Deployment');
     const title = document.createElement('div');
     title.className = 'tt-title';
     title.textContent = fleet.label;
@@ -1597,6 +1601,35 @@ function drawEvent(ev) {
     meta.style.cssText = 'color: var(--fg-subtle); font-size: 0.7rem; margin-top: 4px;';
     meta.textContent = fleet.source || 'Unknown source';
     wrapper.append(cat, title, meta);
+    
+    // Add country/nation info for infantry deployments
+    if (fleet.country) {
+      const countryEl = document.createElement('div');
+      countryEl.style.cssText = 'font-size: 0.75rem; color: var(--fg-muted); margin-top: 2px;';
+      countryEl.textContent = `Nation: ${fleet.country}`;
+      wrapper.appendChild(countryEl);
+    }
+    
+    // Add from/to info for fleet movements
+    if (fleet.from && fleet.to && fleet.from.lat && fleet.to.lat) {
+      const fromEl = document.createElement('div');
+      fromEl.style.cssText = 'font-size: 0.75rem; color: var(--fg-muted); margin-top: 2px;';
+      fromEl.textContent = `From: ${fleet.from.lat.toFixed(1)}°, ${fleet.from.lon.toFixed(1)}°`;
+      wrapper.appendChild(fromEl);
+      const toEl = document.createElement('div');
+      toEl.style.cssText = 'font-size: 0.75rem; color: var(--fg-muted); margin-top: 2px;';
+      toEl.textContent = `To: ${fleet.to.lat.toFixed(1)}°, ${fleet.to.lon.toFixed(1)}°`;
+      wrapper.appendChild(toEl);
+    }
+    
+    // Add troop count if available
+    if (fleet.troops) {
+      const troopsEl = document.createElement('div');
+      troopsEl.style.cssText = 'font-size: 0.75rem; color: var(--fg-muted); margin-top: 2px;';
+      troopsEl.textContent = `Troops: ${fleet.troops.toLocaleString()}`;
+      wrapper.appendChild(troopsEl);
+    }
+    
     if (fleet.note) {
       const note = document.createElement('div');
       note.style.cssText = 'margin-top: 6px; font-size: 0.75rem; color: var(--fg-muted);';
@@ -1846,7 +1879,7 @@ function drawEvent(ev) {
     } else if (name === 'crises') {
       state.showCrises = !state.showCrises;
       try { localStorage.setItem(STORAGE_KEY_SHOW_CRISES, String(state.showCrises)); } catch (_) {}
-      // Update filter-crisis button opacity
+      // Update filter-crisis button opacity to reflect actual layer visibility
       updateFilterButton('filter-crisis', state.filterCrisis && state.showCrises);
     }
     // If enabling a military layer, also enable the military filter
@@ -1865,9 +1898,9 @@ function drawEvent(ev) {
     }
     draw();
     updateStatsDisplay();
-    // A layer toggle can flip a filter (zones/deployments turn the military
-    // filter on, crises turn the crisis filter on); keep the filter buttons'
-    // brightness in sync so an enabled layer always lights up its button.
+    // Keep the filter buttons' brightness in sync so an enabled layer always lights up its button.
+    // The filter buttons reflect the FILTER state, not the layer visibility.
+    // Layer visibility is shown in the legend rows themselves.
     updateFilterButton('filter-military', state.filterMilitary);
     updateFilterButton('filter-crisis', state.filterCrisis);
     renderLegend();
@@ -1978,13 +2011,10 @@ function drawEvent(ev) {
     }
 
     const counts = {};
-    let unknown = 0;
       state.events.forEach(ev => {
         const key = canonicalCategory(ev.category);
         if (CATEGORY_COLORS[key]) {
           counts[key] = (counts[key] || 0) + 1;
-        } else {
-          unknown++;
         }
       });
 
@@ -2087,26 +2117,6 @@ const fragment = document.createDocumentFragment();
         ring: true,
         title: layerCountTitle(state.crises)
       });
-
-    if (unknown > 0) {
-      const row = document.createElement('div');
-      row.className = 'map-legend-row map-legend-row--static';
-      row.setAttribute('role', 'listitem');
-      row.setAttribute('aria-label', `Other, ${unknown} events`);
-      const dot = document.createElement('span');
-      dot.className = 'map-legend-dot';
-      dot.style.background = '#00d4ff';
-      dot.setAttribute('aria-hidden', 'true');
-      const label = document.createElement('span');
-      label.className = 'map-legend-label';
-      label.textContent = 'Other';
-      const count = document.createElement('span');
-      count.className = 'map-legend-count';
-      count.textContent = String(unknown);
-      count.setAttribute('aria-hidden', 'true');
-      row.append(dot, label, count);
-      fragment.appendChild(row);
-    }
 
     // Controls section at bottom of legend — reuse existing controls if present
     // (e.g., from initial markup or previous render) to keep event listeners stable.
@@ -2440,8 +2450,9 @@ function initTimelineSlider() {
   // Generate year labels
   renderTimelineYears();
   
-  // Set initial handle position
+  // Set initial handle position and APPLY filter on load so historical milestones respect slider
   updateTimelineHandle();
+  applyTimelineFilter();
   
   // Mouse events
   let isDragging = false;
@@ -2466,18 +2477,19 @@ function initTimelineSlider() {
     document.removeEventListener('pointerup', onPointerUp);
   }
   
-  track.addEventListener('pointerdown', onPointerDown);
-  handle.addEventListener('pointerdown', onPointerDown);
-  
-  // Click on track to jump
-  track.addEventListener('click', (e) => {
+  function onTrackClick(e) {
     if (e.target === track) {
       updateTimelineFromClientX(e.clientX);
     }
-  });
+  }
   
-  // Keyboard support
-  handle.addEventListener('keydown', (e) => {
+  // Register event listeners
+  track.addEventListener('pointerdown', onPointerDown);
+  handle.addEventListener('pointerdown', onPointerDown);
+  track.addEventListener('click', onTrackClick);
+  handle.addEventListener('keydown', onHandleKeydown);
+  
+  function onHandleKeydown(e) {
     let changed = false;
     switch (e.key) {
       case 'ArrowLeft':
@@ -2555,6 +2567,16 @@ function initTimelineSlider() {
     draw();
     updateStatsDisplay();
   }
+
+  // Return cleanup function for timeline slider
+  return function cleanupTimelineSlider() {
+    track.removeEventListener('pointerdown', onPointerDown);
+    handle.removeEventListener('pointerdown', onPointerDown);
+    track.removeEventListener('click', onTrackClick);
+    handle.removeEventListener('keydown', onHandleKeydown);
+    document.removeEventListener('pointermove', onPointerMove);
+    document.removeEventListener('pointerup', onPointerUp);
+  };
 }
 
 // ---- Init ----
@@ -2592,7 +2614,7 @@ function initTimelineSlider() {
     }
 
     // Initialize timeline slider
-    initTimelineSlider();
+    const cleanupTimelineSlider = initTimelineSlider();
 
     // Keep tooltip open while the pointer is over it so the source link is clickable
     if (tooltip) {
@@ -2617,6 +2639,7 @@ function initTimelineSlider() {
     if (resizeTimeout) clearTimeout(resizeTimeout);
     window.removeEventListener('resize', scheduleResize);
     document.removeEventListener('visibilitychange', onVisibilityChange);
+    if (cleanupTimelineSlider) cleanupTimelineSlider();
   }
 
   // ---- Test hook (inert in production; enabled only when the harness pre-sets the flag) ----

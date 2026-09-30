@@ -475,6 +475,7 @@
   async function loadActivity() {
     const bars = document.getElementById('activity-bars');
     const labels = document.getElementById('activity-labels');
+    const yearFilter = document.getElementById('activity-year-filter');
     if (!bars || !labels) return;
 
     // Skeleton while loading
@@ -490,23 +491,58 @@
     const max = Math.max(1, ...series.map(d => d.count));
     const step = Math.max(1, Math.ceil(series.length / 12));
 
-    const barsFrag = document.createDocumentFragment();
-    const labelsFrag = document.createDocumentFragment();
+    // Populate year filter from data
+    if (yearFilter) {
+      const years = new Set();
+      series.forEach(d => {
+        const year = d.date.slice(0, 4);
+        if (year.match(/^\d{4}$/)) years.add(year);
+      });
+      const sortedYears = Array.from(years).sort((a, b) => b - a);
+      yearFilter.innerHTML = '<option value="all">All years</option>';
+      sortedYears.forEach(y => {
+        const opt = createEl('option', '', y);
+        opt.value = y;
+        yearFilter.appendChild(opt);
+      });
+    }
 
-    series.forEach((d, i) => {
-      const bar = createEl('div', 'chart-bar');
-      bar.style.height = (4 + (d.count / max) * 116) + 'px';
-      const prefix = bucket === 'week' ? 'Week of ' : bucket === 'month' ? 'Month of ' : bucket === 'year' ? '' : '';
-      bar.title = `${prefix}${d.date}: ${d.count} milestone${d.count !== 1 ? 's' : ''}`;
-      barsFrag.appendChild(bar);
+    let currentYearFilter = 'all';
 
-      const lbl = createEl('div', 'chart-label');
-      lbl.textContent = (i % step === 0 || i === series.length - 1) ? d.date.slice(5) : '';
-      labelsFrag.appendChild(lbl);
-    });
+    function renderActivity(year) {
+      currentYearFilter = year;
+      let filteredSeries = series;
+      if (year !== 'all') {
+        filteredSeries = series.filter(d => d.date.startsWith(year));
+      }
+      const filteredMax = Math.max(1, ...filteredSeries.map(d => d.count));
+      const filteredStep = Math.max(1, Math.ceil(filteredSeries.length / 12));
 
-    bars.replaceChildren(barsFrag);
-    labels.replaceChildren(labelsFrag);
+      const barsFrag = document.createDocumentFragment();
+      const labelsFrag = document.createDocumentFragment();
+
+      filteredSeries.forEach((d, i) => {
+        const bar = createEl('div', 'chart-bar');
+        bar.style.height = (4 + (d.count / filteredMax) * 116) + 'px';
+        const prefix = bucket === 'week' ? 'Week of ' : bucket === 'month' ? 'Month of ' : bucket === 'year' ? '' : '';
+        bar.title = `${prefix}${d.date}: ${d.count} milestone${d.count !== 1 ? 's' : ''}`;
+        barsFrag.appendChild(bar);
+
+        const lbl = createEl('div', 'chart-label');
+        lbl.textContent = (i % filteredStep === 0 || i === filteredSeries.length - 1) ? d.date.slice(5) : '';
+        labelsFrag.appendChild(lbl);
+      });
+
+      bars.replaceChildren(barsFrag);
+      labels.replaceChildren(labelsFrag);
+    }
+
+    if (yearFilter) {
+      yearFilter.addEventListener('change', e => renderActivity(e.target.value));
+    }
+
+    // Initial render
+    renderActivity('all');
 
     const ts = document.getElementById('activity-update-time');
     if (ts) ts.textContent = data && data.last_update ? ` (updated ${data.last_update})` : ' (seed data)';
@@ -534,6 +570,7 @@
     const list = document.getElementById('metric-timeline-list');
     const sparkEl = document.getElementById('metric-sparkline');
     const staleEl = document.getElementById('metric-staleness');
+    const yearFilter = document.getElementById('metric-year-filter');
     if (!sel || !list) return;
 
     const history = await getHistoryData();
@@ -546,23 +583,58 @@
     });
     sel.appendChild(optFrag);
 
+    let currentYearFilter = 'all';
+
+    // Populate year filter based on selected metric
+    function populateYearFilter(opt) {
+      if (!yearFilter) return;
+      const years = new Set();
+      opt.records.forEach(rec => {
+        if (rec.date && rec.date.match(/^\d{4}-\d{2}-\d{2}$/)) {
+          years.add(rec.date.slice(0, 4));
+        }
+      });
+      const sortedYears = Array.from(years).sort((a, b) => b - a);
+      yearFilter.innerHTML = '<option value="all">All years</option>';
+      sortedYears.forEach(y => {
+        const opt = createEl('option', '', y);
+        opt.value = y;
+        yearFilter.appendChild(opt);
+      });
+      yearFilter.value = 'all';
+      currentYearFilter = 'all';
+    }
+
+    function filterRecordsByYear(records, year) {
+      if (year === 'all') return records;
+      return records.filter(rec => rec.date && rec.date.startsWith(year));
+    }
+
     function render() {
       const key = sel.value;
       list.replaceChildren();
       if (sparkEl) sparkEl.hidden = true;
       if (staleEl) staleEl.hidden = true;
-      if (!key) return;
+      if (!key) {
+        if (yearFilter) yearFilter.innerHTML = '<option value="all">All years</option>';
+        return;
+      }
 
       const opt = options.find(o => o.value === key);
       if (!opt) return;
+
+      // Populate year filter for this metric
+      populateYearFilter(opt);
 
       if (staleEl && opt.staleDays !== null && opt.staleDays > 3) {
         staleEl.textContent = `No new ${key} record since ${opt.newestDate} (${opt.staleDays} days ago).`;
         staleEl.hidden = false;
       }
 
+      const filteredRecords = filterRecordsByYear(opt.records, currentYearFilter);
+
       if (sparkEl) {
-        const counts = metricCountsByDate(opt.records);
+        const counts = metricCountsByDate(filteredRecords);
         const sMax = Math.max(1, ...counts.map(c => c.count));
         const sparkFrag = document.createDocumentFragment();
         counts.forEach(c => {
@@ -576,7 +648,7 @@
       }
 
       const listFrag = document.createDocumentFragment();
-      opt.records.forEach(rec => {
+      filteredRecords.forEach(rec => {
         const li = createEl('li', 'metric-timeline-item');
         const dateEl = createEl('span', 'metric-timeline-date', rec.date);
         const titleEl = createEl('a', 'metric-timeline-title', rec.title || 'Untitled');
@@ -601,6 +673,12 @@
     }
 
     sel.addEventListener('change', render);
+    if (yearFilter) {
+      yearFilter.addEventListener('change', e => {
+        currentYearFilter = e.target.value;
+        render();
+      });
+    }
     render();
   }
 
@@ -1113,94 +1191,25 @@
     counterObserver.disconnect();
     abortAllFetches();
     removeModalEventListeners();
+    // Cleanup carousel event listeners
+    const carousel = document.getElementById('highlights-carousel');
+    if (carousel) {
+      if (carousel._marqueePauseHandler) {
+        carousel.removeEventListener('mouseenter', carousel._marqueePauseHandler);
+      }
+      if (carousel._marqueeResumeHandler) {
+        carousel.removeEventListener('mouseleave', carousel._marqueeResumeHandler);
+      }
+      carousel.replaceWith(carousel.cloneNode(true));
+    }
   }
 
-  // ---- Highlights Carousel ----
+  // ---- Highlights Carousel (Continuous Marquee) ----
   function initHighlightsCarousel() {
     const carousel = document.getElementById('highlights-carousel');
     const track = document.getElementById('highlights-carousel-track');
-    const prevBtn = document.getElementById('highlights-carousel-prev');
-    const nextBtn = document.getElementById('highlights-carousel-next');
-    const indicatorsContainer = document.getElementById('highlights-carousel-indicators');
     
     if (!carousel || !track) return;
-    
-    let currentIndex = 0;
-    let items = [];
-    let indicators = [];
-    let autoSlideTimer = null;
-    const AUTO_SLIDE_INTERVAL = 5000;
-    
-    function updateCarousel() {
-      if (!items.length) return;
-      
-      // Update track position
-      const itemWidth = track.children[0]?.offsetWidth || 0;
-      if (itemWidth > 0) {
-        track.style.transform = `translateX(-${currentIndex * (items[0].offsetWidth + 16)}px)`;
-      }
-      
-      // Update indicators
-      indicators.forEach((indicator, i) => {
-        indicator.classList.toggle('active', i === currentIndex);
-        indicator.setAttribute('aria-current', i === currentIndex ? 'true' : 'false');
-      });
-      
-      // Update button states
-      if (prevBtn) prevBtn.disabled = currentIndex === 0;
-      if (nextBtn) nextBtn.disabled = currentIndex >= items.length - 1;
-    }
-    
-    function goToSlide(index) {
-      if (index < 0 || index >= items.length) return;
-      currentIndex = index;
-      updateCarousel();
-    }
-    
-    function nextSlide() {
-      if (currentIndex < items.length - 1) {
-        goToSlide(currentIndex + 1);
-      } else {
-        goToSlide(0); // Loop back to start
-      }
-    }
-    
-    function prevSlide() {
-      if (currentIndex > 0) {
-        goToSlide(currentIndex - 1);
-      } else {
-        goToSlide(items.length - 1); // Loop to end
-      }
-    }
-    
-    function startAutoSlide() {
-      stopAutoSlide();
-      autoSlideTimer = setInterval(() => {
-        nextSlide();
-      }, AUTO_SLIDE_INTERVAL);
-    }
-    
-    function stopAutoSlide() {
-      if (autoSlideTimer) {
-        clearInterval(autoSlideTimer);
-        autoSlideTimer = null;
-      }
-    }
-    
-    function renderIndicators() {
-      if (!indicatorsContainer || !items.length) return;
-      indicatorsContainer.innerHTML = '';
-      indicators = [];
-      for (let i = 0; i < items.length; i++) {
-        const indicator = document.createElement('button');
-        indicator.className = 'highlights-carousel-indicator';
-        indicator.setAttribute('aria-label', `Go to slide ${i + 1}`);
-        indicator.setAttribute('aria-current', i === 0 ? 'true' : 'false');
-        indicator.addEventListener('click', () => goToSlide(i));
-        indicators.push(indicator);
-        indicatorsContainer.appendChild(indicator);
-      }
-    }
     
     // Populate carousel with recent milestones
     async function populateCarousel() {
@@ -1224,8 +1233,8 @@
         
         allMilestones.sort((a, b) => new Date(b.date) - new Date(a.date));
         
-        // Take the 10 most recent milestones
-        const recentMilestones = allMilestones.slice(0, 10);
+        // Take the 12 most recent milestones for a good continuous loop
+        const recentMilestones = allMilestones.slice(0, 12);
         
         // Clear track and populate with milestone cards
         track.innerHTML = '';
@@ -1233,9 +1242,10 @@
           const catConfig = CATEGORY_CONFIG[m.category_key] || { name: m.category_name, icon: '📌', color: '#00d4ff' };
           
           const card = document.createElement('div');
-          card.className = 'milestone-card';
+          card.className = 'milestone-card highlights-card';
           card.style.setProperty('--catalog-accent', catConfig.color);
           card.style.setProperty('--catalog-accent-alpha', catConfig.color + '33');
+          card.style.flex = '0 0 320px'; // Fixed width for smooth animation
           
           const header = document.createElement('div');
           header.className = 'milestone-card-header';
@@ -1287,6 +1297,18 @@
           track.appendChild(card);
         });
         
+        // Duplicate cards for seamless infinite loop
+        const cards = Array.from(track.children);
+        cards.forEach(card => {
+          const clone = card.cloneNode(true);
+          clone.setAttribute('aria-hidden', 'true');
+          clone.removeAttribute('tabindex');
+          track.appendChild(clone);
+        });
+        
+        // Start the continuous animation
+        startMarqueeAnimation();
+        
         return true;
       } catch (e) {
         console.warn('Failed to populate highlights carousel:', e);
@@ -1294,111 +1316,45 @@
       }
     }
     
-    function updateCarousel() {
-      if (!items.length) return;
+    function startMarqueeAnimation() {
+      const cards = Array.from(track.children);
+      if (cards.length === 0) return;
       
-      // Update track position
-      const itemWidth = track.children[0]?.offsetWidth || 0;
-      if (itemWidth > 0) {
-        track.style.transform = `translateX(-${currentIndex * (items[0].offsetWidth + 16)}px)`;
+      // Calculate total width of original cards (not clones)
+      const originalCount = cards.length / 2;
+      let totalWidth = 0;
+      // Read all widths first to avoid layout thrashing
+      const widths = [];
+      for (let i = 0; i < originalCount; i++) {
+        widths.push(cards[i].offsetWidth + 16); // card width + gap
       }
+      totalWidth = widths.reduce((a, b) => a + b, 0);
       
-      // Update indicators
-      indicators.forEach((indicator, i) => {
-        indicator.classList.toggle('active', i === currentIndex);
-        indicator.setAttribute('aria-current', i === currentIndex ? 'true' : 'false');
-      });
+      // Set up CSS animation for continuous marquee
+      // Duration: ~30px per second for comfortable reading speed
+      const durationSeconds = Math.max(10, totalWidth / 30);
+      track.style.display = 'flex';
+      track.style.gap = '16px';
+      track.style.willChange = 'transform';
+      track.style.animation = `marquee ${durationSeconds}s linear infinite`;
+      track.style.animationPlayState = 'running';
       
-      // Update button states
-      if (prevBtn) prevBtn.disabled = currentIndex === 0;
-      if (nextBtn) nextBtn.disabled = currentIndex >= items.length - 1;
-    }
-    
-    function goToSlide(index) {
-      if (index < 0 || index >= items.length) return;
-      currentIndex = index;
-      updateCarousel();
-    }
-    
-    function nextSlide() {
-      if (currentIndex < items.length - 1) {
-        goToSlide(currentIndex + 1);
-      } else {
-        goToSlide(0); // Loop back to start
+      // Pause on hover
+      const pauseHandler = () => { track.style.animationPlayState = 'paused'; };
+      const resumeHandler = () => { track.style.animationPlayState = 'running'; };
+      carousel.addEventListener('mouseenter', pauseHandler);
+      carousel.addEventListener('mouseleave', resumeHandler);
+      
+      // Store handlers for cleanup
+      carousel._marqueePauseHandler = pauseHandler;
+      carousel._marqueeResumeHandler = resumeHandler;
+      
+      // Respect prefers-reduced-motion
+      const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (prefersReducedMotion) {
+        track.style.animation = 'none';
       }
     }
-    
-    function prevSlide() {
-      if (currentIndex > 0) {
-        goToSlide(currentIndex - 1);
-      } else {
-        goToSlide(items.length - 1); // Loop to end
-      }
-    }
-    
-    function startAutoSlide() {
-      stopAutoSlide();
-      autoSlideTimer = setInterval(() => {
-        nextSlide();
-      }, AUTO_SLIDE_INTERVAL);
-    }
-    
-    function stopAutoSlide() {
-      if (autoSlideTimer) {
-        clearInterval(autoSlideTimer);
-        autoSlideTimer = null;
-      }
-    }
-    
-    function renderIndicators() {
-      if (!indicatorsContainer || !items.length) return;
-      indicatorsContainer.innerHTML = '';
-      indicators = [];
-      for (let i = 0; i < items.length; i++) {
-        const indicator = document.createElement('button');
-        indicator.className = 'highlights-carousel-indicator';
-        indicator.setAttribute('aria-label', `Go to slide ${i + 1}`);
-        indicator.setAttribute('aria-current', i === 0 ? 'true' : 'false');
-        indicator.addEventListener('click', () => goToSlide(i));
-        indicators.push(indicator);
-        indicatorsContainer.appendChild(indicator);
-      }
-    }
-    
-    // Pause auto-slide on hover
-    carousel.addEventListener('mouseenter', stopAutoSlide);
-    carousel.addEventListener('mouseleave', startAutoSlide);
-    
-    // Button handlers
-    if (prevBtn) {
-      prevBtn.addEventListener('click', prevSlide);
-      prevBtn.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          prevSlide();
-        }
-      });
-    }
-    if (nextBtn) {
-      nextBtn.addEventListener('click', nextSlide);
-      nextBtn.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          nextSlide();
-        }
-      });
-    }
-    
-    // Keyboard navigation
-    carousel.addEventListener('keydown', (e) => {
-      if (e.key === 'ArrowLeft') {
-        e.preventDefault();
-        prevSlide();
-      } else if (e.key === 'ArrowRight') {
-        e.preventDefault();
-        nextSlide();
-      }
-    });
     
     // Initialize
     async function init() {
@@ -1407,18 +1363,6 @@
         carousel.style.display = 'none';
         return;
       }
-      
-      // Get the milestone cards from the track
-      items = Array.from(track.children).filter(el => el.classList.contains('milestone-card'));
-      
-      if (items.length === 0) {
-        carousel.style.display = 'none';
-        return;
-      }
-      
-      renderIndicators();
-      updateCarousel();
-      startAutoSlide();
     }
     
     init();
