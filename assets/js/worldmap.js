@@ -186,10 +186,25 @@
   // Geocoding cache for intelligent fallback
   const GEOCODE_CACHE_KEY = 'worldmap_geocode_cache_v1';
   const GEOCODE_CACHE_MAX_SIZE = 500;
+
+  // JSON.parse can succeed on the wrong type - the string "null" parses to null -
+  // and every later geocodeCache[cacheKey] would then throw. loadEvents catches
+  // that and falls back to sample data, so a corrupt cache entry would silently
+  // replace the whole map with four sample events. Only a non-null object is
+  // usable, so everything else starts from an empty cache.
+  function parseGeocodeCache(raw) {
+    try {
+      const parsed = JSON.parse(raw);
+      return (parsed !== null && typeof parsed === 'object') ? parsed : {};
+    } catch (_) {
+      return {};
+    }
+  }
+
   let geocodeCache = {};
   try {
     const cached = localStorage.getItem(GEOCODE_CACHE_KEY);
-    if (cached) geocodeCache = JSON.parse(cached);
+    if (cached) geocodeCache = parseGeocodeCache(cached);
   } catch (_) {}
 
   let geocodeCacheDirty = false;
@@ -834,10 +849,14 @@ function canonicalCategory(cat) {
     // milestones renders a single fan + count badge (or just the focused dot
     // when one of its members is pinned/hovered) instead of one copy per member.
     const todayISO = currentDayISO();
+    // Re-group once per frame if the day rolled over. Doing it here rather than
+    // relying on the loop below means a frame that filters out every milestone
+    // still notices the new day instead of waiting for something to be visible.
+    ensureStackMapFresh(todayISO);
     for (const ev of state.events) {
       if (ev._hiddenByTimeline) continue;
       if (state.filterRecent && !isInRolling7Days(ev.date, todayISO)) continue;
-      const stackEvts = stackForEvent(ev);
+      const stackEvts = stackForEvent(ev, todayISO);
       if (stackEvts.length > 1) {
         // A focused member replaces the cluster so the pinned popup always has
         // its dot on screen; otherwise the first member draws it for everyone.
@@ -912,29 +931,36 @@ function canonicalCategory(cat) {
   // see belong in a group: hidden by the year slider, hidden by the category
   // legend, or outside the "this week" window are all excluded, which keeps the
   // badge, the pager and hit-testing in agreement with what is on screen.
-  function rebuildStackMap() {
+  function rebuildStackMap(todayISO = currentDayISO()) {
     stackMap = new Map();
-    stackMapDay = currentDayISO();
-    const todayISO = stackMapDay;
+    stackMapDay = todayISO;
     for (const ev of state.events) {
       if (ev._hiddenByTimeline) continue;
       if (!isCategoryVisible(ev.category)) continue;
       if (state.filterRecent && !isInRolling7Days(ev.date, todayISO)) continue;
       const key = stackKey(ev);
-      if (!stackMap.has(key)) stackMap.set(key, []);
-      stackMap.get(key).push(ev);
+      let group = stackMap.get(key);
+      if (!group) { group = []; stackMap.set(key, group); }
+      group.push(ev);
     }
   }
 
   // The "this week" window moves on its own, so the map has to notice the day
   // rolling over even when no filter is touched: a milestone that ages out must
-  // leave its stack instead of lingering in the count badge and the pager.
-  function ensureStackMapFresh() {
-    if (!stackMap || stackMapDay !== currentDayISO()) rebuildStackMap();
+  // leave its stack instead of lingering in the count badge and the pager, and
+  // any popup pinned to it has to go with it. The explicit filter toggles and the
+  // year slider already dismiss stale popups, but they never run on their own,
+  // so the rollover is the only trigger that can leave a popup over empty canvas.
+  // The caller may pass the day it already resolved this frame; recomputing it
+  // here would allocate a Date per event per frame for a value we just built.
+  function ensureStackMapFresh(todayISO = currentDayISO()) {
+    if (stackMap && stackMapDay === todayISO) return;
+    rebuildStackMap(todayISO);
+    dismissTooltipIfTargetHidden();
   }
 
-  function stackForEvent(ev) {
-    ensureStackMapFresh();
+  function stackForEvent(ev, todayISO) {
+    ensureStackMapFresh(todayISO);
     return stackMap.get(stackKey(ev)) || [];
   }
 
@@ -2094,12 +2120,11 @@ function canonicalCategory(cat) {
   }
 
   // ---- Stats computation ----
-  // Current week = Monday..Sunday (ISO week) containing `todayISO` (YYYY-MM-DD).
-  // Rolling 7-day window from today (inclusive)
-  // The window only moves when the day does, but isInRolling7Days() is called
-  // once per event per frame (draw runs ~10x/s) and rebuilt two Date objects
-  // every time. Memoise on the day it was computed for - a new todayISO (real
-  // midnight rollover or the test clock) recomputes and replaces the entry.
+  // The rolling 7-day window runs from today back six days, inclusive. The window
+  // only moves when the day does, but isInRolling7Days() is called once per event
+  // per frame (draw runs ~10x/s) and rebuilt two Date objects every time. Memoise
+  // on the day it was computed for, so a new todayISO (a real midnight rollover or
+  // the test clock) recomputes and replaces the entry.
   let rollingBoundsDay = null;
   let rollingBounds = null;
   function rolling7DayBounds(todayISO) {
@@ -3049,6 +3074,7 @@ function initTimelineSlider() {
       CATEGORY_LEGEND,
       CATEGORY_ALIASES,
       normalizeEvent,
+      parseGeocodeCache,
       isPlottable,
       normalizeZone,
       isZonePlottable,

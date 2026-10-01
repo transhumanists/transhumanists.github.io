@@ -593,6 +593,21 @@ test('zoom controls, keyboard and double-click do not throw', () => {
     expect(api.computeStats().breakthroughs).toBe(3);
   });
 
+  test('a corrupt geocode cache entry cannot take the whole map down', () => {
+    const api = windowObj.__WORLDMAP_TEST__;
+    // A well-formed object is used as-is.
+    expect(api.parseGeocodeCache('{"a|b|c":{"lat":1,"lon":2}}')).toEqual({ 'a|b|c': { lat: 1, lon: 2 } });
+    // JSON.parse("null") succeeds and yields null; without a type guard every
+    // later geocodeCache[key] read throws, loadEvents catches it and the map
+    // silently falls back to four sample events.
+    expect(api.parseGeocodeCache('null')).toEqual({});
+    expect(api.parseGeocodeCache('42')).toEqual({});
+    expect(api.parseGeocodeCache('"a string"')).toEqual({});
+    // Genuinely malformed JSON still starts empty rather than throwing.
+    expect(api.parseGeocodeCache('{not json')).toEqual({});
+    expect(api.parseGeocodeCache('')).toEqual({});
+  });
+
   test('normalizeEvent drops any cached stack key from the payload', () => {
     const api = windowObj.__WORLDMAP_TEST__;
     // A stale/hostile `_stackKey` must not survive normalisation: it would make
@@ -1113,6 +1128,35 @@ test('zoom controls, keyboard and double-click do not throw', () => {
     registeredEls['reset-view'].fire('click', {});
     canvas.fire('mousemove', { clientX: 444, clientY: 220, movementX: 0, movementY: 0 });
     expect(tooltipTitle()).toBe('Fresh A');
+    // Restore the shared fixtures.
+    setTestDay(TEST_DAY);
+    api.setFilterRecent(false);
+    api.setTimelineYear(2026);
+    api.setEvents(EVENT_PAYLOAD.events);
+  });
+
+  test('a popup pinned to a milestone that ages out is dropped without any interaction', () => {
+    const api = windowObj.__WORLDMAP_TEST__;
+    setTestDay(TEST_DAY);
+    api.setFilterRecent(true);
+    api.setEvents([
+      { id: 'pin-a', title: 'Pin A', category: 'Biotechnology', date: '2026-08-08', geolocation: { ...STACK_SPOT } },
+      { id: 'pin-b', title: 'Pin B', category: 'Biotechnology', date: '2026-08-07', geolocation: { ...STACK_SPOT } },
+    ]);
+    api.setTimelineYear(2026);
+    registeredEls['reset-view'].fire('click', {});
+    canvas.fire('mousemove', { clientX: 444, clientY: 220, movementX: 0, movementY: 0 });
+    clickAt(444, 220);
+    expect(tooltip.classList.contains('visible')).toBe(true);
+    expect(tooltipTitle()).toBe('Pin B');
+    // Midnight: both milestones leave the rolling window. Nothing is clicked and
+    // no filter is toggled. stackForEvent() is the frame loop's own freshness
+    // check, so calling it is how the map notices the new day.
+    setTestDay('2026-08-16');
+    expect(api.stackForEvent(api.getEvents()[0])).toEqual([]);
+    // The map noticed, but the popup pinned to an aged-out milestone used to stay
+    // on screen over empty canvas with a stale "2/2" pager.
+    expect(tooltip.classList.contains('visible')).toBe(false);
     // Restore the shared fixtures.
     setTestDay(TEST_DAY);
     api.setFilterRecent(false);

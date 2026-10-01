@@ -125,6 +125,74 @@ class TestCheckEvents(unittest.TestCase):
             self.assertEqual(cd.check_events(payload["events"]), [], f"good date {good!r}")
 
 
+class TestSourceUrlScheme(unittest.TestCase):
+    """Milestone URLs reach the map from the upstream repo via
+    sync_milestones.archive_record, which passes url straight through. Every
+    renderer gates its source link on /^https?:\\/\\//i, so any other scheme is
+    dropped silently in the browser; the gate is where that should be caught."""
+
+    _ABSENT = ...  # sentinel: omit the key entirely, unlike an explicit null
+
+    def _issues(self, url=_ABSENT):
+        entry = {"title": "X", "category": "Renewable Energy", "date": "2026-03-15",
+                 "geolocation": {"lat": 1, "lon": 1}}
+        if url is not self._ABSENT:
+            entry["url"] = url
+        return cd.check_events(_events_payload(entry)["events"])
+
+    def test_https_and_http_pass(self):
+        for good in ("https://example.org/a", "http://example.org/a",
+                     "HTTPS://EXAMPLE.ORG/A"):
+            self.assertEqual(self._issues(good), [], f"good url {good!r}")
+
+    def test_scheme_is_the_only_thing_validated(self):
+        # Deliberately not a URL parser: the renderers only test the prefix, so
+        # the gate must not start rejecting data the front end happily renders
+        # (here a raw space, which the browser percent-encodes).
+        self.assertEqual(self._issues("https://example.org/a b"), [])
+
+    def test_absent_url_is_allowed(self):
+        # Layers legitimately ship without a URL; the link is simply omitted.
+        self.assertEqual(self._issues(), [])
+        self.assertEqual(self._issues(None), [])
+        self.assertEqual(self._issues(""), [])
+
+    def test_non_http_scheme_fails(self):
+        # javascript: would run on click. data:/vbscript: are equally unusable.
+        # The accept surface is exactly the renderers' /^https?:\/\//i test, so a
+        # scheme-less or protocol-relative URL is rejected too.
+        for bad in ("javascript:alert(1)", "JavaScript:alert(1)", "data:text/html,<script>",
+                    "vbscript:msgbox", "ftp://example.org/f", "example.org/a",
+                    "//example.org/a", "https:/example.org", " javascript:alert(1)"):
+            self.assertTrue(
+                any("url" in i for i in self._issues(bad)), f"bad url {bad!r} must fail",
+            )
+
+    def test_padded_url_is_accepted_so_the_gate_never_outruns_the_front_end(self):
+        # The gate strips before matching, so it accepts a superset of what the
+        # front end links. A padded URL renders without a link rather than
+        # failing CI, which is the safe direction for a data gate.
+        self.assertEqual(self._issues("  https://example.org/a  "), [])
+
+    def test_non_string_url_fails(self):
+        self.assertTrue(any("url" in i for i in self._issues(123)))
+        self.assertTrue(any("url" in i for i in self._issues(["https://example.org"])))
+
+    def test_zone_url_is_validated_too(self):
+        good = [{"name": "Z", "lat": 10, "lon": 10, "radiusDeg": 3, "url": "https://example.org/z"}]
+        self.assertEqual(cd.check_zones(good), [])
+        bad = [{"name": "Z", "lat": 10, "lon": 10, "radiusDeg": 3, "url": "javascript:alert(1)"}]
+        self.assertTrue(any("url" in i for i in cd.check_zones(bad)))
+
+    def test_published_data_passes(self):
+        # The live files must not start failing CI.
+        for name in ("events.json", "world_layers.json"):
+            path = cd.DATA_DIR / name
+            if not path.exists():
+                self.skipTest(f"{name} not checked out")
+            self.assertEqual(cd.check_data(json.loads(path.read_text(encoding="utf-8")), name), [])
+
+
 class TestCheckLayers(unittest.TestCase):
     def test_happy_path(self):
         zones = [{"name": "Z", "lat": 10, "lon": 10, "radiusDeg": 3}]

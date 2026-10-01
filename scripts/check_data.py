@@ -243,6 +243,25 @@ def _valid_event_date(value: object) -> bool:
         return False
 
 
+# The map, the dashboard and the widgets all gate their source links on
+# /^https?:\/\//i before assigning href, so any other scheme renders as a
+# silently missing "View source" link instead of a catchable error. Milestone
+# URLs arrive from the upstream repo via sync_milestones.archive_record, which
+# passes url straight through, so validate the scheme here where it fails CI
+# rather than in the browser. Deliberately the renderers' own prefix test and not
+# something stricter, so this gate can never reject data the front end accepts.
+# An absent URL stays legal: the link is simply omitted.
+_SOURCE_URL_RE = re.compile(r"^https?://", re.IGNORECASE)
+
+
+def _valid_source_url(value: object) -> bool:
+    if value is None or value == "":
+        return True
+    if not isinstance(value, str):
+        return False
+    return _SOURCE_URL_RE.match(value.strip()) is not None
+
+
 def check_events(events: object) -> list[str]:
     issues: list[str] = []
     if not isinstance(events, list):
@@ -262,6 +281,10 @@ def check_events(events: object) -> list[str]:
             )
         if not _valid_event_date(ev.get("date")):
             issues.append(f"events[{i}]: date must be a parseable date string")
+        if not _valid_source_url(ev.get("url")):
+            issues.append(
+                f"events[{i}]: url must be absent or an http(s) URL, got {ev.get('url')!r}"
+            )
         geo = ev.get("geolocation")
         if not isinstance(geo, dict) or not _coord_ok(geo.get("lat"), geo.get("lon")):
             issues.append(f"events[{i}]: geolocation must be a finite lat/lon pair in range")
@@ -280,6 +303,10 @@ def check_zones(zones: object, kind: str = "conflict_zones") -> list[str]:
             issues.append(f"{kind}[{i}]: name must be a string")
         if not _coord_located(z.get("lat"), z.get("lon")):
             issues.append(f"{kind}[{i}]: lat/lon must be located (finite, in range, not 0,0)")
+        if not _valid_source_url(z.get("url")):
+            issues.append(
+                f"{kind}[{i}]: url must be absent or an http(s) URL, got {z.get('url')!r}"
+            )
         issues.extend(_check_lifecycle(kind, i, z))
     issues.extend(_check_unique_ids(kind, zones if isinstance(zones, list) else []))
     return issues
