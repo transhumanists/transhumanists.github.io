@@ -73,6 +73,9 @@ jobs:
       - name: Crisis zone script tests
         run: python scripts/test_fetch_crisis_zones.py
 
+      - name: Full pytest suite
+        run: python -m pytest scripts/
+
       - name: Scratch end-to-end generation
         env:
           STALE_ERROR_DAYS: "99"

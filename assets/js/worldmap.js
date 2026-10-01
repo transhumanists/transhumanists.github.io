@@ -65,9 +65,21 @@
   const BRIGHT_ZONE_LINE_WIDTH = 3;
   const CONCLUDED_DESAT = 0.65;
   const STALE_DESAT = 0.35;
+  /**
+   * Decimal places for coordinate rounding when clustering events into stacks.
+   * 4 dp ≈ 11 m at the equator — tight enough to merge only truly co-located events.
+   * @type {number}
+   */
   const STACK_ROUND_DIGITS = 4;
   const STACK_FAN_DX = 3;
   const STACK_FAN_DY = -3;
+
+  /**
+   * An active layer whose last_news_year is more than this many years behind
+   * the current timeline year is rendered with the stale (dimmed) style.
+   * @type {number}
+   */
+  const STALE_THRESHOLD_YEARS = 5;
 
   function withOpacity(hexColor, opacity) {
     const r = parseInt(hexColor.slice(1, 3), 16);
@@ -929,7 +941,7 @@ function drawEvent(ev) {
     const now = new Date();
     const currentYear = state.timelineYear !== undefined ? state.timelineYear : now.getFullYear();
     const lastNewsYear = zone.last_news_year;
-    const isStale = active && typeof lastNewsYear === 'number' && (currentYear - lastNewsYear) > 5;
+    const isStale = active && typeof lastNewsYear === 'number' && (currentYear - lastNewsYear) > STALE_THRESHOLD_YEARS;
 
     if (active && !isStale) {
       // Bright active: neon glow, brighter fill, full opacity stroke
@@ -1028,7 +1040,7 @@ function drawEvent(ev) {
     const now = new Date();
     const currentYear = state.timelineYear !== undefined ? state.timelineYear : now.getFullYear();
     const lastNewsYear = crisis.last_news_year;
-    const isStale = active && typeof lastNewsYear === 'number' && (currentYear - lastNewsYear) > 5;
+    const isStale = active && typeof lastNewsYear === 'number' && (currentYear - lastNewsYear) > STALE_THRESHOLD_YEARS;
 
     if (active && !isStale) {
       const pulse = 0.5 + 0.5 * Math.sin(Date.now() / 900 + crisis.lon);
@@ -1133,7 +1145,7 @@ function drawEvent(ev) {
     const now = new Date();
     const currentYear = state.timelineYear !== undefined ? state.timelineYear : now.getFullYear();
     const lastNewsYear = fleet.last_news_year;
-    const isStale = isLayerActive(fleet) && typeof lastNewsYear === 'number' && (currentYear - lastNewsYear) > 5;
+    const isStale = isLayerActive(fleet) && typeof lastNewsYear === 'number' && (currentYear - lastNewsYear) > STALE_THRESHOLD_YEARS;
 
     if (isInfantry) {
       // For infantry deployments, create an arrow from a from-point to the lat/lon location
