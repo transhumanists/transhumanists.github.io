@@ -64,16 +64,38 @@
   // concluded ones render dim and expose their full duration in the tooltip.
   const STATUS_ACTIVE = 'active';
   const STATUS_CONCLUDED = 'concluded';
-  const FLUO_GLOW_BLUR = 24;        // halo radius for live area rings
-  const FLUO_LINE_GLOW_BLUR = 9;    // halo radius for vector tails + arrowheads
-  const FLUO_PULSE_RADIUS = 10;     // how much the halo breathes (px)
-  const CONCLUDED_OPACITY = 0.45;   // dimming applied to concluded vector tails
-  const CONCLUDED_ZONE_OPACITY = 0.08; // dimming applied to concluded area rings (darker)
-  // Stale active conflicts (no news in 5+ years) get an intermediate dimming
-  const STALE_ZONE_OPACITY = 0.22;
-  // Bright active zones get a neon glow boost
-  const BRIGHT_ZONE_FILL_OPACITY = 0.22;  // was 0.14
-  const BRIGHT_ZONE_STROKE_OPACITY = 1.0; // full opacity stroke
+  const FLUO_GLOW_BLUR = 26;
+  const FLUO_LINE_GLOW_BLUR = 9;
+  const FLUO_PULSE_RADIUS = 10;
+  const CONCLUDED_OPACITY = 0.45;
+  const CONCLUDED_ZONE_OPACITY = 0.05;
+  const STALE_ZONE_OPACITY = 0.15;
+  const BRIGHT_ZONE_FILL_OPACITY = 0.30;
+  const BRIGHT_ZONE_STROKE_OPACITY = 1.0;
+  const BRIGHT_ZONE_HALO_OPACITY = 0.16;
+  const BRIGHT_ZONE_LINE_WIDTH = 3;
+  const CONCLUDED_DESAT = 0.65;
+  const STALE_DESAT = 0.35;
+  const STACK_ROUND_DIGITS = 4;
+  const STACK_FAN_DX = 3;
+  const STACK_FAN_DY = -3;
+
+  function withOpacity(hexColor, opacity) {
+    const r = parseInt(hexColor.slice(1, 3), 16);
+    const g = parseInt(hexColor.slice(3, 5), 16);
+    const b = parseInt(hexColor.slice(5, 7), 16);
+    return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+  }
+
+  function desaturateHex(hexColor, amount) {
+    const r = parseInt(hexColor.slice(1, 3), 16);
+    const g = parseInt(hexColor.slice(3, 5), 16);
+    const b = parseInt(hexColor.slice(5, 7), 16);
+    const grey = Math.round((r + g + b) / 3);
+    const mix = (c) => Math.round(c + (grey - c) * amount);
+    const to2 = (n) => Math.max(0, Math.min(255, n)).toString(16).padStart(2, '0');
+    return `#${to2(mix(r))}${to2(mix(g))}${to2(mix(b))}`;
+  }
 
   // Normalize a layer entry's lifecycle status. Missing/`active`/`ongoing`
   // mean the marker is still live (fluo glow); anything explicitly ended
@@ -354,6 +376,8 @@ height: 0,
       hoveredType: null, // 'zone', 'deployment', 'event', 'crisis'
       selectedEvent: null,
       tooltipHover: false,
+      stackIndex: 0,
+      stackKey: null,
       pressX: null,
       pressY: null,
       events: [],
@@ -420,7 +444,9 @@ height: 0,
     'Spaceflight & Aeronautics': 'Spaceflight & Aeronautics',
     'Quantum Gravity': 'Quantum Physics',
     'Mathematics': 'Computing & AGI',
-    'Computational Archaeology': 'Computing & AGI'
+    'Computational Archaeology': 'Computing & AGI',
+    'Computer Vision': 'Computing & AGI',
+    'Legal AI': 'Computing & AGI'
   };
 
   // Canonical category order used by the legend (color, label).
@@ -793,10 +819,71 @@ function canonicalCategory(cat) {
     }
   }
 
+  function stackKey(ev) {
+    const f = (n) => Number(n.toFixed(STACK_ROUND_DIGITS));
+    return `${f(ev.lat)},${f(ev.lon)}`;
+  }
+
+  function drawStack(px, py, count, color) {
+    const r = 4;
+    for (let i = 0; i < count; i++) {
+      const ox = STACK_FAN_DX * (i - (count - 1) / 2);
+      const oy = STACK_FAN_DY * (i - (count - 1) / 2);
+      ctx.beginPath();
+      ctx.arc(px + ox, py + oy, r, 0, Math.PI * 2);
+      ctx.fillStyle = color;
+      ctx.fill();
+    }
+    if (count > 1) {
+      ctx.beginPath();
+      ctx.arc(px, py, r + 1, 0, Math.PI * 2);
+      ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+      ctx.lineWidth = 0.8;
+      ctx.stroke();
+      ctx.fillStyle = '#fff';
+      ctx.font = '7px ui-monospace, SFMono-Regular, monospace';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(String(count), px, py);
+    }
+  }
+
+  function stackForEvent(ev) {
+    const key = stackKey(ev);
+    const all = state.events.filter(e => stackKey(e) === key && isCategoryVisible(e.category));
+    if (state.filterRecent) {
+      const todayISO = new Date().toISOString().slice(0, 10);
+      return all.filter(e => isInRolling7Days(e.date, todayISO));
+    }
+    return all;
+  }
+
 function drawEvent(ev) {
      // Skip if hidden by timeline filter
      if (ev._hiddenByTimeline) return;
-     
+
+     const stackEvts = stackForEvent(ev);
+     const isStackRepresentative = state.selectedEvent === ev || state.hoveredEvent === ev;
+
+     if (stackEvts.length > 1 && !isStackRepresentative) {
+       const p = project(ev.lon, ev.lat);
+       const color = CATEGORY_COLORS[canonicalCategory(ev.category)] || '#00d4ff';
+       ctx.save();
+       ctx.globalAlpha = 0.8;
+       drawStack(p.x, p.y, stackEvts.length, color);
+       ctx.restore();
+       ctx.save();
+       ctx.globalAlpha = 0.5;
+       ctx.strokeStyle = color + '80';
+       ctx.lineWidth = 1.5;
+       ctx.beginPath();
+       const first = project(stackEvts[0].lon, stackEvts[0].lat);
+       ctx.arc(first.x, first.y, 5, 0, Math.PI * 2);
+       ctx.stroke();
+       ctx.restore();
+       return;
+     }
+
      if (!isCategoryVisible(ev.category)) {
        const p = project(ev.lon, ev.lat);
        const color = CATEGORY_COLORS[canonicalCategory(ev.category)] || '#00d4ff';
@@ -861,7 +948,7 @@ function drawEvent(ev) {
       ctx.shadowBlur = FLUO_GLOW_BLUR + FLUO_PULSE_RADIUS * pulse;
       ctx.beginPath();
       ctx.arc(p.x, p.y, baseRadius * 1.14, 0, Math.PI * 2);
-      ctx.fillStyle = withOpacity(ZONE_COLOR, 0.12); // brighter halo
+      ctx.fillStyle = withOpacity(ZONE_COLOR, BRIGHT_ZONE_HALO_OPACITY);
       ctx.fill();
       ctx.restore();
 
@@ -875,7 +962,7 @@ function drawEvent(ev) {
       ctx.shadowBlur = FLUO_LINE_GLOW_BLUR;
       ctx.setLineDash([4, 3]);
       ctx.lineDashOffset = -Date.now() / 40; // marching dash = "live" cue
-      ctx.lineWidth = 2.5;
+      ctx.lineWidth = BRIGHT_ZONE_LINE_WIDTH;
       ctx.strokeStyle = withOpacity(ZONE_COLOR, BRIGHT_ZONE_STROKE_OPACITY);
       ctx.beginPath();
       ctx.arc(p.x, p.y, baseRadius, 0, Math.PI * 2);
@@ -887,16 +974,17 @@ function drawEvent(ev) {
       ctx.fillStyle = ZONE_COLOR;
       ctx.fill();
     } else if (active && isStale) {
-      // Stale active (ongoing but no recent news): dimmed, no pulse, thinner ring
+      // Stale active (ongoing but no recent news): desaturated, dimmed, thinner ring
+      const staleColor = desaturateHex(ZONE_COLOR, STALE_DESAT);
       ctx.save();
       ctx.globalAlpha = STALE_ZONE_OPACITY;
       ctx.beginPath();
       ctx.arc(p.x, p.y, baseRadius, 0, Math.PI * 2);
-      ctx.fillStyle = ZONE_FILL;
+      ctx.fillStyle = withOpacity(staleColor, 1);
       ctx.fill();
       ctx.setLineDash([4, 3]);
       ctx.lineWidth = 1.5;
-      ctx.strokeStyle = withOpacity(ZONE_COLOR, 0.3);
+      ctx.strokeStyle = withOpacity(staleColor, 0.4);
       ctx.beginPath();
       ctx.arc(p.x, p.y, baseRadius, 0, Math.PI * 2);
       ctx.stroke();
@@ -904,19 +992,20 @@ function drawEvent(ev) {
 
       ctx.beginPath();
       ctx.arc(p.x, p.y, 2.5, 0, Math.PI * 2);
-      ctx.fillStyle = withOpacity(ZONE_COLOR, 0.25);
+      ctx.fillStyle = withOpacity(staleColor, 0.3);
       ctx.fill();
     } else {
-      // Concluded: deeply dim, no glow, thinnest ring
+      // Concluded: deeply dim, desaturated toward slate, no glow, thinnest ring
+      const concludedColor = desaturateHex(ZONE_COLOR, CONCLUDED_DESAT);
       ctx.save();
       ctx.globalAlpha = CONCLUDED_ZONE_OPACITY;
       ctx.beginPath();
       ctx.arc(p.x, p.y, baseRadius, 0, Math.PI * 2);
-      ctx.fillStyle = ZONE_FILL;
+      ctx.fillStyle = withOpacity(concludedColor, 1);
       ctx.fill();
       ctx.setLineDash([4, 3]);
       ctx.lineWidth = 1;
-      ctx.strokeStyle = withOpacity(ZONE_COLOR, 0.1);
+      ctx.strokeStyle = withOpacity(concludedColor, 0.15);
       ctx.beginPath();
       ctx.arc(p.x, p.y, baseRadius, 0, Math.PI * 2);
       ctx.stroke();
@@ -924,7 +1013,7 @@ function drawEvent(ev) {
 
       ctx.beginPath();
       ctx.arc(p.x, p.y, 2, 0, Math.PI * 2);
-      ctx.fillStyle = withOpacity(ZONE_COLOR, 0.1);
+      ctx.fillStyle = withOpacity(concludedColor, 0.15);
       ctx.fill();
     }
   }
@@ -944,8 +1033,12 @@ function drawEvent(ev) {
     const baseRadius = Math.max(4, (crisis.radiusDeg || 3) * degToPx * state.transform.scale * autoScale);
 
     const active = isLayerActive(crisis);
+    const now = new Date();
+    const currentYear = state.timelineYear !== undefined ? state.timelineYear : now.getFullYear();
+    const lastNewsYear = crisis.last_news_year;
+    const isStale = active && typeof lastNewsYear === 'number' && (currentYear - lastNewsYear) > 5;
 
-    if (active) {
+    if (active && !isStale) {
       const pulse = 0.5 + 0.5 * Math.sin(Date.now() / 900 + crisis.lon);
       ctx.save();
       ctx.globalCompositeOperation = 'lighter';
@@ -953,7 +1046,7 @@ function drawEvent(ev) {
       ctx.shadowBlur = FLUO_GLOW_BLUR + FLUO_PULSE_RADIUS * pulse;
       ctx.beginPath();
       ctx.arc(p.x, p.y, baseRadius * 1.14, 0, Math.PI * 2);
-      ctx.fillStyle = withOpacity(CRISIS_COLOR, 0.12);
+      ctx.fillStyle = withOpacity(CRISIS_COLOR, BRIGHT_ZONE_HALO_OPACITY);
       ctx.fill();
       ctx.restore();
 
@@ -967,7 +1060,7 @@ function drawEvent(ev) {
       ctx.shadowBlur = FLUO_LINE_GLOW_BLUR;
       ctx.setLineDash([4, 3]);
       ctx.lineDashOffset = -Date.now() / 40;
-      ctx.lineWidth = 2.5;
+      ctx.lineWidth = BRIGHT_ZONE_LINE_WIDTH;
       ctx.strokeStyle = withOpacity(CRISIS_COLOR, BRIGHT_ZONE_STROKE_OPACITY);
       ctx.beginPath();
       ctx.arc(p.x, p.y, baseRadius, 0, Math.PI * 2);
@@ -978,16 +1071,44 @@ function drawEvent(ev) {
       ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
       ctx.fillStyle = CRISIS_COLOR;
       ctx.fill();
+    } else if (active && isStale) {
+      // Stale active (ongoing but no recent news): desaturated, dimmed, thinner ring
+      const staleColor = desaturateHex(CRISIS_COLOR, STALE_DESAT);
+      ctx.save();
+      ctx.globalAlpha = STALE_ZONE_OPACITY;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, baseRadius, 0, Math.PI * 2);
+      ctx.fillStyle = withOpacity(staleColor, 1);
+      ctx.fill();
+      ctx.setLineDash([4, 3]);
+      ctx.lineWidth = 1.5;
+      ctx.strokeStyle = withOpacity(staleColor, 0.4);
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, baseRadius, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, 2.5, 0, Math.PI * 2);
+      ctx.fillStyle = withOpacity(staleColor, 0.3);
+      ctx.fill();
+
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, 2.5, 0, Math.PI * 2);
+      ctx.fillStyle = withOpacity(staleColor, 0.35);
+      ctx.fill();
     } else {
+      // Concluded: deeply dim, desaturated toward slate, no glow, thinnest ring
+      const concludedColor = desaturateHex(CRISIS_COLOR, CONCLUDED_DESAT);
       ctx.save();
       ctx.globalAlpha = CONCLUDED_ZONE_OPACITY;
       ctx.beginPath();
       ctx.arc(p.x, p.y, baseRadius, 0, Math.PI * 2);
-      ctx.fillStyle = CRISIS_FILL;
+      ctx.fillStyle = withOpacity(concludedColor, 1);
       ctx.fill();
       ctx.setLineDash([4, 3]);
       ctx.lineWidth = 1;
-      ctx.strokeStyle = withOpacity(CRISIS_COLOR, 0.1);
+      ctx.strokeStyle = withOpacity(concludedColor, 0.15);
       ctx.beginPath();
       ctx.arc(p.x, p.y, baseRadius, 0, Math.PI * 2);
       ctx.stroke();
@@ -995,14 +1116,14 @@ function drawEvent(ev) {
 
       ctx.beginPath();
       ctx.arc(p.x, p.y, 2, 0, Math.PI * 2);
-      ctx.fillStyle = withOpacity(CRISIS_COLOR, 0.1);
+      ctx.fillStyle = withOpacity(concludedColor, 0.15);
+      ctx.fill();
+
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, 2.5, 0, Math.PI * 2);
+      ctx.fillStyle = withOpacity(concludedColor, 0.18);
       ctx.fill();
     }
-
-    ctx.beginPath();
-    ctx.arc(p.x, p.y, 2.5, 0, Math.PI * 2);
-    ctx.fillStyle = active ? CRISIS_COLOR : withOpacity(CRISIS_COLOR, 0.18);
-    ctx.fill();
   }
 
   // Tracked deployment: solid colored vector from origin to destination with a
@@ -1390,8 +1511,14 @@ function drawEvent(ev) {
     if (moved <= CLICK_DRAG_THRESHOLD) {
       const hit = findEvent(x, y);
       if (hit) {
-        state.selectedEvent = hit;
-        pinTooltipToEvent(hit);
+        if (state.selectedEvent && hit.id === state.selectedEvent.id) {
+          state.selectedEvent = null;
+          state.hoveredEvent = null;
+          hideTooltip();
+        } else {
+          state.selectedEvent = hit;
+          pinTooltipToEvent(hit);
+        }
         draw();
       }
     }
@@ -1505,6 +1632,27 @@ function drawEvent(ev) {
       link.textContent = 'View source ↗';
       wrapper.appendChild(link);
     }
+
+    const stackEvts = stackForEvent(ev);
+    if (stackEvts.length > 1) {
+      const pager = document.createElement('div');
+      pager.className = 'tt-pager';
+      pager.style.cssText = 'margin-top: 6px; display: flex; gap: 4px; justify-content: center; align-items: center;';
+      const prevBtn = document.createElement('span');
+      prevBtn.className = 'tt-pager-btn tt-pager-prev';
+      prevBtn.title = 'Previous milestone';
+      prevBtn.textContent = '←';
+      const nextBtn = document.createElement('span');
+      nextBtn.className = 'tt-pager-btn tt-pager-next';
+      nextBtn.title = 'Next milestone';
+      nextBtn.textContent = '→';
+      const indexEl = document.createElement('span');
+      indexEl.className = 'tt-pager-index';
+      indexEl.style.cssText = 'font-family: var(--font-mono); font-size: 0.7rem; color: var(--fg-subtle); min-width: 2.5ch; text-align: center;';
+      indexEl.textContent = `1/${stackEvts.length}`;
+      pager.append(prevBtn, indexEl, nextBtn);
+      wrapper.appendChild(pager);
+    }
     return wrapper;
   }
 
@@ -1547,17 +1695,84 @@ function drawEvent(ev) {
     if (ty + th > state.height) ty = p.y - th - TOOLTIP_OFFSET;
     tooltip.style.left = tx + 'px';
     tooltip.style.top = ty + 'px';
+
+    // Clean up previous pager if any (defensive: tooltip may be a mock without querySelector)
+    if (typeof tooltip.querySelector === 'function') {
+      const oldPager = tooltip.querySelector('.tt-pager');
+      if (oldPager && oldPager._cleanup) oldPager._cleanup();
+    }
+
     tooltip.replaceChildren(createTooltipElement(ev));
     tooltip.classList.add('visible');
+
+    const stackEvts = stackForEvent(ev);
+    if (stackEvts.length > 1) {
+      state.stackKey = stackKey(ev);
+      state.stackIndex = 0;
+      if (typeof tooltip.querySelector === 'function') {
+        const pager = tooltip.querySelector('.tt-pager');
+        if (pager) {
+          const prevBtn = pager.querySelector('.tt-pager-prev');
+          const nextBtn = pager.querySelector('.tt-pager-next');
+          const indexEl = pager.querySelector('.tt-pager-index');
+          
+          const updatePager = () => {
+            const idx = state.stackIndex;
+            const total = stackForEvent(ev).length;
+            if (indexEl) indexEl.textContent = `${idx + 1}/${total}`;
+            if (prevBtn) prevBtn.disabled = idx === 0;
+            if (nextBtn) nextBtn.disabled = idx >= total - 1;
+          };
+          
+          updatePager();
+          
+          const handlePrev = (e) => {
+            e.stopPropagation();
+            if (state.stackIndex > 0) {
+              state.stackIndex--;
+              const newEv = stackForEvent(ev)[state.stackIndex];
+              pinTooltipToEvent(newEv);
+            }
+          };
+          
+          const handleNext = (e) => {
+            e.stopPropagation();
+            const total = stackForEvent(ev).length;
+            if (state.stackIndex < total - 1) {
+              state.stackIndex++;
+              const newEv = stackForEvent(ev)[state.stackIndex];
+              pinTooltipToEvent(newEv);
+            }
+          };
+          
+          prevBtn.addEventListener('click', handlePrev);
+          nextBtn.addEventListener('click', handleNext);
+          pager._cleanup = () => {
+            prevBtn.removeEventListener('click', handlePrev);
+            nextBtn.removeEventListener('click', handleNext);
+          };
+        }
+      }
+    } else {
+      state.stackKey = null;
+      state.stackIndex = 0;
+    }
   }
 
   // Remove the tooltip AND forget which event it pointed at (including any
   // pinned selection). Forgetting is what lets the next mousemove re-open it
   // cleanly after a pan/zoom/drag moved the dots underneath the pointer.
   function dismissTooltip() {
+    // Clean up pager event listeners before hiding
+    if (tooltip && typeof tooltip.querySelector === 'function') {
+      const pager = tooltip.querySelector('.tt-pager');
+      if (pager && pager._cleanup) pager._cleanup();
+    }
     state.selectedEvent = null;
     state.hoveredEvent = null;
     state.hoveredType = null;
+    state.stackKey = null;
+    state.stackIndex = 0;
     hideTooltip();
   }
 
@@ -2528,7 +2743,7 @@ function initTimelineSlider() {
         timelineYear = TIMELINE_MIN_YEAR;
         changed = true;
         break;
-      case 'End':
+case 'End':
         timelineYear = TIMELINE_MAX_YEAR;
         changed = true;
         break;
@@ -2538,8 +2753,8 @@ function initTimelineSlider() {
       updateTimelineHandle();
       applyTimelineFilter();
     }
-  });
-  
+  }
+
   function updateTimelineFromClientX(clientX) {
     const rect = track.getBoundingClientRect();
     const ratio = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));

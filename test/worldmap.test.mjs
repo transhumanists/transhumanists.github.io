@@ -258,12 +258,12 @@ describe('worldmap', () => {
     expect(Number(registeredEls['map-stat-fleets'].textContent)).toBe(9);
   });
 
-  test('renders legend rows for all 7 categories plus layers and Other', () => {
+  test('renders legend rows for all 7 categories plus layers', () => {
     const legend = registeredEls['map-legend'];
     expect(legend).toBeDefined();
     expect(legend.getAttribute('role')).toBe('list');
     const rows = legendRows();
-    expect(rows.length).toBe(11);
+    expect(rows.length).toBe(10);
     expect(legendValue('Biotechnology')).toBe('1');
     expect(legendValue('Computing & AGI')).toBe('0');
     expect(legendValue('Quantum Physics')).toBe('1');      // aliased 'Quantum'
@@ -271,7 +271,6 @@ describe('worldmap', () => {
     expect(legendValue('Cybersecurity')).toBe('1');
     expect(legendValue('Spaceflight & Aeronautics')).toBe('0');
     expect(legendValue('Military & Defense')).toBe('2');   // aliased 'Defense' + canonical
-    expect(legendValue('Other')).toBe('1');
     // Military layers now show simple labels with actual counts
     expect(legendValue('Conflict Zones')).toBe('3');
     expect(legendValue('Deployments')).toBe('9');

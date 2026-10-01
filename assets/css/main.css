@@ -285,6 +285,49 @@ body {
 }
 .map-tooltip .tt-link:hover { text-decoration: underline; }
 
+/* Stack pager for multiple milestones at same location */
+.tt-pager {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid var(--border);
+}
+.tt-pager-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--accent-dim);
+  color: var(--fg);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+.tt-pager-btn:hover {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--bg);
+}
+.tt-pager-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.tt-pager-index {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--fg-subtle);
+  min-width: 2.5ch;
+  text-align: center;
+}
+
 .map-legend {
   position: absolute;
   left: 12px;
