@@ -25,16 +25,20 @@
   const ZOOM_FACTOR = 1.1; // Used by zoomAt for keyboard/button zoom steps
   const HIT_RADIUS_BASE = 10;
   const CLICK_DRAG_THRESHOLD = 5;
-  // Default-view latitude window. The map deliberately crops the polar caps
-  // instead of drawing the full +/-90: the day/night boundary degenerates up
-  // there (its hour angle saturates at |lat| >= 90 - |declination|, i.e. 66.6
-  // at the solstices) and smears into a hard horizontal shadow band, and the
-  // pole rows themselves paint a full-width shadow edge. 65 sits just inside
-  // the worst-case saturation latitude, so the smear never reaches the canvas,
-  // and it still contains every landmass anyone lives on and every milestone in
-  // the dataset (the furthest north is 59.4N, the furthest south 13.5S). This is
-  // the default view, so "reset view" returns to exactly this window.
-  const MAP_LAT_LIMIT = 65;
+  // Default-view latitude window. The map crops the poles to +/-MAP_LAT_LIMIT so
+  // the far north/south stay visible as caps rather than filling half the canvas,
+  // and the day/night shading stops short of them entirely (see
+  // TERMINATOR_LAT_LIMIT), which is what keeps the terminator from smearing.
+  // 72 still contains every landmass anyone lives on and every milestone in the
+  // dataset (the furthest north is 59.4N, the furthest south 13.5S). This is the
+  // default view, so "reset view" returns to exactly this window.
+  const MAP_LAT_LIMIT = 72;
+  // The terminator's hour angle saturates at |lat| >= 90 - |declination| (66.6 at
+  // the solstices) and collapses to a constant longitude there, which smears into
+  // a hard horizontal shadow band. Stopping the curve at 64 keeps it strictly
+  // inside the worst-case saturation latitude, so the cap band above/below is
+  // simply left lit (see fadeNightIntoCaps) instead of being painted wrong.
+  const TERMINATOR_LAT_LIMIT = 64;
   const TOOLTIP_WIDTH = 260;
   const TOOLTIP_HEIGHT = 100;
   const TOOLTIP_OFFSET = 12;
@@ -70,8 +74,21 @@
   const FLUO_LINE_GLOW_BLUR = 9;
   const FLUO_PULSE_RADIUS = 10;
   const CONCLUDED_OPACITY = 0.45;
-  const CONCLUDED_ZONE_OPACITY = 0.05;
-  const STALE_ZONE_OPACITY = 0.15;
+  // Passive-area ladder, deliberately a visible three-step ladder rather than a
+  // single "off" look: active+fresh (full fluo glow) > active+stale (weak glow,
+  // desaturated) > concluded (no glow, desaturated, faint ring). The concluded
+  // values used to be 0.05/0.15, which is close enough to invisible that a
+  // concluded zone could not be told apart from "nothing here" and active could
+  // not be told apart from passive at a glance. The stroke alpha matters more
+  // than the fill: it is what makes the ring legible over the ocean.
+  const CONCLUDED_ZONE_OPACITY = 0.10;
+  const STALE_ZONE_OPACITY = 0.16;
+  // Stroke alpha for a concluded ring. Named because it, not the fill, is what
+  // makes a passive area legible over the ocean; it was previously an inline 0.34
+  // duplicated in two places.
+  const CONCLUDED_STROKE_ALPHA = 0.34;
+  // Centre-marker alpha for a concluded area.
+  const CONCLUDED_CENTER_ALPHA = 0.38;
   const BRIGHT_ZONE_FILL_OPACITY = 0.30;
   const BRIGHT_ZONE_STROKE_OPACITY = 1.0;
   const BRIGHT_ZONE_HALO_OPACITY = 0.16;
@@ -617,24 +634,19 @@ function canonicalCategory(cat) {
     const effLon = normalizeLon(sunLon + offsetLon);
     const geo = new Array(TERMINATOR_SAMPLES + 1);
 
+    // Sampled across +/-TERMINATOR_LAT_LIMIT, not +/-90: the polar band above it
+    // is left to the cap fade instead of being given a constant longitude.
     for (let i = 0; i <= TERMINATOR_SAMPLES; i++) {
-      const lat = 90 - (i / TERMINATOR_SAMPLES) * 180;
+      const lat = TERMINATOR_LAT_LIMIT - (i / TERMINATOR_SAMPLES) * (TERMINATOR_LAT_LIMIT * 2);
       const latRad = lat * Math.PI / 180;
       const declRad = sunLat * Math.PI / 180;
 
       const cosHourAngle = -Math.tan(latRad) * Math.tan(declRad);
 
-      let lon;
-      if (cosHourAngle >= 1) {
-        lon = effLon - 180;
-      } else if (cosHourAngle <= -1) {
-        lon = effLon;
-      } else {
-        const hourAngle = Math.acos(Math.max(-1, Math.min(1, cosHourAngle)));
-        lon = effLon + (hourAngle * 180 / Math.PI);
-      }
-
-      geo[i] = { lon: normalizeLon(lon), lat };
+      // cosHourAngle is now strictly inside (-1, 1) for every sample, but keep the
+      // clamp so a future TERMINATOR_LAT_LIMIT change can never produce NaN.
+      const hourAngle = Math.acos(Math.max(-1, Math.min(1, cosHourAngle)));
+      geo[i] = { lon: normalizeLon(effLon + (hourAngle * 180 / Math.PI)), lat };
     }
     return geo;
   }
@@ -716,6 +728,34 @@ function canonicalCategory(cat) {
     }
   }
 
+  // The night band is built only down to +/-TERMINATOR_LAT_LIMIT, so it stops
+  // short of the poles. Fading the same shade across the leftover cap band keeps
+  // that stop from reading as a hard horizontal shadow line, and costs two
+  // fillRects. Each gradient is clipped to the canvas so it stays correct at any
+  // zoom/pan, and the band-edge gradient stop is derived from the same constant
+  // the terminator uses rather than a second magic number.
+  function fadeNightIntoCaps(h) {
+    const edgeTop = project(0, TERMINATOR_LAT_LIMIT).y;
+    const edgeBottom = project(0, -TERMINATOR_LAT_LIMIT).y;
+
+    // Top cap: shade at the band edge -> clear at the canvas top.
+    if (edgeTop > 0) {
+      const g = ctx.createLinearGradient(0, edgeTop, 0, 0);
+      g.addColorStop(0, NIGHT_FILL);
+      g.addColorStop(1, 'rgba(2, 6, 14, 0)');
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, state.width, edgeTop);
+    }
+    // Bottom cap: shade at the band edge -> clear at the canvas bottom.
+    if (edgeBottom < h) {
+      const g = ctx.createLinearGradient(0, edgeBottom, 0, h);
+      g.addColorStop(0, NIGHT_FILL);
+      g.addColorStop(1, 'rgba(2, 6, 14, 0)');
+      ctx.fillStyle = g;
+      ctx.fillRect(0, Math.max(0, edgeBottom), state.width, h - Math.max(0, edgeBottom));
+    }
+  }
+
   function drawTerminator() {
     if (!state.showTerminator) return;
 
@@ -755,6 +795,9 @@ function canonicalCategory(cat) {
     // ---- Day/night boundary lines: soft, blended and very transparent ----
     strokeSoftBoundary(sunset, SUNSET_BOUNDARY);
     strokeSoftBoundary(sunrise, SUNRISE_BOUNDARY);
+
+    // ---- Fade the night shade out across the polar cap band ----
+    fadeNightIntoCaps(h);
 
     // ---- Sun position marker (small sun icon, no dot) ----
     const sunPos = project(sun.lon, sun.lat);
@@ -1129,7 +1172,7 @@ function canonicalCategory(cat) {
       ctx.fill();
       ctx.setLineDash([4, 3]);
       ctx.lineWidth = 1;
-      ctx.strokeStyle = withOpacity(concludedColor, 0.15);
+      ctx.strokeStyle = withOpacity(concludedColor, CONCLUDED_STROKE_ALPHA);
       ctx.beginPath();
       ctx.arc(p.x, p.y, baseRadius, 0, Math.PI * 2);
       ctx.stroke();
@@ -1137,7 +1180,7 @@ function canonicalCategory(cat) {
 
       ctx.beginPath();
       ctx.arc(p.x, p.y, 2, 0, Math.PI * 2);
-      ctx.fillStyle = withOpacity(concludedColor, 0.15);
+      ctx.fillStyle = withOpacity(concludedColor, CONCLUDED_CENTER_ALPHA);
       ctx.fill();
     }
   }
@@ -1230,22 +1273,57 @@ function canonicalCategory(cat) {
       ctx.fill();
       ctx.setLineDash([4, 3]);
       ctx.lineWidth = 1;
-      ctx.strokeStyle = withOpacity(concludedColor, 0.15);
+      ctx.strokeStyle = withOpacity(concludedColor, CONCLUDED_STROKE_ALPHA);
       ctx.beginPath();
       ctx.arc(p.x, p.y, baseRadius, 0, Math.PI * 2);
       ctx.stroke();
       ctx.restore();
 
+      // One centre marker, matching drawZone. This painted two concentric dots
+      // back to back (2px then 2.5px) for no visual gain.
       ctx.beginPath();
       ctx.arc(p.x, p.y, 2, 0, Math.PI * 2);
-      ctx.fillStyle = withOpacity(concludedColor, 0.15);
-      ctx.fill();
-
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, 2.5, 0, Math.PI * 2);
-      ctx.fillStyle = withOpacity(concludedColor, 0.18);
+      ctx.fillStyle = withOpacity(concludedColor, CONCLUDED_CENTER_ALPHA);
       ctx.fill();
     }
+  }
+
+  // Single source of truth for a tracked movement's drawn endpoints.
+  // drawFleet synthesized an infantry tail from `direction` inline while
+  // findDeployment read fleet.from/fleet.to — which infantry entries do not have
+  // at all. Hovering a map that contained one therefore threw inside the
+  // mousemove handler, which killed hover for every layer (events, zones,
+  // deployments and crises alike), not just the arrow under the cursor. Both
+  // sides derive from here now, so the hit target always matches the pixels.
+  function isInfantryKind(fleet) {
+    const k = fleet && fleet.kind;
+    return k === 'infantry' || k === 'mobilization' || k === 'deployment' || k === 'rotation';
+  }
+
+  // Geographic endpoints for a movement, in lon/lat. Returns null when the pair
+  // is unusable so callers can skip rather than draw a degenerate arrow.
+  function fleetEndpoints(fleet) {
+    if (!isInfantryKind(fleet)) {
+      if (!isLocatedCoord(fleet?.from) || !isLocatedCoord(fleet?.to)) return null;
+      return { from: fleet.from, to: fleet.to };
+    }
+    const destLon = fleet.lon;
+    const destLat = fleet.lat;
+    let fromLon = destLon;
+    let fromLat = destLat;
+    const dir = fleet.direction ? String(fleet.direction).toLowerCase() : 'global';
+
+    if (dir === 'east') { fromLon = destLon - 5; fromLat = destLat; }
+    else if (dir === 'west') { fromLon = destLon + 5; fromLat = destLat; }
+    else if (dir === 'north') { fromLon = destLon; fromLat = destLat + 5; }
+    else if (dir === 'south') { fromLon = destLon; fromLat = destLat - 5; }
+    else {
+      // Global/no direction: deterministic offset based on fleet properties.
+      const seed = (destLon * 7 + destLat * 13) % 6;
+      fromLon = destLon - 3 + seed;
+      fromLat = destLat - 3 + ((seed * 2) % 6);
+    }
+    return { from: { lat: fromLat, lon: fromLon }, to: { lat: destLat, lon: destLon } };
   }
 
   // Tracked deployment: solid colored vector from origin to destination with a
@@ -1258,127 +1336,32 @@ function canonicalCategory(cat) {
     if (!state.showFleets) return;
     if (fleet._hiddenByTimeline) return;
 
-    const isInfantry = fleet.kind === 'infantry' || fleet.kind === 'mobilization' || fleet.kind === 'deployment' || fleet.kind === 'rotation';
+    const isInfantry = isInfantryKind(fleet);
     const isGround = fleet.kind === 'ground';
     const now = new Date();
     const currentYear = state.timelineYear !== undefined ? state.timelineYear : now.getFullYear();
     const lastNewsYear = fleet.last_news_year;
     const isStale = isLayerActive(fleet) && typeof lastNewsYear === 'number' && (currentYear - lastNewsYear) > STALE_THRESHOLD_YEARS;
 
-    if (isInfantry) {
-      // For infantry deployments, create an arrow from a from-point to the lat/lon location
-      // based on the deployment direction
-      const destLon = fleet.lon;
-      const destLat = fleet.lat;
-
-      // Convert direction to angle for calculating the from-point
-      let fromLon = destLon;
-      let fromLat = destLat;
-      const deploymentDirection = fleet.direction ? fleet.direction.toLowerCase() : 'global';
-
-      if (deploymentDirection === 'east') {
-        // Moving east: from 5 degrees west of destination
-        fromLon = destLon - 5;
-        fromLat = destLat;
-      } else if (deploymentDirection === 'west') {
-        // Moving west: from 5 degrees east of destination
-        fromLon = destLon + 5;
-        fromLat = destLat;
-      } else if (deploymentDirection === 'north') {
-        // Moving north: from 5 degrees south of destination
-        fromLon = destLon;
-        fromLat = destLat + 5;
-      } else if (deploymentDirection === 'south') {
-        // Moving south: from 5 degrees north of destination
-        fromLon = destLon;
-        fromLat = destLat - 5;
-      } else if (deploymentDirection === 'global') {
-        // Global/no direction: deterministic offset based on fleet properties
-        const seed = (fleet.lon * 7 + fleet.lat * 13) % 6;
-        fromLon = destLon - 3 + seed;
-        fromLat = destLat - 3 + ((seed * 2) % 6);
-      }
-
-      const fromPoint = { lat: fromLat, lon: fromLon };
-      const toPoint = { lat: destLat, lon: destLon };
-      const a = project(fromPoint.lon, fromPoint.lat);
-      const b = project(toPoint.lon, toPoint.lat);
-      const dx = b.x - a.x;
-      const dy = b.y - a.y;
-      if (Math.abs(dx) < 0.5 && Math.abs(dy) < 0.5) return;
-      const ang = Math.atan2(dy, dx);
-      const headLen = 8;
-      const color = GROUND_COLOR;
-      const active = isLayerActive(fleet);
-
-      // Very transparent arrow tail line (barely visible); very active movements
-      // get a luminous second pass over the tail so the whole vector reads live.
-      ctx.save();
-      const tailOpacity = active ? (isStale ? ARROW_TAIL_OPACITY * 0.4 : ARROW_TAIL_OPACITY) : ARROW_TAIL_OPACITY * 0.25;
-      ctx.strokeStyle = withOpacity(color, tailOpacity);
-      ctx.lineWidth = 1.2;
-      ctx.beginPath();
-      ctx.moveTo(a.x, a.y);
-      ctx.lineTo(b.x, b.y);
-      ctx.stroke();
-      if (active && !isStale) {
-        ctx.shadowColor = color;
-        ctx.shadowBlur = FLUO_LINE_GLOW_BLUR;
-        ctx.strokeStyle = withOpacity(color, 0.3);
-        ctx.lineWidth = 2.2;
-        ctx.beginPath();
-        ctx.moveTo(a.x, a.y);
-        ctx.lineTo(b.x, b.y);
-        ctx.stroke();
-      } else if (active && isStale) {
-        ctx.shadowColor = color;
-        ctx.shadowBlur = FLUO_LINE_GLOW_BLUR / 2;
-        ctx.strokeStyle = withOpacity(color, 0.15);
-        ctx.lineWidth = 1.5;
-        ctx.beginPath();
-        ctx.moveTo(a.x, a.y);
-        ctx.lineTo(b.x, b.y);
-        ctx.stroke();
-      }
-      ctx.restore();
-
-      // Solid arrowhead; the halo makes active heads breathe slightly.
-      ctx.save();
-      if (active && !isStale) {
-        ctx.shadowColor = color;
-        ctx.shadowBlur = FLUO_LINE_GLOW_BLUR + 5 * (0.5 + 0.5 * Math.sin(Date.now() / 650 + a.x));
-      } else if (active && isStale) {
-        ctx.shadowColor = color;
-        ctx.shadowBlur = FLUO_LINE_GLOW_BLUR / 2;
-      } else {
-        ctx.globalAlpha = CONCLUDED_OPACITY;
-      }
-      ctx.beginPath();
-      ctx.moveTo(b.x, b.y);
-      ctx.lineTo(b.x - headLen * Math.cos(ang - 0.4), b.y - headLen * Math.sin(ang - 0.4));
-      ctx.lineTo(b.x - headLen * Math.cos(ang + 0.4), b.y - headLen * Math.sin(ang + 0.4));
-      ctx.closePath();
-      ctx.fillStyle = color;
-      ctx.fill();
-      ctx.restore();
-      return;
-    }
-
-    // Fleet/naval movements: arrow from A to B
-    const a = project(fleet.from.lon, fleet.from.lat);
-    const b = project(fleet.to.lon, fleet.to.lat);
+    const ends = fleetEndpoints(fleet);
+    if (!ends) return;
+    const a = project(ends.from.lon, ends.from.lat);
+    const b = project(ends.to.lon, ends.to.lat);
     const dx = b.x - a.x;
     const dy = b.y - a.y;
     if (Math.abs(dx) < 0.5 && Math.abs(dy) < 0.5) return;
     const ang = Math.atan2(dy, dx);
     const headLen = 8;
-    const color = isGround ? GROUND_COLOR : FLEET_COLOR;
+    const color = isInfantry || isGround ? GROUND_COLOR : FLEET_COLOR;
     const active = isLayerActive(fleet);
 
-    // Very transparent arrow tail line (barely visible); very active movements
-    // get a luminous second pass over the tail so the whole vector reads live.
+    // Passive ladder: a concluded movement's tail is a faint memory of the route,
+    // and an active-but-stale one keeps a weak glow so "still live but quiet" and
+    // "over" stay distinguishable at a glance.
+    const tailOpacity = active
+      ? (isStale ? ARROW_TAIL_OPACITY * 0.4 : ARROW_TAIL_OPACITY)
+      : ARROW_TAIL_OPACITY * 0.25;
     ctx.save();
-    const tailOpacity = active ? (isStale ? ARROW_TAIL_OPACITY * 0.4 : ARROW_TAIL_OPACITY) : ARROW_TAIL_OPACITY * 0.25;
     ctx.strokeStyle = withOpacity(color, tailOpacity);
     ctx.lineWidth = 1.2;
     ctx.beginPath();
@@ -1406,7 +1389,9 @@ function canonicalCategory(cat) {
     }
     ctx.restore();
 
-    // Solid arrowhead; the halo makes active heads breathe slightly.
+    // Solid arrowhead; the halo makes active heads breathe slightly. A concluded
+    // head also desaturates toward slate, matching how zones/crises read, so the
+    // three states never rely on alpha alone.
     ctx.save();
     if (active && !isStale) {
       ctx.shadowColor = color;
@@ -1422,7 +1407,7 @@ function canonicalCategory(cat) {
     ctx.lineTo(b.x - headLen * Math.cos(ang - 0.4), b.y - headLen * Math.sin(ang - 0.4));
     ctx.lineTo(b.x - headLen * Math.cos(ang + 0.4), b.y - headLen * Math.sin(ang + 0.4));
     ctx.closePath();
-    ctx.fillStyle = color;
+    ctx.fillStyle = active ? color : desaturateHex(color, CONCLUDED_DESAT);
     ctx.fill();
     ctx.restore();
   }
@@ -1483,8 +1468,13 @@ function canonicalCategory(cat) {
     for (let i = state.fleets.length - 1; i >= 0; i--) {
       const fleet = state.fleets[i];
       if (fleet._hiddenByTimeline) continue;
-      const a = project(fleet.from.lon, fleet.from.lat);
-      const b = project(fleet.to.lon, fleet.to.lat);
+      // Same endpoint derivation the renderer uses, so infantry arrows (which
+      // carry lat/lon + direction, not from/to) are hittable and the hit target
+      // lines up with the pixels that were actually drawn.
+      const ends = fleetEndpoints(fleet);
+      if (!ends) continue;
+      const a = project(ends.from.lon, ends.from.lat);
+      const b = project(ends.to.lon, ends.to.lat);
       // Distance from point to line segment
       const dx = b.x - a.x;
       const dy = b.y - a.y;
@@ -1646,6 +1636,18 @@ function canonicalCategory(cat) {
   function handleMouseUp(e) {
     state.isDragging = false;
     canvas.style.cursor = 'grab';
+    // A release that lands on the popup is a UI interaction with the popup, not
+    // a canvas gesture. This listener is on window so it also sees presses that
+    // started on the tooltip, and because the popup sits on top of the map the
+    // same coordinates hit-test as the dot underneath — so the old code
+    // dismissed the pinned popup here, tearing the pager out of the DOM before
+    // its click could fire and making "previous milestone" unusable. Deselecting
+    // the landmark is the lower-priority behaviour: the popup wins.
+    if (state.tooltipHover) {
+      state.pressX = null;
+      state.pressY = null;
+      return;
+    }
     const rect = canvas.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
@@ -1998,17 +2000,27 @@ function canonicalCategory(cat) {
     const wrapper = document.createElement('div');
     const cat = document.createElement('div');
     cat.className = 'tt-category';
-    const isInfantry = fleet.kind === 'infantry' || fleet.kind === 'mobilization' || fleet.kind === 'deployment' || fleet.kind === 'rotation';
-    cat.style.color = isInfantry ? GROUND_COLOR : (fleet.kind === 'ground' ? GROUND_COLOR : FLEET_COLOR);
+    const isInfantry = isInfantryKind(fleet);
+    cat.style.color = (isInfantry || fleet.kind === 'ground') ? GROUND_COLOR : FLEET_COLOR;
     cat.textContent = isInfantry ? 'Ground Deployment' : (fleet.kind === 'ground' ? 'Ground Deployment' : 'Fleet Deployment');
     const title = document.createElement('div');
     title.className = 'tt-title';
     title.textContent = fleet.label;
     const meta = document.createElement('div');
     meta.style.cssText = 'color: var(--fg-subtle); font-size: 0.7rem; margin-top: 4px;';
-    meta.textContent = fleet.source || 'Unknown source';
+    if (fleet.source && fleet.url && SOURCE_URL_RE.test(fleet.url)) {
+      const link = document.createElement('a');
+      link.href = fleet.url;
+      link.target = '_blank';
+      link.rel = 'noopener noreferrer';
+      link.style.color = 'var(--accent)';
+      link.textContent = fleet.source;
+      meta.appendChild(link);
+    } else {
+      meta.textContent = fleet.source || 'Unknown source';
+    }
     wrapper.append(cat, title, meta);
-    
+
     // Add country/nation info for infantry deployments
     if (fleet.country) {
       const countryEl = document.createElement('div');
@@ -2016,19 +2028,28 @@ function canonicalCategory(cat) {
       countryEl.textContent = `Nation: ${fleet.country}`;
       wrapper.appendChild(countryEl);
     }
-    
-    // Add from/to info for fleet movements
-    if (fleet.from && fleet.to && fleet.from.lat && fleet.to.lat) {
+
+    // Route info. Derived from the same endpoints the renderer draws, so an
+    // infantry arrow (lat/lon + direction, no from/to) reports a real route
+    // instead of silently showing nothing.
+    const ends = fleetEndpoints(fleet);
+    if (ends) {
       const fromEl = document.createElement('div');
       fromEl.style.cssText = 'font-size: 0.75rem; color: var(--fg-muted); margin-top: 2px;';
-      fromEl.textContent = `From: ${fleet.from.lat.toFixed(1)}°, ${fleet.from.lon.toFixed(1)}°`;
+      fromEl.textContent = `From: ${ends.from.lat.toFixed(1)}°, ${ends.from.lon.toFixed(1)}°`;
       wrapper.appendChild(fromEl);
       const toEl = document.createElement('div');
       toEl.style.cssText = 'font-size: 0.75rem; color: var(--fg-muted); margin-top: 2px;';
-      toEl.textContent = `To: ${fleet.to.lat.toFixed(1)}°, ${fleet.to.lon.toFixed(1)}°`;
+      toEl.textContent = `To: ${ends.to.lat.toFixed(1)}°, ${ends.to.lon.toFixed(1)}°`;
       wrapper.appendChild(toEl);
     }
-    
+    if (fleet.direction) {
+      const dirEl = document.createElement('div');
+      dirEl.style.cssText = 'font-size: 0.75rem; color: var(--fg-muted); margin-top: 2px;';
+      dirEl.textContent = `Heading: ${String(fleet.direction).toLowerCase()}`;
+      wrapper.appendChild(dirEl);
+    }
+
     // Add troop count if available
     if (fleet.troops) {
       const troopsEl = document.createElement('div');
@@ -2036,7 +2057,7 @@ function canonicalCategory(cat) {
       troopsEl.textContent = `Troops: ${fleet.troops.toLocaleString()}`;
       wrapper.appendChild(troopsEl);
     }
-    
+
     if (fleet.note) {
       const note = document.createElement('div');
       note.style.cssText = 'margin-top: 6px; font-size: 0.75rem; color: var(--fg-muted);';
@@ -2265,7 +2286,7 @@ function canonicalCategory(cat) {
       localStorage.setItem(STORAGE_KEY_SHOW_ZONES, String(state.showZones));
       localStorage.setItem(STORAGE_KEY_SHOW_FLEETS, String(state.showFleets));
     } catch (_) {}
-    updateFilterButton('filter-military', state.filterMilitary);
+    syncFilterButtons();
     draw();
     updateStatsDisplay();
     renderLegend();
@@ -2279,7 +2300,7 @@ function canonicalCategory(cat) {
       localStorage.setItem(STORAGE_KEY_FILTER_CRISIS, String(state.filterCrisis)); 
       localStorage.setItem(STORAGE_KEY_SHOW_CRISES, String(state.showCrises));
     } catch (_) {}
-    updateFilterButton('filter-crisis', state.filterCrisis);
+    syncFilterButtons();
     draw();
     updateStatsDisplay();
     renderLegend();
@@ -2293,21 +2314,33 @@ function canonicalCategory(cat) {
     }
   }
 
+  // Whether each upper-left tile currently controls something that is actually
+  // painted. The tiles are gated on the filter flag, but the legend can switch
+  // every layer underneath a filter off, so the flag alone stays true while
+  // nothing is drawn. Reporting the flag re-lit the tile at full brightness with
+  // an empty map behind it, which read as "selected" when nothing was selected.
+  // Effective visibility = filter flag AND at least one of its layers on.
+  function militaryVisible() { return state.filterMilitary && (state.showZones || state.showFleets); }
+  function crisisVisible() { return state.filterCrisis && state.showCrises; }
+
+  // Single place that keeps all three tiles in step with what is on the map, so
+  // the filter buttons and the legend rows can never disagree.
+  function syncFilterButtons() {
+    updateFilterButton('filter-recent', state.filterRecent);
+    updateFilterButton('filter-military', militaryVisible());
+    updateFilterButton('filter-crisis', crisisVisible());
+  }
+
   function toggleLayer(name) {
     if (name === 'zones') {
       state.showZones = !state.showZones;
       try { localStorage.setItem(STORAGE_KEY_SHOW_ZONES, String(state.showZones)); } catch (_) {}
-      // Also update filter-military button opacity based on whether any military layer is visible
-      updateFilterButton('filter-military', state.filterMilitary && (state.showZones || state.showFleets));
     } else if (name === 'fleets' || name === 'deployments') {
       state.showFleets = !state.showFleets;
       try { localStorage.setItem(STORAGE_KEY_SHOW_FLEETS, String(state.showFleets)); } catch (_) {}
-      updateFilterButton('filter-military', state.filterMilitary && (state.showZones || state.showFleets));
     } else if (name === 'crises') {
       state.showCrises = !state.showCrises;
       try { localStorage.setItem(STORAGE_KEY_SHOW_CRISES, String(state.showCrises)); } catch (_) {}
-      // Update filter-crisis button opacity to reflect actual layer visibility
-      updateFilterButton('filter-crisis', state.filterCrisis && state.showCrises);
     }
     // If enabling a military layer, also enable the military filter
     if ((name === 'zones' && state.showZones) || (name === 'fleets' && state.showFleets) || (name === 'deployments' && state.showFleets)) {
@@ -2325,11 +2358,9 @@ function canonicalCategory(cat) {
     }
     draw();
     updateStatsDisplay();
-    // Keep the filter buttons' brightness in sync so an enabled layer always lights up its button.
-    // The filter buttons reflect the FILTER state, not the layer visibility.
-    // Layer visibility is shown in the legend rows themselves.
-    updateFilterButton('filter-military', state.filterMilitary);
-    updateFilterButton('filter-crisis', state.filterCrisis);
+    // Re-derive brightness from effective visibility, so switching the last layer
+    // off in a group dims that group's tile instead of leaving it lit.
+    syncFilterButtons();
     renderLegend();
   }
 
@@ -2731,6 +2762,10 @@ const fragment = document.createDocumentFragment();
         end_date: f.end_date || '',
         note: f.note || '',
         source: f.source || '',
+        // url/country were dropped here, so the deployment popup could never
+        // offer a source link or name the nation for a ground movement.
+        url: f.url || '',
+        country: f.country || '',
         troops: f.troops,
         direction: f.direction,
         last_news_year: f.last_news_year,
@@ -2748,7 +2783,9 @@ const fragment = document.createDocumentFragment();
       start_date: f.start_date || f.date || '',
       end_date: f.end_date || '',
       note: f.note || '',
-      source: f.source || ''
+      source: f.source || '',
+      url: f.url || '',
+      last_news_year: f.last_news_year
     };
   }
 
@@ -3030,27 +3067,26 @@ function initTimelineSlider() {
     animationFrameId = requestAnimationFrame(loop);
     startTerminatorInterval();
 
-    // Initialize filter buttons
+    // Initialize filter buttons. Listeners are attached per button, then the
+    // brightness/pressed state is derived once from effective visibility so a
+    // returning visitor whose saved flags and saved layer state disagree (filter
+    // on, every layer off) does not start with a lit but empty tile.
     const filterRecentBtn = document.getElementById('filter-recent');
     const filterMilitaryBtn = document.getElementById('filter-military');
     if (filterRecentBtn) {
-      filterRecentBtn.setAttribute('aria-pressed', String(state.filterRecent));
-      filterRecentBtn.style.opacity = state.filterRecent ? '1' : '0.5';
       filterRecentBtn.addEventListener('click', toggleFilterRecent);
     }
     if (filterMilitaryBtn) {
-      filterMilitaryBtn.setAttribute('aria-pressed', String(state.filterMilitary));
-      filterMilitaryBtn.style.opacity = state.filterMilitary ? '1' : '0.5';
       filterMilitaryBtn.addEventListener('click', toggleFilterMilitary);
     }
 
     // Initialize crisis filter button
     const filterCrisisBtn = document.getElementById('filter-crisis');
     if (filterCrisisBtn) {
-      filterCrisisBtn.setAttribute('aria-pressed', String(state.filterCrisis));
-      filterCrisisBtn.style.opacity = state.filterCrisis ? '1' : '0.5';
       filterCrisisBtn.addEventListener('click', toggleFilterCrisis);
     }
+    syncFilterButtons();
+
 
     // Initialize timeline slider
     const cleanupTimelineSlider = initTimelineSlider();
@@ -3059,7 +3095,16 @@ function initTimelineSlider() {
     if (tooltip) {
       tooltip.addEventListener('mouseenter', handleTooltipMouseEnter);
       tooltip.addEventListener('mouseleave', handleTooltipMouseLeave);
+      // A press that begins on the popup is never a map pan. Clearing the press
+      // origin stops handleMouseMove from treating a drag across the popup as a
+      // canvas drag and hiding the very popup being dragged from.
+      tooltip.addEventListener('mousedown', handleTooltipMouseDown);
     }
+  }
+
+  function handleTooltipMouseDown() {
+    state.pressX = null;
+    state.pressY = null;
   }
 
   function cleanup() {
@@ -3080,6 +3125,7 @@ function initTimelineSlider() {
     if (tooltip) {
       tooltip.removeEventListener('mouseenter', handleTooltipMouseEnter);
       tooltip.removeEventListener('mouseleave', handleTooltipMouseLeave);
+      tooltip.removeEventListener('mousedown', handleTooltipMouseDown);
     }
     if (cleanupTimelineSlider) cleanupTimelineSlider();
   }
@@ -3107,8 +3153,11 @@ function initTimelineSlider() {
         return existingTestHook?.getTodayISO ?? (() => new Date().toISOString().slice(0, 10));
       },
       getView: () => ({ ...state.transform }),
-      setFilterRecent: (val) => { state.filterRecent = val; rebuildStackMap(); updateFilterButton('filter-recent', state.filterRecent); draw(); updateStatsDisplay(); renderLegend(); },
-      setFilterMilitary: (val) => { state.filterMilitary = val; state.showZones = val; state.showFleets = val; updateFilterButton('filter-military', state.filterMilitary); draw(); updateStatsDisplay(); renderLegend(); },
+      setFilterRecent: (val) => { state.filterRecent = val; rebuildStackMap(); syncFilterButtons(); draw(); updateStatsDisplay(); renderLegend(); },
+      setFilterMilitary: (val) => { state.filterMilitary = val; state.showZones = val; state.showFleets = val; syncFilterButtons(); draw(); updateStatsDisplay(); renderLegend(); },
+      toggleLayer,
+      militaryVisible,
+      crisisVisible,
       // Layer lifecycle helpers + stats (fluo/concluded split).
       layerStatus,
       isLayerActive,
@@ -3117,6 +3166,14 @@ function initTimelineSlider() {
       normalizeLayerDate,
       computeStats,
       layerCountTitle,
+      isInfantryKind,
+      fleetEndpoints,
+      get PASSIVE_OPACITY_LADDER() {
+        return { concluded: CONCLUDED_ZONE_OPACITY, stale: STALE_ZONE_OPACITY };
+      },
+      get CONCLUDED_STROKE_ALPHA() { return CONCLUDED_STROKE_ALPHA; },
+      get CONCLUDED_DESAT() { return CONCLUDED_DESAT; },
+      get CONCLUDED_OPACITY() { return CONCLUDED_OPACITY; },
       // Replace the loaded layer data (used to exercise fluo/dim + timeline
       // clustering deterministically without mutating the shared fixtures).
       setLayers: (zones, fleets, crises) => {
@@ -3158,6 +3215,7 @@ function initTimelineSlider() {
       // Screen projection + the default-view latitude window it crops to.
       project,
       get MAP_LAT_LIMIT() { return MAP_LAT_LIMIT; },
+      get TERMINATOR_LAT_LIMIT() { return TERMINATOR_LAT_LIMIT; },
       get NIGHT_FILL() { return NIGHT_FILL; },
       // Pin the sun position (lat, lon) so day/night rendering is deterministic;
       // pass (null, null) to restore the live clock.

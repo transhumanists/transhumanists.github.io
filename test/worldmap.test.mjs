@@ -252,6 +252,20 @@ beforeAll(async () => {
   await new Promise((r) => setTimeout(r, 20));
 });
 
+// Canvas-space point for a lon/lat, derived from the module's own projection.
+// Pointer tests used to hardcode screen coordinates, which silently rotted the
+// moment the default latitude window changed (the dots all moved) and the
+// failures looked like product bugs. Deriving the target from the same
+// projection the renderer uses keeps these tests about interaction, not layout.
+function pt(lon, lat) {
+  return windowObj.__WORLDMAP_TEST__.project(lon, lat);
+}
+
+// The London cybersecurity fixture, in canvas space.
+const LONDON = () => pt(-0.1278, 51.5074);
+// A point guaranteed to have no marker near it, in canvas space.
+const EMPTY_CANVAS = () => pt(135, -61);
+
 function legendRows() {
   const legend = registeredEls['map-legend'];
   if (!legend) return [];
@@ -359,7 +373,7 @@ describe('worldmap', () => {
   test('renders tooltip with canonical category, value and clickable source link', () => {
     // Cybersecurity event in London (lon -0.1278, lat 51.5074) → (400, 54) on the 800x520
     // stub; it is far from every other dot so the hit is unambiguous.
-    canvas.fire('mousemove', { clientX: 400, clientY: 54, movementX: 0, movementY: 0 });
+    canvas.fire('mousemove', { clientX: LONDON().x, clientY: LONDON().y, movementX: 0, movementY: 0 });
     expect(tooltip.classList.contains('visible')).toBe(true);
     const wrapper = tooltip.children[0];
     expect(wrapper.children.find((c) => c.className === 'tt-category').textContent).toBe('Cybersecurity');
@@ -370,14 +384,14 @@ describe('worldmap', () => {
     expect(link.href).toBe('https://example.com/7');
     expect(link.target).toBe('_blank');
     // A press alone no longer dismisses; clicking empty canvas closes the popup.
-    canvas.fire('mousedown', { clientX: 700, clientY: 480 });
-    windowObj.fire('mouseup', { clientX: 700, clientY: 480 });
+    canvas.fire('mousedown', { clientX: EMPTY_CANVAS().x, clientY: EMPTY_CANVAS().y });
+    windowObj.fire('mouseup', { clientX: EMPTY_CANVAS().x, clientY: EMPTY_CANVAS().y });
     expect(tooltip.classList.contains('visible')).toBe(false);
   });
 
 test('tooltip canonicalizes legacy category names', () => {
-    // 'Energy (old name)' at lon -74, lat 40.7 → (236, 97) on the 800x520 stub.
-    canvas.fire('mousemove', { clientX: 236, clientY: 97, movementX: 0, movementY: 0 });
+    // 'Energy (old name)' at lon -74, lat 40.7; isolated dot.
+    canvas.fire('mousemove', { clientX: pt(-74, 40.7).x, clientY: pt(-74, 40.7).y, movementX: 0, movementY: 0 });
     expect(tooltip.classList.contains('visible')).toBe(true);
     const wrapper = tooltip.children[0];
     expect(wrapper.children.find((c) => c.className === 'tt-category').textContent).toBe('Renewable Energy');
@@ -388,8 +402,8 @@ test('tooltip canonicalizes legacy category names', () => {
   });
 
   test('tooltip omits the source link when the event has no url', () => {
-    // 'Quantum (old name)' at lon 8.5417, lat 47.3769 → (419, 70); isolated dot.
-    canvas.fire('mousemove', { clientX: 419, clientY: 70, movementX: 0, movementY: 0 });
+    // 'Quantum (old name)' at lon 8.5417, lat 47.3769; isolated dot.
+    canvas.fire('mousemove', { clientX: pt(8.5417, 47.3769).x, clientY: pt(8.5417, 47.3769).y, movementX: 0, movementY: 0 });
     expect(tooltip.classList.contains('visible')).toBe(true);
     const wrapper = tooltip.children[0];
     expect(wrapper.children.find((c) => c.className === 'tt-category').textContent).toBe('Quantum Physics');
@@ -406,8 +420,8 @@ test('tooltip canonicalizes legacy category names', () => {
     expect(wrapper.children.find((c) => c.className === 'tt-title').textContent).toBe('UnknownX');
     expect(wrapper.children.find((c) => c.className === 'tt-value')).toBeUndefined();
     // Leave no hover/popup state behind for the tests that follow.
-    canvas.fire('mousedown', { clientX: 700, clientY: 480 });
-    windowObj.fire('mouseup', { clientX: 700, clientY: 480 });
+    canvas.fire('mousedown', { clientX: EMPTY_CANVAS().x, clientY: EMPTY_CANVAS().y });
+    windowObj.fire('mouseup', { clientX: EMPTY_CANVAS().x, clientY: EMPTY_CANVAS().y });
     expect(tooltip.classList.contains('visible')).toBe(false);
   });
 
@@ -435,22 +449,23 @@ test('zoom controls, keyboard and double-click do not throw', () => {
   });
 
   test('tooltip clamps to the map edges using its measured size', () => {
-    // Renewable Energy event at lon 151.21 / lat -33.87 → (736, 395) on the 800x520
-    // stub, near both the right and bottom edges. With measured 150x200 the tooltip
-    // must flip to the left of the cursor (574px) and above it (183px) instead of
-    // overflowing the map.
+    // Renewable Energy event at lon 151.21 / lat -33.87, near both the right and
+    // bottom edges. With measured 150x200 the tooltip must flip to the left of
+    // the cursor and above it instead of overflowing the map.
     registeredEls['reset-view'].fire('click', {});
-    canvas.fire('mousemove', { clientX: 736, clientY: 395, movementX: 0, movementY: 0 });
+    const target = pt(151.2093, -33.8688);
+    canvas.fire('mousemove', { clientX: target.x, clientY: target.y, movementX: 0, movementY: 0 });
     expect(tooltip.classList.contains('visible')).toBe(true);
-    expect(tooltip.style.left).toBe('574px');
-    expect(tooltip.style.top).toBe('183px');
+    // Clamped against the canvas edges, not the old hardcoded numbers.
+    expect(parseFloat(tooltip.style.left)).toBe(target.x - 150 - 12);
+    expect(parseFloat(tooltip.style.top)).toBe(target.y - 200 - 12);
   });
 
   test('zoom dismisses a stale tooltip and hover re-opens it', () => {
     registeredEls['reset-view'].fire('click', {});
     // London Cyber event at (400, 54); zoom anchored at (400, 260) relocates it
     // to screen (400, 260), so the old tooltip position would be stale.
-    canvas.fire('mousemove', { clientX: 400, clientY: 54, movementX: 0, movementY: 0 });
+    canvas.fire('mousemove', { clientX: LONDON().x, clientY: LONDON().y, movementX: 0, movementY: 0 });
     expect(tooltip.classList.contains('visible')).toBe(true);
     canvas.fire('dblclick', { clientX: 400, clientY: 260 });
     expect(tooltip.classList.contains('visible')).toBe(false);
@@ -461,61 +476,61 @@ test('zoom controls, keyboard and double-click do not throw', () => {
 
   test('drag clears hover state so a re-hover after drag re-opens', () => {
     registeredEls['reset-view'].fire('click', {});
-    canvas.fire('mousemove', { clientX: 400, clientY: 54, movementX: 0, movementY: 0 });
+    canvas.fire('mousemove', { clientX: LONDON().x, clientY: LONDON().y, movementX: 0, movementY: 0 });
     expect(tooltip.classList.contains('visible')).toBe(true);
     // A real drag (press, travel, release) leaves the dot somewhere else, so the
     // popup is stale and must be dropped on release.
-    canvas.fire('mousedown', { clientX: 400, clientY: 54 });
+    canvas.fire('mousedown', { clientX: LONDON().x, clientY: LONDON().y });
     windowObj.fire('mouseup', { clientX: 430, clientY: 83 });
     expect(tooltip.classList.contains('visible')).toBe(false);
     // Pointing at the same dot again after the drag must re-open (previously the
     // stale hoveredEvent made the second hover only nudge the hidden tooltip).
-    canvas.fire('mousemove', { clientX: 400, clientY: 54, movementX: 0, movementY: 0 });
+    canvas.fire('mousemove', { clientX: LONDON().x, clientY: LONDON().y, movementX: 0, movementY: 0 });
     expect(tooltip.classList.contains('visible')).toBe(true);
   });
 
   test('clicking a dot pins the popup so the source link stays reachable', () => {
     registeredEls['reset-view'].fire('click', {});
     // Cyber dot at (400, 54). Hover then click (press+release without moving).
-    canvas.fire('mousemove', { clientX: 400, clientY: 54, movementX: 0, movementY: 0 });
-    canvas.fire('mousedown', { clientX: 400, clientY: 54 });
+    canvas.fire('mousemove', { clientX: LONDON().x, clientY: LONDON().y, movementX: 0, movementY: 0 });
+    canvas.fire('mousedown', { clientX: LONDON().x, clientY: LONDON().y });
     expect(tooltip.classList.contains('visible')).toBe(true);      // press keeps it
-    windowObj.fire('mouseup', { clientX: 400, clientY: 54 });
+    windowObj.fire('mouseup', { clientX: LONDON().x, clientY: LONDON().y });
     expect(tooltip.classList.contains('visible')).toBe(true);       // release pins it
     const link = tooltip.children[0].children.find((c) => c.className === 'tt-link');
     expect(link).toBeDefined();
     expect(link.href).toBe('https://example.com/7');
     // Moving to an empty part of the map must NOT close the pinned popup.
-    canvas.fire('mousemove', { clientX: 700, clientY: 480, movementX: 0, movementY: 0 });
+    canvas.fire('mousemove', { clientX: EMPTY_CANVAS().x, clientY: EMPTY_CANVAS().y, movementX: 0, movementY: 0 });
     expect(tooltip.classList.contains('visible')).toBe(true);
     // Clicking empty canvas dismisses the pinned popup.
-    canvas.fire('mousedown', { clientX: 700, clientY: 480 });
-    windowObj.fire('mouseup', { clientX: 700, clientY: 480 });
+    canvas.fire('mousedown', { clientX: EMPTY_CANVAS().x, clientY: EMPTY_CANVAS().y });
+    windowObj.fire('mouseup', { clientX: EMPTY_CANVAS().x, clientY: EMPTY_CANVAS().y });
     expect(tooltip.classList.contains('visible')).toBe(false);
   });
 
   test('clicking the pinned dot again unpins it', () => {
     registeredEls['reset-view'].fire('click', {});
-    canvas.fire('mousemove', { clientX: 400, clientY: 54, movementX: 0, movementY: 0 });
-    canvas.fire('mousedown', { clientX: 400, clientY: 54 });
-    windowObj.fire('mouseup', { clientX: 400, clientY: 54 });
+    canvas.fire('mousemove', { clientX: LONDON().x, clientY: LONDON().y, movementX: 0, movementY: 0 });
+    canvas.fire('mousedown', { clientX: LONDON().x, clientY: LONDON().y });
+    windowObj.fire('mouseup', { clientX: LONDON().x, clientY: LONDON().y });
     expect(tooltip.classList.contains('visible')).toBe(true);
     // Second click on the same dot toggles the popup off (it used to be a no-op
     // because the press had already forgotten the selection).
-    canvas.fire('mousedown', { clientX: 400, clientY: 54 });
-    windowObj.fire('mouseup', { clientX: 400, clientY: 54 });
+    canvas.fire('mousedown', { clientX: LONDON().x, clientY: LONDON().y });
+    windowObj.fire('mouseup', { clientX: LONDON().x, clientY: LONDON().y });
     expect(tooltip.classList.contains('visible')).toBe(false);
     // And the selection is gone, so hovering the dot again re-opens a plain popup.
-    canvas.fire('mousemove', { clientX: 402, clientY: 54, movementX: 0, movementY: 0 });
+    canvas.fire('mousemove', { clientX: LONDON().x, clientY: LONDON().y, movementX: 0, movementY: 0 });
     expect(tooltip.classList.contains('visible')).toBe(true);
     expect(tooltip.querySelector('.tt-pager')).toBe(null);
   });
 
   test('Escape clears a pinned popup selection', () => {
     registeredEls['reset-view'].fire('click', {});
-    canvas.fire('mousemove', { clientX: 400, clientY: 54, movementX: 0, movementY: 0 });
-    canvas.fire('mousedown', { clientX: 400, clientY: 54 });
-    windowObj.fire('mouseup', { clientX: 400, clientY: 54 });
+    canvas.fire('mousemove', { clientX: LONDON().x, clientY: LONDON().y, movementX: 0, movementY: 0 });
+    canvas.fire('mousedown', { clientX: LONDON().x, clientY: LONDON().y });
+    windowObj.fire('mouseup', { clientX: LONDON().x, clientY: LONDON().y });
     expect(tooltip.classList.contains('visible')).toBe(true);
     canvas.fire('keydown', { key: 'Escape', target: canvas, preventDefault() {} });
     expect(tooltip.classList.contains('visible')).toBe(false);
@@ -523,8 +538,8 @@ test('zoom controls, keyboard and double-click do not throw', () => {
 
   test('a click that drags does not pin the dot', () => {
     registeredEls['reset-view'].fire('click', {});
-    canvas.fire('mousemove', { clientX: 400, clientY: 54, movementX: 0, movementY: 0 });
-    canvas.fire('mousedown', { clientX: 400, clientY: 54 });
+    canvas.fire('mousemove', { clientX: LONDON().x, clientY: LONDON().y, movementX: 0, movementY: 0 });
+    canvas.fire('mousedown', { clientX: LONDON().x, clientY: LONDON().y });
     windowObj.fire('mouseup', { clientX: 420, clientY: 73 });      // > threshold = drag
     expect(tooltip.classList.contains('visible')).toBe(false);
   });
@@ -982,7 +997,9 @@ test('zoom controls, keyboard and double-click do not throw', () => {
     expect(tooltipTitle()).toBe('Stack B');
     // Focusing a member (hover/pin) replaces the cluster with that single dot, so
     // the count badge is not painted on top of the milestone being described.
-    canvas.fire('mousemove', { clientX: 60, clientY: 480, movementX: 0, movementY: 0 });  // drop hover
+    // Drop the hover onto empty canvas (not another marker) so the next move is a
+    // genuine re-entry rather than a move between two visible dots.
+    canvas.fire('mousemove', { clientX: EMPTY_CANVAS().x, clientY: EMPTY_CANVAS().y, movementX: 0, movementY: 0 });
     ctx.resetCounters();
     canvas.fire('mousemove', { clientX: 444, clientY: 220, movementX: 0, movementY: 0 });
     expect(tooltipTitle()).toBe('Stack B');
@@ -1017,8 +1034,171 @@ test('zoom controls, keyboard and double-click do not throw', () => {
     // Re-opened by hover rather than pinned: leaving the dot closes it again.
     canvas.fire('mousemove', { clientX: 444, clientY: 220, movementX: 0, movementY: 0 });
     expect(tooltip.classList.contains('visible')).toBe(true);
-    canvas.fire('mousemove', { clientX: 60, clientY: 480, movementX: 0, movementY: 0 });
+    canvas.fire('mousemove', { clientX: EMPTY_CANVAS().x, clientY: EMPTY_CANVAS().y, movementX: 0, movementY: 0 });
     expect(tooltip.classList.contains('visible')).toBe(false);
+  });
+
+  test('a release over the popup does not dismiss it, so the pager stays clickable', () => {
+    const api = windowObj.__WORLDMAP_TEST__;
+    api.setFilterRecent(false);
+    api.setEvents(STACKED_EVENTS);
+    api.setTimelineYear(2026);
+    const spot = pt(STACK_SPOT.lon, STACK_SPOT.lat);
+    // The popup is a sibling overlaying the map, so the release coordinates hit
+    // the very dot that opened it. Treating that release as a canvas gesture
+    // un-pinned the popup and tore the pager out of the DOM before its click
+    // could fire, which is why "previous milestone" was unreachable. Deselecting
+    // is the lower-priority behaviour: a release over the popup must be ignored.
+    canvas.fire('mousemove', { clientX: spot.x, clientY: spot.y, movementX: 0, movementY: 0 });
+    clickAt(spot.x, spot.y);
+    expect(tooltip.classList.contains('visible')).toBe(true);
+    expect(pagerIndex()).toBe('2/2');
+
+    // Simulate the pointer being over the popup: mouseenter, then a release at the
+    // same spot (as the window-level mouseup listener sees it).
+    tooltip.fire('mouseenter', {});
+    canvas.fire('mousedown', { clientX: spot.x, clientY: spot.y });
+    windowObj.fire('mouseup', { clientX: spot.x, clientY: spot.y });
+    expect(tooltip.classList.contains('visible')).toBe(true);
+
+    // The pager is still live and the previous arrow still steps back.
+    const prev = pagerBtn('tt-pager-prev');
+    expect(prev.disabled).toBe(false);
+    prev.fire('click', { stopPropagation() {} });
+    expect(tooltipTitle()).toBe('Stack A');
+    expect(pagerIndex()).toBe('1/2');
+    tooltip.fire('mouseleave', {});
+  });
+
+  test('the upper-left tiles dim when every layer under them is switched off', () => {
+    const api = windowObj.__WORLDMAP_TEST__;
+    const tile = (id) => registeredEls[id];
+    api.setFilterMilitary(true);
+    api.setFilterRecent(false);
+    expect(api.militaryVisible()).toBe(true);
+    expect(tile('filter-military').style.opacity).toBe('1');
+
+    // Turning one of the two military layers off still leaves the other drawing,
+    // so the tile must stay lit.
+    api.toggleLayer('zones');
+    expect(api.militaryVisible()).toBe(true);
+    expect(tile('filter-military').style.opacity).toBe('1');
+
+    // Turning the last one off must dim it. This used to read the filter flag
+    // instead of effective visibility and stayed at full brightness, so the tile
+    // looked selected with an empty map behind it.
+    api.toggleLayer('deployments');
+    expect(api.militaryVisible()).toBe(false);
+    expect(tile('filter-military').style.opacity).toBe('0.5');
+    expect(tile('filter-military').getAttribute('aria-pressed')).toBe('false');
+
+    // Re-enabling a single layer lights it again.
+    api.toggleLayer('zones');
+    expect(api.militaryVisible()).toBe(true);
+    expect(tile('filter-military').style.opacity).toBe('1');
+
+    // Same rule for the crisis tile.
+    api.setFilterMilitary(false);
+    api.toggleLayer('crises');
+    expect(api.crisisVisible()).toBe(true);
+    expect(tile('filter-crisis').style.opacity).toBe('1');
+    api.toggleLayer('crises');
+    expect(api.crisisVisible()).toBe(false);
+    expect(tile('filter-crisis').style.opacity).toBe('0.5');
+
+    // The breakthroughs tile tracks only its own filter.
+    expect(tile('filter-recent').style.opacity).toBe('0.5');
+    api.setFilterRecent(true);
+    expect(tile('filter-recent').style.opacity).toBe('1');
+    api.setFilterRecent(false);
+  });
+
+  test('an infantry arrow is hoverable and does not break hover for other layers', () => {
+    const api = windowObj.__WORLDMAP_TEST__;
+    api.setFilterRecent(false);
+    api.setTimelineYear(2026);
+    // Start from an empty map: other tests leave co-located fixtures behind, and a
+    // leftover dot near the arrow would win the hit-test and mask the real subject.
+    api.setEvents([]);
+    // A pinned milestone makes handleMouseMove take the pin branch, which only
+    // hit-tests milestones, so clear any pin left by an earlier test.
+    canvas.fire('keydown', { key: 'Escape', target: canvas, preventDefault() {} });
+    expect(tooltip.classList.contains('visible')).toBe(false);
+    // An infantry entry carries lat/lon + direction, never from/to. findDeployment
+    // used to read fleet.from/fleet.to unconditionally, so hovering a map that
+    // contained one threw inside the mousemove handler and killed hover for events,
+    // zones, deployments and crises alike.
+    api.setLayers(
+      [],
+      [{ id: 'inf-1', kind: 'infantry', name: 'Brigade move', lat: 40, lon: 20, direction: 'east',
+         status: 'active', troops: 5000, start_date: '2026-02-01', source: 'MoD',
+         url: 'https://example.com/inf', country: 'Testland', note: 'Exercise' }],
+      []
+    );
+    api.setFilterMilitary(true);
+    expect(api.getLayers().fleets.length).toBe(1);
+
+    // Hover the infantry arrow's midpoint. It must produce a popup, not a throw.
+    const inf = api.getLayers().fleets[0];
+    const midLon = (20 + (20 - 5)) / 2;
+    const mid = pt(midLon, 40);
+    expect(() => canvas.fire('mousemove', { clientX: mid.x, clientY: mid.y, movementX: 0, movementY: 0 })).not.toThrow();
+    expect(tooltip.classList.contains('visible')).toBe(true);
+    const wrapper = tooltip.children[0];
+    const text = wrapper.children.map((c) => c.textContent).join(' | ');
+    expect(text).toContain('Ground Deployment');
+    expect(text).toContain('Brigade move');
+    expect(text).toContain('Nation: Testland');
+    expect(text).toContain('Troops: 5,000');
+    expect(text).toContain('Heading: east');
+    // Route is reported from the derived endpoints even though the payload has
+    // no from/to at all.
+    expect(text).toMatch(/From: 40\.0/);
+    expect(text).toMatch(/To: 40\.0/);
+    // The source link is preserved end to end and rendered as a real anchor. It
+    // lives inside the meta row, not directly under the wrapper.
+    const metaRow = wrapper.children[2];
+    const anchor = metaRow.children.find((c) => c.tagName === 'A');
+    expect(anchor).toBeDefined();
+    expect(anchor.textContent).toBe('MoD');
+    // The renderer assigns href/target as properties (as it does for every other
+    // tooltip link), so assert the property the browser will actually navigate to.
+    expect(anchor.href).toBe('https://example.com/inf');
+    expect(anchor.rel).toBe('noopener noreferrer');
+    expect(anchor.target).toBe('_blank');
+
+    // And a milestone dot elsewhere is still hoverable, proving the handler no
+    // longer dies on the infantry entry.
+    api.setEvents([{ id: 'm-1', title: 'Still hoverable', category: 'Biotechnology', value: '1',
+                     source: 'S', url: 'https://example.com/m', date: '2026-04-01',
+                     geolocation: { lat: -30, lon: 100 } }]);
+    const m = pt(100, -30);
+    canvas.fire('mousemove', { clientX: m.x, clientY: m.y, movementX: 0, movementY: 0 });
+    expect(tooltip.classList.contains('visible')).toBe(true);
+    expect(tooltip.children[0].children.find((c) => c.className === 'tt-title').textContent).toBe('Still hoverable');
+
+    // fleetEndpoints is the shared geometry: it must produce a usable pair for an
+    // infantry entry and refuse a fleet entry with a missing endpoint.
+    const ends = api.fleetEndpoints(inf);
+    expect(ends).not.toBeNull();
+    expect(ends.to.lon).toBe(20);
+    expect(ends.from.lon).toBe(15);
+    expect(api.fleetEndpoints({ kind: 'fleet', from: { lat: 1, lon: 1 } })).toBeNull();
+  });
+
+  test('a concluded zone and arrow read dimmer than an active one', () => {
+    const api = windowObj.__WORLDMAP_TEST__;
+    api.setFilterRecent(false);
+    api.setTimelineYear(2026);
+    // Ladder: active+fresh (glow) > active+stale (weak glow) > concluded (none).
+    // Asserted on the constants the renderer actually uses, since the distinction
+    // is carried by fill/stroke alpha and desaturation rather than by hue.
+    expect(api.PASSIVE_OPACITY_LADDER).toEqual({ concluded: 0.10, stale: 0.16 });
+    expect(api.CONCLUDED_STROKE_ALPHA).toBeGreaterThan(0.30);
+    expect(api.CONCLUDED_DESAT).toBeGreaterThan(0);
+    // A concluded arrowhead is desaturated as well as dimmed, so the three states
+    // do not rely on alpha alone.
+    expect(api.CONCLUDED_OPACITY).toBeLessThan(0.5);
   });
 
   test('pager arrows are real buttons so the disabled state and keyboard reach work', () => {
@@ -1164,33 +1344,43 @@ test('zoom controls, keyboard and double-click do not throw', () => {
     api.setEvents(EVENT_PAYLOAD.events);
   });
 
-  test('the default view crops the polar caps instead of showing +/-90', () => {
+  test('the default view shows the polar caps but keeps the terminator out of them', () => {
     const api = windowObj.__WORLDMAP_TEST__;
     registeredEls['reset-view'].fire('click', {});
     // Longitude still spans the full 360deg across the canvas width.
     expect(api.project(-180, 0).x).toBe(0);
     expect(api.project(180, 0).x).toBe(800);
-    // Latitude spans the crop, so the canvas edges are +/-MAP_LAT_LIMIT and the
+    // Latitude spans the window, so the canvas edges are +/-MAP_LAT_LIMIT and the
     // equator stays centred.
-    expect(api.MAP_LAT_LIMIT).toBe(65);
+    expect(api.MAP_LAT_LIMIT).toBe(72);
     expect(api.project(0, api.MAP_LAT_LIMIT).y).toBe(0);
     expect(api.project(0, 0).y).toBe(260);
     expect(api.project(0, -api.MAP_LAT_LIMIT).y).toBe(520);
-    // The poles are off-canvas, which is the whole point: the day/night boundary
-    // saturates at |lat| >= 90 - |declination| (66.6 at the solstices) and smears
-    // into a hard horizontal shadow band there, and the pole rows paint a
-    // full-width shadow edge.
+    // The caps are on-canvas (that is the point: the map is recentred, not cropped
+    // tight to the tropics) but the true poles are not.
     expect(api.project(0, 90).y).toBeLessThan(0);
     expect(api.project(0, -90).y).toBeGreaterThan(520);
-    for (const decl of [23.44, -23.44]) {
-      const degenerate = api.buildTerminatorGeo(decl, 0, 0).filter((p) => Math.abs(p.lat) >= 66);
-      expect(degenerate.length).toBeGreaterThan(0);
-      for (const p of degenerate) {
-        const y = api.project(p.lon, p.lat).y;
-        expect(y < 0 || y > 520).toBe(true);
+    // The terminator stops strictly inside the saturation latitude, so the cap
+    // band is left lit instead of being painted a degenerate constant longitude.
+    expect(api.TERMINATOR_LAT_LIMIT).toBeLessThanOrEqual(66.5);
+    expect(api.TERMINATOR_LAT_LIMIT).toBeLessThan(api.MAP_LAT_LIMIT);
+    for (const decl of [23.44, -23.44, 0]) {
+      for (const offset of [0, 180]) {
+        const curve = api.buildTerminatorGeo(decl, 0, offset);
+        expect(curve.length).toBe(181);
+        let maxAbsLat = 0;
+        for (const p of curve) {
+          maxAbsLat = Math.max(maxAbsLat, Math.abs(p.lat));
+          // Never degenerate: the hour angle stays in (0, 180) so no sample
+          // collapses onto a single longitude and smears into a shadow band.
+          expect(Number.isFinite(p.lon)).toBe(true);
+          expect(p.lon).toBeGreaterThanOrEqual(-180);
+          expect(p.lon).toBeLessThanOrEqual(180);
+        }
+        expect(maxAbsLat).toBeLessThanOrEqual(api.TERMINATOR_LAT_LIMIT);
       }
     }
-    // "Reset view" restores exactly this narrower window, not the full globe.
+    // "Reset view" restores exactly this window, not a zoomed-in one.
     canvas.fire('dblclick', { clientX: 400, clientY: 260 });
     expect(api.getView()).not.toEqual({ scale: 1, tx: 0, ty: 0 });
     registeredEls['reset-view'].fire('click', {});

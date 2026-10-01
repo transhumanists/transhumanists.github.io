@@ -330,45 +330,45 @@ body {
 
 .map-legend {
   position: absolute;
-  right: 12px;
-  top: 12px;
+  left: 12px;
+  bottom: 12px;
   max-width: calc(100% - 24px);
   background: rgba(6,11,20,0.72);
   backdrop-filter: blur(8px);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  padding: 6px 8px;
-  font-size: 0.56rem;
-  line-height: 1.2;
+  padding: 5px 7px;
+  font-size: 0.54rem;
+  line-height: 1.18;
   font-family: var(--font-mono);
   z-index: 5;
-  min-width: 120px;
+  min-width: 108px;
   user-select: none;
  }
  .map-legend-controls {
    display: flex;
    flex-wrap: wrap;
-   gap: 4px;
-   margin-top: 7px;
-   padding-top: 7px;
+   gap: 3px;
+   margin-top: 5px;
+   padding-top: 5px;
    border-top: 1px solid var(--border);
  }
  .map-legend-title {
   color: var(--fg-subtle);
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  font-size: 0.56rem;
-  margin-bottom: 4px;
+  font-size: 0.5rem;
+  margin-bottom: 3px;
  }
  .map-legend-row {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
   color: var(--fg-muted);
   cursor: pointer;
-  border-radius: 4px;
-  padding: 2px 4px;
-  margin: 0 -4px;
+  border-radius: 3px;
+  padding: 1px 3px;
+  margin: 0 -3px;
   transition: background 0.15s ease, opacity 0.15s ease;
  }
  .map-legend-row:hover {
@@ -388,7 +388,7 @@ body {
 .map-legend-row[aria-pressed="false"] .map-legend-count {
     text-decoration: line-through;
   }
-  .map-legend-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+  .map-legend-dot { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; }
   .map-legend-dot--ring { background: transparent !important; border: 1.5px solid; border-radius: 50%; }
   .map-legend-dot--diamond { border-radius: 1px; transform: rotate(45deg); }
   .map-legend-label { flex: 1; min-width: 0; }
@@ -410,9 +410,9 @@ body {
     max-width: 320px;
     min-width: 180px;
     height: 24px;
-    background: rgba(255,255,255,0.10);
+    background: rgba(255,255,255,0.16);
     backdrop-filter: blur(6px);
-    border: 1px solid rgba(255,255,255,0.14);
+    border: 1px solid rgba(255,255,255,0.34);
     border-radius: 10px;
     padding: 4px 12px;
     z-index: 5;
@@ -422,9 +422,9 @@ body {
   }
 .map-timeline-track {
     flex: 1;
-    height: 3px;
-    background: rgba(255,255,255,0.38);
-    box-shadow: 0 0 6px rgba(255,255,255,0.18);
+    height: 4px;
+    background: rgba(255,255,255,0.55);
+    box-shadow: 0 0 8px rgba(255,255,255,0.35);
     border-radius: 2px;
     position: relative;
     cursor: pointer;
@@ -436,20 +436,20 @@ body {
     position: absolute;
     top: 50%;
     transform: translate(-50%, -50%);
-    width: 12px;
-    height: 12px;
+    width: 14px;
+    height: 14px;
     background: #fff;
     border: 1.5px solid var(--accent);
     border-radius: 50%;
     cursor: grab;
-    box-shadow: 0 0 6px rgba(255,255,255,0.45), 0 1px 3px rgba(0,0,0,0.15);
+    box-shadow: 0 0 10px rgba(255,255,255,0.75), 0 1px 3px rgba(0,0,0,0.15);
     transition: transform 0.08s ease, box-shadow 0.08s ease, border-color 0.08s ease, background 0.08s ease;
     z-index: 10;
   }
 .map-timeline-handle:hover {
   transform: translate(-50%, -50%) scale(1.15);
-  box-shadow: 0 2px 8px rgba(0,212,255,0.35);
-  border-color: rgba(255,255,255,0.9);
+  box-shadow: 0 0 14px rgba(0,212,255,0.6), 0 0 8px rgba(255,255,255,0.7);
+  border-color: rgba(255,255,255,0.95);
 }
 .map-timeline-handle:active {
   cursor: grabbing;
@@ -469,16 +469,17 @@ body {
   font-size: 0.65rem;
   font-weight: 600;
   font-family: var(--font-mono);
-  color: rgba(255,255,255,0.95);
+  color: #fff;
   text-shadow: 0 1px 2px rgba(0,0,0,0.35);
   white-space: nowrap;
   padding: 1px 8px;
-  background: rgba(0,0,0,0.25);
+  background: rgba(255,255,255,0.22);
+  border: 1px solid rgba(255,255,255,0.30);
   border-radius: 4px;
   pointer-events: none;
   z-index: 11;
   transition: opacity 0.12s ease, transform 0.08s ease;
-  opacity: 0.95;
+  opacity: 0.98;
 }
 
 /* MILESTONES CATALOG */
@@ -1451,7 +1452,7 @@ body {
   .map-timeline-track { height: 3px; }
   .map-timeline-years { top: -16px; font-size: 0.5rem; }
   .map-timeline-handle { width: 18px; height: 18px; }
-  .map-legend { right: 8px; top: 8px; max-width: calc(100% - 16px); padding: 5px 7px; font-size: 0.52rem; min-width: 110px; }
+  .map-legend { left: 8px; bottom: 8px; max-width: calc(100% - 16px); padding: 4px 6px; font-size: 0.5rem; min-width: 100px; }
   .map-legend-title { font-size: 0.52rem; margin-bottom: 3px; }
   .map-legend-row { gap: 5px; padding: 2px 3px; margin: 0 -3px; }
   .map-legend-dot { width: 5px; height: 5px; }
@@ -1481,7 +1482,7 @@ body {
   .map-timeline { height: 36px; padding: 6px 6px; }
   .map-timeline-track { height: 2px; }
   .map-timeline-handle { width: 16px; height: 16px; }
-  .map-legend { font-size: 0.48rem; min-width: 95px; padding: 4px 5px; right: 4px; top: 4px; }
+  .map-legend { font-size: 0.46rem; min-width: 92px; padding: 3px 5px; left: 4px; bottom: 4px; }
   .map-legend-title { font-size: 0.48rem; }
   .map-legend-row { gap: 4px; padding: 1px 3px; }
   .map-legend-dot { width: 5px; height: 5px; }
@@ -1495,7 +1496,7 @@ body {
   #world-map { height: 40vh; min-height: 200px; }
   .map-overlay { top: 4px; left: 4px; right: 4px; }
   .map-timeline { bottom: 4px; height: 32px; padding: 4px 8px; }
-  .map-legend { right: 4px; top: 4px; font-size: 0.45rem; min-width: 90px; padding: 3px 4px; }
+  .map-legend { left: 4px; bottom: 4px; font-size: 0.44rem; min-width: 88px; padding: 3px 4px; }
 }
 
 /* Prevent horizontal scroll on mobile */
@@ -1520,7 +1521,13 @@ body {
   #world-map { height: 45vh; min-height: 200px; }
   .map-overlay { top: 4px; left: 4px; right: 4px; }
   .map-timeline { bottom: 4px; height: 36px; padding: 4px 8px; }
-  .map-legend { display: none; }
+  /* Kept visible (it used to be display:none here). The legend is now small
+     enough to sit in the lower-left corner without covering the map, and hiding
+     it left mobile-landscape visitors with no way to toggle a category at all. */
+  .map-legend { left: 4px; bottom: 4px; font-size: 0.44rem; min-width: 84px; padding: 2px 4px; max-width: 34%; }
+  .map-legend-title { font-size: 0.42rem; margin-bottom: 2px; }
+  .map-legend-row { gap: 4px; padding: 1px 2px; }
+  .map-legend-controls { gap: 2px; margin-top: 3px; padding-top: 3px; }
 }
 
 /* SCROLLBAR */
