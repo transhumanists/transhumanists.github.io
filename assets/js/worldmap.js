@@ -5,6 +5,9 @@
 (function() {
   'use strict';
 
+  if (window.__WORLDMAP_INIT__) return;
+  window.__WORLDMAP_INIT__ = true;
+
   const canvas = document.getElementById('world-map-canvas');
   if (!canvas) return;
 
@@ -19,7 +22,7 @@
   const DRAW_INTERVAL_MS = 100;
   const MIN_SCALE = 0.5;
   const MAX_SCALE = 8;
-  const ZOOM_FACTOR = 1.1;
+  const ZOOM_FACTOR = 1.1; // Used by zoomAt for keyboard/button zoom steps
   const HIT_RADIUS_BASE = 10;
   const CLICK_DRAG_THRESHOLD = 5;
   const TOOLTIP_WIDTH = 260;
@@ -269,7 +272,6 @@
     'iiss': { lat: 51.5074, lon: -0.1278 },
     'india': { lat: 19.0, lon: 72.8 },
     'plan': { lat: 26.7, lon: 114.0 },
-    'usaf': { lat: 38.8951, lon: -77.0364 },
     'iaea': { lat: 48.2082, lon: 16.3738 },
     'who_org': { lat: 46.2276, lon: 6.1424 },
     'un_org': { lat: 40.7580, lon: -73.9683 },
@@ -303,24 +305,25 @@
     'cvpr': { lat: 37.7749, lon: -122.4194 },
     'iclr': { lat: 37.7749, lon: -122.4194 },
     'ijcai': { lat: 37.7749, lon: -122.4194 },
-    'aaai': { lat: 37.7749, lon: -122.4194 },
   };
 
+  const INSTITUTION_PATTERNS = Object.entries(INSTITUTION_COORDS).map(([key, coords]) => ({
+    key,
+    coords,
+    pattern: new RegExp(`(^|[^a-z0-9])${key.toLowerCase()}([^a-z0-9]|$)`)
+  }));
+
   function geocodeInstitution(source, title, category) {
-    // Skip geocoding for placeholder/unknown values
     if (!source || source === 'Unknown' || source === 'unknown') return null;
     if (!title || title === 'Untitled' || title === 'untitled') return null;
-    
+
     const cacheKey = `${source}|${title}|${category}`.toLowerCase();
     if (geocodeCache[cacheKey]) {
       return geocodeCache[cacheKey];
     }
     const text = `${source} ${title} ${category}`.toLowerCase();
-    for (const [key, coords] of Object.entries(INSTITUTION_COORDS)) {
-      // Use word-boundary-ish matching to avoid false positives on short keys
-      const pattern = `(^|[^a-z0-9])${key.toLowerCase()}([^a-z0-9]|$)`;
-      if (new RegExp(pattern).test(text)) {
-        // Enforce cache size limit (LRU-ish: delete oldest entry)
+    for (const { coords, pattern } of INSTITUTION_PATTERNS) {
+      if (pattern.test(text)) {
         if (Object.keys(geocodeCache).length >= GEOCODE_CACHE_MAX_SIZE) {
           const firstKey = Object.keys(geocodeCache)[0];
           delete geocodeCache[firstKey];
@@ -330,7 +333,6 @@
         return coords;
       }
     }
-    // Fallback: try to extract from known patterns
     return null;
   }
 
@@ -813,13 +815,21 @@ function canonicalCategory(cat) {
 
     // Only draw military layers if filterMilitary is active
     if (state.filterMilitary) {
-      if (state.showZones) state.zones.forEach(z => drawZone(z));
+      if (state.showZones) {
+        const visibleZones = state.zones.filter(z => !z._hiddenByTimeline);
+        const zoneAutoScale = visibleZones.length > 20 ? Math.min(1, 20 / visibleZones.length) : 1;
+        visibleZones.forEach(z => drawZone(z, zoneAutoScale));
+      }
       if (state.showFleets) state.fleets.forEach(f => drawFleet(f));
     }
 
     // Only draw crisis zones if filterCrisis is active
     if (state.filterCrisis) {
-      if (state.showCrises) state.crises.forEach(c => drawCrisis(c));
+      if (state.showCrises) {
+        const visibleCrises = state.crises.filter(c => !c._hiddenByTimeline);
+        const crisisAutoScale = visibleCrises.length > 20 ? Math.min(1, 20 / visibleCrises.length) : 1;
+        visibleCrises.forEach(c => drawCrisis(c, crisisAutoScale));
+      }
     }
   }
 
@@ -852,14 +862,23 @@ function canonicalCategory(cat) {
     }
   }
 
-  function stackForEvent(ev) {
-    const key = stackKey(ev);
-    const all = state.events.filter(e => stackKey(e) === key && isCategoryVisible(e.category));
-    if (state.filterRecent) {
-      const todayISO = new Date().toISOString().slice(0, 10);
-      return all.filter(e => isInRolling7Days(e.date, todayISO));
+  let stackMap = null;
+
+  function rebuildStackMap() {
+    stackMap = new Map();
+    const todayISO = new Date().toISOString().slice(0, 10);
+    for (const ev of state.events) {
+      if (!isCategoryVisible(ev.category)) continue;
+      if (state.filterRecent && !isInRolling7Days(ev.date, todayISO)) continue;
+      const key = stackKey(ev);
+      if (!stackMap.has(key)) stackMap.set(key, []);
+      stackMap.get(key).push(ev);
     }
-    return all;
+  }
+
+  function stackForEvent(ev) {
+    if (!stackMap) rebuildStackMap();
+    return stackMap.get(stackKey(ev)) || [];
   }
 
 function drawEvent(ev) {
@@ -926,15 +945,13 @@ function drawEvent(ev) {
   // Still-active zones get a fluo (glow) treatment so they read as "live";
   // concluded zones render flat and dim, with their duration surfaced in the
   // tooltip. Zones outside the timeline year are skipped entirely.
-  function drawZone(zone) {
+  function drawZone(zone, zoneAutoScale) {
     if (!state.showZones) return;
     if (zone._hiddenByTimeline) return;
     const p = project(zone.lon, zone.lat);
     const degToPx = state.height / 180;
 
-    // Auto-scale zone radii when many zones are visible (>20)
-    const visibleZones = state.zones.filter(z => !z._hiddenByTimeline);
-    const autoScale = visibleZones.length > 20 ? Math.min(1, 20 / visibleZones.length) : 1;
+    const autoScale = zoneAutoScale || 1;
     const baseRadius = Math.max(4, (zone.radiusDeg || 3) * degToPx * state.transform.scale * autoScale);
 
     const active = isLayerActive(zone);
@@ -1025,15 +1042,13 @@ function drawEvent(ev) {
 // Crisis zone (humanitarian): translucent area ring + dashed outline + center marker.
   // Distinct purple color to differentiate from conflict zones (red) and deployments.
   // Same fluo/dim lifecycle split as conflict zones.
-  function drawCrisis(crisis) {
+  function drawCrisis(crisis, crisisAutoScale) {
     if (!state.showCrises) return;
     if (crisis._hiddenByTimeline) return;
     const p = project(crisis.lon, crisis.lat);
     const degToPx = state.height / 180;
 
-    // Auto-scale for crisis zones too
-    const visibleCrises = state.crises.filter(c => !c._hiddenByTimeline);
-    const autoScale = visibleCrises.length > 20 ? Math.min(1, 20 / visibleCrises.length) : 1;
+    const autoScale = crisisAutoScale || 1;
     const baseRadius = Math.max(4, (crisis.radiusDeg || 3) * degToPx * state.transform.scale * autoScale);
 
     const active = isLayerActive(crisis);
@@ -1175,9 +1190,10 @@ function drawEvent(ev) {
         fromLon = destLon;
         fromLat = destLat - 5;
       } else if (deploymentDirection === 'global') {
-        // Global/no direction: use random offset or just show a small arrow from center
-        fromLon = destLon - 3 + Math.random() * 6;
-        fromLat = destLat - 3 + Math.random() * 6;
+        // Global/no direction: deterministic offset based on fleet properties
+        const seed = (fleet.lon * 7 + fleet.lat * 13) % 6;
+        fromLon = destLon - 3 + seed;
+        fromLat = destLat - 3 + ((seed * 2) % 6);
       }
 
       const fromPoint = { lat: fromLat, lon: fromLon };
@@ -1397,8 +1413,19 @@ function drawEvent(ev) {
     return null;
   }
 
+  // ---- Tooltip hover handlers ----
+  function handleTooltipMouseEnter() { state.tooltipHover = true; }
+  function handleTooltipMouseLeave() {
+    state.tooltipHover = false;
+    state.hoveredEvent = null;
+    if (state.selectedEvent) return;
+    hideTooltip();
+    draw();
+  }
+
   // ---- Mouse ----
-  canvas.addEventListener('mousemove', e => {
+  canvas.addEventListener('mousemove', handleMouseMove);
+  function handleMouseMove(e) {
     const rect = canvas.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
@@ -1489,9 +1516,10 @@ function drawEvent(ev) {
         moveTooltip(e.clientX - rect.left, e.clientY - rect.top);
       }
     }
-  });
+  }
 
-  canvas.addEventListener('mousedown', e => {
+  canvas.addEventListener('mousedown', handleMouseDown);
+  function handleMouseDown(e) {
     const rect = canvas.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
@@ -1500,9 +1528,10 @@ function drawEvent(ev) {
     state.isDragging = true;
     canvas.style.cursor = 'grabbing';
     dismissTooltip();
-  });
+  }
 
-  window.addEventListener('mouseup', e => {
+  window.addEventListener('mouseup', handleMouseUp);
+  function handleMouseUp(e) {
     state.isDragging = false;
     canvas.style.cursor = 'grab';
     const rect = canvas.getBoundingClientRect();
@@ -1528,13 +1557,14 @@ function drawEvent(ev) {
     }
     state.pressX = null;
     state.pressY = null;
-  });
+  }
 
   // Double-click to zoom in around the cursor
-  canvas.addEventListener('dblclick', e => {
+  canvas.addEventListener('dblclick', handleDblClick);
+  function handleDblClick(e) {
     const rect = canvas.getBoundingClientRect();
     zoomAt(e.clientX - rect.left, e.clientY - rect.top, 1.5);
-  });
+  }
 
   // ---- Zoom helpers (used by controls, wheel, keyboard, double-click) ----
   function applyZoom(x, y, factor) {
@@ -1560,13 +1590,9 @@ function drawEvent(ev) {
     draw();
   }
 
-  canvas.addEventListener('wheel', e => {
-    // Scroll zoom disabled per UX request — use zoom buttons or keyboard instead
-    // e.preventDefault(); // Don't prevent default to allow page scrolling
-  }, { passive: true });
-
   // ---- Keyboard accessibility ----
-  canvas.addEventListener('keydown', e => {
+  canvas.addEventListener('keydown', handleKeyDown);
+  function handleKeyDown(e) {
     if (e.target !== canvas && !canvas.contains(e.target)) return;
     const panStep = 50 / state.transform.scale;
     let handled = true;
@@ -1586,7 +1612,7 @@ function drawEvent(ev) {
         resetView();
         break;
       case 'Escape':
-        handled = true;
+        resetView();
         break;
       default: handled = false;
     }
@@ -1595,7 +1621,7 @@ function drawEvent(ev) {
       dismissTooltip();
       draw();
     }
-  });
+  }
 
   // Make canvas focusable for keyboard interaction
   canvas.setAttribute('tabindex', '0');
@@ -2063,6 +2089,7 @@ function drawEvent(ev) {
   function toggleFilterRecent() {
     state.filterRecent = !state.filterRecent;
     try { localStorage.setItem(STORAGE_KEY_FILTER_RECENT, String(state.filterRecent)); } catch (_) {}
+    rebuildStackMap();
     updateFilterButton('filter-recent', state.filterRecent);
     draw();
     updateStatsDisplay();
@@ -2406,7 +2433,7 @@ const fragment = document.createDocumentFragment();
       btn.addEventListener('click', () => {
         state.showTerminator = !state.showTerminator;
         btn.setAttribute('aria-pressed', state.showTerminator);
-        // Icon shows what clicking will do: ☀ = will show day (turn off), ☾ = will show night (turn on)
+        // Icon shows current state: ☾ = night overlay on, ☀ = off
         icon.textContent = state.showTerminator ? '☾' : '☀';
         draw();
       });
@@ -2454,6 +2481,7 @@ const fragment = document.createDocumentFragment();
       }
     }
     return {
+      id: e.id || `${lat},${lon},${e.title ?? 'Untitled'}`,
       lat,
       lon,
       title: e.title ?? 'Untitled',
@@ -2490,10 +2518,12 @@ const fragment = document.createDocumentFragment();
       } else {
         state.events = [];
       }
+      rebuildStackMap();
     } catch (err) {
       if (err.name === 'AbortError') return;
       console.warn('[worldmap] Failed to load events.json, using sample data:', err);
       state.events = SAMPLE_EVENTS;
+      rebuildStackMap();
     }
   }
 
@@ -2653,7 +2683,7 @@ function startTerminatorInterval() {
 // archive (Trinity test, ENIAC, etc.).
 let timelineYear = new Date().getFullYear(); // current year by default
 const TIMELINE_MIN_YEAR = 1945;
-const TIMELINE_MAX_YEAR = new Date().getFullYear();
+function getTimelineMaxYear() { return new Date().getFullYear(); }
 
 // Cluster milestone events by year: only events dated in that year stay visible.
 // Like filterLayersByYear, this is intentionally inert until the slider moves so
@@ -2664,6 +2694,8 @@ function filterEventsByYear(year) {
       // Route through parseDateToISO (same accept-surface as the 7-day filter):
       // raw .slice(0,4) would misparse "15/03/2026" as the year 15.
       ev._hiddenByTimeline = parseInt((parseDateToISO(ev.date) || '').slice(0, 4), 10) !== year;
+    } else {
+      ev._hiddenByTimeline = false;
     }
   });
 }
@@ -2686,7 +2718,7 @@ function initTimelineSlider() {
   const handle = document.getElementById('map-timeline-handle');
   const yearsContainer = document.getElementById('map-timeline-years');
   
-  if (!timeline || !track || !handle) return;
+  if (!timeline || !track || !handle) return () => {};
   
   // Generate year labels
   renderTimelineYears();
@@ -2740,7 +2772,7 @@ function initTimelineSlider() {
         break;
       case 'ArrowRight':
       case 'ArrowUp':
-        timelineYear = Math.min(TIMELINE_MAX_YEAR, timelineYear + 1);
+        timelineYear = Math.min(getTimelineMaxYear(), timelineYear + 1);
         changed = true;
         break;
       case 'Home':
@@ -2748,7 +2780,7 @@ function initTimelineSlider() {
         changed = true;
         break;
       case 'End':
-        timelineYear = TIMELINE_MAX_YEAR;
+        timelineYear = getTimelineMaxYear();
         changed = true;
         break;
     }
@@ -2762,13 +2794,13 @@ function initTimelineSlider() {
   function updateTimelineFromClientX(clientX) {
     const rect = track.getBoundingClientRect();
     const ratio = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
-    timelineYear = Math.round(TIMELINE_MIN_YEAR + ratio * (TIMELINE_MAX_YEAR - TIMELINE_MIN_YEAR));
+    timelineYear = Math.round(TIMELINE_MIN_YEAR + ratio * (getTimelineMaxYear() - TIMELINE_MIN_YEAR));
     updateTimelineHandle();
     applyTimelineFilter();
   }
   
   function updateTimelineHandle() {
-    const ratio = (timelineYear - TIMELINE_MIN_YEAR) / (TIMELINE_MAX_YEAR - TIMELINE_MIN_YEAR);
+    const ratio = (timelineYear - TIMELINE_MIN_YEAR) / (getTimelineMaxYear() - TIMELINE_MIN_YEAR);
     handle.style.left = `${ratio * 100}%`;
     timeline.setAttribute('aria-valuenow', Math.round(ratio * 100));
     // Update handle aria-label
@@ -2782,15 +2814,15 @@ function initTimelineSlider() {
   
   function renderTimelineYears() {
     if (!yearsContainer) return;
-    yearsContainer.innerHTML = '';
-    const totalYears = TIMELINE_MAX_YEAR - TIMELINE_MIN_YEAR + 1;
+    yearsContainer.replaceChildren();
+    const totalYears = getTimelineMaxYear() - TIMELINE_MIN_YEAR + 1;
     const step = Math.max(1, Math.ceil(totalYears / 25));
-    for (let year = TIMELINE_MIN_YEAR; year <= TIMELINE_MAX_YEAR; year++) {
-      if ((year - TIMELINE_MIN_YEAR) % step !== 0 && year !== TIMELINE_MAX_YEAR) continue;
+    for (let year = TIMELINE_MIN_YEAR; year <= getTimelineMaxYear(); year++) {
+      if ((year - TIMELINE_MIN_YEAR) % step !== 0 && year !== getTimelineMaxYear()) continue;
       const label = document.createElement('span');
       label.textContent = year.toString();
       label.style.position = 'absolute';
-      label.style.left = `${((year - TIMELINE_MIN_YEAR) / (TIMELINE_MAX_YEAR - TIMELINE_MIN_YEAR)) * 100}%`;
+      label.style.left = `${((year - TIMELINE_MIN_YEAR) / (getTimelineMaxYear() - TIMELINE_MIN_YEAR)) * 100}%`;
       label.style.transform = 'translateX(-50%)';
       label.style.fontSize = '0.55rem';
       label.style.fontFamily = 'var(--font-mono)';
@@ -2859,15 +2891,8 @@ function initTimelineSlider() {
 
     // Keep tooltip open while the pointer is over it so the source link is clickable
     if (tooltip) {
-      tooltip.addEventListener('mouseenter', () => { state.tooltipHover = true; });
-      tooltip.addEventListener('mouseleave', () => {
-        state.tooltipHover = false;
-        state.hoveredEvent = null;
-        // Leave a pinned popup open so its link stays reachable.
-        if (state.selectedEvent) return;
-        hideTooltip();
-        draw();
-      });
+      tooltip.addEventListener('mouseenter', handleTooltipMouseEnter);
+      tooltip.addEventListener('mouseleave', handleTooltipMouseLeave);
     }
   }
 
@@ -2880,6 +2905,15 @@ function initTimelineSlider() {
     if (resizeTimeout) clearTimeout(resizeTimeout);
     window.removeEventListener('resize', scheduleResize);
     document.removeEventListener('visibilitychange', onVisibilityChange);
+    canvas.removeEventListener('mousemove', handleMouseMove);
+    canvas.removeEventListener('mousedown', handleMouseDown);
+    window.removeEventListener('mouseup', handleMouseUp);
+    canvas.removeEventListener('dblclick', handleDblClick);
+    canvas.removeEventListener('keydown', handleKeyDown);
+    if (tooltip) {
+      tooltip.removeEventListener('mouseenter', handleTooltipMouseEnter);
+      tooltip.removeEventListener('mouseleave', handleTooltipMouseLeave);
+    }
     if (cleanupTimelineSlider) cleanupTimelineSlider();
   }
 
@@ -2904,7 +2938,7 @@ function initTimelineSlider() {
         return existingTestHook?.getTodayISO ?? (() => new Date().toISOString().slice(0, 10));
       },
       getView: () => ({ ...state.transform }),
-      setFilterRecent: (val) => { state.filterRecent = val; updateFilterButton('filter-recent', state.filterRecent); draw(); updateStatsDisplay(); renderLegend(); },
+      setFilterRecent: (val) => { state.filterRecent = val; rebuildStackMap(); updateFilterButton('filter-recent', state.filterRecent); draw(); updateStatsDisplay(); renderLegend(); },
       setFilterMilitary: (val) => { state.filterMilitary = val; state.showZones = val; state.showFleets = val; updateFilterButton('filter-military', state.filterMilitary); draw(); updateStatsDisplay(); renderLegend(); },
       // Layer lifecycle helpers + stats (fluo/concluded split).
       layerStatus,
@@ -2928,6 +2962,7 @@ function initTimelineSlider() {
       // clustering tests deterministically).
       setEvents: (events) => {
         state.events = (events || []).map(normalizeEvent).filter(isPlottable);
+        rebuildStackMap();
         draw();
         updateStatsDisplay();
         renderLegend();
@@ -2935,7 +2970,7 @@ function initTimelineSlider() {
       getEvents: () => state.events,
       // Drive the same year-clustering code path as the timeline slider.
       setTimelineYear: (year) => {
-        timelineYear = Math.max(TIMELINE_MIN_YEAR, Math.min(TIMELINE_MAX_YEAR, year));
+        timelineYear = Math.max(TIMELINE_MIN_YEAR, Math.min(getTimelineMaxYear(), year));
         filterEventsByYear(timelineYear);
         filterLayersByYear(timelineYear);
         draw();

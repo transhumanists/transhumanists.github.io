@@ -496,12 +496,12 @@ test('zoom controls, keyboard and double-click do not throw', () => {
       geolocation: { lat: 1, lon: 2 },
     });
     expect(full).toEqual({
-      lat: 1, lon: 2, title: 'T', category: 'X', value: 'v', source: 'S', url: 'https://a.b', date: '2026-01-01',
+      id: '1,2,T', lat: 1, lon: 2, title: 'T', category: 'X', value: 'v', source: 'S', url: 'https://a.b', date: '2026-01-01',
     });
     // Missing geolocation and optional fields get safe defaults.
     const bare = api.normalizeEvent({ geolocation: {} });
     expect(bare).toEqual({
-      lat: undefined, lon: undefined, title: 'Untitled', category: 'Unknown', value: '', source: 'Unknown', url: '', date: '',
+      id: 'undefined,undefined,Untitled', lat: undefined, lon: undefined, title: 'Untitled', category: 'Unknown', value: '', source: 'Unknown', url: '', date: '',
     });
     expect(api.isPlottable(full)).toBe(true);
     expect(api.isPlottable(bare)).toBe(false);                       // no coordinates
