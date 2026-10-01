@@ -966,6 +966,11 @@ def build_events(milestones: list) -> dict:
             "date": m.get("date", ""),
             "geolocation": {"lat": lat, "lon": lon},
         }
+        # A record unified from several upstreams carries every source name so the
+        # map tooltip can offer each one, not just whichever survived the merge.
+        srcs = m.get("sources")
+        if isinstance(srcs, list) and len(srcs) > 1:
+            ev["sources"] = list(srcs)
         # Only present when the record is in the secondary tone of a two-tone
         # category; the front end defaults to the category's primary colour.
         tone = classify_tone(m)

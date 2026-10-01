@@ -558,6 +558,45 @@ def check_milestones(data: object) -> list[str]:
     return issues
 
 
+def check_human_rights(items: object) -> list[str]:
+    """Validate the Human Rights Violations layer.
+
+    A toggleable operational layer, not a milestone category: it is absent from
+    controls.events.categories, never appears in a category filter, and defaults
+    to OFF on the map. Entries render as landmarks with milestone tooltips, so they
+    are held to the same located-pair and lifecycle rules as the other layers.
+    """
+    issues: list[str] = []
+    if items is None:
+        # Optional until the first fetch writes the key.
+        return issues
+    if not isinstance(items, list):
+        return ["human_rights_violations must be a list"]
+    for i, item in enumerate(items):
+        if not isinstance(item, dict):
+            issues.append(f"human_rights_violations[{i}]: entry must be an object")
+            continue
+        if not isinstance(item.get("id"), str) or not item["id"].strip():
+            issues.append(f"human_rights_violations[{i}].id: must be a non-empty string")
+        if not isinstance(item.get("name"), str) or not item["name"].strip():
+            issues.append(f"human_rights_violations[{i}].name: must be a non-empty string")
+        if not _coord_located(item.get("lat"), item.get("lon")):
+            issues.append(
+                f"human_rights_violations[{i}]: must carry a located lat/lon pair "
+                f"(not null island), got ({item.get('lat')!r}, {item.get('lon')!r})"
+            )
+        issues.extend(
+            _check_lifecycle("human_rights_violations", i, item)
+        )
+        if not _valid_source_url(item.get("url")):
+            issues.append(
+                f"human_rights_violations[{i}].url: must be absent or an http(s) URL, "
+                f"got {item.get('url')!r}"
+            )
+    issues.extend(_check_unique_ids("human_rights_violations", items))
+    return issues
+
+
 def check_data(data: dict, filename: str) -> list[str]:
     if not isinstance(data, dict):
         return ["top-level JSON must be an object"]
@@ -575,6 +614,7 @@ def check_data(data: dict, filename: str) -> list[str]:
             + check_zones(data.get("conflict_zones"))
             + check_crisis_zones(data.get("crisis_zones"))
             + check_fleets(deployments, kind=kind)
+            + check_human_rights(data.get("human_rights_violations"))
         )
     if filename == "milestones.json":
         return check_milestones(data)

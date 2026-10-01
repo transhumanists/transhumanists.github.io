@@ -3,14 +3,36 @@
   'use strict';
 
   const CATEGORY_CONFIG = {
-    biotechnology: { name: 'Biotechnology', icon: '🧬', color: '#00e676' },
+    biotechnology: { name: 'Biotechnology & Biohacking', icon: '🧬', color: '#00e676', toneColor: '#00a651', tone: 'Biohacking' },
     computing_agi: { name: 'Computing & AGI', icon: '🧠', color: '#448aff' },
     quantum: { name: 'Quantum Physics', icon: '⚛️', color: '#b388ff' },
     energy: { name: 'Renewable Energy', icon: '⚡', color: '#ffd740' },
+    mobility: { name: 'Mobility & Logistics', icon: '🚚', color: '#ff5c9a' },
     cybersecurity: { name: 'Cybersecurity', icon: '🛡️', color: '#ff5252' },
+    robotics: { name: 'Robotics', icon: '🤖', color: '#6c7a89' },
     spaceflight: { name: 'Spaceflight & Aeronautics', icon: '🚀', color: '#00d4ff' },
     defense: { name: 'Military & Defense', icon: '🌍', color: '#ff9100' }
   };
+
+  // Two-tone categories render a second swatch so the split is visible without
+  // opening a card. Kept in step with CATEGORY_SUBTONES in worldmap.js and
+  // CATEGORY_SUBTONES in scripts/sync_milestones.py.
+  const SUBCATEGORY_CONFIG = {
+    'Biohacking': { color: '#00a651', label: 'Biohacking' }
+  };
+
+  // Category display name -> site key. The dashboard reads milestones.json, whose
+  // categories are keyed by snake_case but carry the display name on each
+  // category, so this resolves a record's category to its palette entry.
+  const DISPLAY_TO_CONFIG_KEY = Object.entries(CATEGORY_CONFIG).reduce((acc, [key, cfg]) => {
+    acc[cfg.name] = key;
+    return acc;
+  }, {});
+
+  function categoryConfigFor(category) {
+    const key = DISPLAY_TO_CONFIG_KEY[category];
+    return key ? CATEGORY_CONFIG[key] : null;
+  }
 
   // ---- Sample data (fallback) ----
   const SAMPLE_MILESTONES = [

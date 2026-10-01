@@ -1,6 +1,6 @@
 {
   "version": "1.1.0",
-  "last_update": "2026-10-01T09:52:38+00:00",
+  "last_update": "2026-10-01T22:36:45+00:00",
   "conflict_zones": [
     {
       "id": "zone-ukraine",
@@ -1147,6 +1147,68 @@
         "lon": 2.21
       },
       "last_news_year": 2024
+    }
+  ],
+  "human_rights_violations": [
+    {
+      "id": "hr-ae9f520080",
+      "name": "United Arab Emirates: A Year On, Critic Remains in Detention",
+      "region": "Western Asia",
+      "lat": 23.4,
+      "lon": 53.8,
+      "status": "active",
+      "start_date": "2026-09-30",
+      "note": "Click to expand Image Samuel Peter Oyay © Private (Beirut) – A South Sudanese political commentator remains in prison in the United Arab Emirates (UAE) without charge a year after his arrest, Human Rights Watch said today. Emirati authorities have not disclosed the legal basis fo",
+      "source": "Human Rights Watch",
+      "url": "https://www.hrw.org/news/2026/09/30/united-arab-emirates-a-year-on-critic-remains-in-detention"
+    },
+    {
+      "id": "hr-d953c8af48",
+      "name": "Niger Rejects Key Rights Recommendations at UN Review",
+      "region": "Western Africa",
+      "lat": 17.6,
+      "lon": 8.1,
+      "status": "active",
+      "start_date": "2026-09-25",
+      "note": "Niger has rejected key recommendations raised by United Nations member countries during its Universal Periodic Review (UPR) earlier this year, including calls to address arbitrary detention, discrimination against lesbian, gay, bisexual and transgender (LGBT) people, and accounta",
+      "source": "Human Rights Watch",
+      "url": "https://www.hrw.org/news/2026/09/25/niger-rejects-key-rights-recommendations-at-un-review"
+    },
+    {
+      "id": "hr-dfa1988a55",
+      "name": "Myanmar: Women Political Prisoners Tortured, Ill-treated",
+      "region": "Southeast Asia",
+      "lat": 21.9,
+      "lon": 95.9,
+      "status": "active",
+      "start_date": "2026-09-22",
+      "note": "Click to expand Image Former women political prisoners in Myanmar and their families reported the dangerous and sometimes deadly denial of prenatal and obstetric medical care to pregnant women. © 2026 Human Rights Watch (Bangkok) – The Myanmar military junta subjects women politi",
+      "source": "Human Rights Watch",
+      "url": "https://www.hrw.org/news/2026/09/22/myanmar-women-political-prisoners-tortured-ill-treated"
+    },
+    {
+      "id": "hr-db0b2f5ca4",
+      "name": "Belarusian human rights defenders Nasta Loika, Marfa Rabkova, and Valiantsin Stefanovich pardoned and deported to Lithuania",
+      "region": "Eastern Europe",
+      "lat": 53.9,
+      "lon": 27.6,
+      "status": "active",
+      "start_date": "2026-03-23",
+      "note": "Status: Released 31 October 2022 Woman human rights defender Nasta Loika sentenced to 15 days of administrative arrest under “petty hooliganism” charges On 31 October 2022, the Pieršamajski District Court in Minsk, Belarus sentenced woman human rights defender Nasta Loika under “",
+      "source": "Front Line Defenders",
+      "url": "https://www.frontlinedefenders.org/en/case/belarusian-human-rights-defenders-nasta-loika-marfa-rabkova-and-valiantsin-stefanovich-pardon-1"
+    },
+    {
+      "id": "hr-d935e09b51",
+      "name": "Human rights defender Ieva Raubiško sentenced for helping asylum seekers",
+      "region": "Eastern Europe",
+      "lat": 53.9,
+      "lon": 27.6,
+      "status": "active",
+      "start_date": "2025-08-26",
+      "note": "Status: Sentenced 16 February 2024 Refugee rights defender charged for assisting Syrian asylum seekers at the Latvia-Belarus border On 28 February 2024, the first court hearing in the trial of woman human rights defender Ieva Raubiško is scheduled to take place at the Rezekne cou",
+      "source": "Front Line Defenders",
+      "url": "https://www.frontlinedefenders.org/en/case/human-rights-defender-ieva-raubisko-sentenced-helping-asylum-seekers"
     }
   ]
 }

@@ -1,5 +1,5 @@
 {
-  "last_update": "2026-10-01T22:34:25+00:00",
+  "last_update": "2026-10-01T22:41:52+00:00",
   "version": "1.0.0",
   "events": [
     {
@@ -612,7 +612,11 @@
       "geolocation": {
         "lat": -13.5,
         "lon": -71.9
-      }
+      },
+      "sources": [
+        "Open Khipu Repository",
+        "Academic researchers (Open Khipu Repository)"
+      ]
     },
     {
       "id": "ev-ms-0ef07b4ce70b",
