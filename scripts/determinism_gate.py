@@ -13,6 +13,7 @@ the two drift.
 from __future__ import annotations
 
 import json
+import sys
 from pathlib import Path
 
 # Wall-clock stamps differ between any two runs by construction, so they are not
@@ -80,3 +81,54 @@ def assert_deterministic(dir_a: Path | str, dir_b: Path | str) -> None:
     if failures:
         raise AssertionError(
             "Regeneration is not deterministic:\n  " + "\n  ".join(failures))
+
+
+def milestone_count(data: dict) -> int:
+    """Total published milestones across every category."""
+    return sum(len(cat.get("milestones") or []) for cat in data.get("categories", {}).values())
+
+
+def assert_idempotent(run_dir: Path | str) -> None:
+    """Re-running the pipeline over its own output must not change the feed.
+
+    The duplicate unifier is applied to data that already contains its own merged
+    records. If it kept finding duplicates on a second pass, every scheduled run
+    would shrink the feed a little more - a slow, silent loss of history that no
+    per-record check would notice.
+    """
+    run_dir = Path(run_dir)
+    first = load_stable(run_dir / "data" / "milestones.json")
+    second = load_stable(run_dir / "data-remerged" / "milestones.json")
+    before, after = milestone_count(first), milestone_count(second)
+    if before != after:
+        raise AssertionError(
+            f"unifier is not idempotent: {before} -> {after} milestones after a second pass")
+
+
+def main(argv: list[str]) -> int:
+    """CLI entry point, so CI can run this without manipulating PYTHONPATH."""
+    if len(argv) < 2:
+        print(f"usage: {Path(__file__).name} <run-a-dir> <run-b-dir> [--idempotent <dir>]",
+              file=sys.stderr)
+        return 2
+    failures = compare_runs(argv[0], argv[1])
+    if failures:
+        print("::error::Regeneration is not deterministic:")
+        for failure in failures:
+            print(f"  {failure}")
+        return 1
+    print("Regeneration is deterministic")
+
+    if "--idempotent" in argv:
+        idx = argv.index("--idempotent")
+        try:
+            assert_idempotent(argv[idx + 1])
+        except AssertionError as exc:
+            print(f"::error::{exc}")
+            return 1
+        print("Unifier is idempotent")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))

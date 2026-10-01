@@ -123,6 +123,59 @@ class TestCompareRuns(unittest.TestCase):
                 gate.assert_deterministic(a, b)
 
 
+class TestIdempotence(unittest.TestCase):
+    """The unifier must be a fixed point.
+
+    It runs over data that already contains its own merged records. If it found
+    fresh duplicates on every pass, each scheduled run would shave a few records
+    off the published feed - a slow, silent loss of history that no per-record
+    check would ever catch.
+    """
+
+    def _run(self, root: Path, name: str, count: int) -> Path:
+        run = root / name
+        data = run / "data"
+        data.mkdir(parents=True)
+        (data / "milestones.json").write_text(json.dumps({
+            "last_update": "x",
+            "categories": {"quantum": {"milestones": [{"id": f"m{i}"} for i in range(count)]}},
+        }), encoding="utf-8")
+        return run
+
+    def test_milestone_count_sums_categories(self):
+        data = {"categories": {"a": {"milestones": [1, 2]}, "b": {"milestones": [3]}}}
+        self.assertEqual(gate.milestone_count(data), 3)
+
+    def test_milestone_count_tolerates_missing_milestones(self):
+        self.assertEqual(gate.milestone_count({"categories": {"a": {}}}), 0)
+
+    def test_equal_counts_pass(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            run = self._run(root, "a", 5)
+            remerged = run / "data-remerged"
+            remerged.mkdir()
+            (remerged / "milestones.json").write_text(json.dumps({
+                "last_update": "y",
+                "categories": {"quantum": {"milestones": [{"id": f"m{i}"} for i in range(5)]}},
+            }), encoding="utf-8")
+            gate.assert_idempotent(run)
+
+    def test_a_shrinking_feed_is_rejected(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            run = self._run(root, "a", 5)
+            remerged = run / "data-remerged"
+            remerged.mkdir()
+            (remerged / "milestones.json").write_text(json.dumps({
+                "last_update": "y",
+                "categories": {"quantum": {"milestones": [{"id": f"m{i}"} for i in range(3)]}},
+            }), encoding="utf-8")
+            with self.assertRaises(AssertionError) as ctx:
+                gate.assert_idempotent(run)
+            self.assertIn("not idempotent", str(ctx.exception))
+
+
 class TestWorkflowMirror(unittest.TestCase):
     """The workflow must invoke the tested module, not a private copy.
 
@@ -142,7 +195,14 @@ class TestWorkflowMirror(unittest.TestCase):
             self.skipTest("ci.yml not present")
         text = WORKFLOW.read_text(encoding="utf-8")
         self.assertIn("determinism_gate", text)
-        self.assertIn("assert_deterministic", text)
+
+    def test_workflow_checks_idempotence_through_the_module(self):
+        # The idempotence step was an inline heredoc; move it back and it stops
+        # being testable.
+        if not WORKFLOW.exists():
+            self.skipTest("ci.yml not present")
+        text = WORKFLOW.read_text(encoding="utf-8")
+        self.assertIn("--idempotent", text)
 
     def test_workflow_does_not_compare_bytes(self):
         # The original version diffed raw files and failed on every run because

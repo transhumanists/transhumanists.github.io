@@ -134,12 +134,7 @@ jobs:
             --today 2026-10-01
           # The comparison itself lives in scripts/determinism_gate.py so it is
           # unit-tested rather than only observable by watching a build go red.
-          python -c "
-          import sys
-          from determinism_gate import assert_deterministic
-          assert_deterministic('$RUNNER_TEMP/gen-a', '$RUNNER_TEMP/gen-b')
-          print('Regeneration is deterministic')
-          "
+          python scripts/determinism_gate.py "$RUNNER_TEMP/gen-a" "$RUNNER_TEMP/gen-b"
 
       - name: Regenerated data satisfies every published invariant
         run: |
@@ -150,21 +145,16 @@ jobs:
             "$RUNNER_TEMP/gen-a/data/events.json" \
             "$RUNNER_TEMP/gen-a/data/milestones.json"
           # And the unifier must be idempotent: re-running over its own output
-          # must not merge further records.
+          # must not merge further records. gen-c is written into a sibling
+          # directory that determinism_gate reads back.
           python scripts/sync_milestones.py \
             --output-dir "$RUNNER_TEMP/gen-c" \
             --upstream "$RUNNER_TEMP/gen-a/data/milestones.json" \
             --today 2026-10-01
-          python - <<'PY'
-          import json, sys
-          a = json.load(open(f"{__import__('os').environ['RUNNER_TEMP']}/gen-a/data/milestones.json", encoding="utf-8"))
-          c = json.load(open(f"{__import__('os').environ['RUNNER_TEMP']}/gen-c/data/milestones.json", encoding="utf-8"))
-          def count(d):
-              return sum(len(v["milestones"]) for v in d["categories"].values())
-          if count(a) != count(c):
-              sys.exit(f"unifier not idempotent: {count(a)} -> {count(c)}")
-          print(f"unifier idempotent: {count(a)} milestones")
-          PY
+          cp "$RUNNER_TEMP/gen-c/data/milestones.json" \
+             "$RUNNER_TEMP/gen-a/data-remerged/milestones.json"
+          python scripts/determinism_gate.py "$RUNNER_TEMP/gen-a" "$RUNNER_TEMP/gen-b" \
+            --idempotent "$RUNNER_TEMP/gen-a"
 
   data-check:
     name: Validate map data files
