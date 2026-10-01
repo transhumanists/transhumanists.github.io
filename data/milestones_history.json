@@ -1,5 +1,22 @@
 [
   {
+    "id": "ms-2a45f74dd818",
+    "category": "Biotechnology",
+    "subcategory": "ml_perturbation",
+    "title": "Deep learning perturbation models outperform baselines on calibrated metrics",
+    "value": null,
+    "unit": null,
+    "source": "Nature Biotechnology",
+    "url": "https://www.nature.com/articles/s41587-026-03307-w",
+    "date": "2026-10-01",
+    "geolocation": {
+      "lat": 32.0603,
+      "lon": 118.7969
+    },
+    "first_seen": "2026-10-01",
+    "last_seen": "2026-10-01"
+  },
+  {
     "id": "ms-8644b2a34d60",
     "category": "Biotechnology",
     "subcategory": "gene_therapy",
@@ -20,7 +37,7 @@
     "id": "ms-e0d7fb1f057f",
     "category": "Biotechnology",
     "subcategory": "gene_editing",
-    "title": "Lipid nanoparticles optimized for large RNA cargo and tissue targeting enhance in vivo genome editing",
+    "title": "Lipid nanoparticles optimized for large RNA cargo enhance in vivo genome editing",
     "value": null,
     "unit": null,
     "source": "Nature Biotechnology",
@@ -770,8 +787,8 @@
     "subcategory": "multimodal",
     "title": "ORACLE-2 Omni achieves 0.73 macro F1 for real-time transient classification using multimodal data",
     "value": 0.73,
-    "unit": "macro F1 score",
-    "source": "Zwicky Transient Facility (ZTF) collaboration",
+    "unit": "macro F1",
+    "source": "Zwicky Transient Facility collaboration",
     "url": "http://arxiv.org/abs/2607.00228v1",
     "date": "2026-06-30",
     "geolocation": {
@@ -887,10 +904,10 @@
     "id": "ms-d6824a356960",
     "category": "Computing & AGI",
     "subcategory": "benchmarks",
-    "title": "EgoSafetyBench: Egocentric Video Benchmark for Embodied VLM Safety Guards",
+    "title": "EgoSafetyBench: Diagnostic Egocentric Video Benchmark for Embodied VLM Safety Guards",
     "value": 1200,
     "unit": "scenarios",
-    "source": "Research institution",
+    "source": "Research Consortium",
     "url": "http://arxiv.org/abs/2607.00218v1",
     "date": "2026-06-30",
     "geolocation": {

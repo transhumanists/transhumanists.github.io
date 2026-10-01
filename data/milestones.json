@@ -1,5 +1,5 @@
 {
-  "last_update": "2026-10-01T03:04:35+00:00",
+  "last_update": "2026-10-01T17:53:36+00:00",
   "version": "1.0.0",
   "schema": "https://transhumanists.github.io/schema/milestone-v1.json",
   "categories": {
@@ -17,9 +17,30 @@
         "neuroscience",
         "gene_therapy",
         "immunotherapy",
-        "biosensors"
+        "biosensors",
+        "ml_perturbation"
       ],
       "milestones": [
+        {
+          "id": "ms-2a45f74dd818",
+          "title": "Deep learning perturbation models outperform baselines on calibrated metrics",
+          "summary": "Calibration-aware evaluation demonstrates deep learning models surpass baseline methods in perturbation prediction.",
+          "category": "Biotechnology",
+          "subcategory": "ml_perturbation",
+          "value": null,
+          "unit": null,
+          "source": "Nature Biotechnology",
+          "date": "2026-10-01",
+          "url": "https://www.nature.com/articles/s41587-026-03307-w",
+          "is_record": false,
+          "is_breakthrough": true,
+          "is_new": true,
+          "geolocation": {
+            "lat": 32.0603,
+            "lon": 118.7969
+          },
+          "category_key": "biotechnology"
+        },
         {
           "id": "ms-8644b2a34d60",
           "title": "New ionizable lipid LC-1 enables efficient LNP delivery of large gene editors to multiple tissues",
@@ -42,8 +63,8 @@
         },
         {
           "id": "ms-e0d7fb1f057f",
-          "title": "Lipid nanoparticles optimized for large RNA cargo and tissue targeting enhance in vivo genome editing",
-          "summary": "Researchers improved lipid nanoparticle design by incorporating RNA cargo size, enabling more efficient delivery of large RNA payloads for in vivo genome editing.",
+          "title": "Lipid nanoparticles optimized for large RNA cargo enhance in vivo genome editing",
+          "summary": "Researchers improved lipid nanoparticle design by incorporating RNA cargo size, enabling better tissue targeting and enhanced in vivo genome editing.",
           "category": "Biotechnology",
           "subcategory": "gene_editing",
           "value": null,
@@ -73,7 +94,7 @@
           "url": "https://www.nature.com/articles/s41587-026-03330-x",
           "is_record": true,
           "is_breakthrough": true,
-          "is_new": true,
+          "is_new": false,
           "geolocation": {
             "lat": 32.0603,
             "lon": 118.7969
@@ -93,7 +114,7 @@
           "url": "https://www.nature.com/articles/s41587-026-03328-5",
           "is_record": false,
           "is_breakthrough": true,
-          "is_new": true,
+          "is_new": false,
           "geolocation": {
             "lat": 32.0603,
             "lon": 118.7969
@@ -685,22 +706,6 @@
           "category_key": "quantum"
         },
         {
-          "id": "his-1997-12-01-ads-cft",
-          "category": "Quantum Physics",
-          "subcategory": "holographic_principle",
-          "title": "Maldacena formulates the AdS/CFT correspondence (holographic duality)",
-          "value": null,
-          "unit": null,
-          "source": "Institute for Advanced Study",
-          "url": "https://en.wikipedia.org/wiki/AdS/CFT_correspondence",
-          "date": "1997-12-01",
-          "geolocation": {
-            "lat": 40.3487,
-            "lon": -74.6564
-          },
-          "category_key": "quantum"
-        },
-        {
           "id": "q-001",
           "subcategory": "qubit_count",
           "title": "Physical qubits (superconducting)",
@@ -854,6 +859,22 @@
           "category_key": "quantum"
         },
         {
+          "id": "his-1997-12-01-ads-cft",
+          "category": "Quantum Physics",
+          "subcategory": "holographic_principle",
+          "title": "Maldacena formulates the AdS/CFT correspondence (holographic duality)",
+          "value": null,
+          "unit": null,
+          "source": "Institute for Advanced Study",
+          "url": "https://en.wikipedia.org/wiki/AdS/CFT_correspondence",
+          "date": "1997-12-01",
+          "geolocation": {
+            "lat": 40.3487,
+            "lon": -74.6564
+          },
+          "category_key": "quantum"
+        },
+        {
           "id": "his-1994-10-01-shor-algorithm",
           "category": "Quantum Physics",
           "subcategory": "quantum_resource_theory",
@@ -900,9 +921,7 @@
         "inference_cost",
         "code_generation",
         "math_reasoning",
-        "multimodal",
-        "legal_datasets",
-        "ocr"
+        "multimodal"
       ],
       "milestones": [
         {
@@ -939,6 +958,22 @@
           "is_record": false,
           "is_breakthrough": true,
           "is_new": false,
+          "geolocation": {
+            "lat": 0.0,
+            "lon": 0.0
+          },
+          "category_key": "computing_agi"
+        },
+        {
+          "id": "ms-2457b1872a8c",
+          "category": "Computing & AGI",
+          "subcategory": "graph_theory",
+          "title": "Proof of Graph Sandwich Conjecture",
+          "value": null,
+          "unit": null,
+          "source": "International mathematics collaboration",
+          "url": "https://www.quantamagazine.org/mathematicians-build-long-awaited-graph-sandwich-20260918/",
+          "date": "2026-09-18",
           "geolocation": {
             "lat": 0.0,
             "lon": 0.0
@@ -1031,6 +1066,22 @@
           "category_key": "computing_agi"
         },
         {
+          "id": "ms-0ef07b4ce70b",
+          "category": "Computing & AGI",
+          "subcategory": "legal_datasets",
+          "title": "ImmigrationReason: 12,375 USCIS AAO decisions dataset for legal reasoning",
+          "value": 12375,
+          "unit": "decisions",
+          "source": "Academic researchers",
+          "url": "http://arxiv.org/abs/2608.20391v1",
+          "date": "2026-06-30",
+          "geolocation": {
+            "lat": 0.0,
+            "lon": 0.0
+          },
+          "category_key": "computing_agi"
+        },
+        {
           "id": "ms-cede87aeb630",
           "title": "Seed2.0 model achieves world-leading reasoning and multimodal capabilities",
           "summary": "Seed2.0 model series demonstrates world-leading reasoning, visual understanding, and search capabilities for complex real-world tasks, serving hundreds of millions of users.",
@@ -1053,17 +1104,17 @@
         {
           "id": "ms-fc6083e0cc69",
           "title": "ORACLE-2 Omni achieves 0.73 macro F1 for real-time transient classification using multimodal data",
-          "summary": "A new multimodal AI model combining light curves, metadata, and images improves real-time classification of astronomical transients by up to 40% over light-curve-only methods, deployed on the ZTF aler",
+          "summary": "A new multimodal AI model deployed on the ZTF alert stream improves early classification of astronomical transients by up to 40% over light-curve-only methods.",
           "category": "Computing & AGI",
           "subcategory": "multimodal",
           "value": 0.73,
-          "unit": "macro F1 score",
-          "source": "Zwicky Transient Facility (ZTF) collaboration",
+          "unit": "macro F1",
+          "source": "Zwicky Transient Facility collaboration",
           "date": "2026-06-30",
           "url": "http://arxiv.org/abs/2607.00228v1",
           "is_record": true,
           "is_breakthrough": true,
-          "is_new": false,
+          "is_new": true,
           "geolocation": {
             "lat": 34.1377,
             "lon": -118.1253
@@ -1112,16 +1163,16 @@
         },
         {
           "id": "ms-d6824a356960",
-          "title": "EgoSafetyBench: Egocentric Video Benchmark for Embodied VLM Safety Guards",
-          "summary": "New 1,200-scenario egocentric video benchmark evaluates vision-language models as streaming safety guards for embodied agents using contrastive ladders at half-second granularity.",
+          "title": "EgoSafetyBench: Diagnostic Egocentric Video Benchmark for Embodied VLM Safety Guards",
+          "summary": "New 1,200-scenario egocentric video benchmark with half-second annotations and contrastive ladders evaluates VLMs as streaming safety guards for embodied agents across situational and visual-channel d",
           "category": "Computing & AGI",
           "subcategory": "benchmarks",
           "value": 1200,
           "unit": "scenarios",
-          "source": "Research institution",
+          "source": "Research Consortium",
           "date": "2026-06-30",
           "url": "http://arxiv.org/abs/2607.00218v1",
-          "is_record": false,
+          "is_record": true,
           "is_breakthrough": true,
           "is_new": false,
           "geolocation": {
@@ -1143,10 +1194,74 @@
           "url": "http://arxiv.org/abs/2607.00272v1",
           "is_record": true,
           "is_breakthrough": true,
-          "is_new": true,
+          "is_new": false,
           "geolocation": {
             "lat": 0.0,
             "lon": 0.0
+          },
+          "category_key": "computing_agi"
+        },
+        {
+          "id": "ms-10f19d45d95b",
+          "category": "Computing & AGI",
+          "subcategory": "pattern_mining",
+          "title": "ML-driven Structural Pattern Mining of Inka Khipus",
+          "value": 0.86,
+          "unit": "F1 score",
+          "source": "Open Khipu Repository",
+          "url": "http://arxiv.org/abs/2607.00185v1",
+          "date": "2026-06-30",
+          "geolocation": {
+            "lat": 0.0,
+            "lon": 0.0
+          },
+          "category_key": "computing_agi"
+        },
+        {
+          "id": "ms-fb74b2202f85",
+          "category": "Computing & AGI",
+          "subcategory": "ml_structural_analysis",
+          "title": "ML pipeline achieves 0.86 F1 classifying Inka khipu provenance and validates Santa Valley moiety structure",
+          "value": 0.86,
+          "unit": "F1 score",
+          "source": "Academic researchers (Open Khipu Repository)",
+          "url": "http://arxiv.org/abs/2607.00185v1",
+          "date": "2026-06-30",
+          "geolocation": {
+            "lat": 0.0,
+            "lon": 0.0
+          },
+          "category_key": "computing_agi"
+        },
+        {
+          "id": "ms-6a684b1bc5a3",
+          "category": "Computing & AGI",
+          "subcategory": "ocr",
+          "title": "LV-ROVER-MLT achieves record-low CER 0.0074 in Maltese OCR competition",
+          "value": 0.0074,
+          "unit": "CER",
+          "source": "LV-ROVER-MLT researchers",
+          "url": "http://arxiv.org/abs/2607.00250v5",
+          "date": "2026-01-01",
+          "geolocation": {
+            "lat": 0.0,
+            "lon": 0.0
+          },
+          "category_key": "computing_agi"
+        },
+        {
+          "id": "his-2023-10-12-vesuvius-challenge",
+          "category": "Computing & AGI",
+          "subcategory": "ml_structural_analysis",
+          "title": "Vesuvius Challenge - machine learning deciphers the first word from a charred Herculaneum papyrus",
+          "value": null,
+          "unit": null,
+          "source": "Vesuvius Challenge",
+          "url": "https://en.wikipedia.org/wiki/Herculaneum_papyri",
+          "date": "2023-10-12",
+          "geolocation": {
+            "lat": 40.8518,
+            "lon": 14.2681
           },
           "category_key": "computing_agi"
         },
@@ -1263,6 +1378,22 @@
           "category_key": "computing_agi"
         },
         {
+          "id": "his-1976-07-01-four-color-theorem",
+          "category": "Computing & AGI",
+          "subcategory": "graph_theory",
+          "title": "Four color theorem proven with the aid of a computer",
+          "value": null,
+          "unit": null,
+          "source": "University of Illinois Urbana-Champaign",
+          "url": "https://en.wikipedia.org/wiki/Four_color_theorem",
+          "date": "1976-07-01",
+          "geolocation": {
+            "lat": 40.102,
+            "lon": -88.2272
+          },
+          "category_key": "computing_agi"
+        },
+        {
           "id": "his-1971-11-15-intel-4004",
           "category": "Computing & AGI",
           "subcategory": "computing_power",
@@ -1307,126 +1438,6 @@
           "geolocation": {
             "lat": 39.9526,
             "lon": -75.1652
-          },
-          "category_key": "computing_agi"
-        },
-        {
-          "id": "ms-2457b1872a8c",
-          "category": "Computing & AGI",
-          "subcategory": "graph_theory",
-          "title": "Proof of Graph Sandwich Conjecture",
-          "value": null,
-          "unit": null,
-          "source": "International mathematics collaboration",
-          "url": "https://www.quantamagazine.org/mathematicians-build-long-awaited-graph-sandwich-20260918/",
-          "date": "2026-09-18",
-          "geolocation": {
-            "lat": 0.0,
-            "lon": 0.0
-          },
-          "category_key": "computing_agi"
-        },
-        {
-          "id": "his-1976-07-01-four-color-theorem",
-          "category": "Computing & AGI",
-          "subcategory": "graph_theory",
-          "title": "Four color theorem proven with the aid of a computer",
-          "value": null,
-          "unit": null,
-          "source": "University of Illinois Urbana-Champaign",
-          "url": "https://en.wikipedia.org/wiki/Four_color_theorem",
-          "date": "1976-07-01",
-          "geolocation": {
-            "lat": 40.102,
-            "lon": -88.2272
-          },
-          "category_key": "computing_agi"
-        },
-        {
-          "id": "ms-0ef07b4ce70b",
-          "title": "ImmigrationReason: 12,375 USCIS AAO decisions dataset for legal reasoning",
-          "summary": "A new structured dataset of 12,375 U.S. immigration appeals decisions spanning 2005–2026 enables legal reasoning research with per-criterion evidence labels, adjudicator critiques, and citations.",
-          "category": "Computing & AGI",
-          "subcategory": "legal_datasets",
-          "value": 12375,
-          "unit": "decisions",
-          "source": "Academic researchers",
-          "date": "2026-06-30",
-          "url": "http://arxiv.org/abs/2608.20391v1",
-          "is_record": true,
-          "is_breakthrough": true,
-          "is_new": true,
-          "geolocation": {
-            "lat": 0.0,
-            "lon": 0.0
-          },
-          "category_key": "computing_agi"
-        },
-        {
-          "id": "ms-10f19d45d95b",
-          "category": "Computing & AGI",
-          "subcategory": "pattern_mining",
-          "title": "ML-driven Structural Pattern Mining of Inka Khipus",
-          "value": 0.86,
-          "unit": "F1 score",
-          "source": "Open Khipu Repository",
-          "url": "http://arxiv.org/abs/2607.00185v1",
-          "date": "2026-06-30",
-          "geolocation": {
-            "lat": 0.0,
-            "lon": 0.0
-          },
-          "category_key": "computing_agi"
-        },
-        {
-          "id": "ms-fb74b2202f85",
-          "category": "Computing & AGI",
-          "subcategory": "ml_structural_analysis",
-          "title": "ML pipeline achieves 0.86 F1 classifying Inka khipu provenance and validates Santa Valley moiety structure",
-          "value": 0.86,
-          "unit": "F1 score",
-          "source": "Academic researchers (Open Khipu Repository)",
-          "url": "http://arxiv.org/abs/2607.00185v1",
-          "date": "2026-06-30",
-          "geolocation": {
-            "lat": 0.0,
-            "lon": 0.0
-          },
-          "category_key": "computing_agi"
-        },
-        {
-          "id": "his-2023-10-12-vesuvius-challenge",
-          "category": "Computing & AGI",
-          "subcategory": "ml_structural_analysis",
-          "title": "Vesuvius Challenge - machine learning deciphers the first word from a charred Herculaneum papyrus",
-          "value": null,
-          "unit": null,
-          "source": "Vesuvius Challenge",
-          "url": "https://en.wikipedia.org/wiki/Herculaneum_papyri",
-          "date": "2023-10-12",
-          "geolocation": {
-            "lat": 40.8518,
-            "lon": 14.2681
-          },
-          "category_key": "computing_agi"
-        },
-        {
-          "id": "ms-6a684b1bc5a3",
-          "title": "LV-ROVER-MLT achieves record-low CER 0.0074 in Maltese OCR competition",
-          "summary": "LV-ROVER-MLT wins DocEng 2026 Maltese OCR competition with held-out character error rate 0.0074, halving the next-best score and demonstrating synthetic fine-tuning plus multi-stream arbitration for l",
-          "category": "Computing & AGI",
-          "subcategory": "ocr",
-          "value": 0.0074,
-          "unit": "CER",
-          "source": "LV-ROVER-MLT researchers",
-          "date": "2026-01-01",
-          "url": "http://arxiv.org/abs/2607.00250v5",
-          "is_record": true,
-          "is_breakthrough": true,
-          "is_new": true,
-          "geolocation": {
-            "lat": 0.0,
-            "lon": 0.0
           },
           "category_key": "computing_agi"
         }
