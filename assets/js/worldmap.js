@@ -482,6 +482,12 @@ function canonicalCategory(cat) {
     } else {
       state.hiddenCategories.add(canonical);
     }
+    // Category visibility is part of a stack's membership: hiding one member
+    // can drop a location below the stacking threshold (and unhide can merge
+    // locations that used to be lone dots).
+    rebuildStackMap();
+    // A popup can be pointing at a milestone that is no longer drawn.
+    dismissTooltip();
     draw();
     updateStatsDisplay();
     renderLegend();
@@ -806,12 +812,23 @@ function canonicalCategory(cat) {
 
     drawTerminator();
 
-    // Filter events: if filterRecent is active, only show last 7 days events
-    const todayISO = new Date().toISOString().slice(0, 10);
-    state.events.forEach(ev => {
-      if (state.filterRecent && !isInRolling7Days(ev.date, todayISO)) return;
+    // Milestones: draw each visible location once. A location holding several
+    // milestones renders a single fan + count badge (or just the focused dot
+    // when one of its members is pinned/hovered) instead of one copy per member.
+    const todayISO = currentDayISO();
+    for (const ev of state.events) {
+      if (ev._hiddenByTimeline) continue;
+      if (state.filterRecent && !isInRolling7Days(ev.date, todayISO)) continue;
+      const stackEvts = stackForEvent(ev);
+      if (stackEvts.length > 1) {
+        // A focused member replaces the cluster so the pinned popup always has
+        // its dot on screen; otherwise the first member draws it for everyone.
+        const focused = stackEvts.find(m => m === state.selectedEvent || m === state.hoveredEvent);
+        const lead = focused || stackEvts[0];
+        if (lead !== ev) continue;
+      }
       drawEvent(ev);
-    });
+    }
 
     // Only draw military layers if filterMilitary is active
     if (state.filterMilitary) {
@@ -864,10 +881,16 @@ function canonicalCategory(cat) {
 
   let stackMap = null;
 
+  // Group the milestones that share a location so they can be drawn as one
+  // fanned marker with a count badge. Only milestones the visitor can actually
+  // see belong in a group: hidden by the year slider, hidden by the category
+  // legend, or outside the "this week" window are all excluded, which keeps the
+  // badge, the pager and hit-testing in agreement with what is on screen.
   function rebuildStackMap() {
     stackMap = new Map();
-    const todayISO = new Date().toISOString().slice(0, 10);
+    const todayISO = currentDayISO();
     for (const ev of state.events) {
+      if (ev._hiddenByTimeline) continue;
       if (!isCategoryVisible(ev.category)) continue;
       if (state.filterRecent && !isInRolling7Days(ev.date, todayISO)) continue;
       const key = stackKey(ev);
@@ -1342,11 +1365,10 @@ function drawEvent(ev) {
   function findEvent(px, py) {
     const hitRadius = HIT_RADIUS_BASE / state.transform.scale;
     const hitRadiusSq = hitRadius * hitRadius;
-    const todayISO = (typeof window !== 'undefined' && window.__WORLDMAP_TEST__?.getTodayISO)
-      ? window.__WORLDMAP_TEST__.getTodayISO()
-      : new Date().toISOString().slice(0, 10);
+    const todayISO = currentDayISO();
     for (let i = state.events.length - 1; i >= 0; i--) {
       const ev = state.events[i];
+      if (ev._hiddenByTimeline) continue;
       if (!isCategoryVisible(ev.category)) continue;
       // If filterRecent is active, skip events outside the 7-day window
       if (state.filterRecent && !isInRolling7Days(ev.date, todayISO)) continue;
@@ -1433,6 +1455,14 @@ function drawEvent(ev) {
     if (state.isDragging) {
       state.transform.tx += e.movementX;
       state.transform.ty += e.movementY;
+      // Once the press has clearly turned into a pan, drop the popup so it does
+      // not float over the map mid-drag. The selection itself is kept until
+      // mouseup, so a press that settles within the click threshold still
+      // toggles/pins instead of being swallowed by the drag.
+      if (state.pressX !== null && state.pressY !== null &&
+          Math.hypot(x - state.pressX, y - state.pressY) > CLICK_DRAG_THRESHOLD) {
+        hideTooltip();
+      }
       requestDraw();
       return;
     }
@@ -1527,7 +1557,9 @@ function drawEvent(ev) {
     state.pressY = Number.isFinite(y) ? y : null;
     state.isDragging = true;
     canvas.style.cursor = 'grabbing';
-    dismissTooltip();
+    // Deliberately no dismissal here: the press is only a candidate click, so
+    // a pinned popup survives until we know whether the pointer stayed put
+    // (toggle/pin) or travelled (drag/pan).
   }
 
   window.addEventListener('mouseup', handleMouseUp);
@@ -1541,22 +1573,26 @@ function drawEvent(ev) {
     // A press/release with (almost) no movement selects the event under the
     // cursor and pins its popup, keeping "View source" reachable and clickable.
     const moved = Math.hypot((state.pressX ?? x) - x, (state.pressY ?? y) - y);
-    if (moved <= CLICK_DRAG_THRESHOLD) {
+    if (moved > CLICK_DRAG_THRESHOLD) {
+      // The dots moved out from under the pointer, so any popup is now stale.
+      dismissTooltip();
+    } else {
       const hit = findEvent(x, y);
-      if (hit) {
-        if (state.selectedEvent && hit.id === state.selectedEvent.id) {
-          state.selectedEvent = null;
-          state.hoveredEvent = null;
-          hideTooltip();
-        } else {
-          state.selectedEvent = hit;
-          pinTooltipToEvent(hit);
-        }
-        draw();
+      if (!hit) {
+        // Empty canvas closes a pinned popup.
+        dismissTooltip();
+      } else if (hit === state.selectedEvent) {
+        // Clicking the pinned dot again unpins it (identity, not id: two
+        // milestones at one location can share a generated id).
+        dismissTooltip();
+      } else {
+        state.selectedEvent = hit;
+        pinTooltipToEvent(hit);
       }
     }
     state.pressX = null;
     state.pressY = null;
+    draw();
   }
 
   // Double-click to zoom in around the cursor
@@ -1679,7 +1715,8 @@ function drawEvent(ev) {
       const indexEl = document.createElement('span');
       indexEl.className = 'tt-pager-index';
       indexEl.style.cssText = 'font-family: var(--font-mono); font-size: 0.7rem; color: var(--fg-subtle); min-width: 2.5ch; text-align: center;';
-      indexEl.textContent = `1/${stackEvts.length}`;
+      // Start on the milestone actually shown, not always the first one.
+      indexEl.textContent = `${Math.max(0, stackEvts.indexOf(ev)) + 1}/${stackEvts.length}`;
       pager.append(prevBtn, indexEl, nextBtn);
       wrapper.appendChild(pager);
     }
@@ -1738,7 +1775,9 @@ function drawEvent(ev) {
     const stackEvts = stackForEvent(ev);
     if (stackEvts.length > 1) {
       state.stackKey = stackKey(ev);
-      state.stackIndex = 0;
+      // Track which member of the stack is on screen so prev/next move from here
+      // (the pager used to snap back to 1/N on every re-pin and never advanced).
+      state.stackIndex = Math.max(0, stackEvts.indexOf(ev));
       if (typeof tooltip.querySelector === 'function') {
         const pager = tooltip.querySelector('.tt-pager');
         if (pager) {
@@ -1758,19 +1797,20 @@ function drawEvent(ev) {
           
           const handlePrev = (e) => {
             e.stopPropagation();
+            const stack = stackForEvent(ev);
             if (state.stackIndex > 0) {
-              state.stackIndex--;
-              const newEv = stackForEvent(ev)[state.stackIndex];
+              const newEv = stack[state.stackIndex - 1];
+              if (!newEv) return;
               pinTooltipToEvent(newEv);
             }
           };
           
           const handleNext = (e) => {
             e.stopPropagation();
-            const total = stackForEvent(ev).length;
-            if (state.stackIndex < total - 1) {
-              state.stackIndex++;
-              const newEv = stackForEvent(ev)[state.stackIndex];
+            const stack = stackForEvent(ev);
+            if (state.stackIndex < stack.length - 1) {
+              const newEv = stack[state.stackIndex + 1];
+              if (!newEv) return;
               pinTooltipToEvent(newEv);
             }
           };
@@ -1804,6 +1844,21 @@ function drawEvent(ev) {
     state.stackKey = null;
     state.stackIndex = 0;
     hideTooltip();
+  }
+
+  // A popup pinned to a milestone that a filter just took off the map would
+  // otherwise linger over empty canvas, so drop it when its target disappears.
+  function eventIsHidden(ev) {
+    if (ev._hiddenByTimeline) return true;
+    if (!isCategoryVisible(ev.category)) return true;
+    return state.filterRecent && !isInRolling7Days(ev.date, currentDayISO());
+  }
+
+  function dismissTooltipIfTargetHidden() {
+    // Layer popups (zone / crisis / deployment) carry no category and are not
+    // affected by the milestone filters, so only milestones are checked.
+    const targets = [state.selectedEvent, state.hoveredEvent].filter((t) => t && typeof t.category === 'string');
+    if (targets.some(eventIsHidden)) dismissTooltip();
   }
 
   // ---- Zone/Deployment Tooltips ----
@@ -2038,6 +2093,14 @@ function drawEvent(ev) {
     return iso >= start && iso <= end;
   }
 
+  // Single source of truth for "today": rendering, hit-testing, stats and the
+  // stack map must all window the same day, otherwise a dot can be drawn but not
+  // clicked (or vice versa).
+  function currentDayISO() {
+    const hook = (typeof window !== 'undefined' && window.__WORLDMAP_TEST__)?.getTodayISO;
+    return hook ? hook() : new Date().toISOString().slice(0, 10);
+  }
+
   // Legacy ISO week function (kept for test compatibility)
   function weekBoundsISO(todayISO) {
     const d = new Date(todayISO + 'T00:00:00Z');
@@ -2090,6 +2153,7 @@ function drawEvent(ev) {
     state.filterRecent = !state.filterRecent;
     try { localStorage.setItem(STORAGE_KEY_FILTER_RECENT, String(state.filterRecent)); } catch (_) {}
     rebuildStackMap();
+    dismissTooltipIfTargetHidden();
     updateFilterButton('filter-recent', state.filterRecent);
     draw();
     updateStatsDisplay();
@@ -2698,6 +2762,9 @@ function filterEventsByYear(year) {
       ev._hiddenByTimeline = false;
     }
   });
+  // Stacks must track the slider, otherwise the count badge and the pager keep
+  // paging through milestones the visitor cannot see.
+  rebuildStackMap();
 }
 
 // Cluster the operational layers by year, mirroring how the slider clusters
@@ -2837,6 +2904,7 @@ function initTimelineSlider() {
     // Filter events by year and cluster the operational layers per year too.
     filterEventsByYear(timelineYear);
     filterLayersByYear(timelineYear);
+    dismissTooltipIfTargetHidden();
     draw();
     updateStatsDisplay();
   }
@@ -2973,10 +3041,15 @@ function initTimelineSlider() {
         timelineYear = Math.max(TIMELINE_MIN_YEAR, Math.min(getTimelineMaxYear(), year));
         filterEventsByYear(timelineYear);
         filterLayersByYear(timelineYear);
+        dismissTooltipIfTargetHidden();
         draw();
         updateStatsDisplay();
       },
       getTimelineYear: () => timelineYear,
+      // Stack membership for one location (visit order) — what the count badge
+      // and the pager are built from.
+      stackForEvent,
+      toggleCategory,
       // Pure geometry for the day/night terminator (deterministic tests): the
       // shared sunrise/sunset curve plus the unwrapped night band it feeds.
       buildTerminatorGeo,

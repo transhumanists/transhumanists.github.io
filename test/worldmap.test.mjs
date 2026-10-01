@@ -91,6 +91,21 @@ function makeEl() {
     fire(type, ev) { for (const fn of this.listeners[type] || []) fn(ev); },
     // Real DOM: a node contains itself (used by the keyboard handler guard).
     contains(c) { return c === this; },
+    // Enough of querySelector for the tooltip pager: '.class' lookups, deepest
+    // match wins left-to-right, searched depth-first over descendants.
+    querySelector(sel) {
+      const want = sel.replace(/^\./, '');
+      const matches = (n) => (n && n.className ? n.className.split(' ').includes(want) : false);
+      const walk = (nodes) => {
+        for (const n of nodes || []) {
+          if (matches(n)) return n;
+          const hit = walk(n.children);
+          if (hit) return hit;
+        }
+        return null;
+      };
+      return walk(this.children);
+    },
   };
   // textContent mirrors the DOM string property setter.
   Object.defineProperty(el, 'textContent', {
@@ -118,8 +133,10 @@ function makeCtx() {
     // so tests can assert exactly what shade covered which polygon (used by
     // the day/night terminator tests).
     fillsLog: [],
+    // Text log: { text, x, y } for every fillText() (stack count badges).
+    textsLog: [],
     _path: [],
-    resetCounters() { for (const k in this.counters) this.counters[k] = 0; this.fillsLog.length = 0; },
+    resetCounters() { for (const k in this.counters) this.counters[k] = 0; this.fillsLog.length = 0; this.textsLog.length = 0; },
   };
   ctx.createLinearGradient = () => ({ addColorStop() {} });
   for (const m of ['fillRect', 'beginPath', 'moveTo', 'lineTo', 'stroke', 'fill', 'closePath', 'setLineDash', 'arc', 'fillText', 'save', 'restore', 'setTransform']) {
@@ -131,6 +148,7 @@ function makeCtx() {
       else if (m === 'lineTo') { ctx.counters.lineTos++; ctx._path.push({ x: args[0], y: args[1] }); }
       else if (m === 'moveTo') { ctx.counters.moves++; ctx._path.push({ x: args[0], y: args[1] }); }
       else if (m === 'arc') ctx.counters.arcs++;
+      else if (m === 'fillText') ctx.textsLog.push({ text: String(args[0]), x: args[1], y: args[2] });
       else if (m === 'beginPath') ctx._path = [];
     };
   }
@@ -337,10 +355,10 @@ describe('worldmap', () => {
     expect(link).toBeDefined();
     expect(link.href).toBe('https://example.com/7');
     expect(link.target).toBe('_blank');
-    // mousedown dismisses the tooltip and starts a drag; release it for later tests.
-    canvas.fire('mousedown', {});
+    // A press alone no longer dismisses; clicking empty canvas closes the popup.
+    canvas.fire('mousedown', { clientX: 700, clientY: 480 });
+    windowObj.fire('mouseup', { clientX: 700, clientY: 480 });
     expect(tooltip.classList.contains('visible')).toBe(false);
-    windowObj.fire('mouseup', {});
   });
 
 test('tooltip canonicalizes legacy category names', () => {
@@ -373,10 +391,10 @@ test('tooltip canonicalizes legacy category names', () => {
     const wrapper = tooltip.children[0];
     expect(wrapper.children.find((c) => c.className === 'tt-title').textContent).toBe('UnknownX');
     expect(wrapper.children.find((c) => c.className === 'tt-value')).toBeUndefined();
-    // mousedown dismisses the tooltip and starts a drag; release it for later tests.
-    canvas.fire('mousedown', {});
+    // Leave no hover/popup state behind for the tests that follow.
+    canvas.fire('mousedown', { clientX: 700, clientY: 480 });
+    windowObj.fire('mouseup', { clientX: 700, clientY: 480 });
     expect(tooltip.classList.contains('visible')).toBe(false);
-    windowObj.fire('mouseup', {});
   });
 
   test('terminator toggle flips aria-pressed state', () => {
@@ -431,9 +449,11 @@ test('zoom controls, keyboard and double-click do not throw', () => {
     registeredEls['reset-view'].fire('click', {});
     canvas.fire('mousemove', { clientX: 400, clientY: 111, movementX: 0, movementY: 0 });
     expect(tooltip.classList.contains('visible')).toBe(true);
-    canvas.fire('mousedown', {});
+    // A real drag (press, travel, release) leaves the dot somewhere else, so the
+    // popup is stale and must be dropped on release.
+    canvas.fire('mousedown', { clientX: 400, clientY: 111 });
+    windowObj.fire('mouseup', { clientX: 430, clientY: 140 });
     expect(tooltip.classList.contains('visible')).toBe(false);
-    windowObj.fire('mouseup', {});
     // Pointing at the same dot again after the drag must re-open (previously the
     // stale hoveredEvent made the second hover only nudge the hidden tooltip).
     canvas.fire('mousemove', { clientX: 400, clientY: 111, movementX: 0, movementY: 0 });
@@ -445,7 +465,7 @@ test('zoom controls, keyboard and double-click do not throw', () => {
     // Cyber dot at (400, 111). Hover then click (press+release without moving).
     canvas.fire('mousemove', { clientX: 400, clientY: 111, movementX: 0, movementY: 0 });
     canvas.fire('mousedown', { clientX: 400, clientY: 111 });
-    expect(tooltip.classList.contains('visible')).toBe(false);      // press dismisses
+    expect(tooltip.classList.contains('visible')).toBe(true);      // press keeps it
     windowObj.fire('mouseup', { clientX: 400, clientY: 111 });
     expect(tooltip.classList.contains('visible')).toBe(true);       // release pins it
     const link = tooltip.children[0].children.find((c) => c.className === 'tt-link');
@@ -458,6 +478,23 @@ test('zoom controls, keyboard and double-click do not throw', () => {
     canvas.fire('mousedown', { clientX: 700, clientY: 480 });
     windowObj.fire('mouseup', { clientX: 700, clientY: 480 });
     expect(tooltip.classList.contains('visible')).toBe(false);
+  });
+
+  test('clicking the pinned dot again unpins it', () => {
+    registeredEls['reset-view'].fire('click', {});
+    canvas.fire('mousemove', { clientX: 400, clientY: 111, movementX: 0, movementY: 0 });
+    canvas.fire('mousedown', { clientX: 400, clientY: 111 });
+    windowObj.fire('mouseup', { clientX: 400, clientY: 111 });
+    expect(tooltip.classList.contains('visible')).toBe(true);
+    // Second click on the same dot toggles the popup off (it used to be a no-op
+    // because the press had already forgotten the selection).
+    canvas.fire('mousedown', { clientX: 400, clientY: 111 });
+    windowObj.fire('mouseup', { clientX: 400, clientY: 111 });
+    expect(tooltip.classList.contains('visible')).toBe(false);
+    // And the selection is gone, so hovering the dot again re-opens a plain popup.
+    canvas.fire('mousemove', { clientX: 402, clientY: 111, movementX: 0, movementY: 0 });
+    expect(tooltip.classList.contains('visible')).toBe(true);
+    expect(tooltip.querySelector('.tt-pager')).toBe(null);
   });
 
   test('Escape clears a pinned popup selection', () => {
@@ -805,5 +842,145 @@ test('zoom controls, keyboard and double-click do not throw', () => {
     // Restore shared fixtures.
     api.setLayers(LAYER_PAYLOAD.conflict_zones, LAYER_PAYLOAD.deployments, LAYER_PAYLOAD.crisis_zones);
     expect(Number(registeredEls['map-stat-conflicts'].textContent)).toBe(3);
+  });
+
+  // ---- Co-located milestones (stack) ----
+
+  // Three milestones at one spot; "Stack C" is a year older than the others so
+  // the timeline-slider interaction is observable. lat 10 / lon 20 projects to
+  // (444, 231) on the 800x520 stub.
+  const STACK_SPOT = { lat: 10, lon: 20 };
+  const STACKED_EVENTS = [
+    { id: 'st-a', title: 'Stack A', category: 'Biotechnology', value: '1', source: 'S', url: 'https://example.com/a', date: '2026-04-01', geolocation: { ...STACK_SPOT } },
+    { id: 'st-b', title: 'Stack B', category: 'Renewable Energy', value: '2', source: 'S', url: '', date: '2026-05-01', geolocation: { ...STACK_SPOT } },
+    { id: 'st-c', title: 'Stack C', category: 'Cybersecurity', value: '3', source: 'S', url: '', date: '2025-05-01', geolocation: { ...STACK_SPOT } },
+  ];
+  // Only the stack count badges are numeric; the terminator draws ☀/☽ glyphs.
+  const badgeTexts = () => ctx.textsLog.filter((t) => /^\d+$/.test(t.text)).map((t) => t.text);
+  const tooltipTitle = () => tooltip.children[0].children.find((c) => c.className === 'tt-title').textContent;
+  const pagerBtn = (cls) => tooltip.querySelector('.tt-pager').querySelector('.' + cls);
+  const pagerIndex = () => tooltip.querySelector('.tt-pager-index').textContent;
+  const clickAt = (x, y) => {
+    canvas.fire('mousedown', { clientX: x, clientY: y });
+    windowObj.fire('mouseup', { clientX: x, clientY: y });
+  };
+
+  test('co-located milestones share one count badge and one hit target', () => {
+    const api = windowObj.__WORLDMAP_TEST__;
+    api.setFilterRecent(false);
+    api.setEvents(STACKED_EVENTS);
+    api.setTimelineYear(2026);
+    // Two of the three milestones are on the map in 2026.
+    expect(api.stackForEvent(api.getEvents()[0]).map((e) => e.title)).toEqual(['Stack A', 'Stack B']);
+    // One location = one badge + one fan, no matter how many milestones it holds
+    // (each member used to redraw the whole cluster on top of the others).
+    ctx.resetCounters();
+    registeredEls['reset-view'].fire('click', {});
+    expect(badgeTexts()).toEqual(['2']);
+    // The dot under the cursor resolves to one of the visible members, never to
+    // the milestone the timeline clustered away.
+    canvas.fire('mousemove', { clientX: 444, clientY: 231, movementX: 0, movementY: 0 });
+    expect(tooltipTitle()).toBe('Stack B');
+    // Focusing a member (hover/pin) replaces the cluster with that single dot, so
+    // the count badge is not painted on top of the milestone being described.
+    canvas.fire('mousemove', { clientX: 60, clientY: 480, movementX: 0, movementY: 0 });  // drop hover
+    ctx.resetCounters();
+    canvas.fire('mousemove', { clientX: 444, clientY: 231, movementX: 0, movementY: 0 });
+    expect(tooltipTitle()).toBe('Stack B');
+    expect(badgeTexts()).toEqual([]);
+  });
+
+  test('the stack pager walks the co-located milestones from the one clicked', () => {
+    const api = windowObj.__WORLDMAP_TEST__;
+    api.setFilterRecent(false);
+    api.setEvents(STACKED_EVENTS);
+    api.setTimelineYear(2026);
+    canvas.fire('mousemove', { clientX: 444, clientY: 231, movementX: 0, movementY: 0 });
+    clickAt(444, 231);
+    // Opens on the member that was clicked (topmost), not always on 1/N.
+    expect(tooltipTitle()).toBe('Stack B');
+    expect(pagerIndex()).toBe('2/2');
+    expect(pagerBtn('tt-pager-prev').disabled).toBe(false);
+    expect(pagerBtn('tt-pager-next').disabled).toBe(true);
+    // Back to the first member; the index keeps up instead of snapping back.
+    pagerBtn('tt-pager-prev').fire('click', { stopPropagation() {} });
+    expect(tooltipTitle()).toBe('Stack A');
+    expect(pagerIndex()).toBe('1/2');
+    expect(pagerBtn('tt-pager-prev').disabled).toBe(true);
+    expect(pagerBtn('tt-pager-next').disabled).toBe(false);
+    // And forward again.
+    pagerBtn('tt-pager-next').fire('click', { stopPropagation() {} });
+    expect(tooltipTitle()).toBe('Stack B');
+    expect(pagerIndex()).toBe('2/2');
+    // Pressing the pinned dot again unpins the whole popup, pager included.
+    clickAt(444, 231);
+    expect(tooltip.classList.contains('visible')).toBe(false);
+    // Re-opened by hover rather than pinned: leaving the dot closes it again.
+    canvas.fire('mousemove', { clientX: 444, clientY: 231, movementX: 0, movementY: 0 });
+    expect(tooltip.classList.contains('visible')).toBe(true);
+    canvas.fire('mousemove', { clientX: 60, clientY: 480, movementX: 0, movementY: 0 });
+    expect(tooltip.classList.contains('visible')).toBe(false);
+  });
+
+  test('the year slider re-sizes a stack to the milestones still on the map', () => {
+    const api = windowObj.__WORLDMAP_TEST__;
+    api.setFilterRecent(false);
+    api.setEvents(STACKED_EVENTS);
+    // 2026 drops the 2025 milestone: badge counts 2 and the pager offers 2.
+    api.setTimelineYear(2026);
+    ctx.resetCounters();
+    registeredEls['reset-view'].fire('click', {});
+    expect(badgeTexts()).toEqual(['2']);
+    // A lone milestone renders as a plain dot, with no badge and no pager.
+    api.setTimelineYear(2025);
+    expect(api.stackForEvent(api.getEvents()[0]).map((e) => e.title)).toEqual(['Stack C']);
+    ctx.resetCounters();
+    registeredEls['reset-view'].fire('click', {});
+    expect(badgeTexts()).toEqual([]);
+    canvas.fire('mousemove', { clientX: 444, clientY: 231, movementX: 0, movementY: 0 });
+    expect(tooltipTitle()).toBe('Stack C');
+    expect(tooltip.querySelector('.tt-pager')).toBe(null);
+    // Back to the shared location: the badge returns.
+    api.setTimelineYear(2026);
+    ctx.resetCounters();
+    registeredEls['reset-view'].fire('click', {});
+    expect(badgeTexts()).toEqual(['2']);
+  });
+
+  test('hiding a category drops its milestone out of a shared stack', () => {
+    const api = windowObj.__WORLDMAP_TEST__;
+    api.setFilterRecent(false);
+    api.setEvents(STACKED_EVENTS);
+    api.setTimelineYear(2026);
+    expect(api.stackForEvent(api.getEvents()[0]).length).toBe(2);
+    // Hiding Biotechnology leaves a single visible milestone at the location.
+    api.toggleCategory('Biotechnology');
+    expect(api.stackForEvent(api.getEvents()[0]).map((e) => e.title)).toEqual(['Stack B']);
+    ctx.resetCounters();
+    registeredEls['reset-view'].fire('click', {});
+    expect(badgeTexts()).toEqual([]);
+    // Showing it again merges the location back into a stack.
+    api.toggleCategory('Biotechnology');
+    expect(api.stackForEvent(api.getEvents()[0]).length).toBe(2);
+    ctx.resetCounters();
+    registeredEls['reset-view'].fire('click', {});
+    expect(badgeTexts()).toEqual(['2']);
+  });
+
+  test('a pinned popup is dropped when the slider hides its milestone', () => {
+    const api = windowObj.__WORLDMAP_TEST__;
+    api.setFilterRecent(false);
+    api.setEvents(STACKED_EVENTS);
+    api.setTimelineYear(2026);
+    canvas.fire('mousemove', { clientX: 444, clientY: 231, movementX: 0, movementY: 0 });
+    clickAt(444, 231);
+    expect(tooltip.classList.contains('visible')).toBe(true);
+    // Sliding to 2025 removes every member of this stack, so the popup must not
+    // be left floating over empty canvas.
+    api.setTimelineYear(2025);
+    expect(tooltip.classList.contains('visible')).toBe(false);
+    // Restore the shared fixtures for the record.
+    api.setTimelineYear(2026);
+    api.setEvents(EVENT_PAYLOAD.events);
   });
 });
