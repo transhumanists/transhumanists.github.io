@@ -21,6 +21,7 @@ from datetime import date as _date
 from datetime import datetime as _datetime
 from datetime import timedelta as _timedelta
 from datetime import timezone as _timezone
+from itertools import combinations
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -262,6 +263,115 @@ def _valid_source_url(value: object) -> bool:
     return _SOURCE_URL_RE.match(value.strip()) is not None
 
 
+_DEDUPE_STOPWORDS = frozenset("""
+a an the of for and in on to new via using with at by from is are was were be been
+that this its as into over under more most less least than then which we our
+""".split())
+
+
+def _content_tokens(title: object) -> set:
+    if not isinstance(title, str):
+        return set()
+    return {
+        t
+        for t in re.findall(r"[a-z0-9]+", title.lower())
+        if t not in _DEDUPE_STOPWORDS and len(t) > 2
+    }
+
+
+# Ceiling on duplicate-report findings. If this fires the data is broken in bulk,
+# and printing one line per colliding pair would produce a six-figure log and a
+# multi-second validation step; the count is reported instead.
+_MAX_DUP_ISSUES = 50
+
+
+def check_duplicate_reports(events: list) -> list[str]:
+    """No two events may report the same metric on the same date.
+
+    Mirrors the identity rule in sync_milestones.unify_duplicate_milestones():
+    identical date + value + category is what makes two records the same reported
+    result. A surviving group means the dashboard counts one breakthrough twice
+    and the map stacks two dots on one location, so it is a data bug rather than a
+    cosmetic one.
+
+    Groups are only reported when the records also corroborate each other (shared
+    specific URL or a shared title token). Without that guard a shared value alone
+    would fire constantly - "100 qubits" and similar recur all the time - and the
+    check would be noise nobody keeps enabled.
+    """
+    issues: list[str] = []
+    if not isinstance(events, list):
+        return []
+    buckets: dict[tuple, list] = {}
+    for ev in events:
+        if not isinstance(ev, dict):
+            continue
+        value = ev.get("value")
+        date = ev.get("date")
+        if value in (None, "") or not isinstance(date, str):
+            continue
+        try:
+            value_key = round(float(value), 9)
+        except (TypeError, ValueError):
+            value_key = str(value).strip().lower()
+        # Normalise each record's corroboration keys once, outside the pair loop:
+        # tokenising titles is the only non-trivial work here and doing it per
+        # comparison would make a large group quadratic in string work.
+        buckets.setdefault((date, value_key, ev.get("category")), []).append((
+            ev,
+            str(ev.get("url") or "").strip().lower(),
+            _content_tokens(ev.get("title")),
+        ))
+
+    for key, group in buckets.items():
+        if len(group) < 2:
+            continue
+        for (a, url_a, tok_a), (b, url_b, tok_b) in combinations(group, 2):
+            if (url_a and url_a == url_b) or (tok_a and tok_b and (tok_a & tok_b)):
+                issues.append(
+                    f"duplicate report for date={key[0]} value={key[1]} "
+                    f"category={key[2]}: {a.get('id')} and {b.get('id')} "
+                    f"({a.get('title')!r} / {b.get('title')!r})"
+                )
+                if len(issues) >= _MAX_DUP_ISSUES:
+                    break
+        if len(issues) >= _MAX_DUP_ISSUES:
+            break
+    if len(issues) >= _MAX_DUP_ISSUES:
+        issues.append(
+            f"...duplicate-report findings capped at {_MAX_DUP_ISSUES}; "
+            "the feed is broadly duplicated, fix the upstream source"
+        )
+    return issues
+
+
+def check_event_ordering(events: list) -> list[str]:
+    """The published event list must be newest-first.
+
+    merge_feed() sorts by (date, category, title) descending and every consumer
+    inherits that order: build_events() writes it straight into events.json, the
+    dashboard's "recent highlights" carousel renders in list order, and the map
+    picks a co-located stack's lead member from event order. A transform in the
+    middle of the pipeline that regroups (rather than filters) therefore unsorts
+    the feed without tripping any per-record check - which is exactly how a
+    duplicate-unification step shipped once with the newest milestone buried at
+    index 54. Validated here so it cannot ship again.
+    """
+    issues: list[str] = []
+    if not isinstance(events, list):
+        return []
+    dates = [e.get("date") for e in events if isinstance(e, dict) and isinstance(e.get("date"), str)]
+    for i in range(1, len(dates)):
+        if dates[i] > dates[i - 1]:
+            issues.append(
+                f"events are not newest-first: position {i} ({dates[i]}) is later than "
+                f"position {i - 1} ({dates[i - 1]})"
+            )
+            # One report is enough; a fully reversed list would emit hundreds.
+            break
+    return issues
+
+
 def check_events(events: object) -> list[str]:
     issues: list[str] = []
     if not isinstance(events, list):
@@ -288,6 +398,11 @@ def check_events(events: object) -> list[str]:
         geo = ev.get("geolocation")
         if not isinstance(geo, dict) or not _coord_ok(geo.get("lat"), geo.get("lon")):
             issues.append(f"events[{i}]: geolocation must be a finite lat/lon pair in range")
+    # List-level invariants. Checked after the per-record pass so a malformed
+    # record cannot make the ordering comparison itself throw.
+    if not issues:
+        issues.extend(check_event_ordering(events))
+        issues.extend(check_duplicate_reports(events))
     return issues
 
 
@@ -404,6 +519,38 @@ def check_milestones(data: object) -> list[str]:
                 for flag in ("is_record", "is_breakthrough", "is_new"):
                     if flag in m and not isinstance(m[flag], bool):
                         issues.append(f"categories[{cat_key}].milestones[{i}].{flag}: must be a boolean if present")
+                # Written by unify_duplicate_milestones() when one reported result
+                # arrived from several sources. It must be a non-empty list of
+                # non-empty strings, and it only appears on a merged record, so it
+                # is validated rather than ignored.
+                if "sources" in m:
+                    srcs = m["sources"]
+                    if not isinstance(srcs, list) or not srcs:
+                        issues.append(
+                            f"categories[{cat_key}].milestones[{i}].sources: must be a non-empty list when present"
+                        )
+                    elif any(not isinstance(s, str) or not s.strip() for s in srcs):
+                        issues.append(
+                            f"categories[{cat_key}].milestones[{i}].sources: entries must be non-empty strings"
+                        )
+                    elif len(set(srcs)) != len(srcs):
+                        issues.append(
+                            f"categories[{cat_key}].milestones[{i}].sources: contains duplicate source names"
+                        )
+            # Per-category newest-first, for the same reason as events.json: the
+            # dashboard and the catalog render each bucket in list order.
+            dates = [
+                m.get("date")
+                for m in milestones
+                if isinstance(m, dict) and isinstance(m.get("date"), str)
+            ]
+            for i in range(1, len(dates)):
+                if dates[i] > dates[i - 1]:
+                    issues.append(
+                        f"categories[{cat_key}].milestones: not newest-first at position {i} "
+                        f"({dates[i]} after {dates[i - 1]})"
+                    )
+                    break
     return issues
 
 

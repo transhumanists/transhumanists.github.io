@@ -441,6 +441,229 @@ class TestCheckCrisisZones(unittest.TestCase):
         self.assertTrue(cd.check_crisis_zones({"not": "a list"}))
 
 
+class TestEventOrdering(unittest.TestCase):
+    """The published event list must stay newest-first.
+
+    This invariant shipped broken once: a pipeline step regrouped the feed instead
+    of filtering it, and every per-record check still passed while the newest
+    milestone ended up at index 54.
+    """
+
+    def _ev(self, i, title, value, date, url="https://example.com/x", cat="Biotechnology"):
+        return {
+            "id": i, "title": title, "category": cat, "value": value,
+            "date": date, "url": url, "geolocation": {"lat": 1, "lon": 1},
+        }
+
+    def test_newest_first_passes(self):
+        events = [
+            self._ev("a", "New", "1", "2026-09-01"),
+            self._ev("b", "Mid", "2", "2026-05-01"),
+            self._ev("c", "Old", "3", "2026-01-01"),
+        ]
+        self.assertEqual(cd.check_event_ordering(events), [])
+
+    def test_out_of_order_is_reported(self):
+        events = [
+            self._ev("a", "Old", "1", "2026-01-01"),
+            self._ev("b", "New", "2", "2026-09-01"),
+        ]
+        issues = cd.check_event_ordering(events)
+        self.assertEqual(len(issues), 1)
+        self.assertIn("newest-first", issues[0])
+
+    def test_reversed_list_reports_once_not_once_per_pair(self):
+        events = [self._ev(f"m{i}", f"T{i}", str(i), f"2026-01-{i + 1:02d}") for i in range(5)]
+        self.assertEqual(len(cd.check_event_ordering(events)), 1)
+
+    def test_single_and_empty_lists_pass(self):
+        self.assertEqual(cd.check_event_ordering([]), [])
+        self.assertEqual(cd.check_event_ordering([self._ev("a", "Only", "1", "2026-01-01")]), [])
+
+    def test_check_events_surfaces_the_ordering_violation(self):
+        events = [
+            self._ev("a", "Old", "1", "2026-01-01"),
+            self._ev("b", "New", "2", "2026-09-01"),
+        ]
+        self.assertTrue(any("newest-first" in i for i in cd.check_events(events)))
+
+
+class TestDuplicateReportDetection(unittest.TestCase):
+    """One reported result from several sources must not reach the feed twice."""
+
+    def _ev(self, i, title, value, date, url="https://example.com/x", cat="Computing & AGI"):
+        return {
+            "id": i, "title": title, "category": cat, "value": value,
+            "date": date, "url": url, "geolocation": {"lat": 1, "lon": 1},
+        }
+
+    def test_same_metric_same_date_same_category_is_reported(self):
+        events = [
+            self._ev("x1", "Khipu mining result achieved", "0.86", "2026-06-30",
+                     url="https://arxiv.org/abs/1"),
+            self._ev("x2", "Khipu mining result reported", "0.86", "2026-06-30",
+                     url="https://arxiv.org/abs/2"),
+        ]
+        issues = cd.check_duplicate_reports(events)
+        self.assertEqual(len(issues), 1)
+        self.assertIn("duplicate report", issues[0])
+        self.assertIn("x1", issues[0])
+        self.assertIn("x2", issues[0])
+
+    def test_shared_generic_url_alone_does_not_count(self):
+        # Two SpaceX flights citing spacex.com are two events, not one.
+        events = [
+            self._ev("a", "Starship payload to LEO", "156", "2026-02-01",
+                     url="https://spacex.com", cat="Spaceflight & Aeronautics"),
+            self._ev("b", "Falcon Heavy lift to GTO", "63", "2026-01-01",
+                     url="https://spacex.com", cat="Spaceflight & Aeronautics"),
+        ]
+        self.assertEqual(cd.check_duplicate_reports(events), [])
+
+    def test_two_ibm_milestones_in_one_article_are_not_duplicates(self):
+        events = [
+            self._ev("g", "IBM Condor 1121 qubit processor", "1121", "2026-03-01",
+                     url="https://en.wikipedia.org/wiki/IBM_Q_System_One", cat="Quantum Physics"),
+            self._ev("h", "IBM Eagle 127 qubit processor", "127", "2026-02-01",
+                     url="https://en.wikipedia.org/wiki/IBM_Q_System_One", cat="Quantum Physics"),
+        ]
+        self.assertEqual(cd.check_duplicate_reports(events), [])
+
+    def test_shared_value_with_unrelated_titles_is_not_a_duplicate(self):
+        events = [
+            self._ev("c", "Alpha protein folding benchmark", "0.86", "2026-03-02", url="https://a.com"),
+            self._ev("d", "Beta solar cell efficiency record", "0.86", "2026-03-01",
+                     url="https://b.com", cat="Renewable Energy"),
+        ]
+        self.assertEqual(cd.check_duplicate_reports(events), [])
+
+    def test_same_value_on_different_dates_is_not_a_duplicate(self):
+        events = [
+            self._ev("e", "Rigetti 100 qubit processor", "100", "2026-05-01", url="https://a.com",
+                     cat="Quantum Physics"),
+            self._ev("f", "Rigetti 100 qubit processor", "100", "2026-01-01", url="https://b.com",
+                     cat="Quantum Physics"),
+        ]
+        self.assertEqual(cd.check_duplicate_reports(events), [])
+
+    def test_shared_value_in_different_categories_is_not_a_duplicate(self):
+        events = [
+            self._ev("g", "Khipu provenance result", "0.86", "2026-03-01", url="https://a.com"),
+            self._ev("h", "Khipu provenance result", "0.86", "2026-03-01", url="https://b.com",
+                     cat="Biotechnology"),
+        ]
+        self.assertEqual(cd.check_duplicate_reports(events), [])
+
+    def test_metricless_records_are_never_duplicates(self):
+        events = [
+            self._ev("i", "Qualitative note one", None, "2026-03-01", url="https://a.com"),
+            self._ev("j", "Qualitative note two", None, "2026-03-01", url="https://b.com"),
+        ]
+        self.assertEqual(cd.check_duplicate_reports(events), [])
+
+    def test_numeric_and_string_spellings_are_caught(self):
+        events = [
+            self._ev("k", "Khipu mining result", 0.86, "2026-03-01", url="https://a.com"),
+            self._ev("l", "Khipu mining result restated", "0.860", "2026-03-01", url="https://b.com"),
+        ]
+        self.assertEqual(len(cd.check_duplicate_reports(events)), 1)
+
+    def test_shared_specific_url_is_enough_without_shared_words(self):
+        events = [
+            self._ev("m", "Totally unrelated wording alpha", "5", "2026-03-01",
+                     url="https://arxiv.org/abs/same"),
+            self._ev("n", "Nothing alike whatsoever beta", "5", "2026-03-01",
+                     url="https://arxiv.org/abs/same"),
+        ]
+        self.assertEqual(len(cd.check_duplicate_reports(events)), 1)
+
+    def test_findings_are_capped_so_a_broken_feed_cannot_flood_the_log(self):
+        # Every record shares date+value+category and a content token, so every
+        # pair collides. The check must stay bounded in time and output size.
+        events = [
+            {
+                "id": f"i{n}", "title": "Khipu mining result", "category": "Computing & AGI",
+                "value": "1", "date": "2026-01-01",
+                "url": f"https://e.com/{n}", "geolocation": {"lat": 1, "lon": 1},
+            }
+            for n in range(400)
+        ]
+        issues = cd.check_duplicate_reports(events)
+        self.assertLessEqual(len(issues), cd._MAX_DUP_ISSUES + 1)
+        self.assertIn("capped at", issues[-1])
+        self.assertTrue(any("duplicate report" in i for i in issues))
+
+    def test_published_event_file_is_clean(self):
+        path = Path(cd.ROOT) / "data" / "events.json"
+        if not path.exists():
+            self.skipTest("data/events.json not present")
+        events = json.loads(path.read_text(encoding="utf-8"))["events"]
+        self.assertEqual(cd.check_event_ordering(events), [])
+        self.assertEqual(cd.check_duplicate_reports(events), [])
+
+
+class TestMergedSourcesField(unittest.TestCase):
+    """The `sources` list written by duplicate unification must be well formed."""
+
+    def _milestone(self, i, **over):
+        base = {
+            "id": i, "title": "T", "category": "Computing & AGI",
+            "subcategory": "x", "value": "1", "date": "2026-01-01",
+            "url": "https://example.com", "geolocation": {"lat": 1, "lon": 1},
+        }
+        base.update(over)
+        return base
+
+    def _wrap(self, milestones):
+        return {
+            "version": "1.0.0", "last_update": "2026-01-01T00:00:00+00:00",
+            "categories": {
+                "computing_agi": {
+                    "name": "Computing & AGI", "icon": "x", "color": "#fff",
+                    "subcategories": ["x"], "milestones": milestones,
+                }
+            },
+        }
+
+    def test_valid_sources_list_passes(self):
+        data = self._wrap([self._milestone("a", sources=["Repo", "Paper"])])
+        self.assertEqual(cd.check_milestones(data), [])
+
+    def test_absent_sources_passes(self):
+        data = self._wrap([self._milestone("a")])
+        self.assertEqual(cd.check_milestones(data), [])
+
+    def test_empty_sources_is_rejected(self):
+        data = self._wrap([self._milestone("a", sources=[])])
+        self.assertTrue(any("sources" in i for i in cd.check_milestones(data)))
+
+    def test_non_list_sources_is_rejected(self):
+        data = self._wrap([self._milestone("a", sources="Repo")])
+        self.assertTrue(any("sources" in i for i in cd.check_milestones(data)))
+
+    def test_blank_source_entry_is_rejected(self):
+        data = self._wrap([self._milestone("a", sources=["Repo", "  "])])
+        self.assertTrue(any("sources" in i for i in cd.check_milestones(data)))
+
+    def test_duplicate_source_names_are_rejected(self):
+        data = self._wrap([self._milestone("a", sources=["Repo", "Repo"])])
+        self.assertTrue(any("duplicate source" in i for i in cd.check_milestones(data)))
+
+    def test_category_not_newest_first_is_rejected(self):
+        data = self._wrap([
+            self._milestone("a", date="2026-01-01"),
+            self._milestone("b", date="2026-09-01"),
+        ])
+        self.assertTrue(any("newest-first" in i for i in cd.check_milestones(data)))
+
+    def test_category_newest_first_passes(self):
+        data = self._wrap([
+            self._milestone("a", date="2026-09-01"),
+            self._milestone("b", date="2026-01-01"),
+        ])
+        self.assertEqual(cd.check_milestones(data), [])
+
+
 class TestCheckUniqueIds(unittest.TestCase):
     def test_duplicate_zone_id_fails(self):
         zones = [
