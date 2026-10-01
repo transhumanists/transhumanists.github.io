@@ -393,7 +393,6 @@ height: 0,
       selectedEvent: null,
       tooltipHover: false,
       stackIndex: 0,
-      stackKey: null,
       pressX: null,
       pressY: null,
       events: [],
@@ -1740,13 +1739,21 @@ function canonicalCategory(cat) {
       const pager = document.createElement('div');
       pager.className = 'tt-pager';
       pager.style.cssText = 'margin-top: 6px; display: flex; gap: 4px; justify-content: center; align-items: center;';
-      const prevBtn = document.createElement('span');
+      // Real <button>s, not <span>s: only form controls match the :disabled
+      // pseudo-class and honour the `disabled` property, so a <span> left the
+      // pager looking clickable at the first/last milestone and was unreachable
+      // by keyboard.
+      const prevBtn = document.createElement('button');
+      prevBtn.type = 'button';
       prevBtn.className = 'tt-pager-btn tt-pager-prev';
       prevBtn.title = 'Previous milestone';
+      prevBtn.setAttribute('aria-label', 'Previous milestone');
       prevBtn.textContent = '←';
-      const nextBtn = document.createElement('span');
+      const nextBtn = document.createElement('button');
+      nextBtn.type = 'button';
       nextBtn.className = 'tt-pager-btn tt-pager-next';
       nextBtn.title = 'Next milestone';
+      nextBtn.setAttribute('aria-label', 'Next milestone');
       nextBtn.textContent = '→';
       const indexEl = document.createElement('span');
       indexEl.className = 'tt-pager-index';
@@ -1810,7 +1817,6 @@ function canonicalCategory(cat) {
 
     const stackEvts = stackForEvent(ev);
     if (stackEvts.length > 1) {
-      state.stackKey = stackKey(ev);
       // Track which member of the stack is on screen so prev/next move from here
       // (the pager used to snap back to 1/N on every re-pin and never advanced).
       state.stackIndex = Math.max(0, stackEvts.indexOf(ev));
@@ -1860,7 +1866,6 @@ function canonicalCategory(cat) {
         }
       }
     } else {
-      state.stackKey = null;
       state.stackIndex = 0;
     }
   }
@@ -1877,7 +1882,6 @@ function canonicalCategory(cat) {
     state.selectedEvent = null;
     state.hoveredEvent = null;
     state.hoveredType = null;
-    state.stackKey = null;
     state.stackIndex = 0;
     hideTooltip();
   }
@@ -2092,10 +2096,19 @@ function canonicalCategory(cat) {
   // ---- Stats computation ----
   // Current week = Monday..Sunday (ISO week) containing `todayISO` (YYYY-MM-DD).
   // Rolling 7-day window from today (inclusive)
+  // The window only moves when the day does, but isInRolling7Days() is called
+  // once per event per frame (draw runs ~10x/s) and rebuilt two Date objects
+  // every time. Memoise on the day it was computed for - a new todayISO (real
+  // midnight rollover or the test clock) recomputes and replaces the entry.
+  let rollingBoundsDay = null;
+  let rollingBounds = null;
   function rolling7DayBounds(todayISO) {
+    if (rollingBoundsDay === todayISO) return rollingBounds;
     const end = new Date(todayISO + 'T00:00:00Z');
     const start = new Date(end.getTime() - 6 * 86400000); // 6 days back = 7 days total
-    return { start: start.toISOString().slice(0, 10), end: end.toISOString().slice(0, 10) };
+    rollingBoundsDay = todayISO;
+    rollingBounds = { start: start.toISOString().slice(0, 10), end: end.toISOString().slice(0, 10) };
+    return rollingBounds;
   }
 
   function parseDateToISO(dateStr) {
@@ -2155,14 +2168,16 @@ function canonicalCategory(cat) {
   }
 
   function computeStats() {
-     const counts = {
-       breakthroughs: 0, conflicts: 0, fleets: 0, crises: 0,
-       conflictsActive: 0, conflictsConcluded: 0,
-       fleetsActive: 0, fleetsConcluded: 0,
-       crisesActive: 0, crisesConcluded: 0
-     };
-     const todayISO = new Date().toISOString().slice(0, 10);
-     state.events.forEach(ev => {
+    const counts = {
+      breakthroughs: 0, conflicts: 0, fleets: 0, crises: 0,
+      conflictsActive: 0, conflictsConcluded: 0,
+      fleetsActive: 0, fleetsConcluded: 0,
+      crisesActive: 0, crisesConcluded: 0
+    };
+    // Must be the same "today" the stack map and hit-testing window on, or the
+    // headline count can disagree with what is drawn on the map.
+    const todayISO = currentDayISO();
+    state.events.forEach(ev => {
        if (!isCategoryVisible(ev.category)) return;
        // Always count breakthroughs in the last 7 days (static count)
        if (!isInRolling7Days(ev.date, todayISO)) return;
@@ -2580,6 +2595,9 @@ const fragment = document.createDocumentFragment();
         lon = geo.lon;
       }
     }
+    // Built field by field rather than spread from `e`, so an upstream payload
+    // cannot smuggle in a cached `_stackKey` (or any other internal flag) that
+    // would make two different events collapse into one stack.
     return {
       id: e.id || `${lat},${lon},${e.title ?? 'Untitled'}`,
       lat,

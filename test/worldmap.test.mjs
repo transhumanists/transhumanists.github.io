@@ -210,7 +210,10 @@ const documentObj = {
   },
   addEventListener() {},
   removeEventListener() {},
-  createElement: () => makeEl(),
+  // tagName is what decides whether `disabled`/`:disabled` mean anything in a
+  // real browser, so the fake records it instead of pretending every node is
+  // the same element.
+  createElement: (tag) => Object.assign(makeEl(), { tagName: String(tag || '').toUpperCase() }),
   createDocumentFragment() {
     const f = { isFragment: true, children: [] };
     f.appendChild = (c) => { f.children.push(c); return c; };
@@ -275,9 +278,13 @@ function legendValue(label) {
 
 describe('worldmap', () => {
   test('loads events and renders stat tiles with canonical category mapping', () => {
-    // Fixture events are dated 2026-08-* (outside the current ISO week vs the
-    // real clock), so "breakthroughs this week" must be 0, not a lifetime count.
-    expect(Number(registeredEls['map-stat-active'].textContent)).toBe(0);
+    // "breakthroughs this week" counts only the categories mapped to
+    // map-stat-active, inside the rolling 7-day window of the *test* clock
+    // (2026-08-08 -> 08-02..08-08). That is en-old + en-001 (Renewable Energy)
+    // and q-old (Quantum, via the legacy alias). Deliberately excluded:
+    // bio-001 (08-01, one day before the window), def-old/def-001 (routed to
+    // map-stat-fleets) and cyber-001 (routed to map-stat-conflicts).
+    expect(Number(registeredEls['map-stat-active'].textContent)).toBe(3);
     // Conflicts/fleets now always show actual counts regardless of filterMilitary
     expect(Number(registeredEls['map-stat-conflicts'].textContent)).toBe(3);
     expect(Number(registeredEls['map-stat-fleets'].textContent)).toBe(9);
@@ -565,6 +572,42 @@ test('zoom controls, keyboard and double-click do not throw', () => {
     });
     const sum = legendKeys.reduce((acc, k) => acc + Number(legendValue(k)), 0);
     expect(sum).toBe(known.length);
+  });
+
+  test('stats window on the same day the map does, not the wall clock', () => {
+    const api = windowObj.__WORLDMAP_TEST__;
+    // computeStats() used to read new Date() directly while the stack map and
+    // hit-testing read currentDayISO(). Move the clock a week forward and the
+    // two must still agree: no fixture event may fall in the new window.
+    const before = api.computeStats().breakthroughs;
+    expect(before).toBe(3);
+    setTestDay('2026-09-30');
+    try {
+      expect(api.computeStats().breakthroughs).toBe(0);
+      // The rolling bounds cache is keyed on the day, so it must not serve
+      // the previous day's window after the clock moves.
+      expect(api.isInCurrentWeek('2026-08-03', '2026-09-30')).toBe(false);
+    } finally {
+      setTestDay(TEST_DAY);
+    }
+    expect(api.computeStats().breakthroughs).toBe(3);
+  });
+
+  test('normalizeEvent drops any cached stack key from the payload', () => {
+    const api = windowObj.__WORLDMAP_TEST__;
+    // A stale/hostile `_stackKey` must not survive normalisation: it would make
+    // this event share a stack (and therefore a count badge) with an unrelated
+    // location, hiding one of them from the map.
+    const ev = api.normalizeEvent({
+      title: 'T', category: 'Biotechnology', value: 'v', source: 'S',
+      url: 'https://a.b', date: '2026-01-01',
+      geolocation: { lat: 10, lon: 20 },
+      _stackKey: '999,999',
+    });
+    expect(ev._stackKey).toBeUndefined();
+    expect(Object.keys(ev).sort()).toEqual([
+      'category', 'date', 'id', 'lat', 'lon', 'source', 'title', 'url', 'value',
+    ]);
   });
 
   test('normalizeEvent fills defaults and isPlottable filters unusable events', () => {
@@ -961,6 +1004,30 @@ test('zoom controls, keyboard and double-click do not throw', () => {
     expect(tooltip.classList.contains('visible')).toBe(true);
     canvas.fire('mousemove', { clientX: 60, clientY: 480, movementX: 0, movementY: 0 });
     expect(tooltip.classList.contains('visible')).toBe(false);
+  });
+
+  test('pager arrows are real buttons so the disabled state and keyboard reach work', () => {
+    const api = windowObj.__WORLDMAP_TEST__;
+    api.setFilterRecent(false);
+    api.setEvents(STACKED_EVENTS);
+    api.setTimelineYear(2026);
+    canvas.fire('mousemove', { clientX: 444, clientY: 220, movementX: 0, movementY: 0 });
+    clickAt(444, 220);
+    const prev = pagerBtn('tt-pager-prev');
+    const next = pagerBtn('tt-pager-next');
+    // A <span> silently accepts `disabled` but never matches :disabled, so the
+    // arrow kept looking clickable at the ends and could not be tabbed to.
+    expect(prev.tagName).toBe('BUTTON');
+    expect(next.tagName).toBe('BUTTON');
+    // type=button keeps them from submitting anything if the tooltip is ever
+    // nested in a form.
+    expect(prev.type).toBe('button');
+    expect(next.type).toBe('button');
+    expect(prev.getAttribute('aria-label')).toBe('Previous milestone');
+    expect(next.getAttribute('aria-label')).toBe('Next milestone');
+    // Opened on 2/2: prev is live, next is genuinely disabled.
+    expect(prev.disabled).toBe(false);
+    expect(next.disabled).toBe(true);
   });
 
   test('the year slider re-sizes a stack to the milestones still on the map', () => {
