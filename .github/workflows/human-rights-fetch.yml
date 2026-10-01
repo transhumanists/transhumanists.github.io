@@ -47,10 +47,14 @@ jobs:
         # Gate BEFORE the commit: a malformed candidate must never reach main.
         # fetch_human_rights.py validates its own rows too, but this also catches
         # damage to the layers written by the other jobs sharing this file.
+        #
+        # Unit tests deliberately do NOT run here. CI runs
+        # scripts/test_fetch_human_rights.py on every push and this workflow runs
+        # against main, so the code is already tested before it gets here. What
+        # this job must gate on is the DATA it is about to publish, which is what
+        # check_data.py verifies. Re-testing the code at fetch time would add a
+        # dependency and let a test regression block an unrelated data refresh.
         run: python scripts/check_data.py
-
-      - name: Self-tests
-        run: python -m pytest scripts/test_fetch_human_rights.py -q
 
       - name: Commit and push changes
         if: ${{ inputs.dry_run != 'true' }}

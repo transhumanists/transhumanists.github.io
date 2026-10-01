@@ -85,6 +85,9 @@ jobs:
       - name: Shared geo hints tests
         run: python scripts/test_geo_hints.py
 
+      - name: Workflow lint tests
+        run: python scripts/test_workflows.py
+
       - name: Full pytest suite
         run: python -m pytest scripts/
 
