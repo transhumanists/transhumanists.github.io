@@ -396,8 +396,28 @@ body {
   margin-left: auto;
   color: var(--fg-subtle);
 }
-.map-tooltip .tt-title { font-weight: 700; color: var(--accent); margin-bottom: 4px; }
-.map-tooltip .tt-category { font-family: var(--font-mono); font-size: 0.7rem; color: var(--fg-subtle); text-transform: uppercase; letter-spacing: 0.06em; }
+/* Shown when the milestone feed could not be loaded, so an empty map is never
+   mistaken for "no breakthroughs recorded". */
+.map-data-notice {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  margin: 0;
+  max-width: 78%;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: rgba(6, 11, 20, 0.86);
+  color: var(--fg-muted);
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  line-height: 1.35;
+  text-align: center;
+  pointer-events: none;
+  z-index: 6;
+}
+.map-tooltip .tt-title { font-weight: 700; color: var(--accent); margin-bottom: 4px; }.map-tooltip .tt-category { font-family: var(--font-mono); font-size: 0.7rem; color: var(--fg-subtle); text-transform: uppercase; letter-spacing: 0.06em; }
 .map-tooltip .tt-value { color: var(--green); font-family: var(--font-mono); font-weight: 700; }
 
 /* MAP TIMELINE SLIDER - Ultra Minimal, White Transparent */

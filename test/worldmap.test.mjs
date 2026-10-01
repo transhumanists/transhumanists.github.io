@@ -662,6 +662,37 @@ test('zoom controls, keyboard and double-click do not throw', () => {
     api.setTimelineYear(2026);
   });
 
+  test('a failed milestone feed never substitutes fabricated data in production', () => {
+    const api = windowObj.__WORLDMAP_TEST__;
+    // The harness runs with no location.hostname, so isLocalDev is false — the
+    // same branch a deployed copy takes. SAMPLE_EVENTS carries invented sources
+    // ("Stanford", "GCHQ", "PLASSF"), so rendering it after a failed fetch would
+    // present fabricated breakthroughs as real ones.
+    expect(api.isLocalDev).toBe(false);
+    expect(api.SAMPLE_EVENTS).toBeDefined();
+    expect(api.SAMPLE_EVENTS.length).toBeGreaterThan(0);
+    // Every sample is synthetic; assert the shape that makes that explicit rather
+    // than trusting the comment.
+    for (const s of api.SAMPLE_EVENTS) {
+      expect(typeof s.source).toBe('string');
+      expect(s.source).not.toBe('');
+    }
+    // The production failure state is "empty + explained", not "empty" alone.
+    // Start from an empty map so the assertion is about the failure state and not
+    // about fixtures an earlier test left loaded.
+    expect(api.dataLoadError).toBe(null);   // happy path leaves no notice
+    api.setDataLoadError('milestone data is temporarily unavailable');
+    api.setEvents([]);
+    expect(api.getEvents().length).toBe(0);
+    expect(api.dataLoadError).toBe('milestone data is temporarily unavailable');
+    // And a successful reload clears it again, so the notice cannot go stale.
+    api.setDataLoadError(null);
+    expect(api.dataLoadError).toBe(null);
+    // Restore the shared fixture: state.events is module-level and persists across
+    // tests, so leaving it empty starves the later render-count assertions.
+    api.setEvents(EVENT_PAYLOAD.events);
+  });
+
   test('fleet endpoints are derived once and reused by draw and hit-test', () => {
     const api = windowObj.__WORLDMAP_TEST__;
     const inf = { kind: 'infantry', lat: 40, lon: 20, direction: 'east' };

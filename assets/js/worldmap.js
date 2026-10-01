@@ -301,16 +301,21 @@
       geocodeCacheDirty = false;
     } catch (_) {}
   }
+  // Flush and stop the periodic writer. Named (not an inline arrow) so cleanup()
+  // can detach it: the listeners used to be anonymous, so a teardown that did not
+  // happen to be a page unload left them attached to a dead interval. Idempotent,
+  // because both beforeunload and pagehide fire on a normal navigation.
+  function flushAndStopGeocodeCache() {
+    saveGeocodeCache();
+    if (geocodeCacheIntervalId) {
+      clearInterval(geocodeCacheIntervalId);
+      geocodeCacheIntervalId = null;
+    }
+  }
   // Persist cache periodically and on unload
   geocodeCacheIntervalId = setInterval(saveGeocodeCache, 30000);
-  window.addEventListener('beforeunload', () => {
-    saveGeocodeCache();
-    if (geocodeCacheIntervalId) clearInterval(geocodeCacheIntervalId);
-  });
-  window.addEventListener('pagehide', () => {
-    saveGeocodeCache();
-    if (geocodeCacheIntervalId) clearInterval(geocodeCacheIntervalId);
-  });
+  window.addEventListener('beforeunload', flushAndStopGeocodeCache);
+  window.addEventListener('pagehide', flushAndStopGeocodeCache);
 
   // Known institution coordinates for intelligent geocoding fallback
   const INSTITUTION_COORDS = {
@@ -507,6 +512,9 @@ height: 0,
       // Test/demo override for the sun position (set via the __WORLDMAP_TEST__
       // hook so day/night rendering is deterministic in the test suite).
       sunPositionOverride: null,
+      // Non-null when the milestone feed could not be loaded in production. Drives
+      // the on-map notice so an empty map is explained rather than mysterious.
+      dataLoadError: null,
       hiddenCategories: new Set(),
       foldedCategories: false,  // whether the entire categories section is folded
       zones: [],
@@ -636,9 +644,15 @@ function canonicalCategory(cat) {
     return state.height / (MAP_LAT_LIMIT * 2);
   }
 
-  // ---- Sample data (fallback) ----
-  // Note: Dates are kept recent (within last 7 days of typical deploy) so the "this week" filter works in local dev.
-  // For production, real data is loaded from /data/events.json via fetch.
+  // ---- Sample data (LOCAL DEV ONLY) ----
+  // These entries are fabricated: the sources, figures and dates are invented so
+  // the widget has something to draw while iterating on layout. They must never
+  // reach a real visitor, because this site presents itself as a live tracker of
+  // actual breakthroughs and an indistinguishable fake is worse than an empty
+  // map. loadEvents() therefore only falls back to them on a local origin (see
+  // isLocalDev) and otherwise shows an honest "data unavailable" state.
+  // Dates sit within 7 days of a typical deploy so the "this week" filter works
+  // during local development.
   const SAMPLE_EVENTS = [
     { lat: 37.7749, lon: -122.4194, title: 'CRISPR Cas-13b phase-3 trial cleared', category: 'Biotechnology', value: '50 patients', source: 'Stanford', date: '2026-09-22' },
     { lat: 47.3769, lon: 8.5417, title: 'ETH Zurich - 137 qubit entanglement', category: 'Quantum Physics', value: '137 qubits', source: 'ETH Zurich', date: '2026-09-21' },
@@ -2516,6 +2530,32 @@ function canonicalCategory(cat) {
     }
   }
 
+  // ---- Milestone data notice ----
+  // An empty map with no explanation reads as "no breakthroughs recorded", which
+  // is a different and false claim from "we could not reach the data". One small
+  // live-region line, built once and reused, fixes the difference for assistive
+  // tech as well as sighted visitors.
+  let dataNoticeEl = null;
+  function renderDataNotice() {
+    const mapEl = document.getElementById('world-map');
+    if (!mapEl) return;
+    const message = state.dataLoadError;
+    if (!message) {
+      if (dataNoticeEl && dataNoticeEl.parentNode) dataNoticeEl.remove();
+      dataNoticeEl = null;
+      return;
+    }
+    if (!dataNoticeEl || !dataNoticeEl.parentNode) {
+      dataNoticeEl = document.createElement('p');
+      dataNoticeEl.id = 'map-data-notice';
+      dataNoticeEl.className = 'map-data-notice';
+      dataNoticeEl.setAttribute('role', 'status');
+      dataNoticeEl.setAttribute('aria-live', 'polite');
+      mapEl.appendChild(dataNoticeEl);
+    }
+    dataNoticeEl.textContent = message;
+  }
+
   // ---- Legend ----
   // Humanized legend/count breakdown for a layer list (active vs concluded).
   function layerCountTitle(items) {
@@ -2767,6 +2807,21 @@ const fragment = document.createDocumentFragment();
       Number.isFinite(ev.lon) && ev.lon >= -180 && ev.lon <= 180;
   }
 
+  // True only for a developer machine. Used to decide whether the fabricated
+  // SAMPLE_EVENTS may be shown, so a deployed copy can never present invented
+  // milestones as real ones. `location` is read defensively because this also runs
+  // under a DOM stub in the test harness.
+  const isLocalDev = (() => {
+    try {
+      const h = window.location && window.location.hostname;
+      if (!h) return false;
+      return h === 'localhost' || h === '127.0.0.1' || h === '::1' || h === '[::1]' ||
+        h === '0.0.0.0' || h.endsWith('.localhost');
+    } catch (_) {
+      return false;
+    }
+  })();
+
   async function loadEvents() {
     if (eventsAbortController) eventsAbortController.abort();
     eventsAbortController = new AbortController();
@@ -2778,16 +2833,30 @@ const fragment = document.createDocumentFragment();
       const data = await r.json();
       if (data && Array.isArray(data.events)) {
         state.events = data.events.map(normalizeEvent).filter(isPlottable);
+        state.dataLoadError = null;
       } else {
+        // Shape mismatch is a broken deploy, not an empty dataset. Say so rather
+        // than rendering a blank map that looks like "no milestones yet".
         state.events = [];
+        state.dataLoadError = 'events.json did not contain an "events" array';
+        console.warn('[worldmap] ' + state.dataLoadError);
       }
       rebuildStackMap();
     } catch (err) {
       if (err.name === 'AbortError') return;
-      console.warn('[worldmap] Failed to load events.json, using sample data:', err);
-      state.events = SAMPLE_EVENTS;
+      // Dev keeps a usable map while iterating; production must not invent data.
+      if (isLocalDev) {
+        state.events = SAMPLE_EVENTS;
+        state.dataLoadError = null;
+        console.warn('[worldmap] Failed to load events.json, using LOCAL DEV sample data:', err);
+      } else {
+        state.events = [];
+        state.dataLoadError = 'milestone data is temporarily unavailable';
+        console.warn('[worldmap] Failed to load events.json:', err);
+      }
       rebuildStackMap();
     }
+    renderDataNotice();
   }
 
   // Operational layers: conflict zones (dots) and tracked fleet movements
@@ -3171,8 +3240,10 @@ function initTimelineSlider() {
   function cleanup() {
     if (animationFrameId) { cancelAnimationFrame(animationFrameId); animationFrameId = null; }
     if (scheduledDrawId) { cancelAnimationFrame(scheduledDrawId); scheduledDrawId = null; }
-    if (terminatorInterval) clearInterval(terminatorInterval);
-    if (geocodeCacheIntervalId) clearInterval(geocodeCacheIntervalId);
+    if (terminatorInterval) { clearInterval(terminatorInterval); terminatorInterval = null; }
+    window.removeEventListener('beforeunload', flushAndStopGeocodeCache);
+    window.removeEventListener('pagehide', flushAndStopGeocodeCache);
+    if (geocodeCacheIntervalId) { clearInterval(geocodeCacheIntervalId); geocodeCacheIntervalId = null; }
     if (eventsAbortController) eventsAbortController.abort();
     if (layersAbortController) layersAbortController.abort();
     if (resizeTimeout) clearTimeout(resizeTimeout);
@@ -3189,6 +3260,8 @@ function initTimelineSlider() {
       tooltip.removeEventListener('mousedown', handleTooltipMouseDown);
     }
     if (cleanupTimelineSlider) cleanupTimelineSlider();
+    if (dataNoticeEl && dataNoticeEl.parentNode) dataNoticeEl.remove();
+    dataNoticeEl = null;
   }
 
   // ---- Test hook (inert in production; enabled only when the harness pre-sets the flag) ----
@@ -3230,6 +3303,11 @@ function initTimelineSlider() {
       isInfantryKind,
       fleetEndpoints,
       isStaleLayer,
+      isLocalDev,
+      renderDataNotice,
+      get SAMPLE_EVENTS() { return SAMPLE_EVENTS; },
+      setDataLoadError: (msg) => { state.dataLoadError = msg; renderDataNotice(); },
+      get dataLoadError() { return state.dataLoadError; },
       get GEOCODE_CACHE_MAX_BYTES() { return GEOCODE_CACHE_MAX_BYTES; },
       get STALE_THRESHOLD_YEARS() { return STALE_THRESHOLD_YEARS; },
       get PASSIVE_OPACITY_LADDER() {
