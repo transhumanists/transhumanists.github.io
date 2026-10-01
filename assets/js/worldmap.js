@@ -25,6 +25,16 @@
   const ZOOM_FACTOR = 1.1; // Used by zoomAt for keyboard/button zoom steps
   const HIT_RADIUS_BASE = 10;
   const CLICK_DRAG_THRESHOLD = 5;
+  // Default-view latitude window. The map deliberately crops the polar caps
+  // instead of drawing the full +/-90: the day/night boundary degenerates up
+  // there (its hour angle saturates at |lat| >= 90 - |declination|, i.e. 66.6
+  // at the solstices) and smears into a hard horizontal shadow band, and the
+  // pole rows themselves paint a full-width shadow edge. 65 sits just inside
+  // the worst-case saturation latitude, so the smear never reaches the canvas,
+  // and it still contains every landmass anyone lives on and every milestone in
+  // the dataset (the furthest north is 59.4N, the furthest south 13.5S). This is
+  // the default view, so "reset view" returns to exactly this window.
+  const MAP_LAT_LIMIT = 65;
   const TOOLTIP_WIDTH = 260;
   const TOOLTIP_HEIGHT = 100;
   const TOOLTIP_OFFSET = 12;
@@ -505,10 +515,19 @@ function canonicalCategory(cat) {
   ];
 
   // ---- Projection ----
+  // Longitude always spans the full 360deg across the canvas; latitude spans
+  // MAP_LAT_LIMIT, so the canvas top/bottom edges are the cropped polar edges.
   function project(lon, lat) {
     const x = (lon + 180) / 360 * state.width;
-    const y = (90 - lat) / 180 * state.height;
+    const y = (MAP_LAT_LIMIT - lat) / (MAP_LAT_LIMIT * 2) * state.height;
     return { x: x * state.transform.scale + state.transform.tx, y: y * state.transform.scale + state.transform.ty };
+  }
+
+  // Screen pixels per degree of latitude. Geographic layer radii (conflict and
+  // crisis zones) are declared in degrees and drawn as circles, so they follow
+  // this — the same scale project() uses for latitude.
+  function latDegToPx() {
+    return state.height / (MAP_LAT_LIMIT * 2);
   }
 
   // ---- Sample data (fallback) ----
@@ -827,7 +846,7 @@ function canonicalCategory(cat) {
         const lead = focused || stackEvts[0];
         if (lead !== ev) continue;
       }
-      drawEvent(ev);
+      drawEvent(ev, stackEvts);
     }
 
     // Only draw military layers if filterMilitary is active
@@ -850,9 +869,16 @@ function canonicalCategory(cat) {
     }
   }
 
+  // Rounding to a fixed number of decimals is what makes two milestones a few
+  // hundred metres apart count as "the same location" (campus/city clusters).
+  // The coordinates never change after normalisation, so the key is memoised:
+  // draw() runs ~10x/s and would otherwise re-round every event each frame.
   function stackKey(ev) {
-    const f = (n) => Number(n.toFixed(STACK_ROUND_DIGITS));
-    return `${f(ev.lat)},${f(ev.lon)}`;
+    if (ev._stackKey === undefined) {
+      const f = (n) => Number(n.toFixed(STACK_ROUND_DIGITS));
+      ev._stackKey = `${f(ev.lat)},${f(ev.lon)}`;
+    }
+    return ev._stackKey;
   }
 
   function drawStack(px, py, count, color) {
@@ -880,6 +906,7 @@ function canonicalCategory(cat) {
   }
 
   let stackMap = null;
+  let stackMapDay = null;
 
   // Group the milestones that share a location so they can be drawn as one
   // fanned marker with a count badge. Only milestones the visitor can actually
@@ -888,7 +915,8 @@ function canonicalCategory(cat) {
   // badge, the pager and hit-testing in agreement with what is on screen.
   function rebuildStackMap() {
     stackMap = new Map();
-    const todayISO = currentDayISO();
+    stackMapDay = currentDayISO();
+    const todayISO = stackMapDay;
     for (const ev of state.events) {
       if (ev._hiddenByTimeline) continue;
       if (!isCategoryVisible(ev.category)) continue;
@@ -899,16 +927,24 @@ function canonicalCategory(cat) {
     }
   }
 
+  // The "this week" window moves on its own, so the map has to notice the day
+  // rolling over even when no filter is touched: a milestone that ages out must
+  // leave its stack instead of lingering in the count badge and the pager.
+  function ensureStackMapFresh() {
+    if (!stackMap || stackMapDay !== currentDayISO()) rebuildStackMap();
+  }
+
   function stackForEvent(ev) {
-    if (!stackMap) rebuildStackMap();
+    ensureStackMapFresh();
     return stackMap.get(stackKey(ev)) || [];
   }
 
-function drawEvent(ev) {
+  // Draws one milestone marker. The caller has already decided which event owns
+  // the location (see draw()), and passes that event's stack group along.
+  function drawEvent(ev, stackEvts = stackForEvent(ev)) {
      // Skip if hidden by timeline filter
      if (ev._hiddenByTimeline) return;
 
-     const stackEvts = stackForEvent(ev);
      const isStackRepresentative = state.selectedEvent === ev || state.hoveredEvent === ev;
 
      if (stackEvts.length > 1 && !isStackRepresentative) {
@@ -923,8 +959,8 @@ function drawEvent(ev) {
        ctx.strokeStyle = color + '80';
        ctx.lineWidth = 1.5;
        ctx.beginPath();
-       const first = project(stackEvts[0].lon, stackEvts[0].lat);
-       ctx.arc(first.x, first.y, 5, 0, Math.PI * 2);
+       // ev is the group's lead member, so its projection is the cluster centre.
+       ctx.arc(p.x, p.y, 5, 0, Math.PI * 2);
        ctx.stroke();
        ctx.restore();
        return;
@@ -972,7 +1008,7 @@ function drawEvent(ev) {
     if (!state.showZones) return;
     if (zone._hiddenByTimeline) return;
     const p = project(zone.lon, zone.lat);
-    const degToPx = state.height / 180;
+    const degToPx = latDegToPx();
 
     const autoScale = zoneAutoScale || 1;
     const baseRadius = Math.max(4, (zone.radiusDeg || 3) * degToPx * state.transform.scale * autoScale);
@@ -1069,7 +1105,7 @@ function drawEvent(ev) {
     if (!state.showCrises) return;
     if (crisis._hiddenByTimeline) return;
     const p = project(crisis.lon, crisis.lat);
-    const degToPx = state.height / 180;
+    const degToPx = latDegToPx();
 
     const autoScale = crisisAutoScale || 1;
     const baseRadius = Math.max(4, (crisis.radiusDeg || 3) * degToPx * state.transform.scale * autoScale);
@@ -3054,6 +3090,9 @@ function initTimelineSlider() {
       // shared sunrise/sunset curve plus the unwrapped night band it feeds.
       buildTerminatorGeo,
       buildNightBand,
+      // Screen projection + the default-view latitude window it crops to.
+      project,
+      get MAP_LAT_LIMIT() { return MAP_LAT_LIMIT; },
       get NIGHT_FILL() { return NIGHT_FILL; },
       // Pin the sun position (lat, lon) so day/night rendering is deterministic;
       // pass (null, null) to restore the live clock.

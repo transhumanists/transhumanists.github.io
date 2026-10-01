@@ -219,10 +219,17 @@ const documentObj = {
 };
 
 let load;
+// The clock the module reads for its rolling 7-day window. Kept as a named
+// object (rather than an inline literal) so a test can move "today" forward and
+// restore it, exercising the day-rollover path without waiting for real time.
+const testClock = { getTodayISO: () => '2026-08-08' };
+const TEST_DAY = '2026-08-08';
+const setTestDay = (iso) => { testClock.getTodayISO = () => iso; };
+
 beforeAll(async () => {
   // Set up test hook mock BEFORE import so the module can use it
   // Use 2026-08-08 to include all test fixture events (2026-08-01 to 2026-08-08) in the 7-day window
-  windowObj.__WORLDMAP_TEST__ = { getTodayISO: () => '2026-08-08' };
+  windowObj.__WORLDMAP_TEST__ = testClock;
 
   globalThis.window = windowObj;
   globalThis.document = documentObj;
@@ -343,9 +350,9 @@ describe('worldmap', () => {
   });
 
   test('renders tooltip with canonical category, value and clickable source link', () => {
-    // Cybersecurity event in London (lon -0.1278, lat 51.5074) → (400, 111) on the 800x520
+    // Cybersecurity event in London (lon -0.1278, lat 51.5074) → (400, 54) on the 800x520
     // stub; it is far from every other dot so the hit is unambiguous.
-    canvas.fire('mousemove', { clientX: 400, clientY: 111, movementX: 0, movementY: 0 });
+    canvas.fire('mousemove', { clientX: 400, clientY: 54, movementX: 0, movementY: 0 });
     expect(tooltip.classList.contains('visible')).toBe(true);
     const wrapper = tooltip.children[0];
     expect(wrapper.children.find((c) => c.className === 'tt-category').textContent).toBe('Cybersecurity');
@@ -362,8 +369,8 @@ describe('worldmap', () => {
   });
 
 test('tooltip canonicalizes legacy category names', () => {
-    // 'Energy (old name)' at lon -74, lat 40.7 → (236, 143) on the 800x520 stub.
-    canvas.fire('mousemove', { clientX: 236, clientY: 143, movementX: 0, movementY: 0 });
+    // 'Energy (old name)' at lon -74, lat 40.7 → (236, 97) on the 800x520 stub.
+    canvas.fire('mousemove', { clientX: 236, clientY: 97, movementX: 0, movementY: 0 });
     expect(tooltip.classList.contains('visible')).toBe(true);
     const wrapper = tooltip.children[0];
     expect(wrapper.children.find((c) => c.className === 'tt-category').textContent).toBe('Renewable Energy');
@@ -374,8 +381,8 @@ test('tooltip canonicalizes legacy category names', () => {
   });
 
   test('tooltip omits the source link when the event has no url', () => {
-    // 'Quantum (old name)' at lon 8.5417, lat 47.3769 → (419, 123); isolated dot.
-    canvas.fire('mousemove', { clientX: 419, clientY: 123, movementX: 0, movementY: 0 });
+    // 'Quantum (old name)' at lon 8.5417, lat 47.3769 → (419, 70); isolated dot.
+    canvas.fire('mousemove', { clientX: 419, clientY: 70, movementX: 0, movementY: 0 });
     expect(tooltip.classList.contains('visible')).toBe(true);
     const wrapper = tooltip.children[0];
     expect(wrapper.children.find((c) => c.className === 'tt-category').textContent).toBe('Quantum Physics');
@@ -421,22 +428,22 @@ test('zoom controls, keyboard and double-click do not throw', () => {
   });
 
   test('tooltip clamps to the map edges using its measured size', () => {
-    // Renewable Energy event at lon 151.21 / lat -33.87 → (736, 358) on the 800x520
+    // Renewable Energy event at lon 151.21 / lat -33.87 → (736, 395) on the 800x520
     // stub, near both the right and bottom edges. With measured 150x200 the tooltip
-    // must flip to the left of the cursor (574px) and above it (146px) instead of
+    // must flip to the left of the cursor (574px) and above it (183px) instead of
     // overflowing the map.
     registeredEls['reset-view'].fire('click', {});
-    canvas.fire('mousemove', { clientX: 736, clientY: 358, movementX: 0, movementY: 0 });
+    canvas.fire('mousemove', { clientX: 736, clientY: 395, movementX: 0, movementY: 0 });
     expect(tooltip.classList.contains('visible')).toBe(true);
     expect(tooltip.style.left).toBe('574px');
-    expect(tooltip.style.top).toBe('146px');
+    expect(tooltip.style.top).toBe('183px');
   });
 
   test('zoom dismisses a stale tooltip and hover re-opens it', () => {
     registeredEls['reset-view'].fire('click', {});
-    // London Cyber event at (400, 111); zoom anchored at (400, 260) relocates it
+    // London Cyber event at (400, 54); zoom anchored at (400, 260) relocates it
     // to screen (400, 260), so the old tooltip position would be stale.
-    canvas.fire('mousemove', { clientX: 400, clientY: 111, movementX: 0, movementY: 0 });
+    canvas.fire('mousemove', { clientX: 400, clientY: 54, movementX: 0, movementY: 0 });
     expect(tooltip.classList.contains('visible')).toBe(true);
     canvas.fire('dblclick', { clientX: 400, clientY: 260 });
     expect(tooltip.classList.contains('visible')).toBe(false);
@@ -447,26 +454,26 @@ test('zoom controls, keyboard and double-click do not throw', () => {
 
   test('drag clears hover state so a re-hover after drag re-opens', () => {
     registeredEls['reset-view'].fire('click', {});
-    canvas.fire('mousemove', { clientX: 400, clientY: 111, movementX: 0, movementY: 0 });
+    canvas.fire('mousemove', { clientX: 400, clientY: 54, movementX: 0, movementY: 0 });
     expect(tooltip.classList.contains('visible')).toBe(true);
     // A real drag (press, travel, release) leaves the dot somewhere else, so the
     // popup is stale and must be dropped on release.
-    canvas.fire('mousedown', { clientX: 400, clientY: 111 });
-    windowObj.fire('mouseup', { clientX: 430, clientY: 140 });
+    canvas.fire('mousedown', { clientX: 400, clientY: 54 });
+    windowObj.fire('mouseup', { clientX: 430, clientY: 83 });
     expect(tooltip.classList.contains('visible')).toBe(false);
     // Pointing at the same dot again after the drag must re-open (previously the
     // stale hoveredEvent made the second hover only nudge the hidden tooltip).
-    canvas.fire('mousemove', { clientX: 400, clientY: 111, movementX: 0, movementY: 0 });
+    canvas.fire('mousemove', { clientX: 400, clientY: 54, movementX: 0, movementY: 0 });
     expect(tooltip.classList.contains('visible')).toBe(true);
   });
 
   test('clicking a dot pins the popup so the source link stays reachable', () => {
     registeredEls['reset-view'].fire('click', {});
-    // Cyber dot at (400, 111). Hover then click (press+release without moving).
-    canvas.fire('mousemove', { clientX: 400, clientY: 111, movementX: 0, movementY: 0 });
-    canvas.fire('mousedown', { clientX: 400, clientY: 111 });
+    // Cyber dot at (400, 54). Hover then click (press+release without moving).
+    canvas.fire('mousemove', { clientX: 400, clientY: 54, movementX: 0, movementY: 0 });
+    canvas.fire('mousedown', { clientX: 400, clientY: 54 });
     expect(tooltip.classList.contains('visible')).toBe(true);      // press keeps it
-    windowObj.fire('mouseup', { clientX: 400, clientY: 111 });
+    windowObj.fire('mouseup', { clientX: 400, clientY: 54 });
     expect(tooltip.classList.contains('visible')).toBe(true);       // release pins it
     const link = tooltip.children[0].children.find((c) => c.className === 'tt-link');
     expect(link).toBeDefined();
@@ -482,26 +489,26 @@ test('zoom controls, keyboard and double-click do not throw', () => {
 
   test('clicking the pinned dot again unpins it', () => {
     registeredEls['reset-view'].fire('click', {});
-    canvas.fire('mousemove', { clientX: 400, clientY: 111, movementX: 0, movementY: 0 });
-    canvas.fire('mousedown', { clientX: 400, clientY: 111 });
-    windowObj.fire('mouseup', { clientX: 400, clientY: 111 });
+    canvas.fire('mousemove', { clientX: 400, clientY: 54, movementX: 0, movementY: 0 });
+    canvas.fire('mousedown', { clientX: 400, clientY: 54 });
+    windowObj.fire('mouseup', { clientX: 400, clientY: 54 });
     expect(tooltip.classList.contains('visible')).toBe(true);
     // Second click on the same dot toggles the popup off (it used to be a no-op
     // because the press had already forgotten the selection).
-    canvas.fire('mousedown', { clientX: 400, clientY: 111 });
-    windowObj.fire('mouseup', { clientX: 400, clientY: 111 });
+    canvas.fire('mousedown', { clientX: 400, clientY: 54 });
+    windowObj.fire('mouseup', { clientX: 400, clientY: 54 });
     expect(tooltip.classList.contains('visible')).toBe(false);
     // And the selection is gone, so hovering the dot again re-opens a plain popup.
-    canvas.fire('mousemove', { clientX: 402, clientY: 111, movementX: 0, movementY: 0 });
+    canvas.fire('mousemove', { clientX: 402, clientY: 54, movementX: 0, movementY: 0 });
     expect(tooltip.classList.contains('visible')).toBe(true);
     expect(tooltip.querySelector('.tt-pager')).toBe(null);
   });
 
   test('Escape clears a pinned popup selection', () => {
     registeredEls['reset-view'].fire('click', {});
-    canvas.fire('mousemove', { clientX: 400, clientY: 111, movementX: 0, movementY: 0 });
-    canvas.fire('mousedown', { clientX: 400, clientY: 111 });
-    windowObj.fire('mouseup', { clientX: 400, clientY: 111 });
+    canvas.fire('mousemove', { clientX: 400, clientY: 54, movementX: 0, movementY: 0 });
+    canvas.fire('mousedown', { clientX: 400, clientY: 54 });
+    windowObj.fire('mouseup', { clientX: 400, clientY: 54 });
     expect(tooltip.classList.contains('visible')).toBe(true);
     canvas.fire('keydown', { key: 'Escape', target: canvas, preventDefault() {} });
     expect(tooltip.classList.contains('visible')).toBe(false);
@@ -509,9 +516,9 @@ test('zoom controls, keyboard and double-click do not throw', () => {
 
   test('a click that drags does not pin the dot', () => {
     registeredEls['reset-view'].fire('click', {});
-    canvas.fire('mousemove', { clientX: 400, clientY: 111, movementX: 0, movementY: 0 });
-    canvas.fire('mousedown', { clientX: 400, clientY: 111 });
-    windowObj.fire('mouseup', { clientX: 420, clientY: 130 });      // > threshold = drag
+    canvas.fire('mousemove', { clientX: 400, clientY: 54, movementX: 0, movementY: 0 });
+    canvas.fire('mousedown', { clientX: 400, clientY: 54 });
+    windowObj.fire('mouseup', { clientX: 420, clientY: 73 });      // > threshold = drag
     expect(tooltip.classList.contains('visible')).toBe(false);
   });
 
@@ -848,7 +855,7 @@ test('zoom controls, keyboard and double-click do not throw', () => {
 
   // Three milestones at one spot; "Stack C" is a year older than the others so
   // the timeline-slider interaction is observable. lat 10 / lon 20 projects to
-  // (444, 231) on the 800x520 stub.
+  // (444, 220) on the 800x520 stub.
   const STACK_SPOT = { lat: 10, lon: 20 };
   const STACKED_EVENTS = [
     { id: 'st-a', title: 'Stack A', category: 'Biotechnology', value: '1', source: 'S', url: 'https://example.com/a', date: '2026-04-01', geolocation: { ...STACK_SPOT } },
@@ -879,13 +886,13 @@ test('zoom controls, keyboard and double-click do not throw', () => {
     expect(badgeTexts()).toEqual(['2']);
     // The dot under the cursor resolves to one of the visible members, never to
     // the milestone the timeline clustered away.
-    canvas.fire('mousemove', { clientX: 444, clientY: 231, movementX: 0, movementY: 0 });
+    canvas.fire('mousemove', { clientX: 444, clientY: 220, movementX: 0, movementY: 0 });
     expect(tooltipTitle()).toBe('Stack B');
     // Focusing a member (hover/pin) replaces the cluster with that single dot, so
     // the count badge is not painted on top of the milestone being described.
     canvas.fire('mousemove', { clientX: 60, clientY: 480, movementX: 0, movementY: 0 });  // drop hover
     ctx.resetCounters();
-    canvas.fire('mousemove', { clientX: 444, clientY: 231, movementX: 0, movementY: 0 });
+    canvas.fire('mousemove', { clientX: 444, clientY: 220, movementX: 0, movementY: 0 });
     expect(tooltipTitle()).toBe('Stack B');
     expect(badgeTexts()).toEqual([]);
   });
@@ -895,8 +902,8 @@ test('zoom controls, keyboard and double-click do not throw', () => {
     api.setFilterRecent(false);
     api.setEvents(STACKED_EVENTS);
     api.setTimelineYear(2026);
-    canvas.fire('mousemove', { clientX: 444, clientY: 231, movementX: 0, movementY: 0 });
-    clickAt(444, 231);
+    canvas.fire('mousemove', { clientX: 444, clientY: 220, movementX: 0, movementY: 0 });
+    clickAt(444, 220);
     // Opens on the member that was clicked (topmost), not always on 1/N.
     expect(tooltipTitle()).toBe('Stack B');
     expect(pagerIndex()).toBe('2/2');
@@ -913,10 +920,10 @@ test('zoom controls, keyboard and double-click do not throw', () => {
     expect(tooltipTitle()).toBe('Stack B');
     expect(pagerIndex()).toBe('2/2');
     // Pressing the pinned dot again unpins the whole popup, pager included.
-    clickAt(444, 231);
+    clickAt(444, 220);
     expect(tooltip.classList.contains('visible')).toBe(false);
     // Re-opened by hover rather than pinned: leaving the dot closes it again.
-    canvas.fire('mousemove', { clientX: 444, clientY: 231, movementX: 0, movementY: 0 });
+    canvas.fire('mousemove', { clientX: 444, clientY: 220, movementX: 0, movementY: 0 });
     expect(tooltip.classList.contains('visible')).toBe(true);
     canvas.fire('mousemove', { clientX: 60, clientY: 480, movementX: 0, movementY: 0 });
     expect(tooltip.classList.contains('visible')).toBe(false);
@@ -937,7 +944,7 @@ test('zoom controls, keyboard and double-click do not throw', () => {
     ctx.resetCounters();
     registeredEls['reset-view'].fire('click', {});
     expect(badgeTexts()).toEqual([]);
-    canvas.fire('mousemove', { clientX: 444, clientY: 231, movementX: 0, movementY: 0 });
+    canvas.fire('mousemove', { clientX: 444, clientY: 220, movementX: 0, movementY: 0 });
     expect(tooltipTitle()).toBe('Stack C');
     expect(tooltip.querySelector('.tt-pager')).toBe(null);
     // Back to the shared location: the badge returns.
@@ -972,8 +979,8 @@ test('zoom controls, keyboard and double-click do not throw', () => {
     api.setFilterRecent(false);
     api.setEvents(STACKED_EVENTS);
     api.setTimelineYear(2026);
-    canvas.fire('mousemove', { clientX: 444, clientY: 231, movementX: 0, movementY: 0 });
-    clickAt(444, 231);
+    canvas.fire('mousemove', { clientX: 444, clientY: 220, movementX: 0, movementY: 0 });
+    clickAt(444, 220);
     expect(tooltip.classList.contains('visible')).toBe(true);
     // Sliding to 2025 removes every member of this stack, so the popup must not
     // be left floating over empty canvas.
@@ -981,6 +988,88 @@ test('zoom controls, keyboard and double-click do not throw', () => {
     expect(tooltip.classList.contains('visible')).toBe(false);
     // Restore the shared fixtures for the record.
     api.setTimelineYear(2026);
+    api.setEvents(EVENT_PAYLOAD.events);
+  });
+
+  test('the stack re-groups by itself when the rolling week moves on', () => {
+    const api = windowObj.__WORLDMAP_TEST__;
+    setTestDay(TEST_DAY);
+    api.setFilterRecent(true);
+    api.setEvents([
+      { id: 'rw-a', title: 'Fresh A', category: 'Biotechnology', date: '2026-08-07', geolocation: { ...STACK_SPOT } },
+      { id: 'rw-b', title: 'Fresh B', category: 'Biotechnology', date: '2026-08-06', geolocation: { ...STACK_SPOT } },
+      { id: 'rw-old', title: 'Aged out', category: 'Biotechnology', date: '2026-07-20', geolocation: { ...STACK_SPOT } },
+    ]);
+    api.setTimelineYear(2026);
+    // Window is today-6 .. today, so "Aged out" is already outside it.
+    expect(api.stackForEvent(api.getEvents()[0]).map((e) => e.title)).toEqual(['Fresh A', 'Fresh B']);
+    // Move the clock five days forward with no filter interaction at all: the
+    // window drops "Fresh B", so the count badge must stop including it (the map
+    // used to keep the groups it built when the filter was last touched).
+    setTestDay('2026-08-13');
+    expect(api.stackForEvent(api.getEvents()[0]).map((e) => e.title)).toEqual(['Fresh A']);
+    // And a milestone that ages out is no longer clickable either.
+    registeredEls['reset-view'].fire('click', {});
+    canvas.fire('mousemove', { clientX: 444, clientY: 220, movementX: 0, movementY: 0 });
+    expect(tooltipTitle()).toBe('Fresh A');
+    // Restore the shared fixtures.
+    setTestDay(TEST_DAY);
+    api.setFilterRecent(false);
+    api.setTimelineYear(2026);
+    api.setEvents(EVENT_PAYLOAD.events);
+  });
+
+  test('the default view crops the polar caps instead of showing +/-90', () => {
+    const api = windowObj.__WORLDMAP_TEST__;
+    registeredEls['reset-view'].fire('click', {});
+    // Longitude still spans the full 360deg across the canvas width.
+    expect(api.project(-180, 0).x).toBe(0);
+    expect(api.project(180, 0).x).toBe(800);
+    // Latitude spans the crop, so the canvas edges are +/-MAP_LAT_LIMIT and the
+    // equator stays centred.
+    expect(api.MAP_LAT_LIMIT).toBe(65);
+    expect(api.project(0, api.MAP_LAT_LIMIT).y).toBe(0);
+    expect(api.project(0, 0).y).toBe(260);
+    expect(api.project(0, -api.MAP_LAT_LIMIT).y).toBe(520);
+    // The poles are off-canvas, which is the whole point: the day/night boundary
+    // saturates at |lat| >= 90 - |declination| (66.6 at the solstices) and smears
+    // into a hard horizontal shadow band there, and the pole rows paint a
+    // full-width shadow edge.
+    expect(api.project(0, 90).y).toBeLessThan(0);
+    expect(api.project(0, -90).y).toBeGreaterThan(520);
+    for (const decl of [23.44, -23.44]) {
+      const degenerate = api.buildTerminatorGeo(decl, 0, 0).filter((p) => Math.abs(p.lat) >= 66);
+      expect(degenerate.length).toBeGreaterThan(0);
+      for (const p of degenerate) {
+        const y = api.project(p.lon, p.lat).y;
+        expect(y < 0 || y > 520).toBe(true);
+      }
+    }
+    // "Reset view" restores exactly this narrower window, not the full globe.
+    canvas.fire('dblclick', { clientX: 400, clientY: 260 });
+    expect(api.getView()).not.toEqual({ scale: 1, tx: 0, ty: 0 });
+    registeredEls['reset-view'].fire('click', {});
+    expect(api.getView()).toEqual({ scale: 1, tx: 0, ty: 0 });
+    expect(api.project(0, api.MAP_LAT_LIMIT).y).toBe(0);
+  });
+
+  test('co-located grouping tolerates ~3 m coordinate noise but splits ~300 km', () => {
+    const api = windowObj.__WORLDMAP_TEST__;
+    api.setFilterRecent(false);
+    api.setTimelineYear(2026);
+    // Same campus, quoted to slightly different precision (~3 m apart) — one cluster.
+    api.setEvents([
+      { id: 'np-1', title: 'Precise', category: 'Biotechnology', date: '2026-04-01', geolocation: { lat: 42.3375, lon: -71.1061 } },
+      { id: 'np-2', title: 'Rounded', category: 'Biotechnology', date: '2026-04-02', geolocation: { lat: 42.33753, lon: -71.10609 } },
+    ]);
+    expect(api.stackForEvent(api.getEvents()[0]).length).toBe(2);
+    // Boston vs New York is ~300 km away, so no cluster.
+    api.setEvents([
+      { id: 'np-3', title: 'Far', category: 'Biotechnology', date: '2026-04-01', geolocation: { lat: 42.3375, lon: -71.1061 } },
+      { id: 'np-4', title: 'Elsewhere', category: 'Biotechnology', date: '2026-04-02', geolocation: { lat: 40.7128, lon: -74.006 } },
+    ]);
+    expect(api.stackForEvent(api.getEvents()[0]).length).toBe(1);
+    // Restore the shared fixtures.
     api.setEvents(EVENT_PAYLOAD.events);
   });
 });
