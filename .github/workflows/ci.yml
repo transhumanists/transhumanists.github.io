@@ -151,6 +151,7 @@ jobs:
             --output-dir "$RUNNER_TEMP/gen-c" \
             --upstream "$RUNNER_TEMP/gen-a/data/milestones.json" \
             --today 2026-10-01
+          mkdir -p "$RUNNER_TEMP/gen-a/data-remerged"
           cp "$RUNNER_TEMP/gen-c/data/milestones.json" \
              "$RUNNER_TEMP/gen-a/data-remerged/milestones.json"
           python scripts/determinism_gate.py "$RUNNER_TEMP/gen-a" "$RUNNER_TEMP/gen-b" \
