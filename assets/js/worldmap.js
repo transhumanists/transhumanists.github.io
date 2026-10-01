@@ -3066,6 +3066,7 @@ function initTimelineSlider() {
     if (animationFrameId) { cancelAnimationFrame(animationFrameId); animationFrameId = null; }
     if (scheduledDrawId) { cancelAnimationFrame(scheduledDrawId); scheduledDrawId = null; }
     if (terminatorInterval) clearInterval(terminatorInterval);
+    if (geocodeCacheIntervalId) clearInterval(geocodeCacheIntervalId);
     if (eventsAbortController) eventsAbortController.abort();
     if (layersAbortController) layersAbortController.abort();
     if (resizeTimeout) clearTimeout(resizeTimeout);
