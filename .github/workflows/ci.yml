@@ -79,6 +79,9 @@ jobs:
       - name: Human rights fetcher tests
         run: python scripts/test_fetch_human_rights.py
 
+      - name: Determinism gate tests
+        run: python scripts/test_determinism_gate.py
+
       - name: Full pytest suite
         run: python -m pytest scripts/
 
@@ -111,28 +114,32 @@ jobs:
       # reproducible offline. What MUST hold is that regeneration is
       # deterministic and that its output satisfies every published invariant -
       # the ordering regression shipped precisely because neither was checked
-      # anywhere. Two runs into separate directories must be identical.
+      # anywhere. Two runs into separate directories must agree.
+      #
+      # Compared with volatile fields removed rather than by diffing bytes: every
+      # output carries a fresh `last_update` timestamp, so a byte comparison
+      # fails on every single run and would train everyone to ignore this job.
       - name: Regenerate twice from the committed feed
         env:
           STALE_ERROR_DAYS: "99"
         run: |
           set -euo pipefail
-          run_one() {
-            python scripts/sync_milestones.py \
-              --output-dir "$1" \
-              --upstream data/milestones.json \
-              --today 2026-10-01
-          }
-          run_one "$RUNNER_TEMP/gen-a"
-          run_one "$RUNNER_TEMP/gen-b"
-          for f in events.json milestones.json; do
-            if ! diff -q "$RUNNER_TEMP/gen-a/data/$f" "$RUNNER_TEMP/gen-b/data/$f" >/dev/null; then
-              echo "::error file=data/$f::Regeneration is not deterministic"
-              diff "$RUNNER_TEMP/gen-a/data/$f" "$RUNNER_TEMP/gen-b/data/$f" | head -40
-              exit 1
-            fi
-          done
-          echo "Regeneration is deterministic"
+          python scripts/sync_milestones.py \
+            --output-dir "$RUNNER_TEMP/gen-a" \
+            --upstream data/milestones.json \
+            --today 2026-10-01
+          python scripts/sync_milestones.py \
+            --output-dir "$RUNNER_TEMP/gen-b" \
+            --upstream data/milestones.json \
+            --today 2026-10-01
+          # The comparison itself lives in scripts/determinism_gate.py so it is
+          # unit-tested rather than only observable by watching a build go red.
+          python -c "
+          import sys
+          from determinism_gate import assert_deterministic
+          assert_deterministic('$RUNNER_TEMP/gen-a', '$RUNNER_TEMP/gen-b')
+          print('Regeneration is deterministic')
+          "
 
       - name: Regenerated data satisfies every published invariant
         run: |
@@ -146,7 +153,7 @@ jobs:
           # must not merge further records.
           python scripts/sync_milestones.py \
             --output-dir "$RUNNER_TEMP/gen-c" \
-            --upstream "$RUNNER_TEMP/gen-a/milestones.json" \
+            --upstream "$RUNNER_TEMP/gen-a/data/milestones.json" \
             --today 2026-10-01
           python - <<'PY'
           import json, sys
