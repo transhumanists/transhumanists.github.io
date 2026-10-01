@@ -67,6 +67,9 @@
   // Ground deployments (mobilizations, troop movements): distinct amber/orange
   const GROUND_COLOR = '#ffb347';
   const FLEET_COLOR = '#4fc3f7';
+// Human Rights Violations landmark. Deliberately outside the category palette so
+// the layer can never be mistaken for a milestone category in the legend.
+const HUMAN_RIGHTS_COLOR = '#ff7043';
   // Very transparent arrow tail line (barely visible) — 8% opacity
   const ARROW_TAIL_OPACITY = 0.08;
 
@@ -532,6 +535,8 @@
   const STORAGE_KEY_SHOW_ZONES = 'worldmap_show_zones';
   const STORAGE_KEY_SHOW_FLEETS = 'worldmap_show_fleets';
   const STORAGE_KEY_SHOW_CRISES = 'worldmap_show_crises';
+const STORAGE_KEY_SHOW_HUMAN_RIGHTS = 'worldmap_show_human_rights';
+const STORAGE_KEY_HIDDEN_CATEGORIES = 'worldmap_hidden_categories';
 
   // Load persisted preferences. Defaults are deliberately "show everything":
   // a brand-new visitor sees the full milestone set (filterRecent OFF), while
@@ -543,6 +548,7 @@
   let showZonesDefault = false;
   let showFleetsDefault = false;
   let showCrisesDefault = false;
+  let showHumanRightsDefault = false;
   try {
     const fr = localStorage.getItem(STORAGE_KEY_FILTER_RECENT);
     const fm = localStorage.getItem(STORAGE_KEY_FILTER_MILITARY);
@@ -550,12 +556,14 @@
     const sz = localStorage.getItem(STORAGE_KEY_SHOW_ZONES);
     const sf = localStorage.getItem(STORAGE_KEY_SHOW_FLEETS);
     const sc = localStorage.getItem(STORAGE_KEY_SHOW_CRISES);
+    const sh = localStorage.getItem(STORAGE_KEY_SHOW_HUMAN_RIGHTS);
     if (fr !== null) filterRecentDefault = fr === 'true';
     if (fm !== null) filterMilitaryDefault = fm === 'true';
     if (fc !== null) filterCrisisDefault = fc === 'true';
     if (sz !== null) showZonesDefault = sz === 'true';
     if (sf !== null) showFleetsDefault = sf === 'true';
     if (sc !== null) showCrisesDefault = sc === 'true';
+    if (sh !== null) showHumanRightsDefault = sh === 'true';
   } catch (_) {}
 
   const state = {
@@ -584,6 +592,7 @@ height: 0,
       zones: [],
       fleets: [],
       crises: [],
+      humanRights: [],
       // Filter states
       filterRecent: filterRecentDefault,  // breakthroughs this week only
       filterMilitary: filterMilitaryDefault, // conflict zones & deployments
@@ -592,6 +601,7 @@ height: 0,
       showZones: showZonesDefault,
       showFleets: showFleetsDefault,
       showCrises: showCrisesDefault,
+      showHumanRights: showHumanRightsDefault,
       // Cached terminator data (geo-space: sun angle barely moves, but the
       // screen projection must be recomputed for every draw since pan/zoom
       // changes the transform).
@@ -700,6 +710,27 @@ height: 0,
     { key: 'Military & Defense', label: 'Military & Defense' }
   ];
 
+  // Category visibility is persisted too; it used to reset on every reload, so
+  // a visitor who switched a category off saw it return unprompted. Applied
+  // here rather than in the preference block above because validating against
+  // CATEGORY_LEGEND at that point would throw a TDZ ReferenceError that the
+  // surrounding try/catch would swallow - silently discarding every saved
+  // preference, not just this one.
+  try {
+    const rawHidden = localStorage.getItem(STORAGE_KEY_HIDDEN_CATEGORIES);
+    if (rawHidden !== null) {
+      const parsedHidden = JSON.parse(rawHidden);
+      if (Array.isArray(parsedHidden)) {
+        // Filter to canonical names: localStorage is user-writable, and an
+        // unfiltered value could push arbitrary strings into the legend.
+        state.hiddenCategories = new Set(parsedHidden.filter(
+          (name) => typeof name === 'string' &&
+            CATEGORY_LEGEND.some((l) => l.key === name)
+        ));
+      }
+    }
+  } catch (_) {}
+
 function canonicalCategory(cat) {
     return CATEGORY_ALIASES[cat] || cat;
   }
@@ -716,6 +747,11 @@ function canonicalCategory(cat) {
     } else {
       state.hiddenCategories.add(canonical);
     }
+    // Persist the set so a category hidden before a reload stays hidden.
+    try {
+      localStorage.setItem(STORAGE_KEY_HIDDEN_CATEGORIES,
+        JSON.stringify(Array.from(state.hiddenCategories)));
+    } catch (_) {}
     // Category visibility is part of a stack's membership: hiding one member
     // can drop a location below the stacking threshold (and unhide can merge
     // locations that used to be lone dots).
@@ -1128,6 +1164,13 @@ function canonicalCategory(cat) {
         visibleCrises.forEach(c => drawCrisis(c, crisisAutoScale));
       }
     }
+    // Human Rights Violations: landmarks, not rings, and independent of the
+    // military/crisis filters. Off by default like every operational layer.
+    if (state.showHumanRights) {
+      const visibleRights = state.humanRights.filter(h => !h._hiddenByTimeline);
+      const rightsScale = visibleRights.length > 30 ? Math.min(1, 30 / visibleRights.length) : 1;
+      visibleRights.forEach(h => drawHumanRightsLandmark(h, rightsScale));
+    }
   }
 
   // Rounding to a fixed number of decimals is what makes two milestones a few
@@ -1344,6 +1387,24 @@ function canonicalCategory(cat) {
     drawAreaRing(crisis, CRISIS_COLOR, crisisAutoScale);
   }
 
+  // A reported violation is a point occurrence, so these draw as landmarks rather
+  // than an area ring: a ring would imply an affected extent we do not have.
+  function drawHumanRightsLandmark(entry, autoScale) {
+    if (!state.showHumanRights) return;
+    if (entry._hiddenByTimeline) return;
+    const p = project(entry.lat, entry.lon);
+    if (!p) return;
+    const done = entry.status && entry.status !== 'active' && entry.status !== 'ongoing';
+    const radius = Math.max(3, Math.min(8, (done ? 3.5 : 5) * autoScale));
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, radius, 0, Math.PI * 2);
+    ctx.fillStyle = withOpacity(HUMAN_RIGHTS_COLOR, done ? 0.35 : 0.85);
+    ctx.fill();
+    ctx.lineWidth = 1.5;
+    ctx.strokeStyle = withOpacity('#ffffff', done ? 0.3 : 0.6);
+    ctx.stroke();
+  }
+
   // Single source of truth for a tracked movement's drawn endpoints.
   // drawFleet synthesized an infantry tail from `direction` inline while
   // findDeployment read fleet.from/fleet.to — which infantry entries do not have
@@ -1556,6 +1617,21 @@ function canonicalCategory(cat) {
     return null;
   }
 
+  // Landmark hit test for the Human Rights Violations layer. Only participates when
+  // the layer is on: an invisible layer must not steal hover from a milestone.
+  function findHumanRight(px, py) {
+    if (!state.showHumanRights) return null;
+    const hitRadiusSq = 144; // 12px
+    for (const entry of state.humanRights) {
+      if (entry._hiddenByTimeline) continue;
+      const p = project(entry.lon, entry.lat);
+      const dx = p.x - px;
+      const dy = p.y - py;
+      if (dx * dx + dy * dy < hitRadiusSq) return entry;
+    }
+    return null;
+  }
+
   // ---- Tooltip hover handlers ----
   function handleTooltipMouseEnter() { state.tooltipHover = true; }
   function handleTooltipMouseLeave() {
@@ -1634,6 +1710,13 @@ function canonicalCategory(cat) {
             hit = crisisHit;
             hitType = 'crisis';
           }
+          else {
+            const rightsHit = findHumanRight(x, y);
+            if (rightsHit) {
+              hit = rightsHit;
+              hitType = 'human_rights';
+            }
+          }
         }
       }
     }
@@ -1649,6 +1732,8 @@ function canonicalCategory(cat) {
           showDeploymentTooltip(hit, e.clientX - rect.left, e.clientY - rect.top);
         } else if (hitType === 'crisis') {
           showCrisisTooltip(hit, e.clientX - rect.left, e.clientY - rect.top);
+        } else if (hitType === 'human_rights') {
+          showHumanRightsTooltip(hit, e.clientX - rect.left, e.clientY - rect.top);
         } else {
           showTooltip(hit, e.clientX - rect.left, e.clientY - rect.top);
         }
@@ -1663,6 +1748,8 @@ function canonicalCategory(cat) {
         moveDeploymentTooltip(e.clientX - rect.left, e.clientY - rect.top);
       } else if (hitType === 'crisis') {
         moveCrisisTooltip(e.clientX - rect.left, e.clientY - rect.top);
+      } else if (hitType === 'human_rights') {
+        moveHumanRightsTooltip(e.clientX - rect.left, e.clientY - rect.top);
       } else {
         moveTooltip(e.clientX - rect.left, e.clientY - rect.top);
       }
@@ -1808,12 +1895,14 @@ function canonicalCategory(cat) {
 
   // ---- Tooltip ----
   function createTooltipElement(ev) {
-    const color = CATEGORY_COLORS[canonicalCategory(ev.category)] || '#00d4ff';
+    const color = landmarkColorFor(ev.category, ev.tone) || '#00d4ff';
     const wrapper = document.createElement('div');
     const cat = document.createElement('div');
     cat.className = 'tt-category';
     cat.style.color = color;
     cat.textContent = canonicalCategory(ev.category);
+    // Label which half of a two-tone category this milestone belongs to.
+    if (ev.tone) cat.textContent += ' \u00b7 ' + ev.tone;
     const title = document.createElement('div');
     title.className = 'tt-title';
     title.textContent = ev.title;
@@ -2219,6 +2308,51 @@ function canonicalCategory(cat) {
     moveCrisisTooltip(x, y);
   }
 
+  // Human Rights Violations reuse the milestone tooltip treatment, as specified:
+  // a reader who has learned to read a milestone dot can read these too.
+  function showHumanRightsTooltip(entry, x, y) {
+    if (!tooltip) return;
+    tooltip.replaceChildren(createHumanRightsTooltipElement(entry));
+    tooltip.classList.add('visible');
+    moveHumanRightsTooltip(x, y);
+  }
+
+  const moveHumanRightsTooltip = moveCrisisTooltip;
+
+  function createHumanRightsTooltipElement(entry) {
+    const wrapper = document.createElement('div');
+    const cat = document.createElement('div');
+    cat.className = 'tt-category';
+    cat.style.color = HUMAN_RIGHTS_COLOR;
+    cat.textContent = 'Human Rights Violation';
+    const title = document.createElement('div');
+    title.className = 'tt-title';
+    title.textContent = entry.name;
+    wrapper.append(cat, title);
+    if (entry.note) {
+      const note = document.createElement('div');
+      note.style.cssText = 'color: var(--fg-muted); font-size: 0.72rem; margin-top: 4px;';
+      note.textContent = entry.note;
+      wrapper.appendChild(note);
+    }
+    const meta = document.createElement('div');
+    meta.style.cssText = 'color: var(--fg-subtle); font-size: 0.7rem; margin-top: 4px;';
+    const bits = [entry.region, entry.start_date].filter(Boolean).join(' \u00b7 ');
+    if (entry.source && entry.url && SOURCE_URL_RE.test(entry.url)) {
+      const link = document.createElement('a');
+      link.href = entry.url;
+      link.target = '_blank';
+      link.rel = 'noopener noreferrer';
+      link.style.color = 'var(--accent)';
+      link.textContent = bits ? bits + ' \u2014 ' + entry.source : entry.source;
+      meta.appendChild(link);
+    } else {
+      meta.textContent = [bits, entry.source].filter(Boolean).join(' \u2014 ') || 'Unknown source';
+    }
+    wrapper.appendChild(meta);
+    return wrapper;
+  }
+
   // ---- Stats computation ----
   // The rolling 7-day window runs from today back six days, inclusive. The window
   // only moves when the day does, but isInRolling7Days() is called once per event
@@ -2401,6 +2535,9 @@ function canonicalCategory(cat) {
     } else if (name === 'crises') {
       state.showCrises = !state.showCrises;
       try { localStorage.setItem(STORAGE_KEY_SHOW_CRISES, String(state.showCrises)); } catch (_) {}
+    } else if (name === 'human_rights') {
+      state.showHumanRights = !state.showHumanRights;
+      try { localStorage.setItem(STORAGE_KEY_SHOW_HUMAN_RIGHTS, String(state.showHumanRights)); } catch (_) {}
     }
     // If enabling a military layer, also enable the military filter
     if ((name === 'zones' && state.showZones) || (name === 'fleets' && state.showFleets) || (name === 'deployments' && state.showFleets)) {
@@ -2605,10 +2742,27 @@ const fragment = document.createDocumentFragment();
         row.tabIndex = 0;
         row.setAttribute('aria-pressed', String(!state.hiddenCategories.has(cat.key)));
         row.setAttribute('data-category', cat.key);
-        const dot = document.createElement('span');
-        dot.className = 'map-legend-dot';
-        dot.style.background = CATEGORY_COLORS[cat.key];
-        dot.setAttribute('aria-hidden', 'true');
+        const subtone = CATEGORY_SUBTONES[cat.key];
+        if (subtone) {
+          // Two-tone categories show both colours side by side, like the
+          // Deployments ground/fleet row, so the split is discoverable.
+          for (const colour of [CATEGORY_COLORS[cat.key], subtone.secondaryColor]) {
+            const toneDot = document.createElement('span');
+            toneDot.className = 'map-legend-dot';
+            toneDot.style.background = colour;
+            toneDot.setAttribute('aria-hidden', 'true');
+            row.appendChild(toneDot);
+          }
+          row.setAttribute('aria-label',
+            cat.label + ' (' + subtone.primary + ' and ' + subtone.secondary + '), ' +
+            (counts[cat.key] || 0) + ' events');
+        } else {
+          const dot = document.createElement('span');
+          dot.className = 'map-legend-dot';
+          dot.style.background = CATEGORY_COLORS[cat.key];
+          dot.setAttribute('aria-hidden', 'true');
+          row.appendChild(dot);
+        }
         const label = document.createElement('span');
         label.className = 'map-legend-label';
         label.textContent = cat.label;
@@ -2616,7 +2770,7 @@ const fragment = document.createDocumentFragment();
         count.className = 'map-legend-count';
         count.textContent = String(counts[cat.key] || 0);
         count.setAttribute('aria-hidden', 'true');
-        row.append(dot, label, count);
+        row.append(label, count);
         row.addEventListener('click', () => toggleCategory(cat.key));
         row.addEventListener('keydown', e => {
           if (e.key === 'Enter' || e.key === ' ') {
@@ -2645,7 +2799,7 @@ const fragment = document.createDocumentFragment();
       });
       appendLayerRow(fragment, {
         key: 'deployments',
-        label: 'Deployments',
+        label: 'Fleet Movements & Ground Deployments',
         visible: deploymentsVisible,
         splitColors: [GROUND_COLOR, FLEET_COLOR],
         count: String(state.fleets.length),
@@ -2660,6 +2814,18 @@ const fragment = document.createDocumentFragment();
         count: String(state.crises.length),
         ring: true,
         title: layerCountTitle(state.crises)
+      });
+      // Human Rights Violations: landmarks with milestone tooltips, off by
+      // default like every operational layer. A layer, not a category, so it
+      // carries no category colour and never appears in a category filter.
+      appendLayerRow(fragment, {
+        key: 'human_rights',
+        label: 'Human Rights Violations',
+        visible: state.showHumanRights,
+        color: HUMAN_RIGHTS_COLOR,
+        count: String(state.humanRights.length),
+        landmark: true,
+        title: layerCountTitle(state.humanRights)
       });
 
     // Controls section at bottom of legend — reuse existing controls if present
@@ -2913,6 +3079,29 @@ const fragment = document.createDocumentFragment();
       !(z.lat === 0 && z.lon === 0); // (0,0) is the "no location" marker, not a real position
   }
 
+  // Human rights entries share the zone shape so the tooltip builder can render
+  // them like milestones. radiusDeg is dropped on purpose: these are landmarks,
+  // not area rings.
+  function normalizeHumanRight(h) {
+    return {
+      id: h.id || '',
+      name: h.name || 'Unnamed report',
+      region: h.region || '',
+      lat: Number(h.lat),
+      lon: Number(h.lon),
+      status: h.status || 'active',
+      start_date: h.start_date || '',
+      end_date: h.end_date || '',
+      source: h.source || '',
+      url: h.url || '',
+      note: h.note || ''
+    };
+  }
+
+  function isHumanRightPlottable(h) {
+    return isZonePlottable(h);
+  }
+
   // A fleet arrow needs both endpoints valid; a missing/malformed endpoint
   // drops the whole movement instead of drawing a degenerate arrow. (0,0) is
   // the "unlocated" marker (same convention as normalizeEvent) and is rejected.
@@ -2948,12 +3137,18 @@ const fragment = document.createDocumentFragment();
         ? data.deployments
         : (data.fleet_movements && Array.isArray(data.fleet_movements) ? data.fleet_movements : []);
       state.fleets = deployments.map(normalizeFleet).filter(isFleetPlottable);
+      // Human Rights Violations: an operational layer, not a milestone category.
+      // Landmarks, so they get milestone tooltips rather than a ring.
+      state.humanRights = Array.isArray(data.human_rights_violations)
+        ? data.human_rights_violations.map(normalizeHumanRight).filter(isHumanRightPlottable)
+        : [];
     } catch (err) {
       if (err.name === 'AbortError') return;
       console.warn('[worldmap] Failed to load world_layers.json, using empty layers:', err);
       state.zones = [];
       state.fleets = [];
       state.crises = [];
+      state.humanRights = [];
     }
   }
 

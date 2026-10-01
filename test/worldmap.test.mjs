@@ -304,13 +304,13 @@ describe('worldmap', () => {
     expect(Number(registeredEls['map-stat-fleets'].textContent)).toBe(9);
   });
 
-  test('renders legend rows for all 7 categories plus layers', () => {
+  test('renders legend rows for all 9 categories plus layers', () => {
     const legend = registeredEls['map-legend'];
     expect(legend).toBeDefined();
     expect(legend.getAttribute('role')).toBe('list');
     const rows = legendRows();
-    expect(rows.length).toBe(10);
-    expect(legendValue('Biotechnology')).toBe('1');
+    expect(rows.length).toBe(13); // 9 categories + 4 operational layers
+    expect(legendValue('Biotechnology & Biohacking')).toBe('1');
     expect(legendValue('Computing & AGI')).toBe('0');
     expect(legendValue('Quantum Physics')).toBe('1');      // aliased 'Quantum'
     expect(legendValue('Renewable Energy')).toBe('2');     // aliased 'Energy' + canonical
@@ -319,7 +319,7 @@ describe('worldmap', () => {
     expect(legendValue('Military & Defense')).toBe('2');   // aliased 'Defense' + canonical
     // Military layers now show simple labels with actual counts
     expect(legendValue('Conflict Zones')).toBe('3');
-    expect(legendValue('Deployments')).toBe('9');
+    expect(legendValue('Fleet Movements & Ground Deployments')).toBe('9');
     expect(legendValue('Crisis Zones')).toBe('5');
   });
 
@@ -335,7 +335,7 @@ describe('worldmap', () => {
     expect(Number(registeredEls['map-stat-conflicts'].textContent)).toBe(3);
     expect(ctx.counters.arcs).toBeGreaterThan(0);              // redraw happened
     expect(Number(registeredEls['map-stat-fleets'].textContent)).toBe(9); // fleets also enabled
-    expect(legendValue('Deployments')).toBe('9');          // deployments layer present
+    expect(legendValue('Fleet Movements & Ground Deployments')).toBe('9');          // deployments layer present
 
     rowByLayer('zones').fire('click', {});                     // toggle zones back off
     expect(rowByLayer('zones').getAttribute('aria-pressed')).toBe('false');
@@ -560,7 +560,7 @@ test('zoom controls, keyboard and double-click do not throw', () => {
     const legendKeys = api.CATEGORY_LEGEND.map((c) => c.key);
     // The site has no catch-all bucket, so an alias must always resolve to a
     // legend key - otherwise the dot renders with no colour and no count.
-    expect(legendKeys.length).toBe(7);
+    expect(legendKeys.length).toBe(9);
     expect(legendKeys).not.toContain('Other');
     for (const alias of Object.keys(api.CATEGORY_ALIASES)) {
       expect(legendKeys).toContain(api.CATEGORY_ALIASES[alias]);
