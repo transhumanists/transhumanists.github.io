@@ -30,6 +30,10 @@ import urllib.request
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+import geo_hints
+
 ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_OUTPUT = ROOT / "data" / "world_layers.json"
 USER_AGENT = "transhumanists-worldmap/1.0 (+https://transhumanists.github.io)"
@@ -60,111 +64,6 @@ VIOLATION_KEYWORDS = (
     "journalist killed", "human rights defender", "activist detained",
     "hate crime", "religious freedom", "conscription", "internment",
 )
-
-# Coarse location hints. A feed headline rarely names a country with enough
-# precision for a landmark, so the country is matched first and the capital
-# region used as the anchor. Coordinates are region-level on purpose: a wrong
-# landmark is worse than a coarse one.
-LOCATION_HINTS = {
-    "myanmar": (21.9, 95.9, "Southeast Asia"),
-    "burma": (21.9, 95.9, "Southeast Asia"),
-    "syria": (34.8, 39.0, "Western Asia"),
-    "turkey": (39.0, 35.2, "Western Asia"),
-    "afghanistan": (33.9, 67.7, "Central Asia"),
-    "iran": (32.4, 53.7, "Western Asia"),
-    "iraq": (33.2, 43.7, "Western Asia"),
-    "israel": (31.4, 34.9, "Western Asia"),
-    "palestine": (31.9, 35.2, "Western Asia"),
-    "gaza": (31.5, 34.5, "Western Asia"),
-    "yemen": (15.4, 44.2, "Western Asia"),
-    "syria": (34.8, 39.0, "Western Asia"),
-    "russia": (55.8, 37.6, "Eastern Europe"),
-    "ukraine": (49.0, 31.4, "Eastern Europe"),
-    "belarus": (53.9, 27.6, "Eastern Europe"),
-    "china": (35.9, 104.2, "Eastern Asia"),
-    "tibet": (29.6, 91.1, "Eastern Asia"),
-    "xinjiang": (43.8, 87.6, "Eastern Asia"),
-    "tibet": (29.6, 91.1, "Eastern Asia"),
-    "eritrea": (15.2, 39.8, "Eastern Africa"),
-    "ethiopia": (9.1, 40.5, "Eastern Africa"),
-    "somalia": (5.2, 46.2, "Eastern Africa"),
-    "sudan": (12.8, 30.2, "Northern Africa"),
-    "nigeria": (9.1, 8.7, "Western Africa"),
-    "cameroon": (7.4, 12.4, "Central Africa"),
-    "democratic republic of the congo": (-4.0, 21.8, "Central Africa"),
-    "south sudan": (6.9, 31.3, "Northern Africa"),
-    "libya": (26.3, 17.2, "Northern Africa"),
-    "egypt": (26.8, 30.8, "Northern Africa"),
-    "saudi arabia": (23.9, 45.1, "Western Asia"),
-    "venezuela": (6.4, -66.6, "South America"),
-    "colombia": (4.6, -74.1, "South America"),
-    "brazil": (-14.2, -51.9, "South America"),
-    "mexico": (23.6, -102.5, "North America"),
-    "united states": (39.8, -98.6, "North America"),
-    "india": (20.6, 79.0, "Southern Asia"),
-    "pakistan": (30.4, 69.3, "Southern Asia"),
-    "bangladesh": (23.7, 90.4, "Southern Asia"),
-    "indonesia": (-0.8, 113.9, "South-Eastern Asia"),
-    "philippines": (12.9, 121.8, "South-Eastern Asia"),
-    "thailand": (15.9, 101.0, "South-Eastern Asia"),
-    "malaysia": (4.2, 101.9, "South-Eastern Asia"),
-    "niger": (17.6, 8.1, "Western Africa"),
-    "kenya": (-0.02, 37.9, "Eastern Africa"),
-    "uganda": (1.37, 32.3, "Eastern Africa"),
-    "bangladesh": (23.7, 90.4, "Southern Asia"),
-    "haiti": (18.97, -72.3, "Caribbean"),
-    "venezuela": (6.4, -66.6, "South America"),
-    # Gulf states, plus other jurisdictions these feeds report on often. Added
-    # after a live run placed a UAE article in South Sudan purely for lack of an
-    # entry, so the body-fallback path could be taken instead.
-    "united arab emirates": (23.4, 53.8, "Western Asia"),
-    "bahrain": (26.0, 50.6, "Western Asia"),
-    "qatar": (25.4, 51.2, "Western Asia"),
-    "kuwait": (29.3, 47.5, "Western Asia"),
-    "oman": (21.0, 57.0, "Western Asia"),
-    "jordan": (31.2, 36.5, "Western Asia"),
-    "lebanon": (33.9, 35.5, "Western Asia"),
-    "morocco": (31.8, -7.1, "Northern Africa"),
-    "algeria": (28.0, 1.7, "Northern Africa"),
-    "tunisia": (33.9, 9.5, "Northern Africa"),
-    "senegal": (14.5, -14.5, "Western Africa"),
-    "ghana": (7.9, -1.0, "Western Africa"),
-    "zimbabwe": (-19.0, 29.2, "Southern Africa"),
-    "south africa": (-30.6, 22.9, "Southern Africa"),
-    "congo": (-4.0, 21.8, "Central Africa"),
-    "cote d'ivoire": (7.5, -5.5, "Western Africa"),
-    "côte d'ivoire": (7.5, -5.5, "Western Africa"),
-    "chad": (15.5, 18.7, "Central Africa"),
-    "tanzania": (-6.4, 34.9, "Eastern Africa"),
-    "rwanda": (-1.9, 29.9, "Eastern Africa"),
-    "burundi": (-3.4, 29.9, "Eastern Africa"),
-    "mozambique": (-18.7, 35.5, "Eastern Africa"),
-    "guatemala": (15.8, -90.2, "Central America"),
-    "honduras": (15.2, -86.2, "Central America"),
-    "cuba": (21.5, -77.8, "Caribbean"),
-    "korea": (35.9, 127.8, "Eastern Asia"),
-    "vietnam": (14.1, 108.3, "South-Eastern Asia"),
-    "cambodia": (12.6, 105.0, "South-Eastern Asia"),
-    "singapore": (1.35, 103.8, "South-Eastern Asia"),
-    "new zealand": (-41.0, 174.0, "Oceania"),
-    "australia": (-25.3, 133.8, "Oceania"),
-    "canada": (56.1, -106.3, "North America"),
-    "spain": (40.4, -3.7, "Southern Europe"),
-    "italy": (41.9, 12.6, "Southern Europe"),
-    "greece": (39.1, 21.8, "Southern Europe"),
-    "romania": (45.9, 25.0, "Eastern Europe"),
-    "moldova": (47.4, 28.4, "Eastern Europe"),
-    "georgia": (42.3, 43.4, "Western Asia"),
-    "armenia": (40.1, 45.0, "Western Asia"),
-    "azerbaijan": (40.1, 47.6, "Western Asia"),
-    "uzbekistan": (41.4, 64.6, "Central Asia"),
-    "kazakhstan": (48.0, 66.9, "Central Asia"),
-    "turkmenistan": (38.9, 59.5, "Central Asia"),
-    "tajikistan": (38.9, 71.3, "Central Asia"),
-    "kyrgyzstan": (41.2, 74.8, "Central Asia"),
-    "indonesia": (-0.8, 113.9, "South-Eastern Asia"),
-}
-
 
 def _tls_context(host: str) -> ssl.SSLContext:
     """Tolerant TLS, mirroring fetch_crisis_zones so both scripts behave alike."""
@@ -254,21 +153,21 @@ def is_violation_report(text: str) -> bool:
 def locate(text: str, fallback_text: str = "") -> tuple[float, float, str] | None:
     """Best-effort country anchor, or None when unrecognised.
 
-    The title is searched first and the body only as a fallback. Feed bodies carry
-    boilerplate naming other countries - an HRW article about a critic detained in
-    the UAE sat above "a South Sudanese policeman", and matching the body first
-    plotted the landmark 4,000 km away in South Sudan. The headline states the
-    subject; the boilerplate does not.
+    The headline is searched first and the body only as a fallback. Feed bodies
+    carry boilerplate naming other countries - an HRW article about a critic
+    detained in the UAE sat above "a South Sudanese policeman", and matching the
+    body first plotted the landmark 4,000 km away in South Sudan. The headline
+    states the subject; the boilerplate does not.
+
+    Hints live in geo_hints, shared with the milestone geocoder. This file used to
+    keep its own copy, and that copy carried five duplicate keys that Python
+    silently collapsed.
     """
     for haystack in (text, fallback_text):
-        if not haystack:
-            continue
-        lowered = haystack.lower()
-        # Longest match first so "democratic republic of the congo" wins over "congo".
-        for needle in sorted(LOCATION_HINTS, key=len, reverse=True):
-            if needle in lowered:
-                lat, lon, region = LOCATION_HINTS[needle]
-                return lat, lon, region
+        hit = geo_hints.match_place(haystack or "")
+        if hit:
+            lat, lon, region = hit[1]
+            return lat, lon, region
     return None
 
 

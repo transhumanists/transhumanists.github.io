@@ -34,9 +34,12 @@ class TestCheckEvents(unittest.TestCase):
         )
         self.assertEqual(cd.check_events(payload["events"]), [])
 
-    def test_missing_geolocation_fails(self):
+    def test_unlocated_event_is_published_rather_than_rejected(self):
+        # Was `test_missing_geolocation_fails`. Dropping an unlocatable milestone
+        # deleted it from the feed, dashboard, catalog and metrics with no trace,
+        # which is worse than publishing it without a dot.
         payload = _events_payload({"title": "X", "category": "Renewable Energy", "date": "2026-03-15"})
-        self.assertTrue(cd.check_events(payload["events"]))
+        self.assertEqual(cd.check_events(payload["events"]), [])
 
     def test_nonfinite_coordinate_fails(self):
         payload = _events_payload(
@@ -514,14 +517,56 @@ class TestSharedIdentityRule(unittest.TestCase):
     could end up enforcing a stale policy that no longer matches the merge.
     """
 
-    def test_both_consumers_use_the_shared_module(self):
+    def test_both_consumers_delegate_to_the_shared_module(self):
+        # Guards against the validator and the unifier drifting apart. Asserted
+        # behaviourally rather than by re-exporting the helpers under private
+        # names in check_data: an alias that only exists so an identity check can
+        # pass is dead code, and it proves nothing about what the validator does.
+        import inspect
+
         import milestone_identity
         import sync_milestones
 
-        self.assertIs(cd.check_duplicate_reports.__module__, cd.__name__)
         self.assertIs(sync_milestones._dedupe_same_report, milestone_identity.same_report)
-        self.assertIs(cd._content_tokens, milestone_identity.content_tokens)
-        self.assertIs(cd._DEDUPE_STOPWORDS, milestone_identity.DEDUPE_STOPWORDS)
+        validator_src = inspect.getsource(cd.check_duplicate_reports)
+        self.assertIn("milestone_identity.same_report", validator_src)
+        unifier_src = inspect.getsource(sync_milestones._dedupe_metric_key)
+        self.assertIn("milestone_identity.report_group_key", unifier_src)
+
+    def test_validator_and_unifier_agree_on_every_case(self):
+        # The invariant that actually matters: for any pair, the validator flags
+        # exactly the pairs the unifier would merge (modulo the unit field, which
+        # published events drop).
+        import milestone_identity
+        import sync_milestones
+
+        pairs = [
+            # Same date/value, corroborating title, different URLs -> one result.
+            ({"title": "Khipu mining result achieved", "value": "0.86",
+              "date": "2026-06-30", "url": "https://arxiv.org/abs/1"},
+             {"title": "Khipu mining result reported", "value": 0.86,
+              "date": "2026-06-30", "url": "https://arxiv.org/abs/2"}, True),
+            # Same specific article -> one result.
+            ({"title": "Alpha result", "value": "5", "date": "2026-06-30",
+              "url": "https://arxiv.org/abs/9"},
+             {"title": "Beta result", "value": "5", "date": "2026-06-30",
+              "url": "https://arxiv.org/abs/9"}, True),
+            # Shared generic org URL is not corroboration -> two results.
+            ({"title": "Starship payload to LEO", "value": "156", "date": "2026-06-30",
+              "url": "https://spacex.com"},
+             {"title": "Falcon Heavy lift to GTO", "value": "156", "date": "2026-06-30",
+              "url": "https://spacex.com"}, False),
+        ]
+        for a, b, expected in pairs:
+            with self.subTest(pair=(a["title"], b["title"])):
+                verdict = milestone_identity.same_report(a, b)
+                self.assertEqual(verdict, expected)
+                # The unifier must reach the same conclusion end to end.
+                merged, _ = sync_milestones.unify_duplicate_milestones([
+                    dict(a, id="ms-a", unit="t", category="Computing & AGI"),
+                    dict(b, id="ms-b", unit="t", category="Computing & AGI"),
+                ])
+                self.assertEqual(len(merged), 1 if expected else 2)
 
     def test_paired_and_non_paired_cases_agree(self):
         import milestone_identity
@@ -560,6 +605,54 @@ class TestSharedIdentityRule(unittest.TestCase):
         for rec in ({"value": None}, {"value": ""}, {"value": "1"}, {"value": "1", "date": None}):
             with self.subTest(rec=rec):
                 self.assertIsNone(milestone_identity.report_group_key(rec, include_unit=False))
+
+
+class TestUnlocatedEvents(unittest.TestCase):
+    """A milestone that cannot be geocoded is published, not deleted.
+
+    Dropping it silently removed it from the feed, dashboard, catalog and metrics.
+    The contract is: `geolocation` is either a real located pair or absent, and
+    an explicitly-unlocated record says so.
+    """
+
+    def _event(self, **over):
+        base = {
+            "id": "ev-1", "title": "T", "category": "Cybersecurity",
+            "date": "2026-03-15", "source": "S", "value": "1",
+        }
+        base.update(over)
+        return base
+
+    def test_located_event_is_accepted(self):
+        ev = self._event(geolocation={"lat": 51.5, "lon": -0.12})
+        self.assertEqual(cd.check_events([ev]), [])
+
+    def test_unlocated_event_without_the_flag_is_accepted(self):
+        # Legacy payload shape: simply no geolocation key.
+        self.assertEqual(cd.check_events([self._event()]), [])
+
+    def test_explicitly_unlocated_event_is_accepted(self):
+        self.assertEqual(cd.check_events([self._event(located=False)]), [])
+
+    def test_null_island_is_rejected(self):
+        issues = cd.check_events([self._event(geolocation={"lat": 0, "lon": 0})])
+        self.assertTrue(any("no-location marker" in i for i in issues), issues)
+
+    def test_out_of_range_coordinates_are_rejected(self):
+        issues = cd.check_events([self._event(geolocation={"lat": 200, "lon": 0})])
+        self.assertTrue(any("lat/lon pair" in i for i in issues))
+
+    def test_malformed_geolocation_is_rejected(self):
+        issues = cd.check_events([self._event(geolocation="somewhere")])
+        self.assertTrue(issues)
+
+    def test_unlocated_events_still_participate_in_ordering_and_duplicate_checks(self):
+        # Being unlocated must not exempt a record from list-level invariants.
+        issues = cd.check_events([
+            self._event(id="ev-a", title="Old", date="2026-01-01", located=False),
+            self._event(id="ev-b", title="New", date="2026-09-01", located=False),
+        ])
+        self.assertTrue(any("newest-first" in i for i in issues), issues)
 
 
 class TestEventOrdering(unittest.TestCase):
@@ -1038,9 +1131,11 @@ class TestCheckFile(unittest.TestCase):
     def test_end_to_end_with_written_files(self):
         with tempfile.TemporaryDirectory() as tmp:
             d = Path(tmp)
+            # A real located pair: (0,0) is now rejected outright as the
+            # no-location marker, which this fixture previously relied on.
             (d / "events.json").write_text(
                 json.dumps(_events_payload({"title": "X", "category": "Cybersecurity", "date": "2026-03-15",
-                                            "geolocation": {"lat": 0, "lon": 0}})),
+                                            "geolocation": {"lat": 51.5, "lon": -0.12}})),
                 encoding="utf-8",
             )
             (d / "world_layers.json").write_text(

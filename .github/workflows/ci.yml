@@ -82,6 +82,9 @@ jobs:
       - name: Determinism gate tests
         run: python scripts/test_determinism_gate.py
 
+      - name: Shared geo hints tests
+        run: python scripts/test_geo_hints.py
+
       - name: Full pytest suite
         run: python -m pytest scripts/
 

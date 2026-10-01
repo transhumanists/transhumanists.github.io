@@ -282,9 +282,46 @@ class TestEvents(unittest.TestCase):
         self.assertEqual(events["events"][0]["category"], "Renewable Energy")
         self.assertEqual(events["events"][0]["value"], "100 MW")
 
-    def test_events_skip_no_geolocation(self):
-        no_geo = make_milestone(id="x", geolocation={"lat": 0.0, "lon": 0.0})
-        self.assertEqual(sm.build_events([no_geo])["events"], [])
+    def test_events_keep_an_unlocatable_milestone_instead_of_dropping_it(self):
+        # Deleting the record is the wrong answer: it disappears from the feed, the
+        # dashboard, the catalog and the metrics, and nothing downstream notices.
+        # It is published without a geolocation and the map declines to draw it.
+        no_geo = make_milestone(id="x", geolocation={"lat": 0.0, "lon": 0.0},
+                                title="Unlocatable result", source="Nobody")
+        events = sm.build_events([no_geo])["events"]
+        self.assertEqual(len(events), 1)
+        self.assertNotIn("geolocation", events[0])
+        self.assertIs(events[0]["located"], False)
+        self.assertEqual(events[0]["title"], "Unlocatable result")
+
+    def test_events_never_emit_null_island(self):
+        # (0,0) upstream must never become a coordinate: it is the no-location
+        # marker, and it previously published a dot in the Gulf of Guinea.
+        no_geo = make_milestone(id="x", geolocation={"lat": 0.0, "lon": 0.0},
+                                title="T", source="Nobody")
+        for ev in sm.build_events([no_geo])["events"]:
+            geo = ev.get("geolocation")
+            self.assertFalse(geo and geo["lat"] == 0.0 and geo["lon"] == 0.0)
+
+    def test_events_geocode_from_place_names_in_the_article(self):
+        # OSINT cascade: no institution named, but the title says which country.
+        m = make_milestone(id="ms-mt", title="Record-low error rate in Maltese OCR",
+                           source="LV-ROVER-MLT researchers", summary="",
+                           geolocation={"lat": 0.0, "lon": 0.0})
+        events = sm.build_events([m])["events"]
+        geo = events[0].get("geolocation")
+        self.assertIsNotNone(geo, "place name in the title should have geocoded it")
+        self.assertAlmostEqual(geo["lat"], 35.9, places=1)
+        self.assertAlmostEqual(geo["lon"], 14.5, places=1)
+
+    def test_events_article_place_beats_publisher_headquarters(self):
+        # A paper from a US agency published by Nature must not land in London.
+        m = make_milestone(id="ms-us", title="USCIS adjudication dataset",
+                           source="Nature Biotechnology", summary="",
+                           geolocation={"lat": 0.0, "lon": 0.0})
+        geo = sm.build_events([m])["events"][0].get("geolocation")
+        self.assertIsNotNone(geo)
+        self.assertNotAlmostEqual(geo["lon"], -0.1278, places=1)
 
     def test_events_value_uses_title_when_no_metric(self):
         m = make_milestone(

@@ -1,5 +1,5 @@
 {
-  "last_update": "2026-10-01T23:08:00+00:00",
+  "last_update": "2026-10-01T23:31:56+00:00",
   "version": "1.0.0",
   "events": [
     {
@@ -144,6 +144,16 @@
         "lat": 48.8566,
         "lon": 2.3522
       }
+    },
+    {
+      "id": "ev-ms-e5275443e851",
+      "title": "Versatile nanopore sensor simultaneously identifies four analyte classes with 98.7% accuracy",
+      "category": "Biotechnology & Biohacking",
+      "value": "98.7 percent",
+      "source": "Unknown",
+      "url": "https://www.nature.com/articles/s41587-026-03322-x",
+      "date": "2026-09-15",
+      "located": false
     },
     {
       "id": "ev-ms-e55c8cf4e432",
@@ -576,6 +586,16 @@
       }
     },
     {
+      "id": "ev-ms-f41cd2fc2342",
+      "title": "First certificate-checked solution for quantum-advantage resource extraction from two-mode Gaussian states",
+      "category": "Quantum Physics",
+      "value": "First certificate-checked solution for quantum-advantage resource extraction from two-mode Gaussian states",
+      "source": "Unknown",
+      "url": "http://arxiv.org/abs/2607.00266v1",
+      "date": "2026-06-30",
+      "located": false
+    },
+    {
       "id": "ev-ms-cede87aeb630",
       "title": "Seed2.0 model achieves world-leading reasoning and multimodal capabilities",
       "category": "Computing & AGI",
@@ -602,6 +622,16 @@
       }
     },
     {
+      "id": "ev-ms-46a7d8543058",
+      "title": "Mnemosyne introduces Agentic Transaction Processing with formal safety guarantees for AI workflows",
+      "category": "Computing & AGI",
+      "value": "5.9 % throughput overhead",
+      "source": "Unknown",
+      "url": "http://arxiv.org/abs/2607.00269v3",
+      "date": "2026-06-30",
+      "located": false
+    },
+    {
       "id": "ev-ms-10f19d45d95b",
       "title": "ML-driven Structural Pattern Mining of Inka Khipus",
       "category": "Computing & AGI",
@@ -617,6 +647,49 @@
         "Open Khipu Repository",
         "Academic researchers (Open Khipu Repository)"
       ]
+    },
+    {
+      "id": "ev-ms-0ef07b4ce70b",
+      "title": "ImmigrationReason: 12,375 USCIS AAO decisions dataset for legal reasoning",
+      "category": "Computing & AGI",
+      "value": "12375 decisions",
+      "source": "Academic researchers",
+      "url": "http://arxiv.org/abs/2608.20391v1",
+      "date": "2026-06-30",
+      "geolocation": {
+        "lat": 39.8,
+        "lon": -98.6
+      }
+    },
+    {
+      "id": "ev-ms-09edac1db332",
+      "title": "Evaluation-as-Search adaptive probing finds 2.5× more grounding failures in meeting assistants",
+      "category": "Computing & AGI",
+      "value": "2.5 x",
+      "source": "Research Team",
+      "url": "http://arxiv.org/abs/2608.20392v1",
+      "date": "2026-06-30",
+      "located": false
+    },
+    {
+      "id": "ev-ms-d6824a356960",
+      "title": "EgoSafetyBench: Diagnostic Egocentric Video Benchmark for Embodied VLM Safety Guards",
+      "category": "Computing & AGI",
+      "value": "1200 scenarios",
+      "source": "Research Consortium",
+      "url": "http://arxiv.org/abs/2607.00218v1",
+      "date": "2026-06-30",
+      "located": false
+    },
+    {
+      "id": "ev-ms-110c8b5371e0",
+      "title": "ASPIRE achieves up to 77% improvement on robot manipulation benchmarks via autonomous skill discovery",
+      "category": "Computing & AGI",
+      "value": "77 percent improvement",
+      "source": "ASPIRE research team",
+      "url": "http://arxiv.org/abs/2607.00272v1",
+      "date": "2026-06-30",
+      "located": false
     },
     {
       "id": "ev-def-002",
@@ -707,6 +780,19 @@
       "geolocation": {
         "lat": 32.0853,
         "lon": 34.7818
+      }
+    },
+    {
+      "id": "ev-ms-6a684b1bc5a3",
+      "title": "LV-ROVER-MLT achieves record-low CER 0.0074 in Maltese OCR competition",
+      "category": "Computing & AGI",
+      "value": "0.0074 CER",
+      "source": "LV-ROVER-MLT researchers",
+      "url": "http://arxiv.org/abs/2607.00250v5",
+      "date": "2026-01-01",
+      "geolocation": {
+        "lat": 35.9,
+        "lon": 14.5
       }
     },
     {

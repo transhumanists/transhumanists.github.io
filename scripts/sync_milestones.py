@@ -39,6 +39,7 @@ from pathlib import Path
 # but the explicit insert keeps the import working under `python -m scripts...` too.
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
+import geo_hints
 import milestone_identity
 
 # Institution coordinates for geocoding fallback (shared with worldmap.js)
@@ -962,45 +963,83 @@ def _match_institution(text: str) -> tuple[str, dict] | None:
 
 
 def geocode_milestone(m: dict) -> tuple[float, float] | None:
-    """Locate a milestone, preferring what the article says over who published it.
+    """Locate a milestone from the strongest evidence available, or admit defeat.
 
-    The old version concatenated source, title and category into one string and
-    took the first dictionary hit. That made the PUBLISHER outrank the content:
-    a Nature Biotechnology paper from a Stanford lab was placed at Nature's
-    London headquarters, because 'nature' is an institution key and sat ahead of
-    anything the article itself mentioned.
+    The original version concatenated source, title and category into one string
+    and took the first dictionary hit, which made the PUBLISHER outrank the
+    content: a Nature Biotechnology paper from a Stanford lab was placed at
+    Nature's London headquarters.
 
-    Evidence is now weighted, most specific first:
+    Evidence is now tried in passes, strongest first, alternating between two
+    kinds of clue:
 
-    1. the article's own text - title and summary, which name the labs and people
-       actually responsible;
-    2. the subcategory, for a topical hint;
-    3. the source, i.e. the publisher or preprint server, only as a last resort.
+    1. an institution named in the article's own text (title + summary);
+    2. a place named in the article's own text;
+    3. an institution or place named in the subcategory;
+    4. the source - the publisher or preprint server - as a last resort.
 
     A publisher anchor is a real answer for a corporate announcement (a SpaceX
-    launch really does happen at Boca Chica) and a poor one for a paper.
+    launch does happen at Boca Chica) and a poor one for a paper, which is why
+    content always gets first refusal. Institution beats place at equal
+    evidence, because "ETH Zurich" is a better answer than "Switzerland".
+
+    Returns None when nothing matched. Callers must treat that as "not located",
+    never as a reason to discard the milestone.
     """
-    for fields in (("title", "summary"), ("subcategory",), ("source",)):
-        hit = _match_institution(" ".join(str(m.get(f) or "") for f in fields).lower())
+    content = (str(m.get("title") or ""), str(m.get("summary") or ""))
+    weak = (str(m.get("subcategory") or ""),)
+
+    for fields in (content, weak, (str(m.get("source") or ""),)):
+        text = " ".join(fields).lower()
+        if not text.strip():
+            continue
+        hit = _match_institution(text)
         if hit:
-            coords = hit[1]
-            return coords["lat"], coords["lon"]
+            return hit[1]["lat"], hit[1]["lon"]
+        place = geo_hints.place_coords(text)
+        if place:
+            return place
     return None
 
 
 def build_events(milestones: list) -> dict:
+    """Publish every milestone, located or not.
+
+    A milestone that cannot be geocoded is still a milestone. It keeps its place
+    in the feed, the dashboard, the catalog, the metrics and the scrapers; it
+    simply carries no `geolocation`, and the map declines to draw a dot for it
+    because normalizeEvent/isPlottable require real coordinates.
+
+    Dropping these instead was wrong, and quietly lossy: four records were
+    deleted from a 101-record feed because no cascade produced coordinates, three
+    of which had been rendering as glowing dots on (0,0) in the Gulf of Guinea
+    and one of which had been placed in Mumbai by matching the English word "in".
+
+    The contract with check_data is therefore:
+      * `geolocation` is either absent (unlocated) or a valid located pair;
+      * (0,0) is never emitted, because it is the project's "no location" marker
+        and using it as a coordinate is exactly the bug this replaces.
+    """
     events = []
+    unlocated = 0
     for m in milestones:
-        geo = m.get("geolocation", {})
+        geo = m.get("geolocation") or {}
         lat = geo.get("lat")
         lon = geo.get("lon")
-        # Try to geocode if coordinates are missing or invalid (0,0)
-        if lat is None or lon is None or lat == 0.0 or lon == 0.0:
+        located = (isinstance(lat, (int, float)) and isinstance(lon, (int, float))
+                   and not (lat == 0.0 and lon == 0.0)
+                   and -90 <= lat <= 90 and -180 <= lon <= 180)
+
+        if not located:
+            # (0,0) upstream, missing, or out of range all mean the same thing:
+            # try to do better, and if that fails, publish without a location.
             geocoded = geocode_milestone(m)
             if geocoded:
                 lat, lon = geocoded
+                located = True
             else:
-                continue
+                unlocated += 1
+
         ev = {
             "id": "ev-" + m.get("id", ""),
             "title": m.get("title", ""),
@@ -1009,8 +1048,13 @@ def build_events(milestones: list) -> dict:
             "source": m.get("source", ""),
             "url": m.get("url"),
             "date": m.get("date", ""),
-            "geolocation": {"lat": lat, "lon": lon},
         }
+        if located:
+            ev["geolocation"] = {"lat": lat, "lon": lon}
+        else:
+            # Explicit rather than absent: consumers can tell "we looked and found
+            # nothing" from "this record predates the located flag".
+            ev["located"] = False
         # A record unified from several upstreams carries every source name so the
         # map tooltip can offer each one, not just whichever survived the merge.
         srcs = m.get("sources")
@@ -1022,6 +1066,10 @@ def build_events(milestones: list) -> dict:
         if tone:
             ev["tone"] = tone
         events.append(ev)
+    if unlocated:
+        # Visible in the sync log because a rising count means the geocoding
+        # cascades are degrading, which is otherwise a silent data-quality trend.
+        print(f"note: {unlocated} milestone(s) published without a location")
     return {"last_update": now_iso(), "version": "1.0.0", "events": events}
 
 

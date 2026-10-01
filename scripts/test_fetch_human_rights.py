@@ -126,7 +126,7 @@ class TestBuildViolation(unittest.TestCase):
             "Human Rights Watch", TODAY)
         self.assertIsNotNone(entry)
         self.assertEqual(entry["source"], "Human Rights Watch")
-        self.assertEqual(entry["region"], "Southeast Asia")
+        self.assertEqual(entry["region"], "South-Eastern Asia")  # UN geoscheme label
         self.assertEqual(entry["status"], "active")
         self.assertEqual(entry["start_date"], "2026-09-22")
         self.assertEqual(fhr.validate_entry(entry), [])

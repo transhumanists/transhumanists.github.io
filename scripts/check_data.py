@@ -270,10 +270,6 @@ def _valid_source_url(value: object) -> bool:
     return _SOURCE_URL_RE.match(value.strip()) is not None
 
 
-_DEDUPE_STOPWORDS = milestone_identity.DEDUPE_STOPWORDS
-_content_tokens = milestone_identity.content_tokens
-
-
 # Ceiling on duplicate-report findings. If this fires the data is broken in bulk,
 # and printing one line per colliding pair would produce a six-figure log and a
 # multi-second validation step; the count is reported instead.
@@ -399,9 +395,25 @@ def check_events(events: object) -> list[str]:
             issues.append(
                 f"events[{i}]: url must be absent or an http(s) URL, got {ev.get('url')!r}"
             )
+        # A milestone that could not be geocoded is published WITHOUT a
+        # geolocation rather than dropped, so this key is optional. When it is
+        # present it must be a real located pair, and (0,0) is explicitly
+        # rejected: it is the project's "no location" marker, and emitting it as a
+        # coordinate puts a glowing dot in the Gulf of Guinea.
         geo = ev.get("geolocation")
-        if not isinstance(geo, dict) or not _coord_ok(geo.get("lat"), geo.get("lon")):
-            issues.append(f"events[{i}]: geolocation must be a finite lat/lon pair in range")
+        if geo is not None:
+            if not isinstance(geo, dict) or not _coord_ok(geo.get("lat"), geo.get("lon")):
+                issues.append(
+                    f"events[{i}]: geolocation must be a finite lat/lon pair in range")
+            elif geo.get("lat") == 0.0 and geo.get("lon") == 0.0:
+                issues.append(
+                    f"events[{i}]: geolocation (0,0) is the no-location marker; omit "
+                    f"the key instead of publishing null island")
+        # Absent geolocation means unlocated, which is valid: the milestone is
+        # published without a dot. The optional `located: false` flag the pipeline
+        # emits is informational, and is not required - legacy and hand-authored
+        # payloads predate it, and the same way this module accepts both
+        # `deployments` and `fleet_movements`.
     # List-level invariants. Checked after the per-record pass so a malformed
     # record cannot make the ordering comparison itself throw.
     if not issues:

@@ -2985,7 +2985,16 @@ const fragment = document.createDocumentFragment();
     let lon = e.geolocation?.lon;
     // Intelligent geocoding fallback if coordinates missing OR invalid (0,0 indicates missing)
     const hasValidCoords = Number.isFinite(lat) && Number.isFinite(lon) && !(lat === 0 && lon === 0);
-    if (!hasValidCoords) {
+    // When the pipeline has already ruled on this record it says so explicitly
+    // (`located: false`, emitted after running its full geocoding cascade).
+    // Honouring that decision matters: the client-side table below is a third,
+    // smaller copy of the institution hints and uses the older "first match in
+    // source+title+category" rule, so a second opinion here could place a
+    // milestone somewhere the pipeline deliberately did not - and would place it
+    // worse. The fallback still runs for hand-authored or legacy payloads, which
+    // carry no such flag.
+    const pipelineLocated = e.located === false;
+    if (!hasValidCoords && !pipelineLocated) {
       const geo = geocodeInstitution(e.source, e.title, e.category);
       if (geo) {
         lat = geo.lat;
