@@ -635,31 +635,94 @@ test('zoom controls, keyboard and double-click do not throw', () => {
     expect(api.parseGeocodeCache(42)).toEqual({});
   });
 
-  test('"stale" means the same thing for zones, crises and deployments', () => {
+  test('recency tiers: only active-and-recent layers get the neon treatment', () => {
     const api = windowObj.__WORLDMAP_TEST__;
-    const layer = (over) => ({ status: 'active', last_news_year: 2020, ...over });
+    const zone = (over) => ({ status: 'active', last_news_year: 2020, ...over });
     api.setTimelineYear(2026);
-    // Active and recent -> not stale.
-    expect(api.isStaleLayer(layer({ last_news_year: 2026 }))).toBe(false);
-    // Active but no news for more than the threshold -> stale.
-    expect(api.isStaleLayer(layer({ last_news_year: 2020 }))).toBe(true);
-    // Concluded entries are never "stale"; they are simply over.
-    expect(api.isStaleLayer(layer({ status: 'concluded', last_news_year: 2015 }))).toBe(false);
-    // Absence of data is not evidence of disuse.
-    expect(api.isStaleLayer({ status: 'active' })).toBe(false);
-    expect(api.isStaleLayer(layer({ last_news_year: null }))).toBe(false);
-    expect(api.isStaleLayer(layer({ last_news_year: '2020' }))).toBe(false);
-    expect(api.isStaleLayer(layer({ last_news_year: NaN }))).toBe(false);
-    expect(api.isStaleLayer(layer({ last_news_year: Infinity }))).toBe(false);
-    // A future news year must not read as stale (negative age).
-    expect(api.isStaleLayer(layer({ last_news_year: 2030 }))).toBe(false);
-    // The threshold is exactly what is documented, on both sides of the edge.
-    expect(api.isStaleLayer(layer({ last_news_year: 2026 - api.STALE_THRESHOLD_YEARS }))).toBe(false);
-    expect(api.isStaleLayer(layer({ last_news_year: 2026 - api.STALE_THRESHOLD_YEARS - 1 }))).toBe(true);
+
+    // hot: active and recent relative to the displayed year.
+    expect(api.layerTier(zone({ last_news_year: 2026 }))).toBe('hot');
+    expect(api.layerTier(zone({ last_news_year: 2026 - api.LAYER_FRESH_YEARS }))).toBe('hot');
+    // quiet: active, inside the window, but not fresh.
+    expect(api.layerTier(zone({ last_news_year: 2026 - api.LAYER_FRESH_YEARS - 1 }))).toBe('quiet');
+    expect(api.layerTier(zone({ last_news_year: 2018 }))).toBe('quiet');
+    // cold: long-running background.
+    expect(api.layerTier(zone({ last_news_year: 2026 - api.LAYER_STALE_YEARS - 1 }))).toBe('cold');
+    // done: concluded, whatever the recency.
+    expect(api.layerTier(zone({ status: 'concluded', last_news_year: 2026 }))).toBe('done');
+
+    // No recency signal is NOT read as current. This was the opposite of the
+    // previous rule ("absence of data is not evidence of disuse"); the requirement
+    // is now that neon means "active and recent", and a layer with nothing to
+    // judge on must not get the brightest treatment.
+    expect(api.layerTier({ status: 'active' })).toBe('quiet');
+    expect(api.layerTier(zone({ last_news_year: null, start_date: '' }))).toBe('quiet');
+
+    // start_date is the fallback signal for crises and deployments, which ship no
+    // last_news_year at all.
+    expect(api.layerRecencyYear({ status: 'active', start_date: '2025-06-01' })).toBe(2025);
+    expect(api.layerRecencyYear({ status: 'active', last_news_year: 2024, start_date: '1999-01-01' })).toBe(2024);
+    expect(api.layerRecencyYear({ status: 'active' })).toBe(null);
+    expect(api.layerTier({ status: 'active', start_date: '2026-03-01' })).toBe('hot');
+    expect(api.layerTier({ status: 'active', start_date: '2015-03-01' })).toBe('quiet');
+    expect(api.layerTier({ status: 'active', start_date: '2003-03-01' })).toBe('cold');
+
     // The slider governs the comparison, not the wall clock.
     api.setTimelineYear(2019);
-    expect(api.isStaleLayer(layer({ last_news_year: 2018 }))).toBe(false);
+    expect(api.layerTier(zone({ last_news_year: 2018 }))).toBe('hot');
+    // A recency marker after the displayed year is outside the window being viewed
+    // and must not be treated as "hot".
+    expect(api.layerTier(zone({ last_news_year: 2026 }))).toBe('quiet');
     api.setTimelineYear(2026);
+
+    // isStaleLayer is now "anything that should not read as current".
+    expect(api.isStaleLayer(zone({ last_news_year: 2026 }))).toBe(false);
+    expect(api.isStaleLayer(zone({ last_news_year: 2020 }))).toBe(true);
+    expect(api.isStaleLayer(zone({ status: 'concluded', last_news_year: 2026 }))).toBe(false);
+    // Restore the shared fixture state for later tests.
+    api.setEvents(EVENT_PAYLOAD.events);
+  });
+
+  test('a zone sourced only from the Wikipedia conflict list never reads as neon', () => {
+    const api = windowObj.__WORLDMAP_TEST__;
+    api.setTimelineYear(2026);
+    const wiki = { status: 'active', last_news_year: 2026, source: 'Wikipedia (List of ongoing armed conflicts)' };
+    const curated = { status: 'active', last_news_year: 2026, source: 'UN OCHA' };
+
+    // Recognised as single-list sourced.
+    expect(api.isSingleListSourced(wiki)).toBe(true);
+    expect(api.isSingleListSourced(curated)).toBe(false);
+    expect(api.isSingleListSourced({ status: 'active', source: 'ISW' })).toBe(false);
+    expect(api.isSingleListSourced({ status: 'active' })).toBe(false);
+
+    // The tier itself does not care about sourcing...
+    expect(api.layerTier(wiki)).toBe('hot');
+    expect(api.layerTier(curated)).toBe('hot');
+    // ...but what gets painted is capped, so a recent Wikipedia-only entry does
+    // not claim the same "active and recent" status as a corroborated one.
+    expect(api.layerPaintTier(wiki)).toBe('quiet');
+    expect(api.layerPaintTier(curated)).toBe('hot');
+    expect(api.isStaleLayer(wiki)).toBe(true);
+    expect(api.isStaleLayer(curated)).toBe(false);
+
+    // Only the hot tier is allowed to glow; every other tier must be plain.
+    expect(api.LAYER_TIER_PAINT.hot.glow).toBe(true);
+    expect(api.LAYER_TIER_PAINT.hot.pulse).toBe(true);
+    for (const tier of ['quiet', 'cold', 'done']) {
+      expect(api.LAYER_TIER_PAINT[tier].glow).toBe(false);
+      expect(api.LAYER_TIER_PAINT[tier].pulse).toBe(false);
+    }
+    // The ladder is monotonic: each dimmer tier is at least as dark and at least
+    // as desaturated as the one above it.
+    const order = ['hot', 'quiet', 'cold', 'done'];
+    for (let i = 1; i < order.length; i++) {
+      const prev = api.LAYER_TIER_PAINT[order[i - 1]];
+      const cur = api.LAYER_TIER_PAINT[order[i]];
+      expect(cur.fill).toBeLessThanOrEqual(prev.fill);
+      expect(cur.stroke).toBeLessThanOrEqual(prev.stroke);
+      expect(cur.desat).toBeGreaterThanOrEqual(prev.desat);
+    }
+    api.setEvents(EVENT_PAYLOAD.events);
   });
 
   test('a failed milestone feed never substitutes fabricated data in production', () => {
@@ -1284,15 +1347,19 @@ test('zoom controls, keyboard and double-click do not throw', () => {
     const api = windowObj.__WORLDMAP_TEST__;
     api.setFilterRecent(false);
     api.setTimelineYear(2026);
-    // Ladder: active+fresh (glow) > active+stale (weak glow) > concluded (none).
-    // Asserted on the constants the renderer actually uses, since the distinction
-    // is carried by fill/stroke alpha and desaturation rather than by hue.
-    expect(api.PASSIVE_OPACITY_LADDER).toEqual({ concluded: 0.10, stale: 0.16 });
-    expect(api.CONCLUDED_STROKE_ALPHA).toBeGreaterThan(0.30);
-    expect(api.CONCLUDED_DESAT).toBeGreaterThan(0);
-    // A concluded arrowhead is desaturated as well as dimmed, so the three states
-    // do not rely on alpha alone.
-    expect(api.CONCLUDED_OPACITY).toBeLessThan(0.5);
+    // The distinction is carried by the tier ladder's fill/stroke alpha and
+    // desaturation rather than by hue, so it is asserted on the paint table the
+    // three renderers actually read rather than on the renderer internals.
+    const p = api.LAYER_TIER_PAINT;
+    expect(p.done.fill).toBeLessThan(p.cold.fill);
+    expect(p.cold.fill).toBeLessThan(p.quiet.fill);
+    expect(p.quiet.fill).toBeLessThan(p.hot.fill);
+    expect(p.done.stroke).toBeLessThan(p.hot.stroke);
+    // Concluded and long-running both read desaturated, not merely transparent.
+    expect(p.done.desat).toBeGreaterThan(0);
+    expect(p.cold.desat).toBeGreaterThan(0);
+    expect(p.hot.desat).toBe(0);
+    api.setEvents(EVENT_PAYLOAD.events);
   });
 
   test('pager arrows are real buttons so the disabled state and keyboard reach work', () => {

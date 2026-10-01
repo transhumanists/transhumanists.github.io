@@ -519,6 +519,175 @@ def merge_feed(current: list, history: list) -> list:
     return feed
 
 
+# ---------------------------------------------------------------------------
+# Duplicate unification
+# ---------------------------------------------------------------------------
+# Content tokens used only for the "is this plausibly the same record" guard.
+_DEDUPE_STOPWORDS = frozenset("""
+a an the of for and in on to new via using with at by from is are was were be been
+that this its as into over under more most less least than then which we our
+""".split())
+
+
+def _dedupe_tokens(title: str) -> set:
+    return {
+        t
+        for t in re.findall(r"[a-z0-9]+", (title or "").lower())
+        if t not in _DEDUPE_STOPWORDS and len(t) > 2
+    }
+
+
+def _dedupe_metric_key(m: dict) -> tuple | None:
+    """Identity key for a reported metric, or None when the record has no metric.
+
+    Two records describing the same measurement share the date, the value, the
+    unit and the category. All four are required, so two unrelated milestones that
+    happen to share a number never collapse.
+    """
+    value = m.get("value")
+    if value in (None, ""):
+        return None
+    date = m.get("date")
+    if not date:
+        return None
+    category = m.get("category_key") or m.get("category") or ""
+    # Numeric-equivalent spellings ("0.86" vs 0.86) must collapse; anything
+    # unparsable falls back to the raw string.
+    try:
+        value_key = round(float(value), 9)
+    except (TypeError, ValueError):
+        value_key = str(value).strip().lower()
+    return (str(date), value_key, str(m.get("unit") or "").strip().lower(), str(category))
+
+
+def unify_duplicate_milestones(milestones: list) -> tuple[list, list[str]]:
+    """Collapse milestones that are the same reported result from several sources.
+
+    Upstream mirrors can describe one real-world result twice under different
+    titles - typically when two scrapers (a repository feed and a paper listing)
+    both publish it. Each becomes its own record, so the dashboard counts it twice
+    and the map stacks two dots on one location.
+
+    A pair is merged only when ALL of these hold, which is what keeps genuinely
+    distinct milestones apart:
+
+      * identical date, value, unit and category (a shared *value* alone is far too
+        weak - 100 qubits recurs constantly), and
+      * either a shared specific document URL, or at least one shared content
+        token in the titles.
+
+    Deliberately NOT a merge signal: a bare/generic URL. Two different milestones
+    routinely cite the same landing page (e.g. two SpaceX flights citing
+    spacex.com, or two IBM milestones citing one Wikipedia article), and merging
+    those would erase real history.
+
+    The surviving record keeps the most informative title and gains a `sources`
+    list naming every source that reported it, so provenance is preserved rather
+    than discarded. Returns (unified_records, human_readable_changes).
+    """
+    order: list[tuple] = []
+    groups: dict[tuple, list[dict]] = {}
+    passthrough: list[tuple] = []
+
+    for m in milestones:
+        key = _dedupe_metric_key(m)
+        if key is None:
+            passthrough.append((None, m))
+            continue
+        if key not in groups:
+            groups[key] = []
+            order.append(key)
+        groups[key].append(m)
+
+    changes: list[str] = []
+    out: list[dict] = []
+
+    def emit(record: dict) -> None:
+        out.append(record)
+
+    for key in order:
+        bucket = groups[key]
+        # Within one metric key, partition into clusters of "same report".
+        clusters: list[list[dict]] = []
+        for rec in bucket:
+            placed = False
+            for cluster in clusters:
+                if _dedupe_same_report(cluster[0], rec):
+                    cluster.append(rec)
+                    placed = True
+                    break
+            if not placed:
+                clusters.append([rec])
+
+        for cluster in clusters:
+            if len(cluster) == 1:
+                emit(dict(cluster[0]))
+                continue
+            primary = _dedupe_pick_primary(cluster)
+            sources = _dedupe_collect_sources(cluster)
+            merged = dict(primary)
+            # Only attach `sources` when it adds something, so a single-source
+            # record keeps exactly the shape it had before.
+            if len(sources) > 1:
+                merged["sources"] = sources
+            emit(merged)
+            ids = ", ".join(str(r.get("id")) for r in cluster)
+            changes.append(
+                f"unified {len(cluster)} records into {primary.get('id')} "
+                f"({'; '.join(sources)})"
+            )
+            changes.append(f"  merged ids: {ids}")
+
+    # Records with no metric keep their original relative order by interleaving on
+    # identity is not possible here, so they are appended in encounter order after
+    # the metric-keyed ones. Callers (build_site_categories) group by category, so
+    # ordering within the published file is not load-bearing.
+    for _, rec in passthrough:
+        emit(dict(rec))
+
+    return out, changes
+
+
+def _dedupe_same_report(a: dict, b: dict) -> bool:
+    """Guard for two records that already share date+value+unit+category."""
+    url_a = (a.get("url") or "").strip().lower()
+    url_b = (b.get("url") or "").strip().lower()
+    if url_a and url_a == url_b:
+        return True
+    ta, tb = _dedupe_tokens(a.get("title")), _dedupe_tokens(b.get("title"))
+    if not ta or not tb:
+        return False
+    return bool(ta & tb)
+
+
+def _dedupe_pick_primary(cluster: list[dict]) -> dict:
+    """Choose the record to keep: richest summary, then a real url, then earliest id.
+
+    Deterministic so repeated runs over the same input always produce the same
+    output and therefore do not churn the commit fingerprint.
+    """
+    def score(rec: dict) -> tuple:
+        summary = rec.get("summary") or ""
+        url = rec.get("url") or ""
+        return (
+            -len(summary),
+            0 if url and not url.rstrip("/").count("/") <= 2 else 1,
+            str(rec.get("id") or ""),
+        )
+
+    return min(cluster, key=score)
+
+
+def _dedupe_collect_sources(cluster: list[dict]) -> list[str]:
+    """Every distinct source name in the cluster, in first-seen order."""
+    seen: list[str] = []
+    for rec in cluster:
+        name = str(rec.get("source") or "").strip()
+        if name and name not in seen:
+            seen.append(name)
+    return seen
+
+
 def build_site_categories(milestones: list, upstream_categories: dict) -> dict:
     """Group a flat milestone list into the snake_case site-format container.
 
@@ -821,6 +990,12 @@ def main() -> int:
     #    milestone the archive has ever seen - upstream collapse must never
     #    wipe the site's feeds.
     feed = merge_feed(current, history)
+    # Collapse reports of the same result that arrived from more than one source
+    # before they reach the published feed, so the dashboard and the map count a
+    # single breakthrough once and its provenance names every source.
+    feed, dedupe_changes = unify_duplicate_milestones(feed)
+    for line in dedupe_changes:
+        print(line)
     site_format = {
         "last_update": now_iso(),
         "version": "1.0.0",

@@ -216,6 +216,131 @@ class TestEvents(unittest.TestCase):
         self.assertEqual(events["events"][0]["value"], "100 MW")
 
 
+class TestUnifyDuplicateMilestones(unittest.TestCase):
+    """The same result reported by several sources becomes one milestone."""
+
+    def _m(self, mid, title, **over):
+        rec = {
+            "id": mid,
+            "title": title,
+            "summary": "",
+            "category": "Computing & AGI",
+            "category_key": "computing_agi",
+            "value": "0.86",
+            "unit": "F1 score",
+            "source": "Open Khipu Repository",
+            "date": "2026-06-30",
+            "url": "https://example.com/a",
+            "geolocation": {"lat": -13.5, "lon": -71.9},
+        }
+        rec.update(over)
+        return rec
+
+    def test_same_result_from_two_sources_is_unified_with_both_named(self):
+        a = self._m("ms-1", "ML-driven Structural Pattern Mining of Inka Khipus")
+        b = self._m(
+            "ms-2",
+            "ML pipeline achieves 0.86 F1 classifying Inka khipu provenance",
+            source="Academic researchers",
+            url="https://example.com/b",
+        )
+        out, changes = sm.unify_duplicate_milestones([a, b])
+        self.assertEqual(len(out), 1)
+        self.assertEqual(out[0]["sources"], ["Open Khipu Repository", "Academic researchers"])
+        self.assertTrue(any("unified 2 records" in c for c in changes))
+
+    def test_shared_url_alone_is_not_enough(self):
+        # Two distinct IBM milestones are described in the same Wikipedia article.
+        # A shared url must never merge them.
+        a = self._m("q1", "IBM Condor - the first 1,000+ qubit processor",
+                    category="Quantum Physics", category_key="quantum",
+                    value="1121", unit="qubits", date="2023-12-04",
+                    url="https://en.wikipedia.org/wiki/IBM_Q_System_One")
+        b = self._m("q2", "IBM Eagle - the first 127-qubit processor",
+                    category="Quantum Physics", category_key="quantum",
+                    value="127", unit="qubits", date="2023-12-01",
+                    url="https://en.wikipedia.org/wiki/IBM_Q_System_One")
+        out, _ = sm.unify_duplicate_milestones([a, b])
+        self.assertEqual(len(out), 2)
+
+    def test_identical_metric_on_different_dates_is_not_merged(self):
+        # "100 qubits" and similar recur constantly; the date is part of the key.
+        a = self._m("z1", "Rigetti 100 qubit processor", date="2021-01-01")
+        b = self._m("z2", "Rigetti 100 qubit processor", date="2023-01-01")
+        out, _ = sm.unify_duplicate_milestones([a, b])
+        self.assertEqual(len(out), 2)
+
+    def test_identical_metric_in_different_categories_is_not_merged(self):
+        a = self._m("c1", "0.86 F1 khipu result")
+        b = self._m("c2", "0.86 F1 khipu result", category="Biotechnology",
+                    category_key="biotechnology")
+        out, _ = sm.unify_duplicate_milestones([a, b])
+        self.assertEqual(len(out), 2)
+
+    def test_shared_value_with_unrelated_titles_is_not_merged(self):
+        # Same date/value/unit/category but nothing in common: a coincidence, not
+        # the same report. The title-token guard is what stops this.
+        a = self._m("u1", "Alpha protein folding benchmark", url="https://a.example")
+        b = self._m("u2", "Beta solar cell efficiency record", url="https://b.example")
+        out, _ = sm.unify_duplicate_milestones([a, b])
+        self.assertEqual(len(out), 2)
+
+    def test_numeric_and_string_spellings_of_one_value_collapse(self):
+        a = self._m("n1", "Khipu mining result", value=0.86)
+        b = self._m("n2", "Khipu mining result reported", value="0.860")
+        out, _ = sm.unify_duplicate_milestones([a, b])
+        self.assertEqual(len(out), 1)
+
+    def test_metricless_records_are_left_untouched_and_included(self):
+        a = self._m("m1", "Qualitative note one", value=None, unit=None)
+        b = self._m("m2", "Qualitative note two", value=None, unit=None)
+        out, changes = sm.unify_duplicate_milestones([a, b])
+        self.assertEqual(len(out), 2)
+        self.assertEqual(changes, [])
+        # No `sources` key is invented for a single-source record.
+        self.assertNotIn("sources", out[0])
+
+    def test_single_source_record_keeps_its_original_shape(self):
+        a = self._m("s1", "Khipu mining result")
+        b = self._m("s2", "Unrelated solar record", value="41.2", unit="%")
+        out, _ = sm.unify_duplicate_milestones([a, b])
+        for rec in out:
+            self.assertNotIn("sources", rec)
+
+    def test_richest_summary_wins_and_selection_is_deterministic(self):
+        a = self._m("d1", "Khipu mining result", summary="")
+        b = self._m("d2", "Khipu mining result restated",
+                    summary="A considerably longer and more informative summary.")
+        first, _ = sm.unify_duplicate_milestones([a, b])
+        second, _ = sm.unify_duplicate_milestones([b, a])
+        # Same winner regardless of input order, so the commit fingerprint is stable.
+        self.assertEqual(first[0]["id"], second[0]["id"])
+        self.assertEqual(first[0]["id"], "d2")
+
+    def test_unification_does_not_mutate_its_input(self):
+        a = self._m("i1", "Khipu mining result")
+        b = self._m("i2", "Khipu mining result restated", source="Other source")
+        before = json.dumps([a, b], sort_keys=True)
+        sm.unify_duplicate_milestones([a, b])
+        self.assertEqual(json.dumps([a, b], sort_keys=True), before)
+
+    def test_published_data_has_no_duplicate_reports_left(self):
+        # Regression guard on the real published feed, not just fixtures.
+        path = Path(__file__).resolve().parent.parent / "data" / "milestones.json"
+        if not path.exists():
+            self.skipTest("data/milestones.json not present")
+        site = sm.transform_upstream_to_site_format(
+            json.loads(path.read_text(encoding="utf-8"))
+        )
+        unified, changes = sm.unify_duplicate_milestones(
+            sm.iter_milestones(site)
+        )
+        # Running it again over its own output must be a fixed point.
+        again, again_changes = sm.unify_duplicate_milestones(unified)
+        self.assertEqual(len(unified), len(again))
+        self.assertEqual(again_changes, [])
+
+
 class TestCategoryAliases(unittest.TestCase):
     """Legacy upstream names fold into a canonical category.
 

@@ -92,28 +92,25 @@
   const FLUO_GLOW_BLUR = 26;
   const FLUO_LINE_GLOW_BLUR = 9;
   const FLUO_PULSE_RADIUS = 10;
-  const CONCLUDED_OPACITY = 0.45;
-  // Passive-area ladder, deliberately a visible three-step ladder rather than a
-  // single "off" look: active+fresh (full fluo glow) > active+stale (weak glow,
-  // desaturated) > concluded (no glow, desaturated, faint ring). The concluded
-  // values used to be 0.05/0.15, which is close enough to invisible that a
-  // concluded zone could not be told apart from "nothing here" and active could
-  // not be told apart from passive at a glance. The stroke alpha matters more
-  // than the fill: it is what makes the ring legible over the ocean.
-  const CONCLUDED_ZONE_OPACITY = 0.10;
-  const STALE_ZONE_OPACITY = 0.16;
-  // Stroke alpha for a concluded ring. Named because it, not the fill, is what
-  // makes a passive area legible over the ocean; it was previously an inline 0.34
-  // duplicated in two places.
-  const CONCLUDED_STROKE_ALPHA = 0.34;
-  // Centre-marker alpha for a concluded area.
-  const CONCLUDED_CENTER_ALPHA = 0.38;
-  const BRIGHT_ZONE_FILL_OPACITY = 0.30;
-  const BRIGHT_ZONE_STROKE_OPACITY = 1.0;
-  const BRIGHT_ZONE_HALO_OPACITY = 0.16;
-  const BRIGHT_ZONE_LINE_WIDTH = 3;
-  const CONCLUDED_DESAT = 0.65;
-  const STALE_DESAT = 0.35;
+  // Passive-area ladder, deliberately a visible multi-step ladder rather than a
+  // single "off" look: hot (full fluo glow) > quiet (no glow, desaturated, dark
+  // fill) > cold (darkest, long-running background) > done (ghost outline only).
+  // The stroke alpha matters more than the fill: it is what makes a ring legible
+  // over the ocean. Keyed by the layerPaintTier() values so the three layer
+  // renderers share one palette.
+  const LAYER_TIER_PAINT = {
+    // Active and recent: the only tier allowed to glow.
+    hot: { fill: 0.30, stroke: 1.0, halo: 0.16, line: 3, desat: 0, glow: true, pulse: true },
+    // Active but not current (or single-list sourced, or no recency signal).
+    quiet: { fill: 0.14, stroke: 0.42, halo: 0, line: 1.5, desat: 0.55, glow: false, pulse: false },
+    // Active and long-running background.
+    cold: { fill: 0.07, stroke: 0.22, halo: 0, line: 1, desat: 0.75, glow: false, pulse: false },
+    // Concluded: ghost only.
+    done: { fill: 0.05, stroke: 0.20, halo: 0, line: 1, desat: 0.80, glow: false, pulse: false },
+  };
+  // Centre-marker alpha per tier, so a "hot" dot still reads as a live point
+  // rather than a hole in the ring.
+  const LAYER_TIER_CENTER_ALPHA = { hot: 1, quiet: 0.55, cold: 0.32, done: 0.26 };
   /**
    * Decimal places for coordinate rounding when clustering events into stacks.
    * 4 dp ≈ 11 m at the equator — tight enough to merge only truly co-located events.
@@ -122,13 +119,6 @@
   const STACK_ROUND_DIGITS = 4;
   const STACK_FAN_DX = 3;
   const STACK_FAN_DY = -3;
-
-  /**
-   * An active layer whose last_news_year is more than this many years behind
-   * the current timeline year is rendered with the stale (dimmed) style.
-   * @type {number}
-   */
-  const STALE_THRESHOLD_YEARS = 5;
 
   function withOpacity(hexColor, opacity) {
     const r = parseInt(hexColor.slice(1, 3), 16);
@@ -172,20 +162,83 @@
     return timelineYear;
   }
 
-  // An active layer whose last_news_year is older than STALE_THRESHOLD_YEARS is
-  // "active but quiet": still glowing, but desaturated and without the fluo
-  // pulse, so a long-running story reads differently from a live one.
+  // ---- Layer recency tiers ----
+  // How current a layer looks, judged against the year the map is displaying.
   //
-  // This was copy-pasted into drawZone/drawCrisis/drawFleet, and the deployment
-  // copy had drifted: it re-derived `active` via isLayerActive() instead of using
-  // the local the other two used. One definition, one meaning. A layer with no
-  // usable last_news_year is never treated as stale — absence of data is not
-  // evidence of disuse.
+  // `last_news_year` is a recency *proxy*, not a literal last-reported date: for
+  // Wikipedia-derived layers sync_layers.py fills it from the conflict's start
+  // column (recent start = current, 1948 start = long-running), and curated
+  // news-derived layers carry their own value. Crises and most deployments ship no
+  // `last_news_year` at all, so start_date is the only signal they have.
+  //
+  // Tiers, brightest to dimmest:
+  //   hot   - active and recent. Neon glow + pulse. Reserved for this.
+  //   quiet - active but not recent, or no recency signal, or single-list sourced.
+  //   cold  - active and long-running. Dark and desaturated.
+  //   done  - concluded. Ghost outline, no fill.
+  // Absence of a recency signal is deliberately NOT treated as current: showing a
+  // layer as "hot" because we know nothing about it would misrepresent it, and the
+  // whole point of the ladder is that neon means "active and recent".
+  const TIER_HOT = 'hot';
+  const TIER_QUIET = 'quiet';
+  const TIER_COLD = 'cold';
+  const TIER_DONE = 'done';
+  // Age (in years, vs the displayed year) at or below which an active layer is
+  // still "hot". 3 keeps the 2024 deployments and 2022-23 conflicts lit while
+  // pushing 2022-and-older material down a tier.
+  const LAYER_FRESH_YEARS = 3;
+  // Beyond this the layer reads as long-running background rather than news.
+  const LAYER_STALE_YEARS = 15;
+
+  // Wikipedia's "List of ongoing armed conflicts" is a single community-maintained
+  // list. It is a reasonable catalogue of what is *listed*, not corroboration that
+  // each entry is currently active, so a zone sourced only from it is never
+  // rendered in the neon "hot" treatment - it is capped at `quiet` regardless of
+  // how recent its start year looks. Zones that also carry a named authority
+  // (UN OCHA, IMSC, ISW, ...) are unaffected.
+  const WIKI_CONFLICT_SOURCE = 'wikipedia (list of ongoing armed conflicts)';
+  function isSingleListSourced(item) {
+    const s = String((item && item.source) || '').toLowerCase();
+    return s.includes('wikipedia');
+  }
+
+  // The recency signal for a layer, in years, or null when it carries none.
+  function layerRecencyYear(item) {
+    const news = item && item.last_news_year;
+    if (typeof news === 'number' && Number.isFinite(news)) return news;
+    const start = normalizeLayerDate(layerStartDate(item));
+    return start ? parseInt(start.slice(0, 4), 10) : null;
+  }
+
+  // Single source of truth for how a layer should be painted. drawZone,
+  // drawCrisis and drawFleet all switch on this so the three layer types can
+  // never drift into disagreeing about what "active" looks like.
+  function layerTier(item) {
+    if (!isLayerActive(item)) return TIER_DONE;
+    const recency = layerRecencyYear(item);
+    if (recency === null) return TIER_QUIET;          // no signal -> not "hot"
+    const age = layerCurrentYear() - recency;
+    // A recency marker *after* the displayed year means the signal lies outside
+    // the window being viewed (the slider is parked before the layer's data). That
+    // is not evidence the layer is current, so it must not reach the neon tier.
+    if (age < 0) return TIER_QUIET;
+    if (age > LAYER_STALE_YEARS) return TIER_COLD;
+    if (age <= LAYER_FRESH_YEARS) return TIER_HOT;
+    return TIER_QUIET;
+  }
+
+  // The tier actually painted, after the single-list-sourcing cap.
+  function layerPaintTier(item) {
+    const tier = layerTier(item);
+    if (tier === TIER_HOT && isSingleListSourced(item)) return TIER_QUIET;
+    return tier;
+  }
+
+  // Retained for callers that only need the old boolean. "Stale" now means
+  // "anything that should not read as current", which is quiet or cold.
   function isStaleLayer(item) {
-    if (!isLayerActive(item)) return false;
-    const lastNewsYear = item.last_news_year;
-    if (typeof lastNewsYear !== 'number' || !Number.isFinite(lastNewsYear)) return false;
-    return (layerCurrentYear() - lastNewsYear) > STALE_THRESHOLD_YEARS;
+    const tier = layerPaintTier(item);
+    return tier === TIER_QUIET || tier === TIER_COLD;
   }
 
   // Accept YYYY-MM-DD, YYYY-MM or just YYYY (the forms sync_layers.py writes)
@@ -1158,199 +1211,80 @@ function canonicalCategory(cat) {
     }
   }
 
-  // Conflict zone: translucent area ring + dashed outline + center marker.
-  // Still-active zones get a fluo (glow) treatment so they read as "live";
-  // concluded zones render flat and dim, with their duration surfaced in the
-  // tooltip. Zones outside the timeline year are skipped entirely.
+  // Area ring shared by conflict zones and crisis zones. Both were near-identical
+  // ~90-line copies that had already drifted from each other (drawCrisis painted
+  // its centre dot twice, and the two disagreed on the "stale" treatment), so the
+  // tier ladder is applied here once and the callers only supply a colour.
+  //
+  // Only the `hot` tier glows. quiet / cold / done are progressively darker and
+  // more desaturated, which is what makes an active-and-recent layer visually
+  // distinct from a long-running or unverified one at a glance.
+  function drawAreaRing(item, baseColor, autoScale) {
+    const p = project(item.lon, item.lat);
+    const degToPx = latDegToPx();
+    const baseRadius = Math.max(4, (item.radiusDeg || 3) * degToPx * state.transform.scale * (autoScale || 1));
+    const tier = layerPaintTier(item);
+    const spec = LAYER_TIER_PAINT[tier];
+    const color = spec.desat ? desaturateHex(baseColor, spec.desat) : baseColor;
+
+    if (spec.glow) {
+      // Neon halo, breathing. The only place 'lighter' compositing is used.
+      const pulse = 0.5 + 0.5 * Math.sin(Date.now() / 900 + item.lon);
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.shadowColor = baseColor;
+      ctx.shadowBlur = FLUO_GLOW_BLUR + FLUO_PULSE_RADIUS * pulse;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, baseRadius * 1.14, 0, Math.PI * 2);
+      ctx.fillStyle = withOpacity(baseColor, spec.halo);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, baseRadius, 0, Math.PI * 2);
+    ctx.fillStyle = withOpacity(color, spec.fill);
+    ctx.fill();
+
+    ctx.save();
+    if (spec.glow) {
+      ctx.shadowColor = baseColor;
+      ctx.shadowBlur = FLUO_LINE_GLOW_BLUR;
+    }
+    ctx.setLineDash([4, 3]);
+    // Marching dash is the "live" cue, so it is reserved for the hot tier.
+    if (spec.pulse) ctx.lineDashOffset = -Date.now() / 40;
+    ctx.lineWidth = spec.line;
+    ctx.strokeStyle = withOpacity(color, spec.stroke);
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, baseRadius, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+
+    // Centre marker, sized down with the tier so a cold zone does not read as a
+    // live point.
+    const centerR = tier === TIER_HOT ? 3 : 2;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, centerR, 0, Math.PI * 2);
+    ctx.fillStyle = tier === TIER_HOT ? color : withOpacity(color, LAYER_TIER_CENTER_ALPHA[tier]);
+    ctx.fill();
+  }
+
+  // Conflict zone: area ring in the conflict palette (red/pink). Only zones
+  // sourced from something stronger than Wikipedia's conflict list reach the neon
+  // "hot" treatment - see isSingleListSourced().
   function drawZone(zone, zoneAutoScale) {
     if (!state.showZones) return;
     if (zone._hiddenByTimeline) return;
-    const p = project(zone.lon, zone.lat);
-    const degToPx = latDegToPx();
-
-    const autoScale = zoneAutoScale || 1;
-    const baseRadius = Math.max(4, (zone.radiusDeg || 3) * degToPx * state.transform.scale * autoScale);
-
-    const active = isLayerActive(zone);
-    const isStale = isStaleLayer(zone);
-
-    if (active && !isStale) {
-      // Bright active: neon glow, brighter fill, full opacity stroke
-      const pulse = 0.5 + 0.5 * Math.sin(Date.now() / 900 + zone.lon);
-      ctx.save();
-      ctx.globalCompositeOperation = 'lighter';
-      ctx.shadowColor = ZONE_COLOR;
-      ctx.shadowBlur = FLUO_GLOW_BLUR + FLUO_PULSE_RADIUS * pulse;
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, baseRadius * 1.14, 0, Math.PI * 2);
-      ctx.fillStyle = withOpacity(ZONE_COLOR, BRIGHT_ZONE_HALO_OPACITY);
-      ctx.fill();
-      ctx.restore();
-
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, baseRadius, 0, Math.PI * 2);
-      ctx.fillStyle = withOpacity(ZONE_COLOR, BRIGHT_ZONE_FILL_OPACITY);
-      ctx.fill();
-
-      ctx.save();
-      ctx.shadowColor = ZONE_COLOR;
-      ctx.shadowBlur = FLUO_LINE_GLOW_BLUR;
-      ctx.setLineDash([4, 3]);
-      ctx.lineDashOffset = -Date.now() / 40; // marching dash = "live" cue
-      ctx.lineWidth = BRIGHT_ZONE_LINE_WIDTH;
-      ctx.strokeStyle = withOpacity(ZONE_COLOR, BRIGHT_ZONE_STROKE_OPACITY);
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, baseRadius, 0, Math.PI * 2);
-      ctx.stroke();
-      ctx.restore();
-
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
-      ctx.fillStyle = ZONE_COLOR;
-      ctx.fill();
-    } else if (active && isStale) {
-      // Stale active (ongoing but no recent news): desaturated, dimmed, thinner ring
-      const staleColor = desaturateHex(ZONE_COLOR, STALE_DESAT);
-      ctx.save();
-      ctx.globalAlpha = STALE_ZONE_OPACITY;
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, baseRadius, 0, Math.PI * 2);
-      ctx.fillStyle = withOpacity(staleColor, 1);
-      ctx.fill();
-      ctx.setLineDash([4, 3]);
-      ctx.lineWidth = 1.5;
-      ctx.strokeStyle = withOpacity(staleColor, 0.4);
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, baseRadius, 0, Math.PI * 2);
-      ctx.stroke();
-      ctx.restore();
-
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, 2.5, 0, Math.PI * 2);
-      ctx.fillStyle = withOpacity(staleColor, 0.3);
-      ctx.fill();
-    } else {
-      // Concluded: deeply dim, desaturated toward slate, no glow, thinnest ring
-      const concludedColor = desaturateHex(ZONE_COLOR, CONCLUDED_DESAT);
-      ctx.save();
-      ctx.globalAlpha = CONCLUDED_ZONE_OPACITY;
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, baseRadius, 0, Math.PI * 2);
-      ctx.fillStyle = withOpacity(concludedColor, 1);
-      ctx.fill();
-      ctx.setLineDash([4, 3]);
-      ctx.lineWidth = 1;
-      ctx.strokeStyle = withOpacity(concludedColor, CONCLUDED_STROKE_ALPHA);
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, baseRadius, 0, Math.PI * 2);
-      ctx.stroke();
-      ctx.restore();
-
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, 2, 0, Math.PI * 2);
-      ctx.fillStyle = withOpacity(concludedColor, CONCLUDED_CENTER_ALPHA);
-      ctx.fill();
-    }
+    drawAreaRing(zone, ZONE_COLOR, zoneAutoScale);
   }
 
-// Crisis zone (humanitarian): translucent area ring + dashed outline + center marker.
-  // Distinct purple color to differentiate from conflict zones (red) and deployments.
-  // Same fluo/dim lifecycle split as conflict zones.
+  // Crisis zone (humanitarian): same ladder in the crisis palette (purple), which
+  // is what separates it from conflict zones at a glance.
   function drawCrisis(crisis, crisisAutoScale) {
     if (!state.showCrises) return;
     if (crisis._hiddenByTimeline) return;
-    const p = project(crisis.lon, crisis.lat);
-    const degToPx = latDegToPx();
-
-    const autoScale = crisisAutoScale || 1;
-    const baseRadius = Math.max(4, (crisis.radiusDeg || 3) * degToPx * state.transform.scale * autoScale);
-
-    const active = isLayerActive(crisis);
-    const isStale = isStaleLayer(crisis);
-
-    if (active && !isStale) {
-      const pulse = 0.5 + 0.5 * Math.sin(Date.now() / 900 + crisis.lon);
-      ctx.save();
-      ctx.globalCompositeOperation = 'lighter';
-      ctx.shadowColor = CRISIS_COLOR;
-      ctx.shadowBlur = FLUO_GLOW_BLUR + FLUO_PULSE_RADIUS * pulse;
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, baseRadius * 1.14, 0, Math.PI * 2);
-      ctx.fillStyle = withOpacity(CRISIS_COLOR, BRIGHT_ZONE_HALO_OPACITY);
-      ctx.fill();
-      ctx.restore();
-
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, baseRadius, 0, Math.PI * 2);
-      ctx.fillStyle = withOpacity(CRISIS_COLOR, BRIGHT_ZONE_FILL_OPACITY);
-      ctx.fill();
-
-      ctx.save();
-      ctx.shadowColor = CRISIS_COLOR;
-      ctx.shadowBlur = FLUO_LINE_GLOW_BLUR;
-      ctx.setLineDash([4, 3]);
-      ctx.lineDashOffset = -Date.now() / 40;
-      ctx.lineWidth = BRIGHT_ZONE_LINE_WIDTH;
-      ctx.strokeStyle = withOpacity(CRISIS_COLOR, BRIGHT_ZONE_STROKE_OPACITY);
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, baseRadius, 0, Math.PI * 2);
-      ctx.stroke();
-      ctx.restore();
-
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
-      ctx.fillStyle = CRISIS_COLOR;
-      ctx.fill();
-    } else if (active && isStale) {
-      // Stale active (ongoing but no recent news): desaturated, dimmed, thinner ring
-      const staleColor = desaturateHex(CRISIS_COLOR, STALE_DESAT);
-      ctx.save();
-      ctx.globalAlpha = STALE_ZONE_OPACITY;
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, baseRadius, 0, Math.PI * 2);
-      ctx.fillStyle = withOpacity(staleColor, 1);
-      ctx.fill();
-      ctx.setLineDash([4, 3]);
-      ctx.lineWidth = 1.5;
-      ctx.strokeStyle = withOpacity(staleColor, 0.4);
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, baseRadius, 0, Math.PI * 2);
-      ctx.stroke();
-      ctx.restore();
-
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, 2.5, 0, Math.PI * 2);
-      ctx.fillStyle = withOpacity(staleColor, 0.3);
-      ctx.fill();
-
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, 2.5, 0, Math.PI * 2);
-      ctx.fillStyle = withOpacity(staleColor, 0.35);
-      ctx.fill();
-    } else {
-      // Concluded: deeply dim, desaturated toward slate, no glow, thinnest ring
-      const concludedColor = desaturateHex(CRISIS_COLOR, CONCLUDED_DESAT);
-      ctx.save();
-      ctx.globalAlpha = CONCLUDED_ZONE_OPACITY;
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, baseRadius, 0, Math.PI * 2);
-      ctx.fillStyle = withOpacity(concludedColor, 1);
-      ctx.fill();
-      ctx.setLineDash([4, 3]);
-      ctx.lineWidth = 1;
-      ctx.strokeStyle = withOpacity(concludedColor, CONCLUDED_STROKE_ALPHA);
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, baseRadius, 0, Math.PI * 2);
-      ctx.stroke();
-      ctx.restore();
-
-      // One centre marker, matching drawZone. This painted two concentric dots
-      // back to back (2px then 2.5px) for no visual gain.
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, 2, 0, Math.PI * 2);
-      ctx.fillStyle = withOpacity(concludedColor, CONCLUDED_CENTER_ALPHA);
-      ctx.fill();
-    }
+    drawAreaRing(crisis, CRISIS_COLOR, crisisAutoScale);
   }
 
   // Single source of truth for a tracked movement's drawn endpoints.
@@ -1405,18 +1339,18 @@ function canonicalCategory(cat) {
   }
 
   // Tracked deployment: solid colored vector from origin to destination with a
-  // solid arrowhead indicating direction of travel. Ground/troop movements
-  // render distinct amber, naval/fleet movements solid blue — never dashed or
-  // dotted, and the arrowhead matches the line colour. Arrow tail is barely visible.
-  // Still-active movements glow ("fluo"); concluded ones are dimmed and their
-  // arrowhead stays flat. Movements outside the timeline year are skipped.
+  // solid arrowhead indicating direction of travel. Ground/troop movements render
+  // distinct amber, naval/fleet movements solid blue — never dashed or dotted, and
+  // the arrowhead matches the line colour. The arrow tail is deliberately faint.
+  // Recency uses the same ladder as the area rings: only a hot (active + recent)
+  // movement glows, so a long-quiet fleet movement reads as background.
+  // Movements outside the timeline year are skipped.
   function drawFleet(fleet) {
     if (!state.showFleets) return;
     if (fleet._hiddenByTimeline) return;
 
     const isInfantry = isInfantryKind(fleet);
     const isGround = fleet.kind === 'ground';
-    const isStale = isStaleLayer(fleet);
 
     const ends = fleetEndpoints(fleet);
     if (!ends) return;
@@ -1427,23 +1361,22 @@ function canonicalCategory(cat) {
     if (Math.abs(dx) < 0.5 && Math.abs(dy) < 0.5) return;
     const ang = Math.atan2(dy, dx);
     const headLen = 8;
-    const color = isInfantry || isGround ? GROUND_COLOR : FLEET_COLOR;
-    const active = isLayerActive(fleet);
 
-    // Passive ladder: a concluded movement's tail is a faint memory of the route,
-    // and an active-but-stale one keeps a weak glow so "still live but quiet" and
-    // "over" stay distinguishable at a glance.
-    const tailOpacity = active
-      ? (isStale ? ARROW_TAIL_OPACITY * 0.4 : ARROW_TAIL_OPACITY)
-      : ARROW_TAIL_OPACITY * 0.25;
+    const tier = layerPaintTier(fleet);
+    const spec = LAYER_TIER_PAINT[tier];
+    const base = isInfantry || isGround ? GROUND_COLOR : FLEET_COLOR;
+    const color = spec.desat ? desaturateHex(base, spec.desat) : base;
+
+    // Tail: a faint memory of the route, brightening into a luminous second pass
+    // only for hot movements.
     ctx.save();
-    ctx.strokeStyle = withOpacity(color, tailOpacity);
-    ctx.lineWidth = 1.2;
+    ctx.strokeStyle = withOpacity(color, ARROW_TAIL_OPACITY * spec.fill / 0.30);
+    ctx.lineWidth = spec.line * 0.4;
     ctx.beginPath();
     ctx.moveTo(a.x, a.y);
     ctx.lineTo(b.x, b.y);
     ctx.stroke();
-    if (active && !isStale) {
+    if (spec.glow) {
       ctx.shadowColor = color;
       ctx.shadowBlur = FLUO_LINE_GLOW_BLUR;
       ctx.strokeStyle = withOpacity(color, 0.3);
@@ -1452,37 +1385,22 @@ function canonicalCategory(cat) {
       ctx.moveTo(a.x, a.y);
       ctx.lineTo(b.x, b.y);
       ctx.stroke();
-    } else if (active && isStale) {
-      ctx.shadowColor = color;
-      ctx.shadowBlur = FLUO_LINE_GLOW_BLUR / 2;
-      ctx.strokeStyle = withOpacity(color, 0.15);
-      ctx.lineWidth = 1.5;
-      ctx.beginPath();
-      ctx.moveTo(a.x, a.y);
-      ctx.lineTo(b.x, b.y);
-      ctx.stroke();
     }
     ctx.restore();
 
-    // Solid arrowhead; the halo makes active heads breathe slightly. A concluded
-    // head also desaturates toward slate, matching how zones/crises read, so the
-    // three states never rely on alpha alone.
+    // Arrowhead. Only hot heads breathe and glow; every other tier is desaturated
+    // as well as dimmed so the state does not rely on alpha alone.
     ctx.save();
-    if (active && !isStale) {
+    if (tier === TIER_HOT) {
       ctx.shadowColor = color;
       ctx.shadowBlur = FLUO_LINE_GLOW_BLUR + 5 * (0.5 + 0.5 * Math.sin(Date.now() / 650 + a.x));
-    } else if (active && isStale) {
-      ctx.shadowColor = color;
-      ctx.shadowBlur = FLUO_LINE_GLOW_BLUR / 2;
-    } else {
-      ctx.globalAlpha = CONCLUDED_OPACITY;
     }
     ctx.beginPath();
     ctx.moveTo(b.x, b.y);
     ctx.lineTo(b.x - headLen * Math.cos(ang - 0.4), b.y - headLen * Math.sin(ang - 0.4));
     ctx.lineTo(b.x - headLen * Math.cos(ang + 0.4), b.y - headLen * Math.sin(ang + 0.4));
     ctx.closePath();
-    ctx.fillStyle = active ? color : desaturateHex(color, CONCLUDED_DESAT);
+    ctx.fillStyle = tier === TIER_HOT ? color : withOpacity(color, spec.fill / 0.30);
     ctx.fill();
     ctx.restore();
   }
@@ -3303,19 +3221,19 @@ function initTimelineSlider() {
       isInfantryKind,
       fleetEndpoints,
       isStaleLayer,
+      layerTier,
+      layerPaintTier,
+      layerRecencyYear,
+      isSingleListSourced,
+      LAYER_TIER_PAINT,
+      get LAYER_FRESH_YEARS() { return LAYER_FRESH_YEARS; },
+      get LAYER_STALE_YEARS() { return LAYER_STALE_YEARS; },
       isLocalDev,
       renderDataNotice,
       get SAMPLE_EVENTS() { return SAMPLE_EVENTS; },
       setDataLoadError: (msg) => { state.dataLoadError = msg; renderDataNotice(); },
       get dataLoadError() { return state.dataLoadError; },
       get GEOCODE_CACHE_MAX_BYTES() { return GEOCODE_CACHE_MAX_BYTES; },
-      get STALE_THRESHOLD_YEARS() { return STALE_THRESHOLD_YEARS; },
-      get PASSIVE_OPACITY_LADDER() {
-        return { concluded: CONCLUDED_ZONE_OPACITY, stale: STALE_ZONE_OPACITY };
-      },
-      get CONCLUDED_STROKE_ALPHA() { return CONCLUDED_STROKE_ALPHA; },
-      get CONCLUDED_DESAT() { return CONCLUDED_DESAT; },
-      get CONCLUDED_OPACITY() { return CONCLUDED_OPACITY; },
       // Replace the loaded layer data (used to exercise fluo/dim + timeline
       // clustering deterministically without mutating the shared fixtures).
       setLayers: (zones, fleets, crises) => {
