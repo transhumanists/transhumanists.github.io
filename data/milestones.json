@@ -1,5 +1,5 @@
 {
-  "last_update": "2026-10-01T17:53:36+00:00",
+  "last_update": "2026-10-01T22:07:15+00:00",
   "version": "1.0.0",
   "schema": "https://transhumanists.github.io/schema/milestone-v1.json",
   "categories": {
@@ -22,66 +22,6 @@
       ],
       "milestones": [
         {
-          "id": "ms-2a45f74dd818",
-          "title": "Deep learning perturbation models outperform baselines on calibrated metrics",
-          "summary": "Calibration-aware evaluation demonstrates deep learning models surpass baseline methods in perturbation prediction.",
-          "category": "Biotechnology",
-          "subcategory": "ml_perturbation",
-          "value": null,
-          "unit": null,
-          "source": "Nature Biotechnology",
-          "date": "2026-10-01",
-          "url": "https://www.nature.com/articles/s41587-026-03307-w",
-          "is_record": false,
-          "is_breakthrough": true,
-          "is_new": true,
-          "geolocation": {
-            "lat": 32.0603,
-            "lon": 118.7969
-          },
-          "category_key": "biotechnology"
-        },
-        {
-          "id": "ms-8644b2a34d60",
-          "title": "New ionizable lipid LC-1 enables efficient LNP delivery of large gene editors to multiple tissues",
-          "summary": "Screening identified lipid LC-1 that enhances endosomal escape and achieves efficient genome editing in liver, lung, and brain of mice using lipid nanoparticles for large gene-editor mRNAs.",
-          "category": "Biotechnology",
-          "subcategory": "gene_therapy",
-          "value": null,
-          "unit": null,
-          "source": "Nature Biotechnology",
-          "date": "2026-09-28",
-          "url": "https://www.nature.com/articles/s41587-026-03297-9",
-          "is_record": false,
-          "is_breakthrough": true,
-          "is_new": false,
-          "geolocation": {
-            "lat": 32.0603,
-            "lon": 118.7969
-          },
-          "category_key": "biotechnology"
-        },
-        {
-          "id": "ms-e0d7fb1f057f",
-          "title": "Lipid nanoparticles optimized for large RNA cargo enhance in vivo genome editing",
-          "summary": "Researchers improved lipid nanoparticle design by incorporating RNA cargo size, enabling better tissue targeting and enhanced in vivo genome editing.",
-          "category": "Biotechnology",
-          "subcategory": "gene_editing",
-          "value": null,
-          "unit": null,
-          "source": "Nature Biotechnology",
-          "date": "2026-09-28",
-          "url": "https://www.nature.com/articles/s41587-026-03298-8",
-          "is_record": false,
-          "is_breakthrough": true,
-          "is_new": false,
-          "geolocation": {
-            "lat": 32.0603,
-            "lon": 118.7969
-          },
-          "category_key": "biotechnology"
-        },
-        {
           "id": "ms-bc2c513b6177",
           "title": "AI-guided optimization yields thermostable mRNA vaccines stable at 37°C for 2 months",
           "summary": "AI-driven framework AGENT enables mRNA vaccines retaining full bioactivity after 2 months at 37°C, allowing cold-chain-free delivery via microneedle patches.",
@@ -102,46 +42,6 @@
           "category_key": "biotechnology"
         },
         {
-          "id": "ms-76a6862f54e8",
-          "title": "Photolabile oligonucleotides enable spatially resolved single-cell transcriptomics and epigenomics",
-          "summary": "A new photolabile oligonucleotide system uses topological light gradients to achieve spatially resolved single-cell measurements linking epigenome regulation to gene expression.",
-          "category": "Biotechnology",
-          "subcategory": "microscopy",
-          "value": null,
-          "unit": null,
-          "source": "Nature Biotechnology",
-          "date": "2026-09-25",
-          "url": "https://www.nature.com/articles/s41587-026-03328-5",
-          "is_record": false,
-          "is_breakthrough": true,
-          "is_new": false,
-          "geolocation": {
-            "lat": 32.0603,
-            "lon": 118.7969
-          },
-          "category_key": "biotechnology"
-        },
-        {
-          "id": "ms-1d88f31518db",
-          "title": "Alkermes reports pioneering ADHD data for orexin agonist",
-          "summary": "Alkermes releases pioneering clinical data for orexin agonist in ADHD, potentially expanding the drug class beyond narcolepsy into broader patient populations.",
-          "category": "Biotechnology",
-          "subcategory": "neuroscience",
-          "value": null,
-          "unit": null,
-          "source": "Alkermes",
-          "date": "2026-09-22",
-          "url": "https://www.fiercebiotech.com/biotech/pioneering-adhd-data-alkermes-eyes-orexin-agonist-potential-company-changer",
-          "is_record": false,
-          "is_breakthrough": true,
-          "is_new": false,
-          "geolocation": {
-            "lat": 42.3765,
-            "lon": -71.2356
-          },
-          "category_key": "biotechnology"
-        },
-        {
           "id": "ms-e5275443e851",
           "title": "Versatile nanopore sensor simultaneously identifies four analyte classes with 98.7% accuracy",
           "summary": "A modified bacterial porin nanopore coupled with machine learning simultaneously identifies amino acids, nucleoside monophosphates, saccharides, and peptides with 98.7% accuracy, enabling native glyco",
@@ -158,66 +58,6 @@
           "geolocation": {
             "lat": 0.0,
             "lon": 0.0
-          },
-          "category_key": "biotechnology"
-        },
-        {
-          "id": "ms-e55c8cf4e432",
-          "title": "Engineered nanopore simultaneously identifies saccharides, amino acids, peptides, and ribonucleotides",
-          "summary": "A modified nanopore achieves simultaneous detection of four major biomolecule classes and their modifications, marking a breakthrough in multiplexed single-molecule sensing.",
-          "category": "Biotechnology",
-          "subcategory": "biosensors",
-          "value": null,
-          "unit": null,
-          "source": "Nature Biotechnology",
-          "date": "2026-09-14",
-          "url": "https://www.nature.com/articles/s41587-026-03308-9",
-          "is_record": true,
-          "is_breakthrough": true,
-          "is_new": false,
-          "geolocation": {
-            "lat": 32.0603,
-            "lon": 118.7969
-          },
-          "category_key": "biotechnology"
-        },
-        {
-          "id": "ms-a5c98baae9a8",
-          "title": "Moderna mRNA flu vaccine receives FDA approval",
-          "summary": "Moderna's mRNA-based influenza vaccine gains FDA approval, marking the first regulatory clearance for an mRNA flu vaccine.",
-          "category": "Biotechnology",
-          "subcategory": "immunotherapy",
-          "value": null,
-          "unit": null,
-          "source": "FDA",
-          "date": "2026-09-10",
-          "url": "https://www.nature.com/articles/s41587-026-03313-y",
-          "is_record": false,
-          "is_breakthrough": true,
-          "is_new": false,
-          "geolocation": {
-            "lat": 39.0555,
-            "lon": -77.038
-          },
-          "category_key": "biotechnology"
-        },
-        {
-          "id": "ms-0a279b32fda4",
-          "title": "Biomimetic cells enable new platform for T cell mechanotransduction studies",
-          "summary": "Researchers develop biomimetic cells as a novel synthetic biology tool to investigate mechanical force sensing in T cells, opening new avenues for immunotherapy research.",
-          "category": "Biotechnology",
-          "subcategory": "synthetic_biology",
-          "value": null,
-          "unit": null,
-          "source": "Nature Biotechnology",
-          "date": "2026-09-10",
-          "url": "https://www.nature.com/articles/s41587-026-03312-z",
-          "is_record": false,
-          "is_breakthrough": true,
-          "is_new": false,
-          "geolocation": {
-            "lat": 32.0603,
-            "lon": 118.7969
           },
           "category_key": "biotechnology"
         },
@@ -389,6 +229,166 @@
           },
           "category": "Biotechnology",
           "is_new": false,
+          "category_key": "biotechnology"
+        },
+        {
+          "id": "ms-2a45f74dd818",
+          "title": "Deep learning perturbation models outperform baselines on calibrated metrics",
+          "summary": "Calibration-aware evaluation demonstrates deep learning models surpass baseline methods in perturbation prediction.",
+          "category": "Biotechnology",
+          "subcategory": "ml_perturbation",
+          "value": null,
+          "unit": null,
+          "source": "Nature Biotechnology",
+          "date": "2026-10-01",
+          "url": "https://www.nature.com/articles/s41587-026-03307-w",
+          "is_record": false,
+          "is_breakthrough": true,
+          "is_new": true,
+          "geolocation": {
+            "lat": 32.0603,
+            "lon": 118.7969
+          },
+          "category_key": "biotechnology"
+        },
+        {
+          "id": "ms-8644b2a34d60",
+          "title": "New ionizable lipid LC-1 enables efficient LNP delivery of large gene editors to multiple tissues",
+          "summary": "Screening identified lipid LC-1 that enhances endosomal escape and achieves efficient genome editing in liver, lung, and brain of mice using lipid nanoparticles for large gene-editor mRNAs.",
+          "category": "Biotechnology",
+          "subcategory": "gene_therapy",
+          "value": null,
+          "unit": null,
+          "source": "Nature Biotechnology",
+          "date": "2026-09-28",
+          "url": "https://www.nature.com/articles/s41587-026-03297-9",
+          "is_record": false,
+          "is_breakthrough": true,
+          "is_new": false,
+          "geolocation": {
+            "lat": 32.0603,
+            "lon": 118.7969
+          },
+          "category_key": "biotechnology"
+        },
+        {
+          "id": "ms-e0d7fb1f057f",
+          "title": "Lipid nanoparticles optimized for large RNA cargo enhance in vivo genome editing",
+          "summary": "Researchers improved lipid nanoparticle design by incorporating RNA cargo size, enabling better tissue targeting and enhanced in vivo genome editing.",
+          "category": "Biotechnology",
+          "subcategory": "gene_editing",
+          "value": null,
+          "unit": null,
+          "source": "Nature Biotechnology",
+          "date": "2026-09-28",
+          "url": "https://www.nature.com/articles/s41587-026-03298-8",
+          "is_record": false,
+          "is_breakthrough": true,
+          "is_new": false,
+          "geolocation": {
+            "lat": 32.0603,
+            "lon": 118.7969
+          },
+          "category_key": "biotechnology"
+        },
+        {
+          "id": "ms-76a6862f54e8",
+          "title": "Photolabile oligonucleotides enable spatially resolved single-cell transcriptomics and epigenomics",
+          "summary": "A new photolabile oligonucleotide system uses topological light gradients to achieve spatially resolved single-cell measurements linking epigenome regulation to gene expression.",
+          "category": "Biotechnology",
+          "subcategory": "microscopy",
+          "value": null,
+          "unit": null,
+          "source": "Nature Biotechnology",
+          "date": "2026-09-25",
+          "url": "https://www.nature.com/articles/s41587-026-03328-5",
+          "is_record": false,
+          "is_breakthrough": true,
+          "is_new": false,
+          "geolocation": {
+            "lat": 32.0603,
+            "lon": 118.7969
+          },
+          "category_key": "biotechnology"
+        },
+        {
+          "id": "ms-1d88f31518db",
+          "title": "Alkermes reports pioneering ADHD data for orexin agonist",
+          "summary": "Alkermes releases pioneering clinical data for orexin agonist in ADHD, potentially expanding the drug class beyond narcolepsy into broader patient populations.",
+          "category": "Biotechnology",
+          "subcategory": "neuroscience",
+          "value": null,
+          "unit": null,
+          "source": "Alkermes",
+          "date": "2026-09-22",
+          "url": "https://www.fiercebiotech.com/biotech/pioneering-adhd-data-alkermes-eyes-orexin-agonist-potential-company-changer",
+          "is_record": false,
+          "is_breakthrough": true,
+          "is_new": false,
+          "geolocation": {
+            "lat": 42.3765,
+            "lon": -71.2356
+          },
+          "category_key": "biotechnology"
+        },
+        {
+          "id": "ms-e55c8cf4e432",
+          "title": "Engineered nanopore simultaneously identifies saccharides, amino acids, peptides, and ribonucleotides",
+          "summary": "A modified nanopore achieves simultaneous detection of four major biomolecule classes and their modifications, marking a breakthrough in multiplexed single-molecule sensing.",
+          "category": "Biotechnology",
+          "subcategory": "biosensors",
+          "value": null,
+          "unit": null,
+          "source": "Nature Biotechnology",
+          "date": "2026-09-14",
+          "url": "https://www.nature.com/articles/s41587-026-03308-9",
+          "is_record": true,
+          "is_breakthrough": true,
+          "is_new": false,
+          "geolocation": {
+            "lat": 32.0603,
+            "lon": 118.7969
+          },
+          "category_key": "biotechnology"
+        },
+        {
+          "id": "ms-a5c98baae9a8",
+          "title": "Moderna mRNA flu vaccine receives FDA approval",
+          "summary": "Moderna's mRNA-based influenza vaccine gains FDA approval, marking the first regulatory clearance for an mRNA flu vaccine.",
+          "category": "Biotechnology",
+          "subcategory": "immunotherapy",
+          "value": null,
+          "unit": null,
+          "source": "FDA",
+          "date": "2026-09-10",
+          "url": "https://www.nature.com/articles/s41587-026-03313-y",
+          "is_record": false,
+          "is_breakthrough": true,
+          "is_new": false,
+          "geolocation": {
+            "lat": 39.0555,
+            "lon": -77.038
+          },
+          "category_key": "biotechnology"
+        },
+        {
+          "id": "ms-0a279b32fda4",
+          "title": "Biomimetic cells enable new platform for T cell mechanotransduction studies",
+          "summary": "Researchers develop biomimetic cells as a novel synthetic biology tool to investigate mechanical force sensing in T cells, opening new avenues for immunotherapy research.",
+          "category": "Biotechnology",
+          "subcategory": "synthetic_biology",
+          "value": null,
+          "unit": null,
+          "source": "Nature Biotechnology",
+          "date": "2026-09-10",
+          "url": "https://www.nature.com/articles/s41587-026-03312-z",
+          "is_record": false,
+          "is_breakthrough": true,
+          "is_new": false,
+          "geolocation": {
+            "lat": 32.0603,
+            "lon": 118.7969
+          },
           "category_key": "biotechnology"
         },
         {
@@ -673,241 +673,6 @@
         }
       ]
     },
-    "quantum": {
-      "name": "Quantum Physics",
-      "icon": "⚛️",
-      "color": "#b388ff",
-      "subcategories": [
-        "qubit_count",
-        "error_correction",
-        "time_crystals",
-        "quantum_supremacy",
-        "quantum_networking",
-        "gate_fidelity",
-        "coherence",
-        "trapped_ions",
-        "quantum_resource_theory"
-      ],
-      "milestones": [
-        {
-          "id": "ms-f9883157aeba",
-          "category": "Quantum Physics",
-          "subcategory": "holographic_principle",
-          "title": "Gravity found to be holographic, collapsing space dimensions",
-          "value": null,
-          "unit": null,
-          "source": "Quanta Magazine",
-          "url": "https://www.quantamagazine.org/gravity-seems-holographic-what-does-that-mean-for-reality-20260925/",
-          "date": "2026-09-25",
-          "geolocation": {
-            "lat": 0.0,
-            "lon": 0.0
-          },
-          "category_key": "quantum"
-        },
-        {
-          "id": "q-001",
-          "subcategory": "qubit_count",
-          "title": "Physical qubits (superconducting)",
-          "value": 4158,
-          "unit": "qubits",
-          "source": "IBM Condor 2",
-          "date": "2026-08-22",
-          "url": "https://research.ibm.com",
-          "geolocation": {
-            "lat": 41.0323,
-            "lon": -73.5543
-          },
-          "category": "Quantum Physics",
-          "is_new": false,
-          "category_key": "quantum"
-        },
-        {
-          "id": "q-002",
-          "subcategory": "error_correction",
-          "title": "Logical qubit fidelity",
-          "value": 99.97,
-          "unit": "%",
-          "source": "Google Quantum AI",
-          "date": "2026-08-18",
-          "url": "https://quantumai.google",
-          "geolocation": {
-            "lat": 37.4219,
-            "lon": -122.084
-          },
-          "category": "Quantum Physics",
-          "is_new": false,
-          "category_key": "quantum"
-        },
-        {
-          "id": "q-003",
-          "subcategory": "time_crystals",
-          "title": "Quantum time crystal coherence",
-          "value": 10.0,
-          "unit": "ms",
-          "source": "Google/Stanford",
-          "date": "2026-08-10",
-          "url": "https://arxiv.org/abs/quantum",
-          "geolocation": {
-            "lat": 37.8716,
-            "lon": -122.2727
-          },
-          "category": "Quantum Physics",
-          "is_new": false,
-          "category_key": "quantum"
-        },
-        {
-          "id": "q-004",
-          "subcategory": "quantum_supremacy",
-          "title": "Quantum volume",
-          "value": 8192,
-          "unit": "QV",
-          "source": "Quantinuum H3",
-          "date": "2026-07-30",
-          "url": "https://www.quantinuum.com",
-          "geolocation": {
-            "lat": 51.5074,
-            "lon": -0.1278
-          },
-          "category": "Quantum Physics",
-          "is_new": false,
-          "category_key": "quantum"
-        },
-        {
-          "id": "q-005",
-          "subcategory": "quantum_networking",
-          "title": "Entangled link distance",
-          "value": 248,
-          "unit": "km",
-          "source": "QuTech Delft",
-          "date": "2026-07-15",
-          "url": "https://qutech.nl",
-          "geolocation": {
-            "lat": 52.01,
-            "lon": 4.3555
-          },
-          "category": "Quantum Physics",
-          "is_new": false,
-          "category_key": "quantum"
-        },
-        {
-          "id": "ms-f41cd2fc2342",
-          "title": "First certificate-checked solution for quantum-advantage resource extraction from two-mode Gaussian states",
-          "summary": "Researchers present the first complete, certificate-checked analytical solution for extracting quantum complexity resources from two-mode Gaussian states, proving no closed-form solution exists.",
-          "category": "Quantum Physics",
-          "subcategory": "quantum_resource_theory",
-          "value": null,
-          "unit": null,
-          "source": "Unknown",
-          "date": "2026-06-30",
-          "url": "http://arxiv.org/abs/2607.00266v1",
-          "is_record": true,
-          "is_breakthrough": true,
-          "is_new": false,
-          "geolocation": {
-            "lat": 0.0,
-            "lon": 0.0
-          },
-          "category_key": "quantum"
-        },
-        {
-          "id": "his-2023-12-04-ibm-condor",
-          "category": "Quantum Physics",
-          "subcategory": "qubit_count",
-          "title": "IBM Condor - the first 1,000+ qubit quantum processor (1,121 qubits)",
-          "value": 1121,
-          "unit": "qubits",
-          "source": "IBM Quantum",
-          "url": "https://en.wikipedia.org/wiki/IBM_Q_System_One",
-          "date": "2023-12-04",
-          "geolocation": {
-            "lat": 41.2115,
-            "lon": -73.8532
-          },
-          "category_key": "quantum"
-        },
-        {
-          "id": "his-2021-11-16-ibm-eagle",
-          "category": "Quantum Physics",
-          "subcategory": "qubit_count",
-          "title": "IBM Eagle - the first 127-qubit quantum processor",
-          "value": 127,
-          "unit": "qubits",
-          "source": "IBM Quantum",
-          "url": "https://en.wikipedia.org/wiki/IBM_Q_System_One",
-          "date": "2021-11-16",
-          "geolocation": {
-            "lat": 41.2115,
-            "lon": -73.8532
-          },
-          "category_key": "quantum"
-        },
-        {
-          "id": "his-2019-10-23-quantum-supremacy",
-          "category": "Quantum Physics",
-          "subcategory": "quantum_supremacy",
-          "title": "Google's Sycamore processor claims quantum supremacy (53 qubits)",
-          "value": 53,
-          "unit": "qubits",
-          "source": "Google Quantum AI",
-          "url": "https://en.wikipedia.org/wiki/Quantum_supremacy",
-          "date": "2019-10-23",
-          "geolocation": {
-            "lat": 34.414,
-            "lon": -119.695
-          },
-          "category_key": "quantum"
-        },
-        {
-          "id": "his-1997-12-01-ads-cft",
-          "category": "Quantum Physics",
-          "subcategory": "holographic_principle",
-          "title": "Maldacena formulates the AdS/CFT correspondence (holographic duality)",
-          "value": null,
-          "unit": null,
-          "source": "Institute for Advanced Study",
-          "url": "https://en.wikipedia.org/wiki/AdS/CFT_correspondence",
-          "date": "1997-12-01",
-          "geolocation": {
-            "lat": 40.3487,
-            "lon": -74.6564
-          },
-          "category_key": "quantum"
-        },
-        {
-          "id": "his-1994-10-01-shor-algorithm",
-          "category": "Quantum Physics",
-          "subcategory": "quantum_resource_theory",
-          "title": "Shor's algorithm shows quantum computers can factor integers in polynomial time",
-          "value": null,
-          "unit": null,
-          "source": "AT&T Bell Labs",
-          "url": "https://en.wikipedia.org/wiki/Shor%27s_algorithm",
-          "date": "1994-10-01",
-          "geolocation": {
-            "lat": 40.69,
-            "lon": -74.401
-          },
-          "category_key": "quantum"
-        },
-        {
-          "id": "his-1981-05-06-feynman-quantum",
-          "category": "Quantum Physics",
-          "subcategory": "quantum_resource_theory",
-          "title": "Feynman proposes computers built from quantum mechanical principles",
-          "value": null,
-          "unit": null,
-          "source": "Caltech / MIT",
-          "url": "https://en.wikipedia.org/wiki/Quantum_computing",
-          "date": "1981-05-06",
-          "geolocation": {
-            "lat": 34.1377,
-            "lon": -118.1253
-          },
-          "category_key": "quantum"
-        }
-      ]
-    },
     "computing_agi": {
       "name": "Computing & AGI",
       "icon": "🧠",
@@ -938,42 +703,6 @@
           "is_record": false,
           "is_breakthrough": false,
           "is_new": false,
-          "geolocation": {
-            "lat": 0.0,
-            "lon": 0.0
-          },
-          "category_key": "computing_agi"
-        },
-        {
-          "id": "ms-0a47a34ebd2d",
-          "title": "New evaluation protocol detects sequential reappearance in diffusion model unlearning",
-          "summary": "Researchers identify sequential reappearance in diffusion data-point unlearning and propose a target-level evaluation protocol to track forgetting persistence across sequential deletion requests.",
-          "category": "Computing & AGI",
-          "subcategory": "benchmarks",
-          "value": null,
-          "unit": null,
-          "source": "arXiv (Cornell University)",
-          "date": "2026-09-23",
-          "url": "https://arxiv.org/abs/2609.25166",
-          "is_record": false,
-          "is_breakthrough": true,
-          "is_new": false,
-          "geolocation": {
-            "lat": 0.0,
-            "lon": 0.0
-          },
-          "category_key": "computing_agi"
-        },
-        {
-          "id": "ms-2457b1872a8c",
-          "category": "Computing & AGI",
-          "subcategory": "graph_theory",
-          "title": "Proof of Graph Sandwich Conjecture",
-          "value": null,
-          "unit": null,
-          "source": "International mathematics collaboration",
-          "url": "https://www.quantamagazine.org/mathematicians-build-long-awaited-graph-sandwich-20260918/",
-          "date": "2026-09-18",
           "geolocation": {
             "lat": 0.0,
             "lon": 0.0
@@ -1078,26 +807,6 @@
           "geolocation": {
             "lat": 0.0,
             "lon": 0.0
-          },
-          "category_key": "computing_agi"
-        },
-        {
-          "id": "ms-cede87aeb630",
-          "title": "Seed2.0 model achieves world-leading reasoning and multimodal capabilities",
-          "summary": "Seed2.0 model series demonstrates world-leading reasoning, visual understanding, and search capabilities for complex real-world tasks, serving hundreds of millions of users.",
-          "category": "Computing & AGI",
-          "subcategory": "frontier_models",
-          "value": null,
-          "unit": null,
-          "source": "ByteDance",
-          "date": "2026-06-30",
-          "url": "http://arxiv.org/abs/2607.00248v1",
-          "is_record": true,
-          "is_breakthrough": true,
-          "is_new": false,
-          "geolocation": {
-            "lat": 39.9042,
-            "lon": 116.4074
           },
           "category_key": "computing_agi"
         },
@@ -1215,22 +924,10 @@
             "lat": 0.0,
             "lon": 0.0
           },
-          "category_key": "computing_agi"
-        },
-        {
-          "id": "ms-fb74b2202f85",
-          "category": "Computing & AGI",
-          "subcategory": "ml_structural_analysis",
-          "title": "ML pipeline achieves 0.86 F1 classifying Inka khipu provenance and validates Santa Valley moiety structure",
-          "value": 0.86,
-          "unit": "F1 score",
-          "source": "Academic researchers (Open Khipu Repository)",
-          "url": "http://arxiv.org/abs/2607.00185v1",
-          "date": "2026-06-30",
-          "geolocation": {
-            "lat": 0.0,
-            "lon": 0.0
-          },
+          "sources": [
+            "Open Khipu Repository",
+            "Academic researchers (Open Khipu Repository)"
+          ],
           "category_key": "computing_agi"
         },
         {
@@ -1246,38 +943,6 @@
           "geolocation": {
             "lat": 0.0,
             "lon": 0.0
-          },
-          "category_key": "computing_agi"
-        },
-        {
-          "id": "his-2023-10-12-vesuvius-challenge",
-          "category": "Computing & AGI",
-          "subcategory": "ml_structural_analysis",
-          "title": "Vesuvius Challenge - machine learning deciphers the first word from a charred Herculaneum papyrus",
-          "value": null,
-          "unit": null,
-          "source": "Vesuvius Challenge",
-          "url": "https://en.wikipedia.org/wiki/Herculaneum_papyri",
-          "date": "2023-10-12",
-          "geolocation": {
-            "lat": 40.8518,
-            "lon": 14.2681
-          },
-          "category_key": "computing_agi"
-        },
-        {
-          "id": "his-2023-03-14-gpt4",
-          "category": "Computing & AGI",
-          "subcategory": "language_models",
-          "title": "GPT-4 stabilises frontier multimodal reasoning",
-          "value": null,
-          "unit": null,
-          "source": "OpenAI",
-          "url": "https://en.wikipedia.org/wiki/GPT-4",
-          "date": "2023-03-14",
-          "geolocation": {
-            "lat": 37.7749,
-            "lon": -122.4194
           },
           "category_key": "computing_agi"
         },
@@ -1314,6 +979,110 @@
           "category_key": "computing_agi"
         },
         {
+          "id": "his-2012-09-30-alexnet",
+          "category": "Computing & AGI",
+          "subcategory": "machine_learning",
+          "title": "AlexNet wins ImageNet and ignites the deep-learning era",
+          "value": 15.3,
+          "unit": "top-5 error %",
+          "source": "University of Toronto",
+          "url": "https://en.wikipedia.org/wiki/AlexNet",
+          "date": "2012-09-30",
+          "geolocation": {
+            "lat": 43.6532,
+            "lon": -79.3832
+          },
+          "category_key": "computing_agi"
+        },
+        {
+          "id": "ms-0a47a34ebd2d",
+          "title": "New evaluation protocol detects sequential reappearance in diffusion model unlearning",
+          "summary": "Researchers identify sequential reappearance in diffusion data-point unlearning and propose a target-level evaluation protocol to track forgetting persistence across sequential deletion requests.",
+          "category": "Computing & AGI",
+          "subcategory": "benchmarks",
+          "value": null,
+          "unit": null,
+          "source": "arXiv (Cornell University)",
+          "date": "2026-09-23",
+          "url": "https://arxiv.org/abs/2609.25166",
+          "is_record": false,
+          "is_breakthrough": true,
+          "is_new": false,
+          "geolocation": {
+            "lat": 0.0,
+            "lon": 0.0
+          },
+          "category_key": "computing_agi"
+        },
+        {
+          "id": "ms-2457b1872a8c",
+          "category": "Computing & AGI",
+          "subcategory": "graph_theory",
+          "title": "Proof of Graph Sandwich Conjecture",
+          "value": null,
+          "unit": null,
+          "source": "International mathematics collaboration",
+          "url": "https://www.quantamagazine.org/mathematicians-build-long-awaited-graph-sandwich-20260918/",
+          "date": "2026-09-18",
+          "geolocation": {
+            "lat": 0.0,
+            "lon": 0.0
+          },
+          "category_key": "computing_agi"
+        },
+        {
+          "id": "ms-cede87aeb630",
+          "title": "Seed2.0 model achieves world-leading reasoning and multimodal capabilities",
+          "summary": "Seed2.0 model series demonstrates world-leading reasoning, visual understanding, and search capabilities for complex real-world tasks, serving hundreds of millions of users.",
+          "category": "Computing & AGI",
+          "subcategory": "frontier_models",
+          "value": null,
+          "unit": null,
+          "source": "ByteDance",
+          "date": "2026-06-30",
+          "url": "http://arxiv.org/abs/2607.00248v1",
+          "is_record": true,
+          "is_breakthrough": true,
+          "is_new": false,
+          "geolocation": {
+            "lat": 39.9042,
+            "lon": 116.4074
+          },
+          "category_key": "computing_agi"
+        },
+        {
+          "id": "his-2023-10-12-vesuvius-challenge",
+          "category": "Computing & AGI",
+          "subcategory": "ml_structural_analysis",
+          "title": "Vesuvius Challenge - machine learning deciphers the first word from a charred Herculaneum papyrus",
+          "value": null,
+          "unit": null,
+          "source": "Vesuvius Challenge",
+          "url": "https://en.wikipedia.org/wiki/Herculaneum_papyri",
+          "date": "2023-10-12",
+          "geolocation": {
+            "lat": 40.8518,
+            "lon": 14.2681
+          },
+          "category_key": "computing_agi"
+        },
+        {
+          "id": "his-2023-03-14-gpt4",
+          "category": "Computing & AGI",
+          "subcategory": "language_models",
+          "title": "GPT-4 stabilises frontier multimodal reasoning",
+          "value": null,
+          "unit": null,
+          "source": "OpenAI",
+          "url": "https://en.wikipedia.org/wiki/GPT-4",
+          "date": "2023-03-14",
+          "geolocation": {
+            "lat": 37.7749,
+            "lon": -122.4194
+          },
+          "category_key": "computing_agi"
+        },
+        {
           "id": "his-2017-06-12-transformer",
           "category": "Computing & AGI",
           "subcategory": "language_models",
@@ -1342,22 +1111,6 @@
           "geolocation": {
             "lat": 37.5665,
             "lon": 126.978
-          },
-          "category_key": "computing_agi"
-        },
-        {
-          "id": "his-2012-09-30-alexnet",
-          "category": "Computing & AGI",
-          "subcategory": "machine_learning",
-          "title": "AlexNet wins ImageNet and ignites the deep-learning era",
-          "value": 15.3,
-          "unit": "top-5 error %",
-          "source": "University of Toronto",
-          "url": "https://en.wikipedia.org/wiki/AlexNet",
-          "date": "2012-09-30",
-          "geolocation": {
-            "lat": 43.6532,
-            "lon": -79.3832
           },
           "category_key": "computing_agi"
         },
@@ -1769,6 +1522,241 @@
             "lon": -74.401
           },
           "category_key": "energy"
+        }
+      ]
+    },
+    "quantum": {
+      "name": "Quantum Physics",
+      "icon": "⚛️",
+      "color": "#b388ff",
+      "subcategories": [
+        "qubit_count",
+        "error_correction",
+        "time_crystals",
+        "quantum_supremacy",
+        "quantum_networking",
+        "gate_fidelity",
+        "coherence",
+        "trapped_ions",
+        "quantum_resource_theory"
+      ],
+      "milestones": [
+        {
+          "id": "q-001",
+          "subcategory": "qubit_count",
+          "title": "Physical qubits (superconducting)",
+          "value": 4158,
+          "unit": "qubits",
+          "source": "IBM Condor 2",
+          "date": "2026-08-22",
+          "url": "https://research.ibm.com",
+          "geolocation": {
+            "lat": 41.0323,
+            "lon": -73.5543
+          },
+          "category": "Quantum Physics",
+          "is_new": false,
+          "category_key": "quantum"
+        },
+        {
+          "id": "q-002",
+          "subcategory": "error_correction",
+          "title": "Logical qubit fidelity",
+          "value": 99.97,
+          "unit": "%",
+          "source": "Google Quantum AI",
+          "date": "2026-08-18",
+          "url": "https://quantumai.google",
+          "geolocation": {
+            "lat": 37.4219,
+            "lon": -122.084
+          },
+          "category": "Quantum Physics",
+          "is_new": false,
+          "category_key": "quantum"
+        },
+        {
+          "id": "q-003",
+          "subcategory": "time_crystals",
+          "title": "Quantum time crystal coherence",
+          "value": 10.0,
+          "unit": "ms",
+          "source": "Google/Stanford",
+          "date": "2026-08-10",
+          "url": "https://arxiv.org/abs/quantum",
+          "geolocation": {
+            "lat": 37.8716,
+            "lon": -122.2727
+          },
+          "category": "Quantum Physics",
+          "is_new": false,
+          "category_key": "quantum"
+        },
+        {
+          "id": "q-004",
+          "subcategory": "quantum_supremacy",
+          "title": "Quantum volume",
+          "value": 8192,
+          "unit": "QV",
+          "source": "Quantinuum H3",
+          "date": "2026-07-30",
+          "url": "https://www.quantinuum.com",
+          "geolocation": {
+            "lat": 51.5074,
+            "lon": -0.1278
+          },
+          "category": "Quantum Physics",
+          "is_new": false,
+          "category_key": "quantum"
+        },
+        {
+          "id": "q-005",
+          "subcategory": "quantum_networking",
+          "title": "Entangled link distance",
+          "value": 248,
+          "unit": "km",
+          "source": "QuTech Delft",
+          "date": "2026-07-15",
+          "url": "https://qutech.nl",
+          "geolocation": {
+            "lat": 52.01,
+            "lon": 4.3555
+          },
+          "category": "Quantum Physics",
+          "is_new": false,
+          "category_key": "quantum"
+        },
+        {
+          "id": "his-2023-12-04-ibm-condor",
+          "category": "Quantum Physics",
+          "subcategory": "qubit_count",
+          "title": "IBM Condor - the first 1,000+ qubit quantum processor (1,121 qubits)",
+          "value": 1121,
+          "unit": "qubits",
+          "source": "IBM Quantum",
+          "url": "https://en.wikipedia.org/wiki/IBM_Q_System_One",
+          "date": "2023-12-04",
+          "geolocation": {
+            "lat": 41.2115,
+            "lon": -73.8532
+          },
+          "category_key": "quantum"
+        },
+        {
+          "id": "his-2021-11-16-ibm-eagle",
+          "category": "Quantum Physics",
+          "subcategory": "qubit_count",
+          "title": "IBM Eagle - the first 127-qubit quantum processor",
+          "value": 127,
+          "unit": "qubits",
+          "source": "IBM Quantum",
+          "url": "https://en.wikipedia.org/wiki/IBM_Q_System_One",
+          "date": "2021-11-16",
+          "geolocation": {
+            "lat": 41.2115,
+            "lon": -73.8532
+          },
+          "category_key": "quantum"
+        },
+        {
+          "id": "his-2019-10-23-quantum-supremacy",
+          "category": "Quantum Physics",
+          "subcategory": "quantum_supremacy",
+          "title": "Google's Sycamore processor claims quantum supremacy (53 qubits)",
+          "value": 53,
+          "unit": "qubits",
+          "source": "Google Quantum AI",
+          "url": "https://en.wikipedia.org/wiki/Quantum_supremacy",
+          "date": "2019-10-23",
+          "geolocation": {
+            "lat": 34.414,
+            "lon": -119.695
+          },
+          "category_key": "quantum"
+        },
+        {
+          "id": "ms-f9883157aeba",
+          "category": "Quantum Physics",
+          "subcategory": "holographic_principle",
+          "title": "Gravity found to be holographic, collapsing space dimensions",
+          "value": null,
+          "unit": null,
+          "source": "Quanta Magazine",
+          "url": "https://www.quantamagazine.org/gravity-seems-holographic-what-does-that-mean-for-reality-20260925/",
+          "date": "2026-09-25",
+          "geolocation": {
+            "lat": 0.0,
+            "lon": 0.0
+          },
+          "category_key": "quantum"
+        },
+        {
+          "id": "ms-f41cd2fc2342",
+          "title": "First certificate-checked solution for quantum-advantage resource extraction from two-mode Gaussian states",
+          "summary": "Researchers present the first complete, certificate-checked analytical solution for extracting quantum complexity resources from two-mode Gaussian states, proving no closed-form solution exists.",
+          "category": "Quantum Physics",
+          "subcategory": "quantum_resource_theory",
+          "value": null,
+          "unit": null,
+          "source": "Unknown",
+          "date": "2026-06-30",
+          "url": "http://arxiv.org/abs/2607.00266v1",
+          "is_record": true,
+          "is_breakthrough": true,
+          "is_new": false,
+          "geolocation": {
+            "lat": 0.0,
+            "lon": 0.0
+          },
+          "category_key": "quantum"
+        },
+        {
+          "id": "his-1997-12-01-ads-cft",
+          "category": "Quantum Physics",
+          "subcategory": "holographic_principle",
+          "title": "Maldacena formulates the AdS/CFT correspondence (holographic duality)",
+          "value": null,
+          "unit": null,
+          "source": "Institute for Advanced Study",
+          "url": "https://en.wikipedia.org/wiki/AdS/CFT_correspondence",
+          "date": "1997-12-01",
+          "geolocation": {
+            "lat": 40.3487,
+            "lon": -74.6564
+          },
+          "category_key": "quantum"
+        },
+        {
+          "id": "his-1994-10-01-shor-algorithm",
+          "category": "Quantum Physics",
+          "subcategory": "quantum_resource_theory",
+          "title": "Shor's algorithm shows quantum computers can factor integers in polynomial time",
+          "value": null,
+          "unit": null,
+          "source": "AT&T Bell Labs",
+          "url": "https://en.wikipedia.org/wiki/Shor%27s_algorithm",
+          "date": "1994-10-01",
+          "geolocation": {
+            "lat": 40.69,
+            "lon": -74.401
+          },
+          "category_key": "quantum"
+        },
+        {
+          "id": "his-1981-05-06-feynman-quantum",
+          "category": "Quantum Physics",
+          "subcategory": "quantum_resource_theory",
+          "title": "Feynman proposes computers built from quantum mechanical principles",
+          "value": null,
+          "unit": null,
+          "source": "Caltech / MIT",
+          "url": "https://en.wikipedia.org/wiki/Quantum_computing",
+          "date": "1981-05-06",
+          "geolocation": {
+            "lat": 34.1377,
+            "lon": -118.1253
+          },
+          "category_key": "quantum"
         }
       ]
     },
