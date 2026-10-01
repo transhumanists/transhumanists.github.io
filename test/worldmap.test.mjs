@@ -621,6 +621,69 @@ test('zoom controls, keyboard and double-click do not throw', () => {
     // Genuinely malformed JSON still starts empty rather than throwing.
     expect(api.parseGeocodeCache('{not json')).toEqual({});
     expect(api.parseGeocodeCache('')).toEqual({});
+    // An array parses to a non-null object, so a typeof check alone would accept
+    // it and every geocodeCache[key] lookup would miss on a numeric index.
+    expect(api.parseGeocodeCache('[{"lat":1,"lon":2}]')).toEqual({});
+    // Oversized input is refused before JSON.parse runs, so a hand-edited or
+    // hostile localStorage value cannot force an unbounded parse on page load.
+    const huge = 'x'.repeat(api.GEOCODE_CACHE_MAX_BYTES + 1);
+    expect(api.parseGeocodeCache(huge)).toEqual({});
+    expect(api.GEOCODE_CACHE_MAX_BYTES).toBeLessThanOrEqual(1024 * 1024);
+    // Non-strings are refused without attempting a parse at all.
+    expect(api.parseGeocodeCache(null)).toEqual({});
+    expect(api.parseGeocodeCache(undefined)).toEqual({});
+    expect(api.parseGeocodeCache(42)).toEqual({});
+  });
+
+  test('"stale" means the same thing for zones, crises and deployments', () => {
+    const api = windowObj.__WORLDMAP_TEST__;
+    const layer = (over) => ({ status: 'active', last_news_year: 2020, ...over });
+    api.setTimelineYear(2026);
+    // Active and recent -> not stale.
+    expect(api.isStaleLayer(layer({ last_news_year: 2026 }))).toBe(false);
+    // Active but no news for more than the threshold -> stale.
+    expect(api.isStaleLayer(layer({ last_news_year: 2020 }))).toBe(true);
+    // Concluded entries are never "stale"; they are simply over.
+    expect(api.isStaleLayer(layer({ status: 'concluded', last_news_year: 2015 }))).toBe(false);
+    // Absence of data is not evidence of disuse.
+    expect(api.isStaleLayer({ status: 'active' })).toBe(false);
+    expect(api.isStaleLayer(layer({ last_news_year: null }))).toBe(false);
+    expect(api.isStaleLayer(layer({ last_news_year: '2020' }))).toBe(false);
+    expect(api.isStaleLayer(layer({ last_news_year: NaN }))).toBe(false);
+    expect(api.isStaleLayer(layer({ last_news_year: Infinity }))).toBe(false);
+    // A future news year must not read as stale (negative age).
+    expect(api.isStaleLayer(layer({ last_news_year: 2030 }))).toBe(false);
+    // The threshold is exactly what is documented, on both sides of the edge.
+    expect(api.isStaleLayer(layer({ last_news_year: 2026 - api.STALE_THRESHOLD_YEARS }))).toBe(false);
+    expect(api.isStaleLayer(layer({ last_news_year: 2026 - api.STALE_THRESHOLD_YEARS - 1 }))).toBe(true);
+    // The slider governs the comparison, not the wall clock.
+    api.setTimelineYear(2019);
+    expect(api.isStaleLayer(layer({ last_news_year: 2018 }))).toBe(false);
+    api.setTimelineYear(2026);
+  });
+
+  test('fleet endpoints are derived once and reused by draw and hit-test', () => {
+    const api = windowObj.__WORLDMAP_TEST__;
+    const inf = { kind: 'infantry', lat: 40, lon: 20, direction: 'east' };
+    const first = api.fleetEndpoints(inf);
+    const second = api.fleetEndpoints(inf);
+    // Memoized: drawFleet runs ~10x/s and findDeployment on every mousemove, so
+    // rebuilding this pair per call would be pure allocation churn.
+    expect(second).toBe(first);
+    expect(first.to).toEqual({ lat: 40, lon: 20 });
+    expect(first.from).toEqual({ lat: 40, lon: 15 });
+    // Direction handling, including the deterministic "global" fallback.
+    expect(api.fleetEndpoints({ kind: 'mobilization', lat: 10, lon: 10, direction: 'WEST' }).from.lon).toBe(15);
+    expect(api.fleetEndpoints({ kind: 'rotation', lat: 10, lon: 10, direction: 'north' }).from.lat).toBe(15);
+    expect(api.fleetEndpoints({ kind: 'rotation', lat: 10, lon: 10, direction: 'south' }).from.lat).toBe(5);
+    const global = api.fleetEndpoints({ kind: 'infantry', lat: 12, lon: 34 });
+    expect(Number.isFinite(global.from.lat)).toBe(true);
+    expect(Number.isFinite(global.from.lon)).toBe(true);
+    // A null result is memoized too, so an unusable entry is not re-validated on
+    // every frame either.
+    const broken = { kind: 'fleet', from: { lat: 1, lon: 1 } };
+    expect(api.fleetEndpoints(broken)).toBeNull();
+    expect(api.fleetEndpoints(broken)).toBeNull();
   });
 
   test('normalizeEvent drops any cached stack key from the payload', () => {

@@ -46,7 +46,13 @@
   // Day/night palette. Deliberately disjoint from every CATEGORY_COLORS value
   // so the terminator never visually collides with a milestone category.
   const DAY_TINT = 'rgba(140, 200, 255, 0.07)';
-  const NIGHT_FILL = 'rgba(2, 6, 14, 0.45)';
+  // The night shade is built from one RGB triple so the polar-cap fade below can
+  // end on the exact same colour at zero alpha. It used to repeat the literal
+  // "rgba(2, 6, 14, ...)" in two places, which silently desynced if the shade
+  // was ever retuned.
+  const NIGHT_RGB = '2, 6, 14';
+  const NIGHT_FILL = `rgba(${NIGHT_RGB}, 0.45)`;
+  const NIGHT_FILL_CLEAR = `rgba(${NIGHT_RGB}, 0)`;
   const SUNSET_BOUNDARY = 'rgba(255, 222, 178, ALPHA)';
   const SUNRISE_BOUNDARY = 'rgba(176, 188, 255, ALPHA)';
   const SUN_ICON = '#fff3c4';
@@ -70,6 +76,19 @@
   // concluded ones render dim and expose their full duration in the tooltip.
   const STATUS_ACTIVE = 'active';
   const STATUS_CONCLUDED = 'concluded';
+
+  // Timeline slider state, declared up here because layerCurrentYear() (below) and
+  // the layer renderers all read it. It used to live ~2800 lines further down,
+  // which worked only because nothing called those functions during module
+  // evaluation — a fragile ordering dependency for a load-bearing value.
+  // The floor is a deliberate UI/perf choice: a first-time visitor sees the full
+  // set and the slider clusters within a recent window, so a layer concluded
+  // wholly before TIMELINE_MIN_YEAR would never be reachable at any position.
+  // 1945 covers the full historical milestone archive (Trinity test, ENIAC, etc.).
+  let timelineYear = new Date().getFullYear(); // current year by default
+  const TIMELINE_MIN_YEAR = 1945;
+  function getTimelineMaxYear() { return new Date().getFullYear(); }
+
   const FLUO_GLOW_BLUR = 26;
   const FLUO_LINE_GLOW_BLUR = 9;
   const FLUO_PULSE_RADIUS = 10;
@@ -143,6 +162,32 @@
     return layerStatus(item) === STATUS_ACTIVE;
   }
 
+  // The year the layer is being judged against. `timelineYear` is the single
+  // source of truth for the slider position; this used to read a `state.timelineYear`
+  // that nothing ever assigned, so the field was permanently undefined and the
+  // fallback silently won — staleness was judged against the wall clock even with
+  // the slider parked in the past, marking layers stale that were fresh in the
+  // year being displayed.
+  function layerCurrentYear() {
+    return timelineYear;
+  }
+
+  // An active layer whose last_news_year is older than STALE_THRESHOLD_YEARS is
+  // "active but quiet": still glowing, but desaturated and without the fluo
+  // pulse, so a long-running story reads differently from a live one.
+  //
+  // This was copy-pasted into drawZone/drawCrisis/drawFleet, and the deployment
+  // copy had drifted: it re-derived `active` via isLayerActive() instead of using
+  // the local the other two used. One definition, one meaning. A layer with no
+  // usable last_news_year is never treated as stale — absence of data is not
+  // evidence of disuse.
+  function isStaleLayer(item) {
+    if (!isLayerActive(item)) return false;
+    const lastNewsYear = item.last_news_year;
+    if (typeof lastNewsYear !== 'number' || !Number.isFinite(lastNewsYear)) return false;
+    return (layerCurrentYear() - lastNewsYear) > STALE_THRESHOLD_YEARS;
+  }
+
   // Accept YYYY-MM-DD, YYYY-MM or just YYYY (the forms sync_layers.py writes)
   // and normalize to a comparable YYYY-MM-DD, or null when absent/unparsable.
   function normalizeLayerDate(value) {
@@ -203,6 +248,12 @@
   // Geocoding cache for intelligent fallback
   const GEOCODE_CACHE_KEY = 'worldmap_geocode_cache_v1';
   const GEOCODE_CACHE_MAX_SIZE = 500;
+  // Ceiling on the serialized cache we will even attempt to parse. Each entry is
+  // a short "source|title|category" key plus a 2-number object, so a full cache
+  // is well under 100 kB; this is a cheap guard against a hand-edited or
+  // hostile localStorage value forcing an unbounded JSON.parse on the main thread
+  // during page load. The entry-count trim below is the real size control.
+  const GEOCODE_CACHE_MAX_BYTES = 512 * 1024;
 
   // Single source of truth for the source-link URL scheme gate.
   // Every renderer (worldmap, dashboard, widgets) must test the raw string
@@ -216,9 +267,14 @@
   // replace the whole map with four sample events. Only a non-null object is
   // usable, so everything else starts from an empty cache.
   function parseGeocodeCache(raw) {
+    // Length is checked before parsing, not after: the point is to never hand an
+    // arbitrarily large string to JSON.parse on the load path.
+    if (typeof raw !== 'string' || raw.length === 0 || raw.length > GEOCODE_CACHE_MAX_BYTES) {
+      return {};
+    }
     try {
       const parsed = JSON.parse(raw);
-      return (parsed !== null && typeof parsed === 'object') ? parsed : {};
+      return (parsed !== null && typeof parsed === 'object' && !Array.isArray(parsed)) ? parsed : {};
     } catch (_) {
       return {};
     }
@@ -734,7 +790,7 @@ function canonicalCategory(cat) {
   // fillRects. Each gradient is clipped to the canvas so it stays correct at any
   // zoom/pan, and the band-edge gradient stop is derived from the same constant
   // the terminator uses rather than a second magic number.
-  function fadeNightIntoCaps(h) {
+  function fadeNightIntoCaps(w, h) {
     const edgeTop = project(0, TERMINATOR_LAT_LIMIT).y;
     const edgeBottom = project(0, -TERMINATOR_LAT_LIMIT).y;
 
@@ -742,17 +798,18 @@ function canonicalCategory(cat) {
     if (edgeTop > 0) {
       const g = ctx.createLinearGradient(0, edgeTop, 0, 0);
       g.addColorStop(0, NIGHT_FILL);
-      g.addColorStop(1, 'rgba(2, 6, 14, 0)');
+      g.addColorStop(1, NIGHT_FILL_CLEAR);
       ctx.fillStyle = g;
-      ctx.fillRect(0, 0, state.width, edgeTop);
+      ctx.fillRect(0, 0, w, edgeTop);
     }
     // Bottom cap: shade at the band edge -> clear at the canvas bottom.
-    if (edgeBottom < h) {
+    const from = Math.max(0, edgeBottom);
+    if (from < h) {
       const g = ctx.createLinearGradient(0, edgeBottom, 0, h);
       g.addColorStop(0, NIGHT_FILL);
-      g.addColorStop(1, 'rgba(2, 6, 14, 0)');
+      g.addColorStop(1, NIGHT_FILL_CLEAR);
       ctx.fillStyle = g;
-      ctx.fillRect(0, Math.max(0, edgeBottom), state.width, h - Math.max(0, edgeBottom));
+      ctx.fillRect(0, from, w, h - from);
     }
   }
 
@@ -797,7 +854,7 @@ function canonicalCategory(cat) {
     strokeSoftBoundary(sunrise, SUNRISE_BOUNDARY);
 
     // ---- Fade the night shade out across the polar cap band ----
-    fadeNightIntoCaps(h);
+    fadeNightIntoCaps(w, h);
 
     // ---- Sun position marker (small sun icon, no dot) ----
     const sunPos = project(sun.lon, sun.lat);
@@ -1101,10 +1158,7 @@ function canonicalCategory(cat) {
     const baseRadius = Math.max(4, (zone.radiusDeg || 3) * degToPx * state.transform.scale * autoScale);
 
     const active = isLayerActive(zone);
-    const now = new Date();
-    const currentYear = state.timelineYear !== undefined ? state.timelineYear : now.getFullYear();
-    const lastNewsYear = zone.last_news_year;
-    const isStale = active && typeof lastNewsYear === 'number' && (currentYear - lastNewsYear) > STALE_THRESHOLD_YEARS;
+    const isStale = isStaleLayer(zone);
 
     if (active && !isStale) {
       // Bright active: neon glow, brighter fill, full opacity stroke
@@ -1198,10 +1252,7 @@ function canonicalCategory(cat) {
     const baseRadius = Math.max(4, (crisis.radiusDeg || 3) * degToPx * state.transform.scale * autoScale);
 
     const active = isLayerActive(crisis);
-    const now = new Date();
-    const currentYear = state.timelineYear !== undefined ? state.timelineYear : now.getFullYear();
-    const lastNewsYear = crisis.last_news_year;
-    const isStale = active && typeof lastNewsYear === 'number' && (currentYear - lastNewsYear) > STALE_THRESHOLD_YEARS;
+    const isStale = isStaleLayer(crisis);
 
     if (active && !isStale) {
       const pulse = 0.5 + 0.5 * Math.sin(Date.now() / 900 + crisis.lon);
@@ -1302,9 +1353,22 @@ function canonicalCategory(cat) {
 
   // Geographic endpoints for a movement, in lon/lat. Returns null when the pair
   // is unusable so callers can skip rather than draw a degenerate arrow.
+  //
+  // Memoized on the entry for the same reason stackKey() is: draw() runs ~10x/s
+  // and findDeployment() runs on every mousemove, so recomputing (and
+  // re-allocating) the infantry pair per call per frame is pure garbage
+  // collection pressure. normalizeFleet() is the only producer and it never
+  // mutates a movement afterwards, so the cache cannot go stale.
   function fleetEndpoints(fleet) {
+    if (fleet._ends !== undefined) return fleet._ends;
+    fleet._ends = computeFleetEndpoints(fleet);
+    return fleet._ends;
+  }
+
+  function computeFleetEndpoints(fleet) {
     if (!isInfantryKind(fleet)) {
       if (!isLocatedCoord(fleet?.from) || !isLocatedCoord(fleet?.to)) return null;
+      // Reuse the payload objects rather than wrapping them: these are read-only.
       return { from: fleet.from, to: fleet.to };
     }
     const destLon = fleet.lon;
@@ -1338,10 +1402,7 @@ function canonicalCategory(cat) {
 
     const isInfantry = isInfantryKind(fleet);
     const isGround = fleet.kind === 'ground';
-    const now = new Date();
-    const currentYear = state.timelineYear !== undefined ? state.timelineYear : now.getFullYear();
-    const lastNewsYear = fleet.last_news_year;
-    const isStale = isLayerActive(fleet) && typeof lastNewsYear === 'number' && (currentYear - lastNewsYear) > STALE_THRESHOLD_YEARS;
+    const isStale = isStaleLayer(fleet);
 
     const ends = fleetEndpoints(fleet);
     if (!ends) return;
@@ -1643,7 +1704,16 @@ function canonicalCategory(cat) {
     // dismissed the pinned popup here, tearing the pager out of the DOM before
     // its click could fire and making "previous milestone" unusable. Deselecting
     // the landmark is the lower-priority behaviour: the popup wins.
-    if (state.tooltipHover) {
+    //
+    // Containment of the event target is the authoritative test. The sticky
+    // `tooltipHover` flag alone is not enough: it is only cleared by mouseleave,
+    // which never fires if the pointer leaves the window or the popup is
+    // re-rendered under the cursor, and a stuck-true flag would silently kill
+    // deselect-by-click for the rest of the session.
+    const target = e.target;
+    const overPopup = state.tooltipHover ||
+      (tooltip && target && typeof tooltip.contains === 'function' && tooltip.contains(target));
+    if (overPopup) {
       state.pressX = null;
       state.pressY = null;
       return;
@@ -2875,15 +2945,6 @@ function startTerminatorInterval() {
   }, TERMINATOR_UPDATE_MS);
 }
 
-// Timeline slider state. The floor is a deliberate UI/perf choice: a first-time
-// visitor sees the full set and the slider clusters within a recent window, so a
-// layer concluded wholly before TIMELINE_MIN_YEAR would never be reachable at any
-// position. The floor is set to 1945 to cover the full historical milestone
-// archive (Trinity test, ENIAC, etc.).
-let timelineYear = new Date().getFullYear(); // current year by default
-const TIMELINE_MIN_YEAR = 1945;
-function getTimelineMaxYear() { return new Date().getFullYear(); }
-
 // Cluster milestone events by year: only events dated in that year stay visible.
 // Like filterLayersByYear, this is intentionally inert until the slider moves so
 // a first-time visitor sees the whole milestone set.
@@ -3168,6 +3229,9 @@ function initTimelineSlider() {
       layerCountTitle,
       isInfantryKind,
       fleetEndpoints,
+      isStaleLayer,
+      get GEOCODE_CACHE_MAX_BYTES() { return GEOCODE_CACHE_MAX_BYTES; },
+      get STALE_THRESHOLD_YEARS() { return STALE_THRESHOLD_YEARS; },
       get PASSIVE_OPACITY_LADDER() {
         return { concluded: CONCLUDED_ZONE_OPACITY, stale: STALE_ZONE_OPACITY };
       },
