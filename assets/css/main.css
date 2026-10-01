@@ -330,19 +330,19 @@ body {
 
 .map-legend {
   position: absolute;
-  left: 12px;
-  bottom: 12px;
+  right: 12px;
+  top: 12px;
   max-width: calc(100% - 24px);
   background: rgba(6,11,20,0.72);
   backdrop-filter: blur(8px);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  padding: 7px 10px;
-  font-size: 0.62rem;
-  line-height: 1.25;
+  padding: 6px 8px;
+  font-size: 0.56rem;
+  line-height: 1.2;
   font-family: var(--font-mono);
   z-index: 5;
-  min-width: 138px;
+  min-width: 120px;
   user-select: none;
  }
  .map-legend-controls {
@@ -1451,7 +1451,7 @@ body {
   .map-timeline-track { height: 3px; }
   .map-timeline-years { top: -16px; font-size: 0.5rem; }
   .map-timeline-handle { width: 18px; height: 18px; }
-  .map-legend { left: 8px; bottom: 8px; max-width: calc(100% - 16px); padding: 6px 8px; font-size: 0.56rem; min-width: 116px; }
+  .map-legend { right: 8px; top: 8px; max-width: calc(100% - 16px); padding: 5px 7px; font-size: 0.52rem; min-width: 110px; }
   .map-legend-title { font-size: 0.52rem; margin-bottom: 3px; }
   .map-legend-row { gap: 5px; padding: 2px 3px; margin: 0 -3px; }
   .map-legend-dot { width: 5px; height: 5px; }
@@ -1481,7 +1481,7 @@ body {
   .map-timeline { height: 36px; padding: 6px 6px; }
   .map-timeline-track { height: 2px; }
   .map-timeline-handle { width: 16px; height: 16px; }
-  .map-legend { font-size: 0.5rem; min-width: 100px; padding: 5px 6px; }
+  .map-legend { font-size: 0.48rem; min-width: 95px; padding: 4px 5px; right: 4px; top: 4px; }
   .map-legend-title { font-size: 0.48rem; }
   .map-legend-row { gap: 4px; padding: 1px 3px; }
   .map-legend-dot { width: 5px; height: 5px; }
@@ -1495,7 +1495,7 @@ body {
   #world-map { height: 40vh; min-height: 200px; }
   .map-overlay { top: 4px; left: 4px; right: 4px; }
   .map-timeline { bottom: 4px; height: 32px; padding: 4px 8px; }
-  .map-legend { display: none; }
+  .map-legend { right: 4px; top: 4px; font-size: 0.45rem; min-width: 90px; padding: 3px 4px; }
 }
 
 /* Prevent horizontal scroll on mobile */

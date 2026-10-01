@@ -15,25 +15,7 @@ kramdown:
   input: GFM
   syntax_highlighter: rouge
 
-collections:
-  milestones:
-    output: true
-    permalink: /milestones/:name/
-  metrics:
-    output: true
-    permalink: /metrics/:name/
 
-defaults:
-  - scope:
-      path: ""
-      type: "milestones"
-    values:
-      layout: "milestone"
-  - scope:
-      path: ""
-      type: "metrics"
-    values:
-      layout: "metric"
 
 exclude:
   - Gemfile
