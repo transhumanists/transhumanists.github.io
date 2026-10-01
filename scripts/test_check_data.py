@@ -40,7 +40,7 @@ class TestCheckEvents(unittest.TestCase):
 
     def test_nonfinite_coordinate_fails(self):
         payload = _events_payload(
-            {"title": "X", "category": "Biotechnology", "date": "2026-03-15",
+            {"title": "X", "category": "Biotechnology & Biohacking", "date": "2026-03-15",
              "geolocation": {"lat": 1e400, "lon": 0}},
         )
         issues = cd.check_events(payload["events"])
@@ -48,7 +48,7 @@ class TestCheckEvents(unittest.TestCase):
 
     def test_bool_coordinate_fails(self):
         payload = _events_payload(
-            {"title": "X", "category": "Biotechnology", "date": "2026-03-15",
+            {"title": "X", "category": "Biotechnology & Biohacking", "date": "2026-03-15",
              "geolocation": {"lat": True, "lon": 0}},
         )
         issues = cd.check_events(payload["events"])
@@ -56,7 +56,7 @@ class TestCheckEvents(unittest.TestCase):
 
     def test_out_of_range_fails(self):
         payload = _events_payload(
-            {"title": "X", "category": "Biotechnology", "date": "2026-03-15",
+            {"title": "X", "category": "Biotechnology & Biohacking", "date": "2026-03-15",
              "geolocation": {"lat": 91, "lon": 190}},
         )
         issues = cd.check_events(payload["events"])
@@ -64,7 +64,7 @@ class TestCheckEvents(unittest.TestCase):
 
     def test_bad_title_type_fails(self):
         payload = _events_payload(
-            {"title": 42, "category": "Biotechnology", "date": "2026-03-15",
+            {"title": 42, "category": "Biotechnology & Biohacking", "date": "2026-03-15",
              "geolocation": {"lat": 1, "lon": 1}},
         )
         self.assertTrue(any("title" in i for i in cd.check_events(payload["events"])))
@@ -570,7 +570,7 @@ class TestEventOrdering(unittest.TestCase):
     milestone ended up at index 54.
     """
 
-    def _ev(self, i, title, value, date, url="https://example.com/x", cat="Biotechnology"):
+    def _ev(self, i, title, value, date, url="https://example.com/x", cat="Biotechnology & Biohacking"):
         return {
             "id": i, "title": title, "category": cat, "value": value,
             "date": date, "url": url, "geolocation": {"lat": 1, "lon": 1},
@@ -671,7 +671,7 @@ class TestDuplicateReportDetection(unittest.TestCase):
         events = [
             self._ev("g", "Khipu provenance result", "0.86", "2026-03-01", url="https://a.com"),
             self._ev("h", "Khipu provenance result", "0.86", "2026-03-01", url="https://b.com",
-                     cat="Biotechnology"),
+                     cat="Biotechnology & Biohacking"),
         ]
         self.assertEqual(cd.check_duplicate_reports(events), [])
 
@@ -908,20 +908,79 @@ class TestEventCategories(unittest.TestCase):
         issues = cd.check_events([self._event(42)])
         self.assertTrue(any("must be a string" in i for i in issues))
 
-    def test_schema_declares_seven_categories_with_no_catch_all(self):
+    def test_schema_declares_every_category_with_no_catch_all(self):
         cats = cd._SCHEMA["controls"]["events"]["categories"]
-        self.assertEqual(len(cats), 7)
         self.assertNotIn("Other", cats)
-        self.assertEqual(len(set(cats)), 7)
+        self.assertEqual(len(set(cats)), len(cats))
+        # Nine: the original seven, with standalone Biotechnology replaced by
+        # Biotechnology & Biohacking, plus Mobility & Logistics and Robotics.
+        self.assertEqual(len(cats), 9)
+        for expected in ("Biotechnology & Biohacking", "Mobility & Logistics", "Robotics"):
+            self.assertIn(expected, cats)
+
+    def test_schema_category_order_matches_declared_categories(self):
+        order = cd._SCHEMA["controls"]["events"]["category_order"]
+        cats = cd._SCHEMA["controls"]["events"]["categories"]
+        self.assertEqual(sorted(order), sorted(cats))
+
+    def test_subtone_categories_are_real_categories(self):
+        subtones = cd._SCHEMA["controls"]["events"]["subtones"]
+        self.assertTrue(subtones, "schema should declare at least one two-tone category")
+        for category, spec in subtones.items():
+            with self.subTest(category=category):
+                self.assertIn(category, cd._SCHEMA["controls"]["events"]["categories"])
+                self.assertTrue(spec["primary"])
+                self.assertTrue(spec["secondary"])
+                self.assertNotEqual(spec["primary"], spec["secondary"])
+                self.assertTrue(spec["keywords"])
+
+    def test_subtone_keywords_match_the_python_classifier(self):
+        # The schema mirrors sync_milestones.CATEGORY_SUBTONES for documentation;
+        # a keyword that exists on only one side would make the parity test below
+        # meaningless, so the two lists must not drift.
+        import sync_milestones as sync
+
+        schema_sub = cd._SCHEMA["controls"]["events"]["subtones"]
+        self.assertEqual(
+            set(schema_sub),
+            {sync.SITE_KEY_TO_DISPLAY[k] for k in sync.CATEGORY_SUBTONES},
+            "schema subtones and Python CATEGORY_SUBTONES cover different categories",
+        )
+        for site_key, spec in sync.CATEGORY_SUBTONES.items():
+            display = sync.SITE_KEY_TO_DISPLAY[site_key]
+            with self.subTest(category=display):
+                self.assertEqual(
+                    set(schema_sub[display]["keywords"]),
+                    set(spec["keywords"]),
+                    f"keyword drift for {display}",
+                )
 
     def test_python_and_js_legend_categories_match(self):
         js_file = cd.ROOT / "assets" / "js" / "worldmap.js"
         if not js_file.exists():
             self.skipTest("worldmap.js not checked out")
         js = js_file.read_text(encoding="utf-8")
-        # CATEGORY_LEGEND entries in worldmap.js must be the same seven names.
+        # CATEGORY_LEGEND entries in worldmap.js must cover every declared name.
         for category in cd._CATEGORIES:
             self.assertIn(f"label: '{category}'", js)
+
+    def test_python_and_js_legend_order_matches_schema(self):
+        import sync_milestones as sync
+
+        js_file = cd.ROOT / "assets" / "js" / "worldmap.js"
+        if not js_file.exists():
+            self.skipTest("worldmap.js not checked out")
+        js = js_file.read_text(encoding="utf-8")
+        # The visual reading order is a product decision, but it must be declared
+        # once. The schema is authoritative; JS must render in that order.
+        for display in cd._SCHEMA["controls"]["events"]["category_order"]:
+            self.assertIn(f"label: '{display}'", js)
+        self.assertEqual(
+            list(sync.SITE_KEY_LEGEND_ORDER),
+            [sync.DISPLAY_TO_SITE_KEY[d] for d in
+             cd._SCHEMA["controls"]["events"]["category_order"]],
+            "sync_milestones.SITE_KEY_LEGEND_ORDER disagrees with the schema",
+        )
 
     def test_every_alias_target_is_a_canonical_category(self):
         import sync_milestones as sync

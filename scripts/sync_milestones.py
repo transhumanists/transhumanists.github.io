@@ -173,6 +173,8 @@ _MAX_UPSTREAM_BYTES = 10 * 1024 * 1024  # safety cap on the mirrored upstream fi
 # Upstream category keys -> website snake_case keys (for data file structure).
 UPSTREAM_TO_SITE_KEY = {
     "Biotechnology": "biotechnology",
+    "Biotechnology & Biohacking": "biotechnology",
+    "Biohacking": "biotechnology",
     "Computing & AGI": "computing_agi",
     "Quantum Physics": "quantum",
     "Quantum": "quantum",
@@ -183,20 +185,100 @@ UPSTREAM_TO_SITE_KEY = {
     "Spaceflight & Aeronautics": "spaceflight",
     "Defense": "defense",
     "Military & Defense": "defense",
+    "Mobility & Logistics": "mobility",
+    "Logistics": "mobility",
+    "Transportation": "mobility",
+    "Robotics": "robotics",
+    "Robotics & Automation": "robotics",
 }
 
 # Site keys -> display names for worldmap/catalog.
 SITE_KEY_TO_DISPLAY = {
-    "biotechnology": "Biotechnology",
+    "biotechnology": "Biotechnology & Biohacking",
     "computing_agi": "Computing & AGI",
     "quantum": "Quantum Physics",
     "energy": "Renewable Energy",
+    "mobility": "Mobility & Logistics",
     "cybersecurity": "Cybersecurity",
+    "robotics": "Robotics",
     "spaceflight": "Spaceflight & Aeronautics",
     "defense": "Military & Defense",
 }
 
-# Upstream display names that are not one of the seven canonical categories.
+# A category can render with more than one landmark colour, the way the
+# deployments layer splits ground from fleet. A record takes the secondary colour
+# when it falls in the secondary "tone"; the legend row then shows both colours so
+# the split is always discoverable.
+#
+# The keyword lists here are the single source of truth and are mirrored in
+# schema/worldmap-data.schema.json; scripts/test_check_data.py::TestSchemaParity
+# fails CI if the two drift.
+CATEGORY_SUBTONES = {
+    "biotechnology": {
+        "primary": "Biotechnology",
+        "secondary": "Biohacking",
+        # Matched case-insensitively as substrings against the title, summary and
+        # source. Includes the transhumanist vocabulary the category was widened
+        # for: cyborgs, biohackers, and the implant/prosthesis work that
+        # motivates them (e.g. Neil Harbisson's frequency-relaying implant).
+        "keywords": (
+            "biohacking", "biohack", "cyborg", "transhumanist", "transhumanism",
+            "neuroprosthetic", "neuroprosthesis", "neural implant", "neuralink",
+            "brain-computer interface", "brain computer interface",
+            "neural interface", "implant", "bone-conductive", "bone conductive",
+            "bone conduction", "sensory substitution", "cochlear", "retinal prosthesis",
+            "retinal implant", "prosthetic", "prostheses", "openwetware",
+            "body hacking", "bodyhack", "grinder", "wearable computing",
+            "human-computer interface", "human computer interface",
+            "augmented reality", "brainwave", "eeg headset", "mind-machine",
+            "mind machine", "sonic toothbrush", "cyborgs",
+        ),
+    },
+}
+
+
+def classify_tone(m: dict) -> str | None:
+    """Return the secondary tone label for a record, or None for the primary tone.
+
+    Only meaningful for categories that declare a subtone; every other category
+    returns None and renders in its single colour.
+    """
+    key = m.get("category_key")
+    if not key:
+        display = m.get("category") or ""
+        key = DISPLAY_TO_SITE_KEY.get(display, slugify(display))
+    spec = CATEGORY_SUBTONES.get(key)
+    if not spec:
+        return None
+    # The subcategory is the strongest signal (it is curated); title and summary
+    # catch the upstream buckets that never filled it in. `source` is excluded on
+    # purpose: outlets like "MIT Technology Review" host implants and also host
+    # ordinary biotech, so a publisher name is not evidence of a tone.
+    haystack = " ".join(
+        str(m.get(field) or "") for field in ("subcategory", "title", "summary")
+    ).lower()
+    for kw in spec["keywords"]:
+        if kw in haystack:
+            return spec["secondary"]
+    return None
+
+
+# Legend order. Distinct from the site-key map above (which only maps names) because
+# the map has a deliberate visual reading order: most human-progress categories
+# first, then infrastructure, then the operational ones.
+SITE_KEY_LEGEND_ORDER = [
+    "biotechnology",
+    "computing_agi",
+    "quantum",
+    "energy",
+    "mobility",
+    "cybersecurity",
+    "robotics",
+    "spaceflight",
+    "defense",
+]
+
+# Upstream display names that are not one of the canonical categories.
 # They fold into a canonical category here so the site never needs an "Other"
 # bucket: every milestone lands in a category that has a colour, a legend row and
 # a catalog filter. Mirrors CATEGORY_ALIASES in assets/js/worldmap.js - keep the
@@ -207,6 +289,19 @@ CATEGORY_ALIASES = {
     "Computational Archaeology": "Computing & AGI",
     "Computer Vision": "Computing & AGI",
     "Legal AI": "Computing & AGI",
+    # Category splits and renames. Upstream buckets keep whatever name they had;
+    # the site folds them into the canonical bucket so history is preserved
+    # instead of orphaning every pre-existing milestone in a dead key.
+    "Biotechnology": "Biotechnology & Biohacking",
+    "Biohacking": "Biotechnology & Biohacking",
+    "Biotech": "Biotechnology & Biohacking",
+    "Synthetic Biology": "Biotechnology & Biohacking",
+    "Logistics": "Mobility & Logistics",
+    "Transportation": "Mobility & Logistics",
+    "Transport": "Mobility & Logistics",
+    "Robotics": "Robotics",
+    "Robotics & Automation": "Robotics",
+    "Automation": "Robotics",
 }
 
 def slugify(name: str) -> str:
@@ -246,7 +341,13 @@ DISPLAY_TO_DISPLAY.update({
     "Defense": "Military & Defense",
     "Computing & AGI": "Computing & AGI",
     "Cybersecurity": "Cybersecurity",
-    "Biotechnology": "Biotechnology",
+    # Split/renamed categories: upstream's old names fold into the new canonical
+    # display so historical milestones are re-labelled, not duplicated.
+    "Biotechnology": "Biotechnology & Biohacking",
+    "Biohacking": "Biotechnology & Biohacking",
+    "Logistics": "Mobility & Logistics",
+    "Transportation": "Mobility & Logistics",
+    "Robotics": "Robotics",
 })
 DISPLAY_TO_DISPLAY.update(CATEGORY_ALIASES)
 
@@ -537,6 +638,15 @@ _dedupe_same_report = milestone_identity.same_report
 _DEDUPE_STOPWORDS = milestone_identity.DEDUPE_STOPWORDS
 
 
+def _dedupe_category_key(category: object) -> str:
+    """Normalise a category to the site key the record will be published under.
+
+    Must match build_site_categories, otherwise unification buckets on a different
+    label than the one that ends up in the feed.
+    """
+    return DISPLAY_TO_SITE_KEY.get(category, slugify(category or ""))
+
+
 def _dedupe_metric_key(m: dict) -> tuple | None:
     """Identity key for a reported metric, or None when the record has no metric.
 
@@ -544,7 +654,9 @@ def _dedupe_metric_key(m: dict) -> tuple | None:
     unit and the category. All four are required, so two unrelated milestones that
     happen to share a number never collapse.
     """
-    return milestone_identity.report_group_key(m, include_unit=True)
+    return milestone_identity.report_group_key(
+        m, include_unit=True, category_resolver=_dedupe_category_key
+    )
 
 
 def unify_duplicate_milestones(milestones: list) -> tuple[list, list[str]]:
@@ -844,7 +956,7 @@ def build_events(milestones: list) -> dict:
                 lat, lon = geocoded
             else:
                 continue
-        events.append({
+        ev = {
             "id": "ev-" + m.get("id", ""),
             "title": m.get("title", ""),
             "category": display_category(m.get("category")),
@@ -853,7 +965,13 @@ def build_events(milestones: list) -> dict:
             "url": m.get("url"),
             "date": m.get("date", ""),
             "geolocation": {"lat": lat, "lon": lon},
-        })
+        }
+        # Only present when the record is in the secondary tone of a two-tone
+        # category; the front end defaults to the category's primary colour.
+        tone = classify_tone(m)
+        if tone:
+            ev["tone"] = tone
+        events.append(ev)
     return {"last_update": now_iso(), "version": "1.0.0", "events": events}
 
 

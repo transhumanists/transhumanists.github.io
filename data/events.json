@@ -1,11 +1,11 @@
 {
-  "last_update": "2026-10-01T22:12:53+00:00",
+  "last_update": "2026-10-01T22:34:25+00:00",
   "version": "1.0.0",
   "events": [
     {
       "id": "ev-ms-2a45f74dd818",
       "title": "Deep learning perturbation models outperform baselines on calibrated metrics",
-      "category": "Biotechnology",
+      "category": "Biotechnology & Biohacking",
       "value": "Deep learning perturbation models outperform baselines on calibrated metrics",
       "source": "Nature Biotechnology",
       "url": "https://www.nature.com/articles/s41587-026-03307-w",
@@ -18,7 +18,7 @@
     {
       "id": "ev-ms-8644b2a34d60",
       "title": "New ionizable lipid LC-1 enables efficient LNP delivery of large gene editors to multiple tissues",
-      "category": "Biotechnology",
+      "category": "Biotechnology & Biohacking",
       "value": "New ionizable lipid LC-1 enables efficient LNP delivery of large gene editors to multiple tissues",
       "source": "Nature Biotechnology",
       "url": "https://www.nature.com/articles/s41587-026-03297-9",
@@ -31,7 +31,7 @@
     {
       "id": "ev-ms-e0d7fb1f057f",
       "title": "Lipid nanoparticles optimized for large RNA cargo enhance in vivo genome editing",
-      "category": "Biotechnology",
+      "category": "Biotechnology & Biohacking",
       "value": "Lipid nanoparticles optimized for large RNA cargo enhance in vivo genome editing",
       "source": "Nature Biotechnology",
       "url": "https://www.nature.com/articles/s41587-026-03298-8",
@@ -44,7 +44,7 @@
     {
       "id": "ev-ms-bc2c513b6177",
       "title": "AI-guided optimization yields thermostable mRNA vaccines stable at 37°C for 2 months",
-      "category": "Biotechnology",
+      "category": "Biotechnology & Biohacking",
       "value": "37 °C",
       "source": "Nature Biotechnology",
       "url": "https://www.nature.com/articles/s41587-026-03330-x",
@@ -96,7 +96,7 @@
     {
       "id": "ev-ms-76a6862f54e8",
       "title": "Photolabile oligonucleotides enable spatially resolved single-cell transcriptomics and epigenomics",
-      "category": "Biotechnology",
+      "category": "Biotechnology & Biohacking",
       "value": "Photolabile oligonucleotides enable spatially resolved single-cell transcriptomics and epigenomics",
       "source": "Nature Biotechnology",
       "url": "https://www.nature.com/articles/s41587-026-03328-5",
@@ -122,7 +122,7 @@
     {
       "id": "ev-ms-1d88f31518db",
       "title": "Alkermes reports pioneering ADHD data for orexin agonist",
-      "category": "Biotechnology",
+      "category": "Biotechnology & Biohacking",
       "value": "Alkermes reports pioneering ADHD data for orexin agonist",
       "source": "Alkermes",
       "url": "https://www.fiercebiotech.com/biotech/pioneering-adhd-data-alkermes-eyes-orexin-agonist-potential-company-changer",
@@ -148,7 +148,7 @@
     {
       "id": "ev-ms-e55c8cf4e432",
       "title": "Engineered nanopore simultaneously identifies saccharides, amino acids, peptides, and ribonucleotides",
-      "category": "Biotechnology",
+      "category": "Biotechnology & Biohacking",
       "value": "Engineered nanopore simultaneously identifies saccharides, amino acids, peptides, and ribonucleotides",
       "source": "Nature Biotechnology",
       "url": "https://www.nature.com/articles/s41587-026-03308-9",
@@ -161,7 +161,7 @@
     {
       "id": "ev-ms-a5c98baae9a8",
       "title": "Moderna mRNA flu vaccine receives FDA approval",
-      "category": "Biotechnology",
+      "category": "Biotechnology & Biohacking",
       "value": "Moderna mRNA flu vaccine receives FDA approval",
       "source": "FDA",
       "url": "https://www.nature.com/articles/s41587-026-03313-y",
@@ -174,7 +174,7 @@
     {
       "id": "ev-ms-0a279b32fda4",
       "title": "Biomimetic cells enable new platform for T cell mechanotransduction studies",
-      "category": "Biotechnology",
+      "category": "Biotechnology & Biohacking",
       "value": "Biomimetic cells enable new platform for T cell mechanotransduction studies",
       "source": "Nature Biotechnology",
       "url": "https://www.nature.com/articles/s41587-026-03312-z",
@@ -187,7 +187,7 @@
     {
       "id": "ev-bio-001",
       "title": "CRISPR in-vivo editing efficiency",
-      "category": "Biotechnology",
+      "category": "Biotechnology & Biohacking",
       "value": "94.2 %",
       "source": "Broad Institute",
       "url": "https://www.broadinstitute.org",
@@ -265,7 +265,7 @@
     {
       "id": "ev-bio-002",
       "title": "Neural implant electrode density",
-      "category": "Biotechnology",
+      "category": "Biotechnology & Biohacking",
       "value": "16384 channels/cm²",
       "source": "Neuralink",
       "url": "https://neuralink.com",
@@ -273,7 +273,8 @@
       "geolocation": {
         "lat": 37.4861,
         "lon": -122.1519
-      }
+      },
+      "tone": "Biohacking"
     },
     {
       "id": "ev-en-005",
@@ -330,7 +331,7 @@
     {
       "id": "ev-bio-003",
       "title": "Electron microscope resolution",
-      "category": "Biotechnology",
+      "category": "Biotechnology & Biohacking",
       "value": "0.39 Ångström",
       "source": "Thermo Fisher FEI",
       "url": "https://www.thermofisher.com",
@@ -434,7 +435,7 @@
     {
       "id": "ev-bio-009",
       "title": "CAR-T manufacturing speed (bedside)",
-      "category": "Biotechnology",
+      "category": "Biotechnology & Biohacking",
       "value": "7 days",
       "source": "驯玉兰生物",
       "url": "https://www.cncell.com",
@@ -499,7 +500,7 @@
     {
       "id": "ev-bio-010",
       "title": "Wearable simultaneous biomarker sensors",
-      "category": "Biotechnology",
+      "category": "Biotechnology & Biohacking",
       "value": "12 analytes",
       "source": "Dexcom",
       "url": "https://www.dexcom.com",
@@ -538,7 +539,7 @@
     {
       "id": "ev-bio-004",
       "title": "Max lifespan extension (mouse)",
-      "category": "Biotechnology",
+      "category": "Biotechnology & Biohacking",
       "value": "38.4 %",
       "source": "Harvard Sinclair Lab",
       "url": "https://sinclair.hms.harvard.edu",
@@ -564,7 +565,7 @@
     {
       "id": "ev-bio-007",
       "title": "In-vivo whole-organ 3D imaging",
-      "category": "Biotechnology",
+      "category": "Biotechnology & Biohacking",
       "value": "3.2 µm",
       "source": "MPI-CBG",
       "url": "https://www.mpi-cbg.de",
@@ -572,19 +573,6 @@
       "geolocation": {
         "lat": 51.0504,
         "lon": 13.7373
-      }
-    },
-    {
-      "id": "ev-ms-0ef07b4ce70b",
-      "title": "ImmigrationReason: 12,375 USCIS AAO decisions dataset for legal reasoning",
-      "category": "Computing & AGI",
-      "value": "12375 decisions",
-      "source": "Academic researchers",
-      "url": "http://arxiv.org/abs/2608.20391v1",
-      "date": "2026-06-30",
-      "geolocation": {
-        "lat": 0.0,
-        "lon": 0.0
       }
     },
     {
@@ -614,6 +602,32 @@
       }
     },
     {
+      "id": "ev-ms-10f19d45d95b",
+      "title": "ML-driven Structural Pattern Mining of Inka Khipus",
+      "category": "Computing & AGI",
+      "value": "0.86 F1 score",
+      "source": "Open Khipu Repository",
+      "url": "http://arxiv.org/abs/2607.00185v1",
+      "date": "2026-06-30",
+      "geolocation": {
+        "lat": -13.5,
+        "lon": -71.9
+      }
+    },
+    {
+      "id": "ev-ms-0ef07b4ce70b",
+      "title": "ImmigrationReason: 12,375 USCIS AAO decisions dataset for legal reasoning",
+      "category": "Computing & AGI",
+      "value": "12375 decisions",
+      "source": "Academic researchers",
+      "url": "http://arxiv.org/abs/2608.20391v1",
+      "date": "2026-06-30",
+      "geolocation": {
+        "lat": 0.0,
+        "lon": 0.0
+      }
+    },
+    {
       "id": "ev-ms-09edac1db332",
       "title": "Evaluation-as-Search adaptive probing finds 2.5× more grounding failures in meeting assistants",
       "category": "Computing & AGI",
@@ -640,19 +654,6 @@
       }
     },
     {
-      "id": "ev-ms-10f19d45d95b",
-      "title": "ML-driven Structural Pattern Mining of Inka Khipus",
-      "category": "Computing & AGI",
-      "value": "0.86 F1 score",
-      "source": "Open Khipu Repository",
-      "url": "http://arxiv.org/abs/2607.00185v1",
-      "date": "2026-06-30",
-      "geolocation": {
-        "lat": -13.5,
-        "lon": -71.9
-      }
-    },
-    {
       "id": "ev-def-002",
       "title": "S-500 anti-ballistic missile range",
       "category": "Military & Defense",
@@ -668,7 +669,7 @@
     {
       "id": "ev-bio-008",
       "title": "AAV vector delivery efficiency",
-      "category": "Biotechnology",
+      "category": "Biotechnology & Biohacking",
       "value": "91.7 %",
       "source": "Spark Therapeutics",
       "url": "https://sparktx.com",
@@ -694,7 +695,7 @@
     {
       "id": "ev-bio-005",
       "title": "Largest synthetic genome synthesized",
-      "category": "Biotechnology",
+      "category": "Biotechnology & Biohacking",
       "value": "1500000000 bp",
       "source": "JCVI",
       "url": "https://www.jcvi.org",
@@ -707,7 +708,7 @@
     {
       "id": "ev-bio-006",
       "title": "Brain organoid complexity (neurons)",
-      "category": "Biotechnology",
+      "category": "Biotechnology & Biohacking",
       "value": "100000000 neurons",
       "source": "ETH Zürich",
       "url": "https://biol.ethz.ch",
@@ -863,7 +864,7 @@
     {
       "id": "ev-his-2020-12-11-mrna-vaccine",
       "title": "First mRNA vaccine granted emergency use authorisation (COVID-19)",
-      "category": "Biotechnology",
+      "category": "Biotechnology & Biohacking",
       "value": "First mRNA vaccine granted emergency use authorisation (COVID-19)",
       "source": "Pfizer / BioNTech / FDA",
       "url": "https://en.wikipedia.org/wiki/History_of_COVID-19_vaccine_development",
@@ -967,7 +968,7 @@
     {
       "id": "ev-his-2012-06-28-crispr",
       "title": "CRISPR-Cas9 programmable genome editing is published",
-      "category": "Biotechnology",
+      "category": "Biotechnology & Biohacking",
       "value": "CRISPR-Cas9 programmable genome editing is published",
       "source": "UC Berkeley / Umeå University",
       "url": "https://en.wikipedia.org/wiki/CRISPR",
@@ -1032,7 +1033,7 @@
     {
       "id": "ev-his-2003-04-14-human-genome",
       "title": "Human Genome Project announces completion of the human genome sequence",
-      "category": "Biotechnology",
+      "category": "Biotechnology & Biohacking",
       "value": "Human Genome Project announces completion of the human genome sequence",
       "source": "NIH / Wellcome Trust",
       "url": "https://en.wikipedia.org/wiki/Human_Genome_Project",
@@ -1071,7 +1072,7 @@
     {
       "id": "ev-his-1996-07-05-dolly",
       "title": "Dolly - the first mammal cloned from an adult somatic cell",
-      "category": "Biotechnology",
+      "category": "Biotechnology & Biohacking",
       "value": "Dolly - the first mammal cloned from an adult somatic cell",
       "source": "Roslin Institute",
       "url": "https://en.wikipedia.org/wiki/Dolly_(sheep)",
@@ -1123,7 +1124,7 @@
     {
       "id": "ev-his-1983-04-01-pcr",
       "title": "Kary Mullis conceives the polymerase chain reaction (PCR)",
-      "category": "Biotechnology",
+      "category": "Biotechnology & Biohacking",
       "value": "Kary Mullis conceives the polymerase chain reaction (PCR)",
       "source": "Cetus Corporation",
       "url": "https://en.wikipedia.org/wiki/Polymerase_chain_reaction",
@@ -1188,7 +1189,7 @@
     {
       "id": "ev-his-1973-01-01-recombinant-dna",
       "title": "Cohen & Boyer pioneer recombinant DNA technology",
-      "category": "Biotechnology",
+      "category": "Biotechnology & Biohacking",
       "value": "Cohen & Boyer pioneer recombinant DNA technology",
       "source": "Stanford University",
       "url": "https://en.wikipedia.org/wiki/Recombinant_DNA",
@@ -1279,7 +1280,7 @@
     {
       "id": "ev-his-1953-04-25-dna-double-helix",
       "title": "Watson & Crick publish the structure of DNA (double helix)",
-      "category": "Biotechnology",
+      "category": "Biotechnology & Biohacking",
       "value": "Watson & Crick publish the structure of DNA (double helix)",
       "source": "Nature",
       "url": "https://en.wikipedia.org/wiki/Molecular_structure_of_Nucleic_Acids",

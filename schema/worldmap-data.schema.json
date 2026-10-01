@@ -14,39 +14,161 @@
       "reason": "Operational layers and fleet endpoints are never geocoded at load; (0,0) is the no-location marker and plotting it would draw a glowing halo over the Gulf of Guinea."
     },
     "layer_lifecycle": {
-      "status_values": ["active", "ongoing", "concluded", "inactive", "ended", "resolved"],
+      "status_values": [
+        "active",
+        "ongoing",
+        "concluded",
+        "inactive",
+        "ended",
+        "resolved"
+      ],
       "date_pattern": "^\\d{4}(-\\d{2}){0,2}$",
-      "date_formats": ["YYYY", "YYYY-MM", "YYYY-MM-DD"],
+      "date_formats": [
+        "YYYY",
+        "YYYY-MM",
+        "YYYY-MM-DD"
+      ],
       "empty_dates_allowed": true,
       "status_mapping": "worldmap.js layerStatus: '' | 'active' | 'ongoing' -> active; any other value -> concluded",
       "ordering_rule": "equal-precision ISO dates order lexicographically (start <= end); mixed precision is only flagged when the earliest possible start instant is after the latest possible end instant (a provably empty window)."
     },
     "events": {
       "date_required": true,
-      "accepted_shapes": ["YYYY-MM-DD", "D-M-YYYY", "D/M/YYYY", "partial YYYY / YYYY-MM", "ISO datetime (Date-constructor fallback)"],
+      "accepted_shapes": [
+        "YYYY-MM-DD",
+        "D-M-YYYY",
+        "D/M/YYYY",
+        "partial YYYY / YYYY-MM",
+        "ISO datetime (Date-constructor fallback)"
+      ],
       "calendar_validity": true,
       "coordinates": "finite and in-range; (0,0) allowed because events ARE geocoded at load and some are intentionally global.",
       "categories": [
-        "Biotechnology",
+        "Biotechnology & Biohacking",
         "Computing & AGI",
         "Quantum Physics",
         "Renewable Energy",
+        "Mobility & Logistics",
         "Cybersecurity",
+        "Robotics",
         "Spaceflight & Aeronautics",
         "Military & Defense"
       ],
-      "category_rule": "Exactly one of controls.events.categories, matched case-sensitively. There is deliberately no catch-all bucket: sync_milestones.py folds upstream legacy names (CATEGORY_ALIASES, e.g. \"Quantum Gravity\" -> \"Quantum Physics\") into a canonical category, so every milestone has a colour, a legend row and a catalog filter. An unknown category fails validation instead of silently rendering as \"Other\"."
+      "category_order": [
+        "Biotechnology & Biohacking",
+        "Computing & AGI",
+        "Quantum Physics",
+        "Renewable Energy",
+        "Mobility & Logistics",
+        "Cybersecurity",
+        "Robotics",
+        "Spaceflight & Aeronautics",
+        "Military & Defense"
+      ],
+      "subtones_description": "A category may render with more than one landmark colour, like the deployments layer's ground/fleet split. A record takes the secondary colour when its category is listed in `subtones` and it matches that category's `keywords`; everything else in the category takes the primary colour. Both colours always appear in the legend row, in order.",
+      "subtones": {
+        "Biotechnology & Biohacking": {
+          "primary": "Biotechnology",
+          "secondary": "Biohacking",
+          "keywords": [
+            "biohacking",
+            "biohack",
+            "cyborg",
+            "transhumanist",
+            "transhumanism",
+            "neuroprosthetic",
+            "neuroprosthesis",
+            "neural implant",
+            "neuralink",
+            "brain-computer interface",
+            "brain computer interface",
+            "neural interface",
+            "implant",
+            "bone-conductive",
+            "bone conductive",
+            "bone conduction",
+            "sensory substitution",
+            "cochlear",
+            "retinal prosthesis",
+            "retinal implant",
+            "prosthetic",
+            "prostheses",
+            "openwetware",
+            "body hacking",
+            "bodyhack",
+            "grinder",
+            "wearable computing",
+            "human-computer interface",
+            "human computer interface",
+            "augmented reality",
+            "brainwave",
+            "eeg headset",
+            "mind-machine",
+            "mind machine",
+            "sonic toothbrush",
+            "cyborgs"
+          ]
+        }
+      },
+      "category_rule": "Exactly one of controls.events.categories, matched case-sensitively. There is deliberately no catch-all bucket: sync_milestones.py folds upstream legacy names (CATEGORY_ALIASES, e.g. \"Quantum Gravity\" -> \"Quantum Physics\", \"Biotechnology\" -> \"Biotechnology & Biohacking\") into a canonical category, so every milestone has a colour, a legend row and a catalog filter. An unknown category fails validation instead of silently rendering as \"Other\"."
+    },
+    "worldmap_layers": {
+      "description": "Toggleable operational layers rendered by assets/js/worldmap.js. Distinct from controls.events.categories: a layer is a separate data list in world_layers.json with its own visibility preference, and is NOT a milestone category, so it never appears in a category dropdown or in catalog filtering.",
+      "layers": [
+        {
+          "key": "conflict_zones",
+          "legend_label": "Conflict Zones",
+          "data_key": "conflict_zones",
+          "shape": "ring",
+          "default_on": false
+        },
+        {
+          "key": "deployments",
+          "legend_label": "Fleet Movements & Ground Deployments",
+          "data_key": "deployments",
+          "shape": "diamond",
+          "default_on": false,
+          "split_colors": [
+            "ground",
+            "fleet"
+          ]
+        },
+        {
+          "key": "crises",
+          "legend_label": "Crisis Zones",
+          "data_key": "crisis_zones",
+          "shape": "ring",
+          "default_on": false
+        },
+        {
+          "key": "human_rights",
+          "legend_label": "Human Rights Violations",
+          "data_key": "human_rights_violations",
+          "shape": "landmark",
+          "default_on": false
+        }
+      ],
+      "layer_rule": "Every layer defaults OFF and is dim/invisible until the user enables it, including Human Rights Violations. A landmark-shaped layer renders its entries with the same tooltip treatment as milestones rather than as a ring."
     }
   },
   "files": {
     "events.json": {
       "shape": "top-level object; events: list of { id, title, category, date, geolocation: { lat, lon }, ... }",
-      "rules": ["date is required and calendar-valid per controls.events", "lat/lon finite and within controls.coordinate ranges", "category must be one of controls.events.categories"]
+      "rules": [
+        "date is required and calendar-valid per controls.events",
+        "lat/lon finite and within controls.coordinate ranges",
+        "category must be one of controls.events.categories"
+      ]
     },
     "world_layers.json": {
       "version": "1.1.0",
       "shape": "top-level object with conflict_zones, deployments and crisis_zones lists; fleet_movements accepted as the legacy alias for deployments",
-      "rules": ["every zone/fleet entry name/label + located pair (not null island)", "lifecycle status in status_values and dates per layer_lifecycle.date_pattern", "ids unique per list", "top-level metadata: version equals this file's version and last_update is a non-empty ISO-8601 UTC timestamp (offset or Z)"]
+      "rules": [
+        "every zone/fleet entry name/label + located pair (not null island)",
+        "lifecycle status in status_values and dates per layer_lifecycle.date_pattern",
+        "ids unique per list",
+        "top-level metadata: version equals this file's version and last_update is a non-empty ISO-8601 UTC timestamp (offset or Z)"
+      ]
     }
   }
 }

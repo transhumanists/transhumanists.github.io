@@ -606,20 +606,50 @@ height: 0,
     };
 
   const CATEGORY_COLORS = {
-    'Biotechnology': '#00e676',
+    'Biotechnology & Biohacking': '#00e676',
     'Computing & AGI': '#448aff',
     'Quantum Physics': '#b388ff',
     'Renewable Energy': '#ffd740',
+    'Mobility & Logistics': '#ff5c9a',
     'Cybersecurity': '#ff5252',
+    'Robotics': '#6c7a89',
     'Spaceflight & Aeronautics': '#00d4ff',
     'Military & Defense': '#ff9100'
   };
 
+  // Two-tone categories. The primary colour is the category colour above; a record
+  // whose `tone` matches the secondary label renders in `secondary`, so one legend
+  // row covers both (the row is drawn with splitColors, like Deployments).
+  // Classified upstream by sync_milestones.classify_tone; the keyword list that
+  // drives it lives in CATEGORY_SUBTONES there and is mirrored in
+  // schema/worldmap-data.schema.json.
+  const CATEGORY_SUBTONES = {
+    'Biotechnology & Biohacking': {
+      secondary: 'Biohacking',
+      secondaryColor: '#00a651'
+    }
+  };
+
+  function secondaryColorFor(cat, tone) {
+    if (!tone) return null;
+    const spec = CATEGORY_SUBTONES[canonicalCategory(cat)];
+    if (!spec || spec.secondary !== tone) return null;
+    return spec.secondaryColor;
+  }
+
+  // The colour a milestone landmark is actually drawn in: the category colour,
+  // overridden by its sub-tone when it has one.
+  function landmarkColorFor(cat, tone) {
+    return secondaryColorFor(cat, tone) || CATEGORY_COLORS[canonicalCategory(cat)] || '#00d4ff';
+  }
+
   const CATEGORY_STAT_MAP = {
-    'Biotechnology': { statId: 'map-stat-active', label: 'breakthroughs this week' },
+    'Biotechnology & Biohacking': { statId: 'map-stat-active', label: 'breakthroughs this week' },
     'Cybersecurity': { statId: 'map-stat-conflicts', label: 'active conflict zones' },
     'Military & Defense': { statId: 'map-stat-fleets', label: 'fleet movements tracked' },
     'Renewable Energy': { statId: 'map-stat-active', label: 'breakthroughs this week' },
+    'Mobility & Logistics': { statId: 'map-stat-active', label: 'breakthroughs this week' },
+    'Robotics': { statId: 'map-stat-active', label: 'breakthroughs this week' },
     'Spaceflight & Aeronautics': { statId: 'map-stat-fleets', label: 'fleet movements tracked' },
     'Quantum Physics': { statId: 'map-stat-active', label: 'breakthroughs this week' },
     'Computing & AGI': { statId: 'map-stat-active', label: 'breakthroughs this week' }
@@ -640,16 +670,32 @@ height: 0,
     'Mathematics': 'Computing & AGI',
     'Computational Archaeology': 'Computing & AGI',
     'Computer Vision': 'Computing & AGI',
-    'Legal AI': 'Computing & AGI'
+    'Legal AI': 'Computing & AGI',
+    // Split / renamed categories. Legacy payloads and the dev sample data still
+    // carry the old labels, so they fold into the canonical bucket.
+    'Biotechnology': 'Biotechnology & Biohacking',
+    'Biohacking': 'Biotechnology & Biohacking',
+    'Biotech': 'Biotechnology & Biohacking',
+    'Synthetic Biology': 'Biotechnology & Biohacking',
+    'Logistics': 'Mobility & Logistics',
+    'Transportation': 'Mobility & Logistics',
+    'Transport': 'Mobility & Logistics',
+    'Robotics & Automation': 'Robotics',
+    'Automation': 'Robotics'
   };
 
-  // Canonical category order used by the legend (color, label).
+  // Canonical category order used by the legend (color, label). This is the
+  // product's reading order: human-progress fields first, then infrastructure,
+  // then the operational ones. Mirrors category_order in
+  // schema/worldmap-data.schema.json; scripts/test_check_data.py enforces parity.
   const CATEGORY_LEGEND = [
-    { key: 'Biotechnology', label: 'Biotechnology' },
+    { key: 'Biotechnology & Biohacking', label: 'Biotechnology & Biohacking' },
     { key: 'Computing & AGI', label: 'Computing & AGI' },
     { key: 'Quantum Physics', label: 'Quantum Physics' },
     { key: 'Renewable Energy', label: 'Renewable Energy' },
+    { key: 'Mobility & Logistics', label: 'Mobility & Logistics' },
     { key: 'Cybersecurity', label: 'Cybersecurity' },
+    { key: 'Robotics', label: 'Robotics' },
     { key: 'Spaceflight & Aeronautics', label: 'Spaceflight & Aeronautics' },
     { key: 'Military & Defense', label: 'Military & Defense' }
   ];

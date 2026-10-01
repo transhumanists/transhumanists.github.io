@@ -64,12 +64,19 @@ def normalize_metric_value(value: object):
         return str(value).strip().lower()
 
 
-def report_group_key(record: dict, *, include_unit: bool):
+def report_group_key(record: dict, *, include_unit: bool, category_resolver=None):
     """Bucket key for "same reported metric", or ``None`` if not reportable.
 
     Identity is date + value + category, plus ``unit`` when the record carries one.
     All components are required, so two unrelated milestones that happen to share
     a number never collapse.
+
+    ``category_resolver`` must normalise the record's category to the same label
+    the record will be *published* under, and is required by the unifier. Without
+    it, a pair straddling a rename - one copy from upstream carrying the canonical
+    name, one from the archive carrying the legacy alias - buckets apart and then
+    publishes as two records in one category. That is exactly how the Khipu pair
+    survived unification despite sharing date, value, unit and article URL.
     """
     value_key = normalize_metric_value(record.get("value"))
     if value_key is None:
@@ -78,6 +85,8 @@ def report_group_key(record: dict, *, include_unit: bool):
     if not isinstance(date, str) or not date:
         return None
     category = record.get("category_key") or record.get("category") or ""
+    if category_resolver is not None:
+        category = category_resolver(category)
     if include_unit:
         unit = str(record.get("unit") or "").strip().lower()
         return (date, value_key, unit, str(category))

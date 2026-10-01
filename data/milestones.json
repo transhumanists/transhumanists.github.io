@@ -1,10 +1,10 @@
 {
-  "last_update": "2026-10-01T22:12:53+00:00",
+  "last_update": "2026-10-01T22:34:25+00:00",
   "version": "1.0.0",
   "schema": "https://transhumanists.github.io/schema/milestone-v1.json",
   "categories": {
     "biotechnology": {
-      "name": "Biotechnology",
+      "name": "Biotechnology & Biohacking",
       "icon": "🧬",
       "color": "#00e676",
       "subcategories": [
@@ -25,7 +25,7 @@
           "id": "ms-2a45f74dd818",
           "title": "Deep learning perturbation models outperform baselines on calibrated metrics",
           "summary": "Calibration-aware evaluation demonstrates deep learning models surpass baseline methods in perturbation prediction.",
-          "category": "Biotechnology",
+          "category": "Biotechnology & Biohacking",
           "subcategory": "ml_perturbation",
           "value": null,
           "unit": null,
@@ -45,7 +45,7 @@
           "id": "ms-8644b2a34d60",
           "title": "New ionizable lipid LC-1 enables efficient LNP delivery of large gene editors to multiple tissues",
           "summary": "Screening identified lipid LC-1 that enhances endosomal escape and achieves efficient genome editing in liver, lung, and brain of mice using lipid nanoparticles for large gene-editor mRNAs.",
-          "category": "Biotechnology",
+          "category": "Biotechnology & Biohacking",
           "subcategory": "gene_therapy",
           "value": null,
           "unit": null,
@@ -65,7 +65,7 @@
           "id": "ms-e0d7fb1f057f",
           "title": "Lipid nanoparticles optimized for large RNA cargo enhance in vivo genome editing",
           "summary": "Researchers improved lipid nanoparticle design by incorporating RNA cargo size, enabling better tissue targeting and enhanced in vivo genome editing.",
-          "category": "Biotechnology",
+          "category": "Biotechnology & Biohacking",
           "subcategory": "gene_editing",
           "value": null,
           "unit": null,
@@ -85,7 +85,7 @@
           "id": "ms-bc2c513b6177",
           "title": "AI-guided optimization yields thermostable mRNA vaccines stable at 37°C for 2 months",
           "summary": "AI-driven framework AGENT enables mRNA vaccines retaining full bioactivity after 2 months at 37°C, allowing cold-chain-free delivery via microneedle patches.",
-          "category": "Biotechnology",
+          "category": "Biotechnology & Biohacking",
           "subcategory": "gene_therapy",
           "value": 37,
           "unit": "°C",
@@ -105,7 +105,7 @@
           "id": "ms-76a6862f54e8",
           "title": "Photolabile oligonucleotides enable spatially resolved single-cell transcriptomics and epigenomics",
           "summary": "A new photolabile oligonucleotide system uses topological light gradients to achieve spatially resolved single-cell measurements linking epigenome regulation to gene expression.",
-          "category": "Biotechnology",
+          "category": "Biotechnology & Biohacking",
           "subcategory": "microscopy",
           "value": null,
           "unit": null,
@@ -125,7 +125,7 @@
           "id": "ms-1d88f31518db",
           "title": "Alkermes reports pioneering ADHD data for orexin agonist",
           "summary": "Alkermes releases pioneering clinical data for orexin agonist in ADHD, potentially expanding the drug class beyond narcolepsy into broader patient populations.",
-          "category": "Biotechnology",
+          "category": "Biotechnology & Biohacking",
           "subcategory": "neuroscience",
           "value": null,
           "unit": null,
@@ -145,7 +145,7 @@
           "id": "ms-e5275443e851",
           "title": "Versatile nanopore sensor simultaneously identifies four analyte classes with 98.7% accuracy",
           "summary": "A modified bacterial porin nanopore coupled with machine learning simultaneously identifies amino acids, nucleoside monophosphates, saccharides, and peptides with 98.7% accuracy, enabling native glyco",
-          "category": "Biotechnology",
+          "category": "Biotechnology & Biohacking",
           "subcategory": "biosensors",
           "value": 98.7,
           "unit": "percent",
@@ -165,7 +165,7 @@
           "id": "ms-e55c8cf4e432",
           "title": "Engineered nanopore simultaneously identifies saccharides, amino acids, peptides, and ribonucleotides",
           "summary": "A modified nanopore achieves simultaneous detection of four major biomolecule classes and their modifications, marking a breakthrough in multiplexed single-molecule sensing.",
-          "category": "Biotechnology",
+          "category": "Biotechnology & Biohacking",
           "subcategory": "biosensors",
           "value": null,
           "unit": null,
@@ -185,7 +185,7 @@
           "id": "ms-a5c98baae9a8",
           "title": "Moderna mRNA flu vaccine receives FDA approval",
           "summary": "Moderna's mRNA-based influenza vaccine gains FDA approval, marking the first regulatory clearance for an mRNA flu vaccine.",
-          "category": "Biotechnology",
+          "category": "Biotechnology & Biohacking",
           "subcategory": "immunotherapy",
           "value": null,
           "unit": null,
@@ -205,7 +205,7 @@
           "id": "ms-0a279b32fda4",
           "title": "Biomimetic cells enable new platform for T cell mechanotransduction studies",
           "summary": "Researchers develop biomimetic cells as a novel synthetic biology tool to investigate mechanical force sensing in T cells, opening new avenues for immunotherapy research.",
-          "category": "Biotechnology",
+          "category": "Biotechnology & Biohacking",
           "subcategory": "synthetic_biology",
           "value": null,
           "unit": null,
@@ -234,7 +234,7 @@
             "lat": 42.3375,
             "lon": -71.1061
           },
-          "category": "Biotechnology",
+          "category": "Biotechnology & Biohacking",
           "is_new": false,
           "category_key": "biotechnology"
         },
@@ -251,7 +251,7 @@
             "lat": 37.4861,
             "lon": -122.1519
           },
-          "category": "Biotechnology",
+          "category": "Biotechnology & Biohacking",
           "is_new": false,
           "category_key": "biotechnology"
         },
@@ -268,7 +268,7 @@
             "lat": 44.4268,
             "lon": -123.0764
           },
-          "category": "Biotechnology",
+          "category": "Biotechnology & Biohacking",
           "is_new": false,
           "category_key": "biotechnology"
         },
@@ -285,7 +285,7 @@
             "lat": 31.2304,
             "lon": 121.4737
           },
-          "category": "Biotechnology",
+          "category": "Biotechnology & Biohacking",
           "is_new": false,
           "category_key": "biotechnology"
         },
@@ -302,7 +302,7 @@
             "lat": 32.8844,
             "lon": -117.234
           },
-          "category": "Biotechnology",
+          "category": "Biotechnology & Biohacking",
           "is_new": false,
           "category_key": "biotechnology"
         },
@@ -319,7 +319,7 @@
             "lat": 42.3375,
             "lon": -71.1061
           },
-          "category": "Biotechnology",
+          "category": "Biotechnology & Biohacking",
           "is_new": false,
           "category_key": "biotechnology"
         },
@@ -336,7 +336,7 @@
             "lat": 51.0504,
             "lon": 13.7373
           },
-          "category": "Biotechnology",
+          "category": "Biotechnology & Biohacking",
           "is_new": false,
           "category_key": "biotechnology"
         },
@@ -353,7 +353,7 @@
             "lat": 39.9526,
             "lon": -75.1652
           },
-          "category": "Biotechnology",
+          "category": "Biotechnology & Biohacking",
           "is_new": false,
           "category_key": "biotechnology"
         },
@@ -370,7 +370,7 @@
             "lat": 32.7157,
             "lon": -117.1611
           },
-          "category": "Biotechnology",
+          "category": "Biotechnology & Biohacking",
           "is_new": false,
           "category_key": "biotechnology"
         },
@@ -387,13 +387,13 @@
             "lat": 47.3769,
             "lon": 8.5417
           },
-          "category": "Biotechnology",
+          "category": "Biotechnology & Biohacking",
           "is_new": false,
           "category_key": "biotechnology"
         },
         {
           "id": "his-2020-12-11-mrna-vaccine",
-          "category": "Biotechnology",
+          "category": "Biotechnology & Biohacking",
           "subcategory": "immunotherapy",
           "title": "First mRNA vaccine granted emergency use authorisation (COVID-19)",
           "value": null,
@@ -409,7 +409,7 @@
         },
         {
           "id": "his-2012-06-28-crispr",
-          "category": "Biotechnology",
+          "category": "Biotechnology & Biohacking",
           "subcategory": "gene_editing",
           "title": "CRISPR-Cas9 programmable genome editing is published",
           "value": null,
@@ -425,7 +425,7 @@
         },
         {
           "id": "his-2003-04-14-human-genome",
-          "category": "Biotechnology",
+          "category": "Biotechnology & Biohacking",
           "subcategory": "synthetic_biology",
           "title": "Human Genome Project announces completion of the human genome sequence",
           "value": null,
@@ -441,7 +441,7 @@
         },
         {
           "id": "his-1996-07-05-dolly",
-          "category": "Biotechnology",
+          "category": "Biotechnology & Biohacking",
           "subcategory": "synthetic_biology",
           "title": "Dolly - the first mammal cloned from an adult somatic cell",
           "value": null,
@@ -457,7 +457,7 @@
         },
         {
           "id": "his-1983-04-01-pcr",
-          "category": "Biotechnology",
+          "category": "Biotechnology & Biohacking",
           "subcategory": "synthetic_biology",
           "title": "Kary Mullis conceives the polymerase chain reaction (PCR)",
           "value": null,
@@ -473,7 +473,7 @@
         },
         {
           "id": "his-1973-01-01-recombinant-dna",
-          "category": "Biotechnology",
+          "category": "Biotechnology & Biohacking",
           "subcategory": "gene_editing",
           "title": "Cohen & Boyer pioneer recombinant DNA technology",
           "value": null,
@@ -489,7 +489,7 @@
         },
         {
           "id": "his-1953-04-25-dna-double-helix",
-          "category": "Biotechnology",
+          "category": "Biotechnology & Biohacking",
           "subcategory": "synthetic_biology",
           "title": "Watson & Crick publish the structure of DNA (double helix)",
           "value": null,
@@ -1066,22 +1066,6 @@
           "category_key": "computing_agi"
         },
         {
-          "id": "ms-0ef07b4ce70b",
-          "category": "Computing & AGI",
-          "subcategory": "legal_datasets",
-          "title": "ImmigrationReason: 12,375 USCIS AAO decisions dataset for legal reasoning",
-          "value": 12375,
-          "unit": "decisions",
-          "source": "Academic researchers",
-          "url": "http://arxiv.org/abs/2608.20391v1",
-          "date": "2026-06-30",
-          "geolocation": {
-            "lat": 0.0,
-            "lon": 0.0
-          },
-          "category_key": "computing_agi"
-        },
-        {
           "id": "ms-cede87aeb630",
           "title": "Seed2.0 model achieves world-leading reasoning and multimodal capabilities",
           "summary": "Seed2.0 model series demonstrates world-leading reasoning, visual understanding, and search capabilities for complex real-world tasks, serving hundreds of millions of users.",
@@ -1135,6 +1119,42 @@
           "is_record": false,
           "is_breakthrough": true,
           "is_new": false,
+          "geolocation": {
+            "lat": 0.0,
+            "lon": 0.0
+          },
+          "category_key": "computing_agi"
+        },
+        {
+          "id": "ms-10f19d45d95b",
+          "category": "Computing & AGI",
+          "subcategory": "pattern_mining",
+          "title": "ML-driven Structural Pattern Mining of Inka Khipus",
+          "value": 0.86,
+          "unit": "F1 score",
+          "source": "Open Khipu Repository",
+          "url": "http://arxiv.org/abs/2607.00185v1",
+          "date": "2026-06-30",
+          "geolocation": {
+            "lat": 0.0,
+            "lon": 0.0
+          },
+          "sources": [
+            "Open Khipu Repository",
+            "Academic researchers (Open Khipu Repository)"
+          ],
+          "category_key": "computing_agi"
+        },
+        {
+          "id": "ms-0ef07b4ce70b",
+          "category": "Computing & AGI",
+          "subcategory": "legal_datasets",
+          "title": "ImmigrationReason: 12,375 USCIS AAO decisions dataset for legal reasoning",
+          "value": 12375,
+          "unit": "decisions",
+          "source": "Academic researchers",
+          "url": "http://arxiv.org/abs/2608.20391v1",
+          "date": "2026-06-30",
           "geolocation": {
             "lat": 0.0,
             "lon": 0.0
@@ -1199,26 +1219,6 @@
             "lat": 0.0,
             "lon": 0.0
           },
-          "category_key": "computing_agi"
-        },
-        {
-          "id": "ms-10f19d45d95b",
-          "category": "Computing & AGI",
-          "subcategory": "pattern_mining",
-          "title": "ML-driven Structural Pattern Mining of Inka Khipus",
-          "value": 0.86,
-          "unit": "F1 score",
-          "source": "Open Khipu Repository",
-          "url": "http://arxiv.org/abs/2607.00185v1",
-          "date": "2026-06-30",
-          "geolocation": {
-            "lat": 0.0,
-            "lon": 0.0
-          },
-          "sources": [
-            "Open Khipu Repository",
-            "Academic researchers (Open Khipu Repository)"
-          ],
           "category_key": "computing_agi"
         },
         {

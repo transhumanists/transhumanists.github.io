@@ -1,7 +1,7 @@
 [
   {
     "id": "ms-2a45f74dd818",
-    "category": "Biotechnology",
+    "category": "Biotechnology & Biohacking",
     "subcategory": "ml_perturbation",
     "title": "Deep learning perturbation models outperform baselines on calibrated metrics",
     "value": null,
@@ -18,7 +18,7 @@
   },
   {
     "id": "ms-8644b2a34d60",
-    "category": "Biotechnology",
+    "category": "Biotechnology & Biohacking",
     "subcategory": "gene_therapy",
     "title": "New ionizable lipid LC-1 enables efficient LNP delivery of large gene editors to multiple tissues",
     "value": null,
@@ -35,7 +35,7 @@
   },
   {
     "id": "ms-e0d7fb1f057f",
-    "category": "Biotechnology",
+    "category": "Biotechnology & Biohacking",
     "subcategory": "gene_editing",
     "title": "Lipid nanoparticles optimized for large RNA cargo enhance in vivo genome editing",
     "value": null,
@@ -52,7 +52,7 @@
   },
   {
     "id": "ms-bc2c513b6177",
-    "category": "Biotechnology",
+    "category": "Biotechnology & Biohacking",
     "subcategory": "gene_therapy",
     "title": "AI-guided optimization yields thermostable mRNA vaccines stable at 37°C for 2 months",
     "value": 37,
@@ -86,7 +86,7 @@
   },
   {
     "id": "ms-76a6862f54e8",
-    "category": "Biotechnology",
+    "category": "Biotechnology & Biohacking",
     "subcategory": "microscopy",
     "title": "Photolabile oligonucleotides enable spatially resolved single-cell transcriptomics and epigenomics",
     "value": null,
@@ -103,7 +103,7 @@
   },
   {
     "id": "ms-f9883157aeba",
-    "category": "Quantum Gravity",
+    "category": "Quantum Physics",
     "subcategory": "holographic_principle",
     "title": "Gravity found to be holographic, collapsing space dimensions",
     "value": null,
@@ -116,7 +116,7 @@
       "lon": 0.0
     },
     "first_seen": "2026-09-26",
-    "last_seen": "2026-09-29"
+    "last_seen": "2026-10-01"
   },
   {
     "id": "ms-847b6f6830b8",
@@ -154,7 +154,7 @@
   },
   {
     "id": "ms-1d88f31518db",
-    "category": "Biotechnology",
+    "category": "Biotechnology & Biohacking",
     "subcategory": "neuroscience",
     "title": "Alkermes reports pioneering ADHD data for orexin agonist",
     "value": null,
@@ -171,7 +171,7 @@
   },
   {
     "id": "ms-2457b1872a8c",
-    "category": "Mathematics",
+    "category": "Computing & AGI",
     "subcategory": "graph_theory",
     "title": "Proof of Graph Sandwich Conjecture",
     "value": null,
@@ -184,11 +184,11 @@
       "lon": 0.0
     },
     "first_seen": "2026-09-26",
-    "last_seen": "2026-09-29"
+    "last_seen": "2026-10-01"
   },
   {
     "id": "ms-e5275443e851",
-    "category": "Biotechnology",
+    "category": "Biotechnology & Biohacking",
     "subcategory": "biosensors",
     "title": "Versatile nanopore sensor simultaneously identifies four analyte classes with 98.7% accuracy",
     "value": 98.7,
@@ -205,7 +205,7 @@
   },
   {
     "id": "ms-e55c8cf4e432",
-    "category": "Biotechnology",
+    "category": "Biotechnology & Biohacking",
     "subcategory": "biosensors",
     "title": "Engineered nanopore simultaneously identifies saccharides, amino acids, peptides, and ribonucleotides",
     "value": null,
@@ -222,7 +222,7 @@
   },
   {
     "id": "ms-a5c98baae9a8",
-    "category": "Biotechnology",
+    "category": "Biotechnology & Biohacking",
     "subcategory": "immunotherapy",
     "title": "Moderna mRNA flu vaccine receives FDA approval",
     "value": null,
@@ -239,7 +239,7 @@
   },
   {
     "id": "ms-0a279b32fda4",
-    "category": "Biotechnology",
+    "category": "Biotechnology & Biohacking",
     "subcategory": "synthetic_biology",
     "title": "Biomimetic cells enable new platform for T cell mechanotransduction studies",
     "value": null,
@@ -256,7 +256,7 @@
   },
   {
     "id": "bio-001",
-    "category": "Biotechnology",
+    "category": "Biotechnology & Biohacking",
     "subcategory": "gene_editing",
     "title": "CRISPR in-vivo editing efficiency",
     "value": 94.2,
@@ -341,7 +341,7 @@
   },
   {
     "id": "bio-002",
-    "category": "Biotechnology",
+    "category": "Biotechnology & Biohacking",
     "subcategory": "medical_implants",
     "title": "Neural implant electrode density",
     "value": 16384,
@@ -443,7 +443,7 @@
   },
   {
     "id": "bio-003",
-    "category": "Biotechnology",
+    "category": "Biotechnology & Biohacking",
     "subcategory": "microscopy",
     "title": "Electron microscope resolution",
     "value": 0.39,
@@ -579,7 +579,7 @@
   },
   {
     "id": "bio-009",
-    "category": "Biotechnology",
+    "category": "Biotechnology & Biohacking",
     "subcategory": "immunotherapy",
     "title": "CAR-T manufacturing speed (bedside)",
     "value": 7,
@@ -647,7 +647,7 @@
   },
   {
     "id": "bio-010",
-    "category": "Biotechnology",
+    "category": "Biotechnology & Biohacking",
     "subcategory": "biosensors",
     "title": "Wearable simultaneous biomarker sensors",
     "value": 12,
@@ -681,7 +681,7 @@
   },
   {
     "id": "bio-004",
-    "category": "Biotechnology",
+    "category": "Biotechnology & Biohacking",
     "subcategory": "longevity",
     "title": "Max lifespan extension (mouse)",
     "value": 38.4,
@@ -732,7 +732,7 @@
   },
   {
     "id": "bio-007",
-    "category": "Biotechnology",
+    "category": "Biotechnology & Biohacking",
     "subcategory": "macroscopy",
     "title": "In-vivo whole-organ 3D imaging",
     "value": 3.2,
@@ -817,7 +817,7 @@
   },
   {
     "id": "ms-10f19d45d95b",
-    "category": "Computational Archaeology",
+    "category": "Computing & AGI",
     "subcategory": "pattern_mining",
     "title": "ML-driven Structural Pattern Mining of Inka Khipus",
     "value": 0.86,
@@ -830,11 +830,11 @@
       "lon": 0.0
     },
     "first_seen": "2026-09-29",
-    "last_seen": "2026-09-30"
+    "last_seen": "2026-10-01"
   },
   {
     "id": "ms-fb74b2202f85",
-    "category": "Computational Archaeology",
+    "category": "Computing & AGI",
     "subcategory": "ml_structural_analysis",
     "title": "ML pipeline achieves 0.86 F1 classifying Inka khipu provenance and validates Santa Valley moiety structure",
     "value": 0.86,
@@ -847,11 +847,11 @@
       "lon": 0.0
     },
     "first_seen": "2026-09-27",
-    "last_seen": "2026-09-30"
+    "last_seen": "2026-10-01"
   },
   {
     "id": "ms-0ef07b4ce70b",
-    "category": "Legal AI",
+    "category": "Computing & AGI",
     "subcategory": "legal_datasets",
     "title": "ImmigrationReason: 12,375 USCIS AAO decisions dataset for legal reasoning",
     "value": 12375,
@@ -953,7 +953,7 @@
   },
   {
     "id": "bio-008",
-    "category": "Biotechnology",
+    "category": "Biotechnology & Biohacking",
     "subcategory": "gene_therapy",
     "title": "AAV vector delivery efficiency",
     "value": 91.7,
@@ -987,7 +987,7 @@
   },
   {
     "id": "bio-005",
-    "category": "Biotechnology",
+    "category": "Biotechnology & Biohacking",
     "subcategory": "synthetic_biology",
     "title": "Largest synthetic genome synthesized",
     "value": 1500000000,
@@ -1004,7 +1004,7 @@
   },
   {
     "id": "bio-006",
-    "category": "Biotechnology",
+    "category": "Biotechnology & Biohacking",
     "subcategory": "neuroscience",
     "title": "Brain organoid complexity (neurons)",
     "value": 100000000,
@@ -1055,7 +1055,7 @@
   },
   {
     "id": "ms-6a684b1bc5a3",
-    "category": "Computer Vision",
+    "category": "Computing & AGI",
     "subcategory": "ocr",
     "title": "LV-ROVER-MLT achieves record-low CER 0.0074 in Maltese OCR competition",
     "value": 0.0074,
@@ -1085,11 +1085,11 @@
       "lon": -73.8532
     },
     "first_seen": "2026-09-30",
-    "last_seen": "2026-09-30"
+    "last_seen": "2026-10-01"
   },
   {
     "id": "his-2023-10-12-vesuvius-challenge",
-    "category": "Computational Archaeology",
+    "category": "Computing & AGI",
     "subcategory": "ml_structural_analysis",
     "title": "Vesuvius Challenge - machine learning deciphers the first word from a charred Herculaneum papyrus",
     "value": null,
@@ -1102,7 +1102,7 @@
       "lon": 14.2681
     },
     "first_seen": "2026-09-30",
-    "last_seen": "2026-09-30"
+    "last_seen": "2026-10-01"
   },
   {
     "id": "his-2023-03-14-gpt4",
@@ -1119,7 +1119,7 @@
       "lon": -122.4194
     },
     "first_seen": "2026-09-30",
-    "last_seen": "2026-09-30"
+    "last_seen": "2026-10-01"
   },
   {
     "id": "his-2022-12-05-nif-ignition",
@@ -1136,7 +1136,7 @@
       "lon": -121.7045
     },
     "first_seen": "2026-09-29",
-    "last_seen": "2026-09-29"
+    "last_seen": "2026-10-01"
   },
   {
     "id": "his-2022-11-30-chatgpt",
@@ -1153,7 +1153,7 @@
       "lon": -122.4194
     },
     "first_seen": "2026-09-29",
-    "last_seen": "2026-09-29"
+    "last_seen": "2026-10-01"
   },
   {
     "id": "his-2021-12-25-jwst",
@@ -1170,7 +1170,7 @@
       "lon": -52.7608
     },
     "first_seen": "2026-09-29",
-    "last_seen": "2026-09-29"
+    "last_seen": "2026-10-01"
   },
   {
     "id": "his-2021-11-16-ibm-eagle",
@@ -1187,7 +1187,7 @@
       "lon": -73.8532
     },
     "first_seen": "2026-09-29",
-    "last_seen": "2026-09-29"
+    "last_seen": "2026-10-01"
   },
   {
     "id": "his-2020-12-13-solarwinds",
@@ -1204,11 +1204,11 @@
       "lon": -97.7431
     },
     "first_seen": "2026-09-29",
-    "last_seen": "2026-09-29"
+    "last_seen": "2026-10-01"
   },
   {
     "id": "his-2020-12-11-mrna-vaccine",
-    "category": "Biotechnology",
+    "category": "Biotechnology & Biohacking",
     "subcategory": "immunotherapy",
     "title": "First mRNA vaccine granted emergency use authorisation (COVID-19)",
     "value": null,
@@ -1221,7 +1221,7 @@
       "lon": -73.9626
     },
     "first_seen": "2026-09-29",
-    "last_seen": "2026-09-29"
+    "last_seen": "2026-10-01"
   },
   {
     "id": "his-2020-06-11-gpt3",
@@ -1238,7 +1238,7 @@
       "lon": -122.4194
     },
     "first_seen": "2026-09-29",
-    "last_seen": "2026-09-29"
+    "last_seen": "2026-10-01"
   },
   {
     "id": "his-2019-10-23-quantum-supremacy",
@@ -1255,7 +1255,7 @@
       "lon": -119.695
     },
     "first_seen": "2026-09-29",
-    "last_seen": "2026-09-29"
+    "last_seen": "2026-10-01"
   },
   {
     "id": "his-2017-06-12-transformer",
@@ -1272,7 +1272,7 @@
       "lon": -79.3832
     },
     "first_seen": "2026-09-29",
-    "last_seen": "2026-09-29"
+    "last_seen": "2026-10-01"
   },
   {
     "id": "his-2016-03-15-alphago",
@@ -1289,7 +1289,7 @@
       "lon": 126.978
     },
     "first_seen": "2026-09-29",
-    "last_seen": "2026-09-29"
+    "last_seen": "2026-10-01"
   },
   {
     "id": "his-2015-12-21-falcon9-landing",
@@ -1306,7 +1306,7 @@
       "lon": -80.5774
     },
     "first_seen": "2026-09-29",
-    "last_seen": "2026-09-29"
+    "last_seen": "2026-10-01"
   },
   {
     "id": "his-2014-04-07-heartbleed",
@@ -1323,7 +1323,7 @@
       "lon": 8.5417
     },
     "first_seen": "2026-09-29",
-    "last_seen": "2026-09-29"
+    "last_seen": "2026-10-01"
   },
   {
     "id": "his-2012-09-30-alexnet",
@@ -1340,11 +1340,11 @@
       "lon": -79.3832
     },
     "first_seen": "2026-09-29",
-    "last_seen": "2026-09-29"
+    "last_seen": "2026-10-01"
   },
   {
     "id": "his-2012-06-28-crispr",
-    "category": "Biotechnology",
+    "category": "Biotechnology & Biohacking",
     "subcategory": "gene_editing",
     "title": "CRISPR-Cas9 programmable genome editing is published",
     "value": null,
@@ -1357,7 +1357,7 @@
       "lon": -122.2585
     },
     "first_seen": "2026-09-29",
-    "last_seen": "2026-09-29"
+    "last_seen": "2026-10-01"
   },
   {
     "id": "his-2012-05-25-dragon-iss",
@@ -1374,7 +1374,7 @@
       "lon": -118.3279
     },
     "first_seen": "2026-09-29",
-    "last_seen": "2026-09-29"
+    "last_seen": "2026-10-01"
   },
   {
     "id": "his-2011-04-05-iron-dome",
@@ -1391,7 +1391,7 @@
       "lon": 34.7818
     },
     "first_seen": "2026-09-29",
-    "last_seen": "2026-09-29"
+    "last_seen": "2026-10-01"
   },
   {
     "id": "his-2010-06-17-stuxnet",
@@ -1408,7 +1408,7 @@
       "lon": 51.9163
     },
     "first_seen": "2026-09-29",
-    "last_seen": "2026-09-29"
+    "last_seen": "2026-10-01"
   },
   {
     "id": "his-2007-04-27-estonia-cyber",
@@ -1425,11 +1425,11 @@
       "lon": 24.7536
     },
     "first_seen": "2026-09-29",
-    "last_seen": "2026-09-29"
+    "last_seen": "2026-10-01"
   },
   {
     "id": "his-2003-04-14-human-genome",
-    "category": "Biotechnology",
+    "category": "Biotechnology & Biohacking",
     "subcategory": "synthetic_biology",
     "title": "Human Genome Project announces completion of the human genome sequence",
     "value": null,
@@ -1442,11 +1442,11 @@
       "lon": -77.0947
     },
     "first_seen": "2026-09-29",
-    "last_seen": "2026-09-29"
+    "last_seen": "2026-10-01"
   },
   {
     "id": "his-1997-12-01-ads-cft",
-    "category": "Quantum Gravity",
+    "category": "Quantum Physics",
     "subcategory": "holographic_principle",
     "title": "Maldacena formulates the AdS/CFT correspondence (holographic duality)",
     "value": null,
@@ -1459,7 +1459,7 @@
       "lon": -74.6564
     },
     "first_seen": "2026-09-29",
-    "last_seen": "2026-09-29"
+    "last_seen": "2026-10-01"
   },
   {
     "id": "his-1997-05-11-deep-blue",
@@ -1476,11 +1476,11 @@
       "lon": -73.9683
     },
     "first_seen": "2026-09-28",
-    "last_seen": "2026-09-28"
+    "last_seen": "2026-10-01"
   },
   {
     "id": "his-1996-07-05-dolly",
-    "category": "Biotechnology",
+    "category": "Biotechnology & Biohacking",
     "subcategory": "synthetic_biology",
     "title": "Dolly - the first mammal cloned from an adult somatic cell",
     "value": null,
@@ -1493,7 +1493,7 @@
       "lon": -3.1883
     },
     "first_seen": "2026-09-28",
-    "last_seen": "2026-09-28"
+    "last_seen": "2026-10-01"
   },
   {
     "id": "his-1994-10-01-shor-algorithm",
@@ -1510,7 +1510,7 @@
       "lon": -74.401
     },
     "first_seen": "2026-09-28",
-    "last_seen": "2026-09-28"
+    "last_seen": "2026-10-01"
   },
   {
     "id": "his-1991-01-18-patriot-scud",
@@ -1527,7 +1527,7 @@
       "lon": 46.6753
     },
     "first_seen": "2026-09-28",
-    "last_seen": "2026-09-28"
+    "last_seen": "2026-10-01"
   },
   {
     "id": "his-1988-11-02-morris-worm",
@@ -1544,11 +1544,11 @@
       "lon": -71.0942
     },
     "first_seen": "2026-09-28",
-    "last_seen": "2026-09-28"
+    "last_seen": "2026-10-01"
   },
   {
     "id": "his-1983-04-01-pcr",
-    "category": "Biotechnology",
+    "category": "Biotechnology & Biohacking",
     "subcategory": "synthetic_biology",
     "title": "Kary Mullis conceives the polymerase chain reaction (PCR)",
     "value": null,
@@ -1561,7 +1561,7 @@
       "lon": -122.2853
     },
     "first_seen": "2026-09-28",
-    "last_seen": "2026-09-28"
+    "last_seen": "2026-10-01"
   },
   {
     "id": "his-1983-03-23-sdi-announced",
@@ -1578,7 +1578,7 @@
       "lon": -77.0369
     },
     "first_seen": "2026-09-28",
-    "last_seen": "2026-09-28"
+    "last_seen": "2026-10-01"
   },
   {
     "id": "his-1981-05-06-feynman-quantum",
@@ -1595,7 +1595,7 @@
       "lon": -118.1253
     },
     "first_seen": "2026-09-28",
-    "last_seen": "2026-09-28"
+    "last_seen": "2026-10-01"
   },
   {
     "id": "his-1981-04-12-sts-1",
@@ -1612,11 +1612,11 @@
       "lon": -80.649
     },
     "first_seen": "2026-09-28",
-    "last_seen": "2026-09-28"
+    "last_seen": "2026-10-01"
   },
   {
     "id": "his-1976-07-01-four-color-theorem",
-    "category": "Mathematics",
+    "category": "Computing & AGI",
     "subcategory": "graph_theory",
     "title": "Four color theorem proven with the aid of a computer",
     "value": null,
@@ -1629,11 +1629,11 @@
       "lon": -88.2272
     },
     "first_seen": "2026-09-28",
-    "last_seen": "2026-09-28"
+    "last_seen": "2026-10-01"
   },
   {
     "id": "his-1973-01-01-recombinant-dna",
-    "category": "Biotechnology",
+    "category": "Biotechnology & Biohacking",
     "subcategory": "gene_editing",
     "title": "Cohen & Boyer pioneer recombinant DNA technology",
     "value": null,
@@ -1646,7 +1646,7 @@
       "lon": -122.1697
     },
     "first_seen": "2026-09-29",
-    "last_seen": "2026-09-29"
+    "last_seen": "2026-10-01"
   },
   {
     "id": "his-1971-11-15-intel-4004",
@@ -1663,7 +1663,7 @@
       "lon": -121.9552
     },
     "first_seen": "2026-09-29",
-    "last_seen": "2026-09-29"
+    "last_seen": "2026-10-01"
   },
   {
     "id": "his-1969-10-29-arpanet",
@@ -1680,7 +1680,7 @@
       "lon": -118.4452
     },
     "first_seen": "2026-09-29",
-    "last_seen": "2026-09-29"
+    "last_seen": "2026-10-01"
   },
   {
     "id": "his-1969-07-20-apollo-11",
@@ -1697,7 +1697,7 @@
       "lon": 23.473
     },
     "first_seen": "2026-09-29",
-    "last_seen": "2026-09-29"
+    "last_seen": "2026-10-01"
   },
   {
     "id": "his-1961-04-12-vostok-1",
@@ -1714,7 +1714,7 @@
       "lon": 63.305
     },
     "first_seen": "2026-09-29",
-    "last_seen": "2026-09-29"
+    "last_seen": "2026-10-01"
   },
   {
     "id": "his-1957-10-04-sputnik-1",
@@ -1731,7 +1731,7 @@
       "lon": 63.305
     },
     "first_seen": "2026-09-29",
-    "last_seen": "2026-09-29"
+    "last_seen": "2026-10-01"
   },
   {
     "id": "his-1954-04-25-silicon-solar-cell",
@@ -1748,11 +1748,11 @@
       "lon": -74.401
     },
     "first_seen": "2026-09-29",
-    "last_seen": "2026-09-29"
+    "last_seen": "2026-10-01"
   },
   {
     "id": "his-1953-04-25-dna-double-helix",
-    "category": "Biotechnology",
+    "category": "Biotechnology & Biohacking",
     "subcategory": "synthetic_biology",
     "title": "Watson & Crick publish the structure of DNA (double helix)",
     "value": null,
@@ -1765,7 +1765,7 @@
       "lon": 0.1218
     },
     "first_seen": "2026-09-29",
-    "last_seen": "2026-09-29"
+    "last_seen": "2026-10-01"
   },
   {
     "id": "his-1945-11-15-eniac",
@@ -1782,7 +1782,7 @@
       "lon": -75.1652
     },
     "first_seen": "2026-09-29",
-    "last_seen": "2026-09-29"
+    "last_seen": "2026-10-01"
   },
   {
     "id": "his-1945-07-16-trinity-test",
@@ -1799,6 +1799,6 @@
       "lon": -106.4754
     },
     "first_seen": "2026-09-29",
-    "last_seen": "2026-09-29"
+    "last_seen": "2026-10-01"
   }
 ]

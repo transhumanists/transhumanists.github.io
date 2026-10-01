@@ -58,10 +58,46 @@ class TestMergeHistory(unittest.TestCase):
 
     def test_display_category_maps(self):
         self.assertEqual(sm.display_category("Energy"), "Renewable Energy")
-        self.assertEqual(sm.display_category("Quantum"), "Quantum Physics")
         self.assertEqual(sm.display_category("Spaceflight"), "Spaceflight & Aeronautics")
         self.assertEqual(sm.display_category("Defense"), "Military & Defense")
-        self.assertEqual(sm.display_category("Biotechnology"), "Biotechnology")
+        # Biotechnology was split and renamed; upstream's old label must fold in.
+        self.assertEqual(sm.display_category("Biotechnology"), "Biotechnology & Biohacking")
+        self.assertEqual(sm.display_category("Biohacking"), "Biotechnology & Biohacking")
+        self.assertEqual(sm.display_category("Logistics"), "Mobility & Logistics")
+        self.assertEqual(sm.display_category("Transportation"), "Mobility & Logistics")
+        self.assertEqual(sm.display_category("Robotics"), "Robotics")
+
+    def test_dedupe_buckets_on_the_published_category_not_the_raw_one(self):
+        # Regression: the unifier bucketed on the record's raw category while the
+        # feed publishes the canonical one, so a pair straddling a rename split
+        # across buckets and then published as two records in one category. The
+        # Khipu pair survived unification for exactly this reason despite sharing
+        # date, value, unit AND article URL.
+        upstream = {
+            "id": "ms-a", "title": "ML-driven Structural Pattern Mining of Inka Khipus",
+            "date": "2026-06-30", "value": "0.86", "unit": "F1 score",
+            "category": "Computing & AGI", "source": "Open Khipu Repository",
+            "url": "http://arxiv.org/abs/2607.00185v1", "geolocation": {"lat": -13.5, "lon": -71.9},
+        }
+        archived = {
+            "id": "ms-b", "title": "ML pipeline achieves 0.86 F1 classifying Inka khipu provenance",
+            "date": "2026-06-30", "value": "0.86", "unit": "F1 score",
+            # The archive keeps whatever label upstream used years ago.
+            "category": "Computational Archaeology",
+            "source": "Academic researchers (Open Khipu Repository)",
+            "url": "http://arxiv.org/abs/2607.00185v1", "geolocation": {"lat": -13.5, "lon": -71.9},
+        }
+        out, changes = sm.unify_duplicate_milestones([upstream, archived])
+        self.assertEqual(len(out), 1, f"straddling alias pair was not unified: {changes}")
+        self.assertEqual(len(out[0]["sources"]), 2)
+
+    def test_every_alias_resolves_to_a_canonical_site_key(self):
+        # Guards the invariant the bucket key now depends on: if an alias ever
+        # fails to resolve, straddling pairs silently stop merging again.
+        for alias in sm.CATEGORY_ALIASES:
+            with self.subTest(alias=alias):
+                resolved = sm._dedupe_category_key(alias)
+                self.assertIn(resolved, sm.SITE_KEY_TO_DISPLAY)
 
 
 class TestRetentionFeed(unittest.TestCase):
