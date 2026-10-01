@@ -1745,6 +1745,37 @@ test('zoom controls, keyboard and double-click do not throw', () => {
     expect(api.HUMAN_RIGHTS_PULSE_MS).toBeLessThan(6000);
   });
 
+  test('the landmark hit radius covers the widest painted landmark', () => {
+    const api = windowObj.__WORLDMAP_TEST__;
+    // Regression: the hit radius was a hardcoded 12px while the pulsing glow
+    // reached 24px, so aiming at the visible halo did nothing. Both now derive
+    // from the same constants.
+    const widestGlow = api.HUMAN_RIGHTS_CORE_MAX *
+      (api.HUMAN_RIGHTS_GLOW_INNER + api.HUMAN_RIGHTS_GLOW_PULSE);
+    expect(api.HUMAN_RIGHTS_HIT_RADIUS).toBe(widestGlow);
+    expect(api.HUMAN_RIGHTS_HIT_RADIUS).toBeGreaterThanOrEqual(api.HUMAN_RIGHTS_CORE_MAX);
+  });
+
+  test('a pointer just outside the glow still does not hit the landmark', () => {
+    withFreshHover((api) => {
+      registeredEls['reset-view'].fire('click', {});
+      const lon = 67.7, lat = 33.9;
+      api.setLayers([], [], [], [
+        { id: 'hr-1', name: 'Detention report', lon, lat, status: 'active',
+          region: 'Central Asia', source: 'HRW', start_date: '2026-09-22',
+          url: 'https://example.com/a', note: '' }
+      ]);
+      api.getState().showHumanRights = true;
+      const at = pt(lon, lat);
+      // Just inside the hit radius.
+      const inside = api.HUMAN_RIGHTS_HIT_RADIUS - 1;
+      expect(api.findHumanRight(at.x + inside, at.y)).not.toBe(null);
+      // And clearly outside it, so the radius is not simply unbounded.
+      const outside = api.HUMAN_RIGHTS_HIT_RADIUS * 2;
+      expect(api.findHumanRight(at.x + outside, at.y)).toBe(null);
+    });
+  });
+
   test('Deployments legend row explains both components', () => {
     registeredEls['reset-view'].fire('click', {});
     expect(legendValue('Fleet Movements & Ground Deployments')).toBeDefined();

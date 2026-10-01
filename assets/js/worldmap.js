@@ -81,6 +81,24 @@ const HUMAN_RIGHTS_COLOR = '#ff7043';
 // One full swell-and-fade cycle for a landmark. Long enough to read as a
 // breath rather than a flicker, short enough that the layer feels live.
 const HUMAN_RIGHTS_PULSE_MS = 2400;
+
+  // Landmark geometry, in screen pixels, shared by the renderer and the hit test.
+  //
+  // These are deliberately one set of constants. The hit radius used to be a
+  // hardcoded 12px while the pulsing glow reached 24px, so the visible halo was
+  // twice as large as the clickable area and aiming at it did nothing. Deriving
+  // the hit radius from the same numbers the renderer uses makes that
+  // unrepresentable.
+  const HUMAN_RIGHTS_CORE_MIN = 3;
+  const HUMAN_RIGHTS_CORE_MAX = 8;
+  const HUMAN_RIGHTS_CORE_ACTIVE = 5;   // nominal core radius, active entry
+  const HUMAN_RIGHTS_CORE_DONE = 3.5;   // nominal core radius, concluded entry
+  const HUMAN_RIGHTS_GLOW_INNER = 1.9;  // glow radius at the trough of the pulse
+  const HUMAN_RIGHTS_GLOW_PULSE = 1.1; // extra glow radius at the peak
+  // Widest the landmark ever paints itself, therefore the widest the pointer may
+  // reasonably be from its centre and still count as "on" it.
+  const HUMAN_RIGHTS_HIT_RADIUS =
+    HUMAN_RIGHTS_CORE_MAX * (HUMAN_RIGHTS_GLOW_INNER + HUMAN_RIGHTS_GLOW_PULSE);
   // Very transparent arrow tail line (barely visible) — 8% opacity
   const ARROW_TAIL_OPACITY = 0.08;
 
@@ -1384,7 +1402,10 @@ function canonicalCategory(cat) {
     const p = project(entry.lon, entry.lat);
     if (!p) return;
     const done = entry.status && entry.status !== 'active' && entry.status !== 'ongoing';
-    const base = Math.max(3, Math.min(8, (done ? 3.5 : 5) * autoScale));
+    const base = Math.max(
+      HUMAN_RIGHTS_CORE_MIN,
+      Math.min(HUMAN_RIGHTS_CORE_MAX, (done ? HUMAN_RIGHTS_CORE_DONE : HUMAN_RIGHTS_CORE_ACTIVE) * autoScale)
+    );
     const alpha = done ? 0.35 : 0.85;
 
     // Ease the pulse with a raised cosine so it swells and fades rather than
@@ -1395,7 +1416,7 @@ function canonicalCategory(cat) {
     const pulse = 0.5 - 0.5 * Math.cos(phase * Math.PI * 2);
 
     // Soft outer glow, painted first so the solid core sits on top of it.
-    const glowRadius = base * (1.9 + pulse * 1.1);
+    const glowRadius = base * (HUMAN_RIGHTS_GLOW_INNER + pulse * HUMAN_RIGHTS_GLOW_PULSE);
     const gradient = ctx.createRadialGradient(p.x, p.y, base * 0.5, p.x, p.y, glowRadius);
     gradient.addColorStop(0, withOpacity(HUMAN_RIGHTS_COLOR, (done ? 0.10 : 0.34) * (1 - pulse * 0.55)));
     gradient.addColorStop(1, withOpacity(HUMAN_RIGHTS_COLOR, 0));
@@ -1661,7 +1682,9 @@ function canonicalCategory(cat) {
   // the layer is on: an invisible layer must not steal hover from a milestone.
   function findHumanRight(px, py) {
     if (!state.showHumanRights) return null;
-    const hitRadiusSq = 144; // 12px
+    // Derived from the widest painted landmark, not a separate magic number.
+    const hitRadius = HUMAN_RIGHTS_HIT_RADIUS;
+    const hitRadiusSq = hitRadius * hitRadius;
     for (const entry of state.humanRights) {
       if (entry._hiddenByTimeline) continue;
       const p = project(entry.lon, entry.lat);
@@ -3531,6 +3554,10 @@ function initTimelineSlider() {
   secondaryColorFor,
   HUMAN_RIGHTS_COLOR,
   HUMAN_RIGHTS_PULSE_MS,
+  HUMAN_RIGHTS_HIT_RADIUS,
+  HUMAN_RIGHTS_CORE_MAX,
+  HUMAN_RIGHTS_GLOW_INNER,
+  HUMAN_RIGHTS_GLOW_PULSE,
   normalizeHumanRight,
   isHumanRightPlottable,
   findHumanRight,
