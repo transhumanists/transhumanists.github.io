@@ -5,6 +5,8 @@ baseurl: ""
 github_username: transhumanists
 github_repo: transhumanists.github.io
 
+theme: null
+
 plugins:
   - jekyll-feed
   - jekyll-seo-tag
