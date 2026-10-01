@@ -39,24 +39,13 @@
 
   // Operational layers (conflict zones + tracked deployments).
   const ZONE_COLOR = '#ff6d8a';
-  const ZONE_FILL = 'rgba(255, 109, 138, 0.14)';
-  const ZONE_STROKE = 'rgba(255, 109, 138, 1)';
   // Crisis zones (humanitarian): distinct purple to differentiate from conflict (red) and deployments (blue/amber)
   const CRISIS_COLOR = '#b388ff';
-  const CRISIS_FILL = 'rgba(179, 136, 255, 0.14)';
-  const CRISIS_STROKE = 'rgba(179, 136, 255, 1)';
   // Ground deployments (mobilizations, troop movements): distinct amber/orange
   const GROUND_COLOR = '#ffb347';
   const FLEET_COLOR = '#4fc3f7';
   // Very transparent arrow tail line (barely visible) — 8% opacity
   const ARROW_TAIL_OPACITY = 0.08;
-  
-  function withOpacity(hexColor, opacity) {
-    const r = parseInt(hexColor.slice(1, 3), 16);
-    const g = parseInt(hexColor.slice(3, 5), 16);
-    const b = parseInt(hexColor.slice(5, 7), 16);
-    return `rgba(${r}, ${g}, ${b}, ${opacity})`;
-  }
 
   // ---- Layer lifecycle (active/concluded + duration) ----
   // Operational layers now carry an optional lifecycle: still-active zones,
@@ -88,6 +77,9 @@
   }
 
   function desaturateHex(hexColor, amount) {
+    if (typeof hexColor !== 'string' || !/^#[0-9a-fA-F]{6}$/.test(hexColor)) {
+      return hexColor; // Return as-is for invalid input (fail-open for rendering)
+    }
     const r = parseInt(hexColor.slice(1, 3), 16);
     const g = parseInt(hexColor.slice(3, 5), 16);
     const b = parseInt(hexColor.slice(5, 7), 16);
@@ -2743,7 +2735,7 @@ function initTimelineSlider() {
         timelineYear = TIMELINE_MIN_YEAR;
         changed = true;
         break;
-case 'End':
+      case 'End':
         timelineYear = TIMELINE_MAX_YEAR;
         changed = true;
         break;
