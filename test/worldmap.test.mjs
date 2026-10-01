@@ -1668,4 +1668,161 @@ test('zoom controls, keyboard and double-click do not throw', () => {
     registeredEls['reset-view'].fire('click', {});
     expect(legendValue('Fleet Movements & Ground Deployments')).toBeDefined();
   });
+
+  // ---- Hover arbitration ----------------------------------------------------
+  // "Whatever is under the cursor wins" was wrong in three distinct ways, now
+  // separated explicitly in worldmap.js: drift keeps the tooltip, a nearby but
+  // different milestone leaves it untouched, and a same-location cluster member
+  // does take over. A pinned milestone persists through all of it.
+  //
+  // Every test builds its own events rather than borrowing the suite's, and puts
+  // them back afterwards, so none depends on what ran before it.
+
+  function mkEvent(id, title, lon, lat, category) {
+    // geolocation, not a flat lon/lat pair: normalizeEvent derives the projected
+    // coordinates from geolocation, so a bare pair is dropped as unplottable.
+    return {
+      id, title, category: category || 'Quantum Physics',
+      value: '1', source: 'Src', url: 'https://example.com/' + id,
+      date: '2026-09-01', geolocation: { lat, lon }
+    };
+  }
+
+  function hoverAt(lon, lat) {
+    const p = pt(lon, lat);
+    canvas.fire('mousemove', { clientX: p.x, clientY: p.y, movementX: 0, movementY: 0 });
+    return p;
+  }
+
+  // The DOM mock tracks children but does not aggregate textContent the way a
+  // real element does, so the tooltip's rendered text is read off the tree.
+  function tooltipText() {
+    const collect = (node) => {
+      let out = node.textContent || '';
+      for (const c of node.children || []) out += collect(c);
+      return out;
+    };
+    return collect(tooltip);
+  }
+
+  function findPager() {
+    const walk = (node) => {
+      for (const c of node.children || []) {
+        if ((c.className || '').indexOf('tt-pager') === 0) return c;
+        const hit = walk(c);
+        if (hit) return hit;
+      }
+      return null;
+    };
+    return walk(tooltip);
+  }
+
+  // Transient hover state is anchored by design now, so it has to be cleared
+  // between these tests or a leftover anchor suppresses the next tooltip.
+  function withFreshHover(fn) {
+    const api = windowObj.__WORLDMAP_TEST__;
+    const saved = api.getEvents().slice();
+    const st = api.getState();
+    const savedRecent = st.filterRecent;
+    st.hoveredEvent = null;
+    st.hoveredType = null;
+    st.selectedEvent = null;
+    // These fixtures are dated weeks before the test clock, so an inherited
+    // "breakthroughs this week" filter would hide every one of them.
+    api.setFilterRecent(false);
+    tooltip.classList.remove('visible');
+    try {
+      fn(api);
+    } finally {
+      api.setEvents(saved);
+      api.setFilterRecent(savedRecent);
+      st.hoveredEvent = null;
+      st.hoveredType = null;
+      st.selectedEvent = null;
+      st.stackIndex = 0;
+      tooltip.classList.remove('visible');
+    }
+  }
+
+  test('pointer drift off a milestone keeps its tooltip open', () => {
+    withFreshHover((api) => {
+      registeredEls['reset-view'].fire('click', {});
+      api.setEvents([mkEvent('a', 'Anchor milestone', 8.5417, 47.3769)]);
+      const home = hoverAt(8.5417, 47.3769);
+      expect(tooltip.classList.contains('visible')).toBe(true);
+      // A few pixels off the dot, as happens when reaching for the tooltip.
+      canvas.fire('mousemove', { clientX: home.x + 9, clientY: home.y + 7, movementX: 0, movementY: 0 });
+      expect(tooltip.classList.contains('visible')).toBe(true);
+      expect(tooltipText()).toContain('Anchor milestone');
+    });
+  });
+
+  test('travelling well away closes the tooltip', () => {
+    withFreshHover((api) => {
+      registeredEls['reset-view'].fire('click', {});
+      api.setEvents([mkEvent('a', 'Anchor milestone', 8.5417, 47.3769)]);
+      hoverAt(8.5417, 47.3769);
+      expect(tooltip.classList.contains('visible')).toBe(true);
+      // Far outside the proximity radius: an intentional departure must dismiss.
+      canvas.fire('mousemove', { clientX: 790, clientY: 500, movementX: 0, movementY: 0 });
+      expect(tooltip.classList.contains('visible')).toBe(false);
+    });
+  });
+
+  test('a nearby different milestone leaves the current tooltip untouched', () => {
+    withFreshHover((api) => {
+      registeredEls['reset-view'].fire('click', {});
+      const anchor = mkEvent('a', 'Anchor milestone', 8.5417, 47.3769);
+      // ~34 px on screen: outside the hit radius so both are separately clickable,
+      // inside the proximity radius so they read as one ambiguous pair.
+      const neighbour = mkEvent('nb', 'Neighbour milestone', 24.0, 47.3769);
+      api.setEvents([anchor, neighbour]);
+      const home = hoverAt(8.5417, 47.3769);
+      expect(tooltipText()).toContain('Anchor milestone');
+      const near = hoverAt(24.0, 47.3769);
+      expect(api.sameLocationCluster(anchor, neighbour)).toBe(false);
+      expect(Math.hypot(near.x - home.x, near.y - home.y)).toBeLessThan(api.PROXIMITY_RADIUS);
+      expect(Math.hypot(near.x - home.x, near.y - home.y)).toBeGreaterThan(10);
+      // Must not retarget, and must not close either.
+      expect(tooltipText()).toContain('Anchor milestone');
+      expect(tooltip.classList.contains('visible')).toBe(true);
+      // The anchor itself must not have moved.
+      expect(api.getState().hoveredEvent.title).toBe('Anchor milestone');
+    });
+  });
+
+
+
+  test('travelling to a distant milestone still retargets the tooltip', () => {
+    withFreshHover((api) => {
+      registeredEls['reset-view'].fire('click', {});
+      api.setEvents([
+        mkEvent('a', 'Zurich milestone', 8.5417, 47.3769),
+        mkEvent('ny', 'New York milestone', -74.006, 40.7128)
+      ]);
+      hoverAt(8.5417, 47.3769);
+      expect(tooltipText()).toContain('Zurich milestone');
+      hoverAt(-74.006, 40.7128);
+      expect(tooltip.classList.contains('visible')).toBe(true);
+      expect(tooltipText()).toContain('New York milestone');
+      expect(tooltipText()).not.toContain('Zurich milestone');
+    });
+  });
+
+
+
+  test('sameLocationCluster separates a cluster from merely-near dots', () => {
+    const api = windowObj.__WORLDMAP_TEST__;
+    const a = { lon: 10, lat: 50, category: 'Quantum Physics' };
+    const b = { lon: 10, lat: 50, category: 'Quantum Physics' };
+    const c = { lon: 10.35, lat: 50, category: 'Quantum Physics' };
+    expect(api.sameLocationCluster(a, a)).toBe(true);
+    expect(api.sameLocationCluster(a, b)).toBe(true);
+    // Different coordinates -> different stack, even when visually adjacent.
+    expect(api.sameLocationCluster(a, c)).toBe(false);
+    expect(api.sameLocationCluster(null, a)).toBe(false);
+  });
+
+
+
 });

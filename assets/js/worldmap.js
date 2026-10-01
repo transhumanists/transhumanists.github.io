@@ -1564,6 +1564,36 @@ function canonicalCategory(cat) {
     return null;
   }
 
+  // Radius within which a nearby-but-different milestone is treated as visually
+  // confusable with the anchor rather than as a move to a new subject. Scaled with
+  // zoom so it stays a constant apparent distance on screen. Roughly twice the hit
+  // radius: enough to bridge the gap between a small dot and the tooltip, too small
+  // to swallow an adjacent landmark.
+  const PROXIMITY_RADIUS = 56;
+
+  function isNearAnchor(px, py) {
+    const anchor = state.selectedEvent || state.hoveredEvent;
+    if (!anchor || anchor.lon == null || anchor.lat == null) return false;
+    if (anchor._hiddenByTimeline) return false;
+    if (!isCategoryVisible(anchor.category)) return false;
+    const p = project(anchor.lon, anchor.lat);
+    if (!p) return false;
+    const r = PROXIMITY_RADIUS / state.transform.scale;
+    const dx = p.x - px;
+    const dy = p.y - py;
+    return dx * dx + dy * dy < r * r;
+  }
+
+  // Whether two milestones render as one co-located cluster, i.e. share a stack
+  // position. Stepping between members must take over the tooltip; stepping
+  // between two merely-adjacent dots must not.
+  function sameLocationCluster(a, b) {
+    if (!a || !b) return false;
+    if (a === b) return true;
+    if (a.lon == null || a.lat == null || b.lon == null || b.lat == null) return false;
+    return stackKey(a) === stackKey(b);
+  }
+
   function findZone(px, py) {
     if (!state.showZones) return null;
     const hitRadius = HIT_RADIUS_BASE / state.transform.scale;
@@ -1728,7 +1758,38 @@ function canonicalCategory(cat) {
       }
     }
 
-    canvas.style.cursor = hit ? 'pointer' : 'grab';
+canvas.style.cursor = hit ? 'pointer' : 'grab';
+    // --- Hover arbitration -----------------------------------------------------
+    // "Whatever is under the cursor wins" was wrong in three distinct ways, so
+    // they are separated here rather than left to the hit test:
+    //
+    // 1. Drift. A milestone dot is a handful of pixels across, so a pointer moving
+    //    toward the tooltip drifts off it long before reaching anything else.
+    //    Hiding on a miss made the tooltip's own source link unreachable.
+    //
+    // 2. Nearby, and NOT the same location. Two dots a few pixels apart are
+    //    visually ambiguous, and swapping the tooltip as the pointer crossed the
+    //    gap made it impossible to read either one. The current tooltip is left
+    //    completely untouched - the anchor does not even move.
+    //
+    // 3. Same-location cluster. Stepping through co-located milestones is the
+    //    point of a cluster, so each member DOES take over.
+    //
+    // Past the proximity radius the pointer has clearly travelled somewhere else,
+    // so switching is expected and stays easy. A click pins the milestone
+    // (state.selectedEvent); while pinned the tooltip is persistent and nearby
+    // hovers of any kind leave it alone, including cluster members.
+    const anchor = state.selectedEvent || state.hoveredEvent;
+    if (anchor && hit !== anchor && isNearAnchor(x, y)) {
+      if (state.selectedEvent) return;                  // pinned: persist
+      if (hit && hitType === 'event' && sameLocationCluster(hit, anchor)) {
+        // Same location: fall through so this member opens its own tooltip.
+      } else {
+        return;                                          // nearby: leave alone
+      }
+    }
+    if (!hit && isNearAnchor(x, y)) return;              // drift: keep it
+
     if (hit !== state.hoveredEvent || hitType !== state.hoveredType) {
       state.hoveredEvent = hit;
       state.hoveredType = hitType;
@@ -1984,11 +2045,59 @@ function canonicalCategory(cat) {
     tooltip.style.top = ty + 'px';
   }
 
-  function showTooltip(ev, x, y) {
+function showTooltip(ev, x, y) {
     if (!tooltip) return;
+    // Keep the stack pager in step with the milestone actually on screen, and wire
+    // it. The hover tooltip renders the same pager as the pinned popup, but only
+    // the popup used to wire it: hovering the second member of a cluster showed
+    // "2/2" with a dead prev button, so co-located milestones were reachable only
+    // by clicking.
+    const stack = stackForEvent(ev);
+    state.stackIndex = stack.length > 1 ? Math.max(0, stack.indexOf(ev)) : 0;
     tooltip.replaceChildren(createTooltipElement(ev));
+    wireStackPager(tooltip, ev);
     tooltip.classList.add('visible');
     moveTooltip(x, y);
+  }
+
+  // Attach prev/next behaviour to whichever stack pager is currently rendered.
+  // Shared by the hover tooltip and the pinned popup: both render the same pager,
+  // and wiring only one of them is what left the other visibly broken.
+  function wireStackPager(container, ev) {
+    const stack = stackForEvent(ev);
+    if (stack.length <= 1) return;
+    if (typeof container.querySelector !== 'function') return;
+    const pager = container.querySelector('.tt-pager');
+    if (!pager) return;
+    const prevBtn = pager.querySelector('.tt-pager-prev');
+    const nextBtn = pager.querySelector('.tt-pager-next');
+    const indexEl = pager.querySelector('.tt-pager-index');
+
+    const step = (delta) => {
+      const members = stackForEvent(ev);
+      const target = members[state.stackIndex + delta];
+      if (!target) return;
+      pinTooltipToEvent(target);
+    };
+    const handlePrev = (e) => { e.stopPropagation(); step(-1); };
+    const handleNext = (e) => { e.stopPropagation(); step(1); };
+
+    if (prevBtn) prevBtn.addEventListener('click', handlePrev);
+    if (nextBtn) nextBtn.addEventListener('click', handleNext);
+    pager._cleanup = () => {
+      if (prevBtn) prevBtn.removeEventListener('click', handlePrev);
+      if (nextBtn) nextBtn.removeEventListener('click', handleNext);
+    };
+    // Reflect the current position. Real <button>s are used precisely so this
+    // works: a <span> accepts `disabled` but never matches :disabled, which is
+    // why the arrows once looked clickable at the ends of the stack.
+    const refresh = () => {
+      const total = stackForEvent(ev).length;
+      if (indexEl) indexEl.textContent = `${state.stackIndex + 1}/${total}`;
+      if (prevBtn) prevBtn.disabled = state.stackIndex === 0;
+      if (nextBtn) nextBtn.disabled = state.stackIndex >= total - 1;
+    };
+    refresh();
   }
 
   function hideTooltip() {
@@ -2018,59 +2127,13 @@ function canonicalCategory(cat) {
     tooltip.replaceChildren(createTooltipElement(ev));
     tooltip.classList.add('visible');
 
+    // Track which member of the stack is on screen so prev/next move from here
+    // (the pager used to snap back to 1/N on every re-pin and never advanced),
+    // then hand the pager to the shared wiring so the hover tooltip and this
+    // popup cannot drift apart again.
     const stackEvts = stackForEvent(ev);
-    if (stackEvts.length > 1) {
-      // Track which member of the stack is on screen so prev/next move from here
-      // (the pager used to snap back to 1/N on every re-pin and never advanced).
-      state.stackIndex = Math.max(0, stackEvts.indexOf(ev));
-      if (typeof tooltip.querySelector === 'function') {
-        const pager = tooltip.querySelector('.tt-pager');
-        if (pager) {
-          const prevBtn = pager.querySelector('.tt-pager-prev');
-          const nextBtn = pager.querySelector('.tt-pager-next');
-          const indexEl = pager.querySelector('.tt-pager-index');
-          
-          const updatePager = () => {
-            const idx = state.stackIndex;
-            const total = stackForEvent(ev).length;
-            if (indexEl) indexEl.textContent = `${idx + 1}/${total}`;
-            if (prevBtn) prevBtn.disabled = idx === 0;
-            if (nextBtn) nextBtn.disabled = idx >= total - 1;
-          };
-          
-          updatePager();
-          
-          const handlePrev = (e) => {
-            e.stopPropagation();
-            const stack = stackForEvent(ev);
-            if (state.stackIndex > 0) {
-              const newEv = stack[state.stackIndex - 1];
-              if (!newEv) return;
-              pinTooltipToEvent(newEv);
-            }
-          };
-          
-          const handleNext = (e) => {
-            e.stopPropagation();
-            const stack = stackForEvent(ev);
-            if (state.stackIndex < stack.length - 1) {
-              const newEv = stack[state.stackIndex + 1];
-              if (!newEv) return;
-              pinTooltipToEvent(newEv);
-            }
-          };
-          
-          prevBtn.addEventListener('click', handlePrev);
-          nextBtn.addEventListener('click', handleNext);
-          pager._cleanup = () => {
-            prevBtn.removeEventListener('click', handlePrev);
-            nextBtn.removeEventListener('click', handleNext);
-          };
-        }
-      }
-    } else {
-      state.stackIndex = 0;
-    }
+    state.stackIndex = stackEvts.length > 1 ? Math.max(0, stackEvts.indexOf(ev)) : 0;
+    wireStackPager(tooltip, ev);
   }
 
   // Remove the tooltip AND forget which event it pointed at (including any
@@ -3458,6 +3521,9 @@ function initTimelineSlider() {
   normalizeHumanRight,
   isHumanRightPlottable,
   findHumanRight,
+  isNearAnchor,
+  sameLocationCluster,
+  PROXIMITY_RADIUS,
       normalizeEvent,
       parseGeocodeCache,
       SOURCE_URL_RE,
@@ -3528,6 +3594,9 @@ function initTimelineSlider() {
         renderLegend();
       },
       getEvents: () => state.events,
+      // Exposed so tests can reset transient hover/selection state, which is
+      // anchored by design and would otherwise leak between them.
+      getState: () => state,
       // Drive the same year-clustering code path as the timeline slider.
       setTimelineYear: (year) => {
         timelineYear = Math.max(TIMELINE_MIN_YEAR, Math.min(getTimelineMaxYear(), year));
