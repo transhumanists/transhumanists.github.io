@@ -1,5 +1,5 @@
 {
-  "last_update": "2026-10-01T22:41:52+00:00",
+  "last_update": "2026-10-01T23:08:00+00:00",
   "version": "1.0.0",
   "events": [
     {
@@ -619,45 +619,6 @@
       ]
     },
     {
-      "id": "ev-ms-0ef07b4ce70b",
-      "title": "ImmigrationReason: 12,375 USCIS AAO decisions dataset for legal reasoning",
-      "category": "Computing & AGI",
-      "value": "12375 decisions",
-      "source": "Academic researchers",
-      "url": "http://arxiv.org/abs/2608.20391v1",
-      "date": "2026-06-30",
-      "geolocation": {
-        "lat": 0.0,
-        "lon": 0.0
-      }
-    },
-    {
-      "id": "ev-ms-09edac1db332",
-      "title": "Evaluation-as-Search adaptive probing finds 2.5× more grounding failures in meeting assistants",
-      "category": "Computing & AGI",
-      "value": "2.5 x",
-      "source": "Research Team",
-      "url": "http://arxiv.org/abs/2608.20392v1",
-      "date": "2026-06-30",
-      "geolocation": {
-        "lat": 19.0,
-        "lon": 72.8
-      }
-    },
-    {
-      "id": "ev-ms-110c8b5371e0",
-      "title": "ASPIRE achieves up to 77% improvement on robot manipulation benchmarks via autonomous skill discovery",
-      "category": "Computing & AGI",
-      "value": "77 percent improvement",
-      "source": "ASPIRE research team",
-      "url": "http://arxiv.org/abs/2607.00272v1",
-      "date": "2026-06-30",
-      "geolocation": {
-        "lat": 0.0,
-        "lon": 0.0
-      }
-    },
-    {
       "id": "ev-def-002",
       "title": "S-500 anti-ballistic missile range",
       "category": "Military & Defense",
@@ -746,19 +707,6 @@
       "geolocation": {
         "lat": 32.0853,
         "lon": 34.7818
-      }
-    },
-    {
-      "id": "ev-ms-6a684b1bc5a3",
-      "title": "LV-ROVER-MLT achieves record-low CER 0.0074 in Maltese OCR competition",
-      "category": "Computing & AGI",
-      "value": "0.0074 CER",
-      "source": "LV-ROVER-MLT researchers",
-      "url": "http://arxiv.org/abs/2607.00250v5",
-      "date": "2026-01-01",
-      "geolocation": {
-        "lat": 19.0,
-        "lon": 72.8
       }
     },
     {

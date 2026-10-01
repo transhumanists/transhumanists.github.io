@@ -387,7 +387,7 @@ def merge_entries(existing: list, fresh: list, today: datetime) -> tuple[list, i
         by_id[entry["id"]] = entry
         added += 1
     merged = sorted(by_id.values(), key=lambda e: (e.get("start_date") or "", e.get("id") or ""), reverse=True)
-    return merged, added, len(merged) - added
+    return merged, added, len(merged)
 
 
 def collect(today: datetime) -> list[dict]:

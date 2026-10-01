@@ -91,6 +91,54 @@ class TestMergeHistory(unittest.TestCase):
         self.assertEqual(len(out), 1, f"straddling alias pair was not unified: {changes}")
         self.assertEqual(len(out[0]["sources"]), 2)
 
+    def test_geocoding_prefers_the_article_over_the_publisher(self):
+        # A Nature Biotechnology paper from a Stanford lab was being plotted at
+        # Nature's London headquarters, because the publisher name is also an
+        # institution key and outranked anything the article itself said.
+        got = sm.geocode_milestone({
+            "source": "Nature Biotechnology",
+            "title": "Lipid nanoparticle delivery",
+            "summary": "Researchers at Stanford University improved LNP design",
+        })
+        self.assertIsNotNone(got)
+        self.assertNotEqual(
+            got[0], sm.INSTITUTION_COORDS["nature"]["lat"],
+            "publisher headquarters overrode the article content",
+        )
+
+    def test_geocoding_falls_back_to_the_publisher_when_the_article_is_silent(self):
+        got = sm.geocode_milestone({
+            "source": "Nature Biotechnology",
+            "title": "New ionizable lipid LC-1",
+            "summary": "Screening identified lipid LC-1",
+        })
+        self.assertEqual(got[0], sm.INSTITUTION_COORDS["nature"]["lat"])
+
+    def test_geocoding_keeps_corporate_anchors_for_corporate_events(self):
+        # A SpaceX launch genuinely happens at the SpaceX site, so a publisher
+        # anchor is the right answer here rather than a fallback to be avoided.
+        got = sm.geocode_milestone({
+            "source": "SpaceX",
+            "title": "Starship payload to LEO",
+            "summary": "A Starship launch from the Texas site",
+        })
+        self.assertIsNotNone(got)
+
+    def test_geocoding_prefers_the_longest_matching_institution(self):
+        # "cornell university" is a more precise claim than "cornell"; a shorter
+        # alias must not shadow it by virtue of dictionary order.
+        got = sm.geocode_milestone({
+            "source": "arXiv preprint",
+            "title": "Structural pattern mining",
+            "summary": "A Cornell University team reports the result",
+        })
+        self.assertIsNotNone(got)
+
+    def test_geocoding_returns_none_when_nothing_is_locatable(self):
+        self.assertIsNone(sm.geocode_milestone({
+            "source": "Unknown", "title": "Nothing locatable", "summary": "",
+        }))
+
     def test_every_alias_resolves_to_a_canonical_site_key(self):
         # Guards the invariant the bucket key now depends on: if an alias ever
         # fails to resolve, straddling pairs silently stop merging again.

@@ -1,0 +1,77 @@
+name: Human Rights Fetch
+
+on:
+  schedule:
+    # Six-hourly. These are human-rights feeds rather than breaking-news wires, so
+    # the layer changes slowly and there is no value in checking more often; the
+    # frequency is set by OHCHR/UN reporting cycles rather than by our need.
+    - cron: "17 */6 * * *"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Fetch and validate but skip commit"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  # Shared with the other writers of world_layers.json (crisis-zone-fetch.yml) so
+  # two jobs never rewrite the same file concurrently. Queued, never cancelled, so
+  # an in-flight commit is not interrupted mid-write.
+  group: "map-data-writers"
+  cancel-in-progress: false
+
+jobs:
+  fetch-human-rights:
+    name: Fetch & Update Human Rights Violations
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Fetch human rights violations
+        run: python scripts/fetch_human_rights.py
+
+      - name: Validate world_layers.json
+        # Gate BEFORE the commit: a malformed candidate must never reach main.
+        # fetch_human_rights.py validates its own rows too, but this also catches
+        # damage to the layers written by the other jobs sharing this file.
+        run: python scripts/check_data.py
+
+      - name: Self-tests
+        run: python -m pytest scripts/test_fetch_human_rights.py -q
+
+      - name: Commit and push changes
+        if: ${{ inputs.dry_run != 'true' }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/world_layers.json
+          if git diff --cached --quiet; then
+            echo "No human rights changes"
+            exit 0
+          fi
+          ts=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
+          git commit -m "chore(human-rights): refresh ${ts}"
+          # The remote can advance while this job runs (a scheduled run collides
+          # with a manual push). Rebase onto the latest main, then retry once;
+          # fail loudly rather than silently dropping a data refresh.
+          if git push origin main; then
+            echo "Pushed human rights refresh to main"
+          else
+            echo "Push rejected (remote moved?) - rebasing and retrying..."
+            git pull --rebase origin main
+            git push origin main
+            echo "Pushed human rights refresh to main (after rebase)"
+          fi

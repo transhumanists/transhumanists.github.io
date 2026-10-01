@@ -930,15 +930,60 @@ def event_value(m: dict) -> str:
     return m.get("title") or ""
 
 
-def geocode_milestone(m: dict) -> tuple[float, float] | None:
-    """Attempt to geocode a milestone using institution name matching."""
-    source = m.get("source", "")
-    title = m.get("title", "")
-    category = m.get("category", "")
-    text = f"{source} {title} {category}".lower()
+def _match_institution(text: str) -> tuple[str, dict] | None:
+    """Most specific institution named in `text`, or None.
+
+    Longest key wins rather than first-in-dict-order: "cornell university" is a
+    more precise claim than "cornell", and an earlier, shorter alias must not
+    shadow it.
+
+    Two classes of key are excluded outright:
+
+    * Keys of two characters or fewer. The table contains 'in', which is a
+      conjunction, not an institution - it was matching the English word "in" in
+      a summary and placing an unrelated LLM benchmark in Mumbai.
+    * Entries pinned to (0, 0). Those are deliberate "we cannot place this"
+      placeholders (e.g. 'research team'); returning one made a non-empty tuple
+      that build_events mistook for a successful geocode, publishing the
+      milestone at null island in the Gulf of Guinea.
+    """
+    if not text:
+        return None
+    best = None
     for key, coords in INSTITUTION_COORDS.items():
-        pattern = fr"(^|[^a-z0-9]){key.lower()}([^a-z0-9]|\$)"
-        if re.search(pattern, text):
+        if len(key) <= 2:
+            continue
+        if coords["lat"] == 0.0 and coords["lon"] == 0.0:
+            continue
+        pattern = fr"(^|[^a-z0-9]){re.escape(key.lower())}([^a-z0-9]|$)"
+        if re.search(pattern, text) and (best is None or len(key) > len(best[0])):
+            best = (key, coords)
+    return best
+
+
+def geocode_milestone(m: dict) -> tuple[float, float] | None:
+    """Locate a milestone, preferring what the article says over who published it.
+
+    The old version concatenated source, title and category into one string and
+    took the first dictionary hit. That made the PUBLISHER outrank the content:
+    a Nature Biotechnology paper from a Stanford lab was placed at Nature's
+    London headquarters, because 'nature' is an institution key and sat ahead of
+    anything the article itself mentioned.
+
+    Evidence is now weighted, most specific first:
+
+    1. the article's own text - title and summary, which name the labs and people
+       actually responsible;
+    2. the subcategory, for a topical hint;
+    3. the source, i.e. the publisher or preprint server, only as a last resort.
+
+    A publisher anchor is a real answer for a corporate announcement (a SpaceX
+    launch really does happen at Boca Chica) and a poor one for a paper.
+    """
+    for fields in (("title", "summary"), ("subcategory",), ("source",)):
+        hit = _match_institution(" ".join(str(m.get(f) or "") for f in fields).lower())
+        if hit:
+            coords = hit[1]
             return coords["lat"], coords["lon"]
     return None
 

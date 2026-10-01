@@ -732,6 +732,14 @@
           category_key: catKey,
           category_name: catData.name || config.name || catKey,
           icon: m.icon || config.icon || '📌',
+          // A two-tone category carries a sub-tone on the record (written by
+          // sync_milestones.classify_tone). Surface it so a card can be tinted with
+          // the darker colour instead of pretending every biohacking milestone is
+          // plain biotech.
+          tone: m.tone || null,
+          tone_color: (m.tone && SUBCATEGORY_CONFIG[m.tone])
+            ? SUBCATEGORY_CONFIG[m.tone].color
+            : null,
         });
       });
     }
@@ -764,6 +772,15 @@
       const cat = createEl('span', 'milestone-card-category', m.category || '');
       header.appendChild(icon);
       header.appendChild(cat);
+      // Two-tone categories show a second swatch beside the icon, so a biohacking
+      // card is distinguishable from a biotech one without opening it.
+      if (m.tone && m.tone_color) {
+        const toneSwatch = createEl('span', 'milestone-card-tone');
+        toneSwatch.style.background = m.tone_color;
+        toneSwatch.title = m.tone;
+        toneSwatch.setAttribute('aria-label', m.tone);
+        header.appendChild(toneSwatch);
+      }
 
       const titleEl = createEl('h3', '', m.title || '');
       const valueEl = createEl('div', 'milestone-card-value', milestoneValueText(m));
