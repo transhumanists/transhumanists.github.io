@@ -1,7 +1,46 @@
 {
-  "last_update": "2026-10-01T22:07:15+00:00",
+  "last_update": "2026-10-01T22:12:53+00:00",
   "version": "1.0.0",
   "events": [
+    {
+      "id": "ev-ms-2a45f74dd818",
+      "title": "Deep learning perturbation models outperform baselines on calibrated metrics",
+      "category": "Biotechnology",
+      "value": "Deep learning perturbation models outperform baselines on calibrated metrics",
+      "source": "Nature Biotechnology",
+      "url": "https://www.nature.com/articles/s41587-026-03307-w",
+      "date": "2026-10-01",
+      "geolocation": {
+        "lat": 32.0603,
+        "lon": 118.7969
+      }
+    },
+    {
+      "id": "ev-ms-8644b2a34d60",
+      "title": "New ionizable lipid LC-1 enables efficient LNP delivery of large gene editors to multiple tissues",
+      "category": "Biotechnology",
+      "value": "New ionizable lipid LC-1 enables efficient LNP delivery of large gene editors to multiple tissues",
+      "source": "Nature Biotechnology",
+      "url": "https://www.nature.com/articles/s41587-026-03297-9",
+      "date": "2026-09-28",
+      "geolocation": {
+        "lat": 32.0603,
+        "lon": 118.7969
+      }
+    },
+    {
+      "id": "ev-ms-e0d7fb1f057f",
+      "title": "Lipid nanoparticles optimized for large RNA cargo enhance in vivo genome editing",
+      "category": "Biotechnology",
+      "value": "Lipid nanoparticles optimized for large RNA cargo enhance in vivo genome editing",
+      "source": "Nature Biotechnology",
+      "url": "https://www.nature.com/articles/s41587-026-03298-8",
+      "date": "2026-09-28",
+      "geolocation": {
+        "lat": 32.0603,
+        "lon": 118.7969
+      }
+    },
     {
       "id": "ev-ms-bc2c513b6177",
       "title": "AI-guided optimization yields thermostable mRNA vaccines stable at 37°C for 2 months",
@@ -29,6 +68,19 @@
       }
     },
     {
+      "id": "ev-ms-f9883157aeba",
+      "title": "Gravity found to be holographic, collapsing space dimensions",
+      "category": "Quantum Physics",
+      "value": "Gravity found to be holographic, collapsing space dimensions",
+      "source": "Quanta Magazine",
+      "url": "https://www.quantamagazine.org/gravity-seems-holographic-what-does-that-mean-for-reality-20260925/",
+      "date": "2026-09-25",
+      "geolocation": {
+        "lat": 40.758,
+        "lon": -73.9683
+      }
+    },
+    {
       "id": "ev-ms-847b6f6830b8",
       "title": "Forecast-Dojo: Replayable Benchmark for LLM Forecasting Agents",
       "category": "Computing & AGI",
@@ -39,6 +91,97 @@
       "geolocation": {
         "lat": 42.444,
         "lon": -76.5019
+      }
+    },
+    {
+      "id": "ev-ms-76a6862f54e8",
+      "title": "Photolabile oligonucleotides enable spatially resolved single-cell transcriptomics and epigenomics",
+      "category": "Biotechnology",
+      "value": "Photolabile oligonucleotides enable spatially resolved single-cell transcriptomics and epigenomics",
+      "source": "Nature Biotechnology",
+      "url": "https://www.nature.com/articles/s41587-026-03328-5",
+      "date": "2026-09-25",
+      "geolocation": {
+        "lat": 32.0603,
+        "lon": 118.7969
+      }
+    },
+    {
+      "id": "ev-ms-0a47a34ebd2d",
+      "title": "New evaluation protocol detects sequential reappearance in diffusion model unlearning",
+      "category": "Computing & AGI",
+      "value": "New evaluation protocol detects sequential reappearance in diffusion model unlearning",
+      "source": "arXiv (Cornell University)",
+      "url": "https://arxiv.org/abs/2609.25166",
+      "date": "2026-09-23",
+      "geolocation": {
+        "lat": 42.444,
+        "lon": -76.5019
+      }
+    },
+    {
+      "id": "ev-ms-1d88f31518db",
+      "title": "Alkermes reports pioneering ADHD data for orexin agonist",
+      "category": "Biotechnology",
+      "value": "Alkermes reports pioneering ADHD data for orexin agonist",
+      "source": "Alkermes",
+      "url": "https://www.fiercebiotech.com/biotech/pioneering-adhd-data-alkermes-eyes-orexin-agonist-potential-company-changer",
+      "date": "2026-09-22",
+      "geolocation": {
+        "lat": 42.3765,
+        "lon": -71.2356
+      }
+    },
+    {
+      "id": "ev-ms-2457b1872a8c",
+      "title": "Proof of Graph Sandwich Conjecture",
+      "category": "Computing & AGI",
+      "value": "Proof of Graph Sandwich Conjecture",
+      "source": "International mathematics collaboration",
+      "url": "https://www.quantamagazine.org/mathematicians-build-long-awaited-graph-sandwich-20260918/",
+      "date": "2026-09-18",
+      "geolocation": {
+        "lat": 48.8566,
+        "lon": 2.3522
+      }
+    },
+    {
+      "id": "ev-ms-e55c8cf4e432",
+      "title": "Engineered nanopore simultaneously identifies saccharides, amino acids, peptides, and ribonucleotides",
+      "category": "Biotechnology",
+      "value": "Engineered nanopore simultaneously identifies saccharides, amino acids, peptides, and ribonucleotides",
+      "source": "Nature Biotechnology",
+      "url": "https://www.nature.com/articles/s41587-026-03308-9",
+      "date": "2026-09-14",
+      "geolocation": {
+        "lat": 32.0603,
+        "lon": 118.7969
+      }
+    },
+    {
+      "id": "ev-ms-a5c98baae9a8",
+      "title": "Moderna mRNA flu vaccine receives FDA approval",
+      "category": "Biotechnology",
+      "value": "Moderna mRNA flu vaccine receives FDA approval",
+      "source": "FDA",
+      "url": "https://www.nature.com/articles/s41587-026-03313-y",
+      "date": "2026-09-10",
+      "geolocation": {
+        "lat": 39.0555,
+        "lon": -77.038
+      }
+    },
+    {
+      "id": "ev-ms-0a279b32fda4",
+      "title": "Biomimetic cells enable new platform for T cell mechanotransduction studies",
+      "category": "Biotechnology",
+      "value": "Biomimetic cells enable new platform for T cell mechanotransduction studies",
+      "source": "Nature Biotechnology",
+      "url": "https://www.nature.com/articles/s41587-026-03312-z",
+      "date": "2026-09-10",
+      "geolocation": {
+        "lat": 32.0603,
+        "lon": 118.7969
       }
     },
     {
@@ -445,6 +588,19 @@
       }
     },
     {
+      "id": "ev-ms-cede87aeb630",
+      "title": "Seed2.0 model achieves world-leading reasoning and multimodal capabilities",
+      "category": "Computing & AGI",
+      "value": "Seed2.0 model achieves world-leading reasoning and multimodal capabilities",
+      "source": "ByteDance",
+      "url": "http://arxiv.org/abs/2607.00248v1",
+      "date": "2026-06-30",
+      "geolocation": {
+        "lat": 39.9042,
+        "lon": 116.4074
+      }
+    },
+    {
       "id": "ev-ms-fc6083e0cc69",
       "title": "ORACLE-2 Omni achieves 0.73 macro F1 for real-time transient classification using multimodal data",
       "category": "Computing & AGI",
@@ -614,253 +770,6 @@
       }
     },
     {
-      "id": "ev-his-2022-12-05-nif-ignition",
-      "title": "NIF achieves fusion ignition - more energy out than the laser put in (3.15 MJ)",
-      "category": "Renewable Energy",
-      "value": "3.15 MJ output",
-      "source": "LLNL NIF",
-      "url": "https://en.wikipedia.org/wiki/National_Ignition_Facility",
-      "date": "2022-12-05",
-      "geolocation": {
-        "lat": 37.6881,
-        "lon": -121.7045
-      }
-    },
-    {
-      "id": "ev-his-2022-11-30-chatgpt",
-      "title": "ChatGPT launches and reaches 100 million users faster than any previous app",
-      "category": "Computing & AGI",
-      "value": "100 M users in 2 months",
-      "source": "OpenAI",
-      "url": "https://en.wikipedia.org/wiki/ChatGPT",
-      "date": "2022-11-30",
-      "geolocation": {
-        "lat": 37.7749,
-        "lon": -122.4194
-      }
-    },
-    {
-      "id": "ev-his-2021-11-16-ibm-eagle",
-      "title": "IBM Eagle - the first 127-qubit quantum processor",
-      "category": "Quantum Physics",
-      "value": "127 qubits",
-      "source": "IBM Quantum",
-      "url": "https://en.wikipedia.org/wiki/IBM_Q_System_One",
-      "date": "2021-11-16",
-      "geolocation": {
-        "lat": 41.2115,
-        "lon": -73.8532
-      }
-    },
-    {
-      "id": "ev-his-2020-06-11-gpt3",
-      "title": "GPT-3 demonstrates few-shot learning at 175 billion parameters",
-      "category": "Computing & AGI",
-      "value": "175 B parameters",
-      "source": "OpenAI",
-      "url": "https://en.wikipedia.org/wiki/GPT-3",
-      "date": "2020-06-11",
-      "geolocation": {
-        "lat": 37.7749,
-        "lon": -122.4194
-      }
-    },
-    {
-      "id": "ev-his-2019-10-23-quantum-supremacy",
-      "title": "Google's Sycamore processor claims quantum supremacy (53 qubits)",
-      "category": "Quantum Physics",
-      "value": "53 qubits",
-      "source": "Google Quantum AI",
-      "url": "https://en.wikipedia.org/wiki/Quantum_supremacy",
-      "date": "2019-10-23",
-      "geolocation": {
-        "lat": 34.414,
-        "lon": -119.695
-      }
-    },
-    {
-      "id": "ev-his-2012-09-30-alexnet",
-      "title": "AlexNet wins ImageNet and ignites the deep-learning era",
-      "category": "Computing & AGI",
-      "value": "15.3 top-5 error %",
-      "source": "University of Toronto",
-      "url": "https://en.wikipedia.org/wiki/AlexNet",
-      "date": "2012-09-30",
-      "geolocation": {
-        "lat": 43.6532,
-        "lon": -79.3832
-      }
-    },
-    {
-      "id": "ev-his-1954-04-25-silicon-solar-cell",
-      "title": "Bell Labs builds the first practical silicon solar cell (6% efficiency)",
-      "category": "Renewable Energy",
-      "value": "6 %",
-      "source": "Bell Labs",
-      "url": "https://en.wikipedia.org/wiki/Solar_cell",
-      "date": "1954-04-25",
-      "geolocation": {
-        "lat": 40.69,
-        "lon": -74.401
-      }
-    },
-    {
-      "id": "ev-ms-2a45f74dd818",
-      "title": "Deep learning perturbation models outperform baselines on calibrated metrics",
-      "category": "Biotechnology",
-      "value": "Deep learning perturbation models outperform baselines on calibrated metrics",
-      "source": "Nature Biotechnology",
-      "url": "https://www.nature.com/articles/s41587-026-03307-w",
-      "date": "2026-10-01",
-      "geolocation": {
-        "lat": 32.0603,
-        "lon": 118.7969
-      }
-    },
-    {
-      "id": "ev-ms-8644b2a34d60",
-      "title": "New ionizable lipid LC-1 enables efficient LNP delivery of large gene editors to multiple tissues",
-      "category": "Biotechnology",
-      "value": "New ionizable lipid LC-1 enables efficient LNP delivery of large gene editors to multiple tissues",
-      "source": "Nature Biotechnology",
-      "url": "https://www.nature.com/articles/s41587-026-03297-9",
-      "date": "2026-09-28",
-      "geolocation": {
-        "lat": 32.0603,
-        "lon": 118.7969
-      }
-    },
-    {
-      "id": "ev-ms-e0d7fb1f057f",
-      "title": "Lipid nanoparticles optimized for large RNA cargo enhance in vivo genome editing",
-      "category": "Biotechnology",
-      "value": "Lipid nanoparticles optimized for large RNA cargo enhance in vivo genome editing",
-      "source": "Nature Biotechnology",
-      "url": "https://www.nature.com/articles/s41587-026-03298-8",
-      "date": "2026-09-28",
-      "geolocation": {
-        "lat": 32.0603,
-        "lon": 118.7969
-      }
-    },
-    {
-      "id": "ev-ms-f9883157aeba",
-      "title": "Gravity found to be holographic, collapsing space dimensions",
-      "category": "Quantum Physics",
-      "value": "Gravity found to be holographic, collapsing space dimensions",
-      "source": "Quanta Magazine",
-      "url": "https://www.quantamagazine.org/gravity-seems-holographic-what-does-that-mean-for-reality-20260925/",
-      "date": "2026-09-25",
-      "geolocation": {
-        "lat": 40.758,
-        "lon": -73.9683
-      }
-    },
-    {
-      "id": "ev-ms-76a6862f54e8",
-      "title": "Photolabile oligonucleotides enable spatially resolved single-cell transcriptomics and epigenomics",
-      "category": "Biotechnology",
-      "value": "Photolabile oligonucleotides enable spatially resolved single-cell transcriptomics and epigenomics",
-      "source": "Nature Biotechnology",
-      "url": "https://www.nature.com/articles/s41587-026-03328-5",
-      "date": "2026-09-25",
-      "geolocation": {
-        "lat": 32.0603,
-        "lon": 118.7969
-      }
-    },
-    {
-      "id": "ev-ms-0a47a34ebd2d",
-      "title": "New evaluation protocol detects sequential reappearance in diffusion model unlearning",
-      "category": "Computing & AGI",
-      "value": "New evaluation protocol detects sequential reappearance in diffusion model unlearning",
-      "source": "arXiv (Cornell University)",
-      "url": "https://arxiv.org/abs/2609.25166",
-      "date": "2026-09-23",
-      "geolocation": {
-        "lat": 42.444,
-        "lon": -76.5019
-      }
-    },
-    {
-      "id": "ev-ms-1d88f31518db",
-      "title": "Alkermes reports pioneering ADHD data for orexin agonist",
-      "category": "Biotechnology",
-      "value": "Alkermes reports pioneering ADHD data for orexin agonist",
-      "source": "Alkermes",
-      "url": "https://www.fiercebiotech.com/biotech/pioneering-adhd-data-alkermes-eyes-orexin-agonist-potential-company-changer",
-      "date": "2026-09-22",
-      "geolocation": {
-        "lat": 42.3765,
-        "lon": -71.2356
-      }
-    },
-    {
-      "id": "ev-ms-2457b1872a8c",
-      "title": "Proof of Graph Sandwich Conjecture",
-      "category": "Computing & AGI",
-      "value": "Proof of Graph Sandwich Conjecture",
-      "source": "International mathematics collaboration",
-      "url": "https://www.quantamagazine.org/mathematicians-build-long-awaited-graph-sandwich-20260918/",
-      "date": "2026-09-18",
-      "geolocation": {
-        "lat": 48.8566,
-        "lon": 2.3522
-      }
-    },
-    {
-      "id": "ev-ms-e55c8cf4e432",
-      "title": "Engineered nanopore simultaneously identifies saccharides, amino acids, peptides, and ribonucleotides",
-      "category": "Biotechnology",
-      "value": "Engineered nanopore simultaneously identifies saccharides, amino acids, peptides, and ribonucleotides",
-      "source": "Nature Biotechnology",
-      "url": "https://www.nature.com/articles/s41587-026-03308-9",
-      "date": "2026-09-14",
-      "geolocation": {
-        "lat": 32.0603,
-        "lon": 118.7969
-      }
-    },
-    {
-      "id": "ev-ms-a5c98baae9a8",
-      "title": "Moderna mRNA flu vaccine receives FDA approval",
-      "category": "Biotechnology",
-      "value": "Moderna mRNA flu vaccine receives FDA approval",
-      "source": "FDA",
-      "url": "https://www.nature.com/articles/s41587-026-03313-y",
-      "date": "2026-09-10",
-      "geolocation": {
-        "lat": 39.0555,
-        "lon": -77.038
-      }
-    },
-    {
-      "id": "ev-ms-0a279b32fda4",
-      "title": "Biomimetic cells enable new platform for T cell mechanotransduction studies",
-      "category": "Biotechnology",
-      "value": "Biomimetic cells enable new platform for T cell mechanotransduction studies",
-      "source": "Nature Biotechnology",
-      "url": "https://www.nature.com/articles/s41587-026-03312-z",
-      "date": "2026-09-10",
-      "geolocation": {
-        "lat": 32.0603,
-        "lon": 118.7969
-      }
-    },
-    {
-      "id": "ev-ms-cede87aeb630",
-      "title": "Seed2.0 model achieves world-leading reasoning and multimodal capabilities",
-      "category": "Computing & AGI",
-      "value": "Seed2.0 model achieves world-leading reasoning and multimodal capabilities",
-      "source": "ByteDance",
-      "url": "http://arxiv.org/abs/2607.00248v1",
-      "date": "2026-06-30",
-      "geolocation": {
-        "lat": 39.9042,
-        "lon": 116.4074
-      }
-    },
-    {
       "id": "ev-his-2023-10-12-vesuvius-challenge",
       "title": "Vesuvius Challenge - machine learning deciphers the first word from a charred Herculaneum papyrus",
       "category": "Computing & AGI",
@@ -887,6 +796,32 @@
       }
     },
     {
+      "id": "ev-his-2022-12-05-nif-ignition",
+      "title": "NIF achieves fusion ignition - more energy out than the laser put in (3.15 MJ)",
+      "category": "Renewable Energy",
+      "value": "3.15 MJ output",
+      "source": "LLNL NIF",
+      "url": "https://en.wikipedia.org/wiki/National_Ignition_Facility",
+      "date": "2022-12-05",
+      "geolocation": {
+        "lat": 37.6881,
+        "lon": -121.7045
+      }
+    },
+    {
+      "id": "ev-his-2022-11-30-chatgpt",
+      "title": "ChatGPT launches and reaches 100 million users faster than any previous app",
+      "category": "Computing & AGI",
+      "value": "100 M users in 2 months",
+      "source": "OpenAI",
+      "url": "https://en.wikipedia.org/wiki/ChatGPT",
+      "date": "2022-11-30",
+      "geolocation": {
+        "lat": 37.7749,
+        "lon": -122.4194
+      }
+    },
+    {
       "id": "ev-his-2021-12-25-jwst",
       "title": "James Webb Space Telescope lifts off from Kourou",
       "category": "Spaceflight & Aeronautics",
@@ -897,6 +832,19 @@
       "geolocation": {
         "lat": 5.2372,
         "lon": -52.7608
+      }
+    },
+    {
+      "id": "ev-his-2021-11-16-ibm-eagle",
+      "title": "IBM Eagle - the first 127-qubit quantum processor",
+      "category": "Quantum Physics",
+      "value": "127 qubits",
+      "source": "IBM Quantum",
+      "url": "https://en.wikipedia.org/wiki/IBM_Q_System_One",
+      "date": "2021-11-16",
+      "geolocation": {
+        "lat": 41.2115,
+        "lon": -73.8532
       }
     },
     {
@@ -923,6 +871,32 @@
       "geolocation": {
         "lat": 40.8075,
         "lon": -73.9626
+      }
+    },
+    {
+      "id": "ev-his-2020-06-11-gpt3",
+      "title": "GPT-3 demonstrates few-shot learning at 175 billion parameters",
+      "category": "Computing & AGI",
+      "value": "175 B parameters",
+      "source": "OpenAI",
+      "url": "https://en.wikipedia.org/wiki/GPT-3",
+      "date": "2020-06-11",
+      "geolocation": {
+        "lat": 37.7749,
+        "lon": -122.4194
+      }
+    },
+    {
+      "id": "ev-his-2019-10-23-quantum-supremacy",
+      "title": "Google's Sycamore processor claims quantum supremacy (53 qubits)",
+      "category": "Quantum Physics",
+      "value": "53 qubits",
+      "source": "Google Quantum AI",
+      "url": "https://en.wikipedia.org/wiki/Quantum_supremacy",
+      "date": "2019-10-23",
+      "geolocation": {
+        "lat": 34.414,
+        "lon": -119.695
       }
     },
     {
@@ -975,6 +949,19 @@
       "geolocation": {
         "lat": 47.3769,
         "lon": 8.5417
+      }
+    },
+    {
+      "id": "ev-his-2012-09-30-alexnet",
+      "title": "AlexNet wins ImageNet and ignites the deep-learning era",
+      "category": "Computing & AGI",
+      "value": "15.3 top-5 error %",
+      "source": "University of Toronto",
+      "url": "https://en.wikipedia.org/wiki/AlexNet",
+      "date": "2012-09-30",
+      "geolocation": {
+        "lat": 43.6532,
+        "lon": -79.3832
       }
     },
     {
@@ -1274,6 +1261,19 @@
       "geolocation": {
         "lat": 45.965,
         "lon": 63.305
+      }
+    },
+    {
+      "id": "ev-his-1954-04-25-silicon-solar-cell",
+      "title": "Bell Labs builds the first practical silicon solar cell (6% efficiency)",
+      "category": "Renewable Energy",
+      "value": "6 %",
+      "source": "Bell Labs",
+      "url": "https://en.wikipedia.org/wiki/Solar_cell",
+      "date": "1954-04-25",
+      "geolocation": {
+        "lat": 40.69,
+        "lon": -74.401
       }
     },
     {
