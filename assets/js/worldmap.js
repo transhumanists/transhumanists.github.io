@@ -111,6 +111,17 @@
   // Centre-marker alpha per tier, so a "hot" dot still reads as a live point
   // rather than a hole in the ring.
   const LAYER_TIER_CENTER_ALPHA = { hot: 1, quiet: 0.55, cold: 0.32, done: 0.26 };
+  // Deployment arrows use their own alpha table rather than being derived from the
+  // area-ring fill above. An arrow is a thin 1px line, not a filled disc, so it
+  // needs a much higher alpha to read at all - deriving it from the ring's fill
+  // (dividing by the hot value) meant retuning a ring silently retuned every
+  // arrow on the map.
+  const LAYER_TIER_ARROW = {
+    hot: { tail: 1.0, head: 1.0, line: 2.2 },
+    quiet: { tail: 0.45, head: 0.55, line: 1.5 },
+    cold: { tail: 0.28, head: 0.34, line: 1.2 },
+    done: { tail: 0.18, head: 0.22, line: 1.2 },
+  };
   /**
    * Decimal places for coordinate rounding when clustering events into stacks.
    * 4 dp ≈ 11 m at the equator — tight enough to merge only truly co-located events.
@@ -1364,14 +1375,15 @@ function canonicalCategory(cat) {
 
     const tier = layerPaintTier(fleet);
     const spec = LAYER_TIER_PAINT[tier];
+    const arrow = LAYER_TIER_ARROW[tier];
     const base = isInfantry || isGround ? GROUND_COLOR : FLEET_COLOR;
     const color = spec.desat ? desaturateHex(base, spec.desat) : base;
 
     // Tail: a faint memory of the route, brightening into a luminous second pass
     // only for hot movements.
     ctx.save();
-    ctx.strokeStyle = withOpacity(color, ARROW_TAIL_OPACITY * spec.fill / 0.30);
-    ctx.lineWidth = spec.line * 0.4;
+    ctx.strokeStyle = withOpacity(color, ARROW_TAIL_OPACITY * arrow.tail);
+    ctx.lineWidth = arrow.line * 0.55;
     ctx.beginPath();
     ctx.moveTo(a.x, a.y);
     ctx.lineTo(b.x, b.y);
@@ -1380,7 +1392,7 @@ function canonicalCategory(cat) {
       ctx.shadowColor = color;
       ctx.shadowBlur = FLUO_LINE_GLOW_BLUR;
       ctx.strokeStyle = withOpacity(color, 0.3);
-      ctx.lineWidth = 2.2;
+      ctx.lineWidth = arrow.line;
       ctx.beginPath();
       ctx.moveTo(a.x, a.y);
       ctx.lineTo(b.x, b.y);
@@ -1400,7 +1412,7 @@ function canonicalCategory(cat) {
     ctx.lineTo(b.x - headLen * Math.cos(ang - 0.4), b.y - headLen * Math.sin(ang - 0.4));
     ctx.lineTo(b.x - headLen * Math.cos(ang + 0.4), b.y - headLen * Math.sin(ang + 0.4));
     ctx.closePath();
-    ctx.fillStyle = tier === TIER_HOT ? color : withOpacity(color, spec.fill / 0.30);
+    ctx.fillStyle = tier === TIER_HOT ? color : withOpacity(color, arrow.head);
     ctx.fill();
     ctx.restore();
   }
@@ -3226,6 +3238,7 @@ function initTimelineSlider() {
       layerRecencyYear,
       isSingleListSourced,
       LAYER_TIER_PAINT,
+      LAYER_TIER_ARROW,
       get LAYER_FRESH_YEARS() { return LAYER_FRESH_YEARS; },
       get LAYER_STALE_YEARS() { return LAYER_STALE_YEARS; },
       isLocalDev,

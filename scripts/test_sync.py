@@ -324,6 +324,57 @@ class TestUnifyDuplicateMilestones(unittest.TestCase):
         sm.unify_duplicate_milestones([a, b])
         self.assertEqual(json.dumps([a, b], sort_keys=True), before)
 
+    def test_unification_preserves_input_order(self):
+        # merge_feed() sorts newest-first and both build_site_categories() and
+        # build_events() propagate list order into the published files, so this
+        # function must not regroup. An earlier version bucketed by metric key and
+        # appended the metric-less records at the end, which silently unsorted the
+        # feed: the newest milestone ended up buried mid-list.
+        ordered = [
+            self._m("o1", "Newest khipu result", date="2026-06-30"),
+            self._m("o2", "Second result", date="2026-05-01", value="1.5", unit="x"),
+            self._m("o3", "Third khipu restatement", date="2026-06-30"),
+            self._m("o4", "Metricless note", value=None, unit=None, date="2026-04-01"),
+        ]
+        out, _ = sm.unify_duplicate_milestones(ordered)
+        self.assertEqual(
+            [r["id"] for r in out], ["o1", "o2", "o4"],
+            "merged record must appear at its first member's position",
+        )
+
+    def test_merged_record_is_not_duplicated_in_output(self):
+        # The rest of a merged cluster must be dropped, not emitted alongside the
+        # survivor (which would silently restore the duplicate).
+        a = self._m("k1", "Khipu mining result")
+        b = self._m("k2", "Khipu mining result restated", source="Other source")
+        c = self._m("k3", "Khipu mining result third source", source="Third source")
+        out, _ = sm.unify_duplicate_milestones([a, b, c])
+        self.assertEqual(len(out), 1)
+        self.assertEqual(out[0]["id"], "k1")
+        self.assertEqual(len(out[0]["sources"]), 3)
+        ids = [r["id"] for r in out]
+        self.assertEqual(len(ids), len(set(ids)))
+
+    def test_shipped_feed_stays_newest_first_after_unification(self):
+        # End-to-end guard on the real artifacts: the published event list must
+        # still be date-descending once the dedupe step is in the path.
+        path = Path(__file__).resolve().parent.parent / "data" / "milestones.json"
+        if not path.exists():
+            self.skipTest("data/milestones.json not present")
+        upstream = json.loads(path.read_text(encoding="utf-8"))
+        site = sm.transform_upstream_to_site_format(upstream)
+        current = sm.iter_milestones(site)
+        history = sm.merge_history([], current, "2026-10-01")
+        feed = sm.merge_feed(current, history)
+        self.assertEqual(
+            [r.get("date") for r in feed],
+            sorted((r.get("date") for r in feed), reverse=True),
+            "merge_feed must hand unify_duplicate_milestones a sorted feed",
+        )
+        unified, _ = sm.unify_duplicate_milestones(feed)
+        dates = [r.get("date") for r in unified]
+        self.assertEqual(dates, sorted(dates, reverse=True), "unification reordered the feed")
+
     def test_published_data_has_no_duplicate_reports_left(self):
         # Regression guard on the real published feed, not just fixtures.
         path = Path(__file__).resolve().parent.parent / "data" / "milestones.json"

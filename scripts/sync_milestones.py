@@ -583,67 +583,71 @@ def unify_duplicate_milestones(milestones: list) -> tuple[list, list[str]]:
 
     The surviving record keeps the most informative title and gains a `sources`
     list naming every source that reported it, so provenance is preserved rather
-    than discarded. Returns (unified_records, human_readable_changes).
-    """
-    order: list[tuple] = []
-    groups: dict[tuple, list[dict]] = {}
-    passthrough: list[tuple] = []
+    than discarded.
 
+    Input order is preserved exactly: a merged record is emitted at the position
+    of its first member and the rest of the cluster is dropped. merge_feed() has
+    already sorted the feed newest-first, and build_site_categories()/build_events()
+    both propagate list order into the published files, so regrouping here would
+    silently unsort the feed and reshuffle the map's co-located stacks.
+
+    Returns (unified_records, human_readable_changes).
+    """
+    # Pass 1: assign each record to a cluster, without emitting anything.
+    buckets: dict[tuple, list[dict]] = {}
     for m in milestones:
         key = _dedupe_metric_key(m)
         if key is None:
-            passthrough.append((None, m))
             continue
-        if key not in groups:
-            groups[key] = []
-            order.append(key)
-        groups[key].append(m)
+        buckets.setdefault(key, []).append(m)
 
-    changes: list[str] = []
-    out: list[dict] = []
-
-    def emit(record: dict) -> None:
-        out.append(record)
-
-    for key in order:
-        bucket = groups[key]
-        # Within one metric key, partition into clusters of "same report".
+    # leader_of maps a cluster's first encountered member to the whole cluster, so
+    # the survivor can be emitted at that member's position in pass 2. Records
+    # without a metric key are never clustered and always pass through untouched.
+    leader_of: dict[int, list[dict]] = {}
+    emitted: set[int] = set()
+    for bucket in buckets.values():
         clusters: list[list[dict]] = []
         for rec in bucket:
-            placed = False
             for cluster in clusters:
                 if _dedupe_same_report(cluster[0], rec):
                     cluster.append(rec)
-                    placed = True
                     break
-            if not placed:
+            else:
                 clusters.append([rec])
-
         for cluster in clusters:
-            if len(cluster) == 1:
-                emit(dict(cluster[0]))
-                continue
-            primary = _dedupe_pick_primary(cluster)
-            sources = _dedupe_collect_sources(cluster)
-            merged = dict(primary)
-            # Only attach `sources` when it adds something, so a single-source
-            # record keeps exactly the shape it had before.
-            if len(sources) > 1:
-                merged["sources"] = sources
-            emit(merged)
-            ids = ", ".join(str(r.get("id")) for r in cluster)
-            changes.append(
-                f"unified {len(cluster)} records into {primary.get('id')} "
-                f"({'; '.join(sources)})"
-            )
-            changes.append(f"  merged ids: {ids}")
+            if len(cluster) > 1:
+                leader_of[id(cluster[0])] = cluster
 
-    # Records with no metric keep their original relative order by interleaving on
-    # identity is not possible here, so they are appended in encounter order after
-    # the metric-keyed ones. Callers (build_site_categories) group by category, so
-    # ordering within the published file is not load-bearing.
-    for _, rec in passthrough:
-        emit(dict(rec))
+    # Pass 2: emit in the original order.
+    out: list[dict] = []
+    changes: list[str] = []
+    for m in milestones:
+        cluster = leader_of.get(id(m))
+        if cluster is None:
+            if id(m) in emitted:
+                continue
+            emitted.add(id(m))
+            out.append(dict(m))
+            continue
+        # Only the first member emits; the rest collapse into it.
+        if id(m) in emitted:
+            continue
+        emitted.update(id(r) for r in cluster)
+        primary = _dedupe_pick_primary(cluster)
+        sources = _dedupe_collect_sources(cluster)
+        merged = dict(primary)
+        # Only attach `sources` when it adds something, so a single-source record
+        # keeps exactly the shape it had before.
+        if len(sources) > 1:
+            merged["sources"] = sources
+        out.append(merged)
+        ids = ", ".join(str(r.get("id")) for r in cluster)
+        changes.append(
+            f"unified {len(cluster)} records into {primary.get('id')} "
+            f"({'; '.join(sources)})"
+        )
+        changes.append(f"  merged ids: {ids}")
 
     return out, changes
 
@@ -661,21 +665,20 @@ def _dedupe_same_report(a: dict, b: dict) -> bool:
 
 
 def _dedupe_pick_primary(cluster: list[dict]) -> dict:
-    """Choose the record to keep: richest summary, then a real url, then earliest id.
+    """Choose the record to keep.
 
-    Deterministic so repeated runs over the same input always produce the same
-    output and therefore do not churn the commit fingerprint.
+    Preference order: the most informative summary, then a record that actually
+    links somewhere, then the lowest id. Deterministic on purpose, so repeated
+    runs over the same input always produce the same output and the commit
+    fingerprint does not churn.
     """
-    def score(rec: dict) -> tuple:
-        summary = rec.get("summary") or ""
-        url = rec.get("url") or ""
-        return (
-            -len(summary),
-            0 if url and not url.rstrip("/").count("/") <= 2 else 1,
-            str(rec.get("id") or ""),
-        )
+    def rank(rec: dict) -> tuple:
+        summary = str(rec.get("summary") or "")
+        url = str(rec.get("url") or "").strip()
+        # Negated so `min` picks the longest summary.
+        return (-len(summary), 0 if url else 1, str(rec.get("id") or ""))
 
-    return min(cluster, key=score)
+    return min(cluster, key=rank)
 
 
 def _dedupe_collect_sources(cluster: list[dict]) -> list[str]:
