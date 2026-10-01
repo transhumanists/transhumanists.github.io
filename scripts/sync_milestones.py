@@ -34,6 +34,13 @@ from collections import Counter
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
+# Share the "same reported result" identity rule with the data validator; see
+# milestone_identity.py. sys.path[0] is this file's directory when run as a script,
+# but the explicit insert keeps the import working under `python -m scripts...` too.
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+import milestone_identity
+
 # Institution coordinates for geocoding fallback (shared with worldmap.js)
 INSTITUTION_COORDS = {
     'arxiv': { 'lat': 42.4440, 'lon': -76.5019 },  # Cornell University, Ithaca NY
@@ -522,19 +529,12 @@ def merge_feed(current: list, history: list) -> list:
 # ---------------------------------------------------------------------------
 # Duplicate unification
 # ---------------------------------------------------------------------------
-# Content tokens used only for the "is this plausibly the same record" guard.
-_DEDUPE_STOPWORDS = frozenset("""
-a an the of for and in on to new via using with at by from is are was were be been
-that this its as into over under more most less least than then which we our
-""".split())
-
-
-def _dedupe_tokens(title: str) -> set:
-    return {
-        t
-        for t in re.findall(r"[a-z0-9]+", (title or "").lower())
-        if t not in _DEDUPE_STOPWORDS and len(t) > 2
-    }
+# Content tokens used only for the "is this plausibly the same record" guard, plus
+# the bucketing key. These live in milestone_identity so check_data.py enforces
+# exactly the rule the unifier applies; see that module's docstring.
+_content_tokens = milestone_identity.content_tokens
+_dedupe_same_report = milestone_identity.same_report
+_DEDUPE_STOPWORDS = milestone_identity.DEDUPE_STOPWORDS
 
 
 def _dedupe_metric_key(m: dict) -> tuple | None:
@@ -544,20 +544,7 @@ def _dedupe_metric_key(m: dict) -> tuple | None:
     unit and the category. All four are required, so two unrelated milestones that
     happen to share a number never collapse.
     """
-    value = m.get("value")
-    if value in (None, ""):
-        return None
-    date = m.get("date")
-    if not date:
-        return None
-    category = m.get("category_key") or m.get("category") or ""
-    # Numeric-equivalent spellings ("0.86" vs 0.86) must collapse; anything
-    # unparsable falls back to the raw string.
-    try:
-        value_key = round(float(value), 9)
-    except (TypeError, ValueError):
-        value_key = str(value).strip().lower()
-    return (str(date), value_key, str(m.get("unit") or "").strip().lower(), str(category))
+    return milestone_identity.report_group_key(m, include_unit=True)
 
 
 def unify_duplicate_milestones(milestones: list) -> tuple[list, list[str]]:
@@ -650,18 +637,6 @@ def unify_duplicate_milestones(milestones: list) -> tuple[list, list[str]]:
         changes.append(f"  merged ids: {ids}")
 
     return out, changes
-
-
-def _dedupe_same_report(a: dict, b: dict) -> bool:
-    """Guard for two records that already share date+value+unit+category."""
-    url_a = (a.get("url") or "").strip().lower()
-    url_b = (b.get("url") or "").strip().lower()
-    if url_a and url_a == url_b:
-        return True
-    ta, tb = _dedupe_tokens(a.get("title")), _dedupe_tokens(b.get("title"))
-    if not ta or not tb:
-        return False
-    return bool(ta & tb)
 
 
 def _dedupe_pick_primary(cluster: list[dict]) -> dict:

@@ -89,6 +89,73 @@ jobs:
             --upstream data/milestones.json \
             --today 2026-09-21
 
+  data-reproducibility:
+    name: Data regeneration is deterministic
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      # The published data cannot be compared byte-for-byte against a local
+      # regeneration: milestone-check.yml fetches live upstream with no
+      # --upstream and geocodes during the build, so the committed files are not
+      # reproducible offline. What MUST hold is that regeneration is
+      # deterministic and that its output satisfies every published invariant -
+      # the ordering regression shipped precisely because neither was checked
+      # anywhere. Two runs into separate directories must be identical.
+      - name: Regenerate twice from the committed feed
+        env:
+          STALE_ERROR_DAYS: "99"
+        run: |
+          set -euo pipefail
+          run_one() {
+            python scripts/sync_milestones.py \
+              --output-dir "$1" \
+              --upstream data/milestones.json \
+              --today 2026-10-01
+          }
+          run_one "$RUNNER_TEMP/gen-a"
+          run_one "$RUNNER_TEMP/gen-b"
+          for f in events.json milestones.json; do
+            if ! diff -q "$RUNNER_TEMP/gen-a/data/$f" "$RUNNER_TEMP/gen-b/data/$f" >/dev/null; then
+              echo "::error file=data/$f::Regeneration is not deterministic"
+              diff "$RUNNER_TEMP/gen-a/data/$f" "$RUNNER_TEMP/gen-b/data/$f" | head -40
+              exit 1
+            fi
+          done
+          echo "Regeneration is deterministic"
+
+      - name: Regenerated data satisfies every published invariant
+        run: |
+          set -euo pipefail
+          # Only the files this pipeline produces; world_layers.json is written by
+          # sync_layers.py / fetch_crisis_zones.py and is validated by data-check.
+          python scripts/check_data.py \
+            "$RUNNER_TEMP/gen-a/data/events.json" \
+            "$RUNNER_TEMP/gen-a/data/milestones.json"
+          # And the unifier must be idempotent: re-running over its own output
+          # must not merge further records.
+          python scripts/sync_milestones.py \
+            --output-dir "$RUNNER_TEMP/gen-c" \
+            --upstream "$RUNNER_TEMP/gen-a/milestones.json" \
+            --today 2026-10-01
+          python - <<'PY'
+          import json, sys
+          a = json.load(open(f"{__import__('os').environ['RUNNER_TEMP']}/gen-a/data/milestones.json", encoding="utf-8"))
+          c = json.load(open(f"{__import__('os').environ['RUNNER_TEMP']}/gen-c/data/milestones.json", encoding="utf-8"))
+          def count(d):
+              return sum(len(v["milestones"]) for v in d["categories"].values())
+          if count(a) != count(c):
+              sys.exit(f"unifier not idempotent: {count(a)} -> {count(c)}")
+          print(f"unifier idempotent: {count(a)} milestones")
+          PY
+
   data-check:
     name: Validate map data files
     runs-on: ubuntu-latest

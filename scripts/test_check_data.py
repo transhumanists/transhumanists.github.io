@@ -441,6 +441,127 @@ class TestCheckCrisisZones(unittest.TestCase):
         self.assertTrue(cd.check_crisis_zones({"not": "a list"}))
 
 
+class TestSpecificUrlRule(unittest.TestCase):
+    """A bare org URL must not corroborate that two records are one result.
+
+    Regression guard: sync_milestones documented "a bare/generic URL is NOT a merge
+    signal" but compared any identical non-empty URL, so two distinct SpaceX
+    flights sharing date+value+category would have been merged.
+    """
+
+    def test_bare_origins_are_not_specific(self):
+        import milestone_identity
+
+        for url in ("https://spacex.com", "https://www.nature.com/",
+                    "http://example.org", "https://arxiv.org", ""):
+            with self.subTest(url=url):
+                self.assertFalse(milestone_identity.is_specific_url(url))
+
+    def test_document_urls_are_specific(self):
+        import milestone_identity
+
+        for url in ("https://arxiv.org/abs/2401.12345",
+                    "https://www.nature.com/articles/s41587-026-03307-w",
+                    "https://en.wikipedia.org/wiki/IBM_Q_System_One",
+                    "https://example.com/paper.pdf",
+                    "https://example.com/search?q=khipu"):
+            with self.subTest(url=url):
+                self.assertTrue(milestone_identity.is_specific_url(url))
+
+    def test_two_spacex_flights_sharing_an_org_url_do_not_merge(self):
+        import sync_milestones
+
+        a = {"title": "Starship payload to LEO", "value": "156", "unit": "t",
+             "date": "2026-06-30", "category": "Spaceflight & Aeronautics",
+             "url": "https://spacex.com"}
+        b = {"title": "Falcon Heavy lift to GTO", "value": "156", "unit": "t",
+             "date": "2026-06-30", "category": "Spaceflight & Aeronautics",
+             "url": "https://spacex.com"}
+        self.assertFalse(sync_milestones._dedupe_same_report(a, b))
+        # And end to end, the two records must both survive the unifier.
+        out, changes = sync_milestones.unify_duplicate_milestones([a, b])
+        self.assertEqual(len(out), 2)
+        self.assertEqual(changes, [])
+
+    def test_same_specific_document_still_merges(self):
+        import sync_milestones
+
+        a = {"title": "Alpha result", "value": "5", "unit": "x",
+             "date": "2026-06-30", "category": "Quantum Physics",
+             "url": "https://arxiv.org/abs/2401.1"}
+        b = {"title": "Beta result", "value": "5", "unit": "x",
+             "date": "2026-06-30", "category": "Quantum Physics",
+             "url": "https://arxiv.org/abs/2401.1"}
+        self.assertTrue(sync_milestones._dedupe_same_report(a, b))
+        out, _ = sync_milestones.unify_duplicate_milestones([a, b])
+        self.assertEqual(len(out), 1)
+
+    def test_title_tokens_still_merge_records_without_a_url(self):
+        import sync_milestones
+
+        a = {"title": "Khipu mining result achieved", "value": "0.86", "unit": "x",
+             "date": "2026-06-30", "category": "Computing & AGI"}
+        b = {"title": "Khipu mining result reported", "value": "0.86", "unit": "x",
+             "date": "2026-06-30", "category": "Computing & AGI"}
+        self.assertTrue(sync_milestones._dedupe_same_report(a, b))
+
+
+class TestSharedIdentityRule(unittest.TestCase):
+    """The unifier and the validator must agree on what a duplicate is.
+
+    Both consume scripts/milestone_identity.py. This test fails if either one goes
+    back to carrying its own private copy of the rule, which is how the validator
+    could end up enforcing a stale policy that no longer matches the merge.
+    """
+
+    def test_both_consumers_use_the_shared_module(self):
+        import milestone_identity
+        import sync_milestones
+
+        self.assertIs(cd.check_duplicate_reports.__module__, cd.__name__)
+        self.assertIs(sync_milestones._dedupe_same_report, milestone_identity.same_report)
+        self.assertIs(cd._content_tokens, milestone_identity.content_tokens)
+        self.assertIs(cd._DEDUPE_STOPWORDS, milestone_identity.DEDUPE_STOPWORDS)
+
+    def test_paired_and_non_paired_cases_agree(self):
+        import milestone_identity
+        import sync_milestones
+
+        a = {"title": "Khipu mining result achieved", "value": "0.86",
+             "date": "2026-06-30", "url": "https://arxiv.org/abs/1"}
+        b = {"title": "Khipu mining result reported", "value": 0.86,
+             "date": "2026-06-30", "url": "https://arxiv.org/abs/2"}
+        # Generic shared URL, unrelated content: not the same reported result.
+        c = {"title": "Starship payload to LEO", "value": "156",
+             "date": "2026-06-30", "url": "https://spacex.com"}
+        d = {"title": "Falcon Heavy lift to GTO", "value": "156",
+             "date": "2026-06-30", "url": "https://spacex.com"}
+
+        for x, y, expected in ((a, b, True), (c, d, False), (a, c, False)):
+            with self.subTest(pair=(x["title"], y["title"])):
+                self.assertEqual(milestone_identity.same_report(x, y), expected)
+                self.assertEqual(sync_milestones._dedupe_same_report(x, y), expected)
+
+    def test_group_keys_differ_only_by_unit(self):
+        import milestone_identity
+
+        rec = {"title": "T", "value": "0.86", "date": "2026-06-30",
+               "category": "Computing & AGI", "unit": "TWh"}
+        with_unit = milestone_identity.report_group_key(rec, include_unit=True)
+        without_unit = milestone_identity.report_group_key(rec, include_unit=False)
+        self.assertEqual(len(with_unit), 4)
+        self.assertEqual(len(without_unit), 3)
+        # Date, value and category are shared; only the unit is dropped.
+        self.assertEqual(with_unit[:2] + with_unit[3:], without_unit)
+
+    def test_metricless_records_have_no_key(self):
+        import milestone_identity
+
+        for rec in ({"value": None}, {"value": ""}, {"value": "1"}, {"value": "1", "date": None}):
+            with self.subTest(rec=rec):
+                self.assertIsNone(milestone_identity.report_group_key(rec, include_unit=False))
+
+
 class TestEventOrdering(unittest.TestCase):
     """The published event list must stay newest-first.
 
@@ -577,9 +698,9 @@ class TestDuplicateReportDetection(unittest.TestCase):
         ]
         self.assertEqual(len(cd.check_duplicate_reports(events)), 1)
 
-    def test_findings_are_capped_so_a_broken_feed_cannot_flood_the_log(self):
-        # Every record shares date+value+category and a content token, so every
-        # pair collides. The check must stay bounded in time and output size.
+    def test_oversized_bucket_is_reported_as_one_finding_not_pairwise(self):
+        # A bucket this large is itself the finding, and pairwise comparison would
+        # be quadratic over data already known to be broken.
         events = [
             {
                 "id": f"i{n}", "title": "Khipu mining result", "category": "Computing & AGI",
@@ -588,6 +709,22 @@ class TestDuplicateReportDetection(unittest.TestCase):
             }
             for n in range(400)
         ]
+        issues = cd.check_duplicate_reports(events)
+        self.assertEqual(len(issues), 1)
+        self.assertIn("400 records report the same metric", issues[0])
+        self.assertIn("suspected", issues[0])
+
+    def test_findings_are_capped_so_a_broken_feed_cannot_flood_the_log(self):
+        # Many small buckets, each pair corroborating: the cap must bound output.
+        events = []
+        for bucket in range(60):
+            for n in range(2):
+                events.append({
+                    "id": f"b{bucket}-{n}", "title": "Khipu mining result",
+                    "category": "Computing & AGI", "value": str(bucket),
+                    "date": "2026-01-01", "url": f"https://e.com/{bucket}/{n}",
+                    "geolocation": {"lat": 1, "lon": 1},
+                })
         issues = cd.check_duplicate_reports(events)
         self.assertLessEqual(len(issues), cd._MAX_DUP_ISSUES + 1)
         self.assertIn("capped at", issues[-1])

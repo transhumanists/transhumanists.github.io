@@ -24,6 +24,13 @@ from datetime import timezone as _timezone
 from itertools import combinations
 from pathlib import Path
 
+# This module is executed both as `python scripts/check_data.py` and imported by the
+# test suite as `check_data`. The sibling import only resolves in the first case, so
+# make the script directory explicit rather than relying on sys.path[0].
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+import milestone_identity
+
 ROOT = Path(__file__).resolve().parent.parent
 DATA_DIR = ROOT / "data"
 REQUIRED_FILES = ("events.json", "world_layers.json", "milestones.json")
@@ -263,20 +270,8 @@ def _valid_source_url(value: object) -> bool:
     return _SOURCE_URL_RE.match(value.strip()) is not None
 
 
-_DEDUPE_STOPWORDS = frozenset("""
-a an the of for and in on to new via using with at by from is are was were be been
-that this its as into over under more most less least than then which we our
-""".split())
-
-
-def _content_tokens(title: object) -> set:
-    if not isinstance(title, str):
-        return set()
-    return {
-        t
-        for t in re.findall(r"[a-z0-9]+", title.lower())
-        if t not in _DEDUPE_STOPWORDS and len(t) > 2
-    }
+_DEDUPE_STOPWORDS = milestone_identity.DEDUPE_STOPWORDS
+_content_tokens = milestone_identity.content_tokens
 
 
 # Ceiling on duplicate-report findings. If this fires the data is broken in bulk,
@@ -284,20 +279,25 @@ def _content_tokens(title: object) -> set:
 # multi-second validation step; the count is reported instead.
 _MAX_DUP_ISSUES = 50
 
+# Bucket size past which the whole collision is reported as one finding instead of
+# comparing pairs. Pairwise corroboration is only meaningful while the candidates
+# could plausibly be distinct results; beyond this the bucket is bulk-duplicate.
+_MAX_DUP_BUCKET = 25
+
 
 def check_duplicate_reports(events: list) -> list[str]:
     """No two events may report the same metric on the same date.
 
-    Mirrors the identity rule in sync_milestones.unify_duplicate_milestones():
-    identical date + value + category is what makes two records the same reported
-    result. A surviving group means the dashboard counts one breakthrough twice
-    and the map stacks two dots on one location, so it is a data bug rather than a
-    cosmetic one.
+    Enforces exactly the rule sync_milestones.unify_duplicate_milestones applies,
+    via the shared milestone_identity helpers: identical date + value + category is
+    what makes two records the same reported result, and they must additionally
+    corroborate each other (shared specific URL or shared content title token).
+    Published events drop `unit`, so this keys without it - the one asymmetry
+    between the two callers, declared at the call site in milestone_identity.
 
-    Groups are only reported when the records also corroborate each other (shared
-    specific URL or a shared title token). Without that guard a shared value alone
-    would fire constantly - "100 qubits" and similar recur all the time - and the
-    check would be noise nobody keeps enabled.
+    A surviving group means the dashboard counts one breakthrough twice and the map
+    stacks two dots on one location, so it is a data bug rather than a cosmetic
+    one.
     """
     issues: list[str] = []
     if not isinstance(events, list):
@@ -306,31 +306,35 @@ def check_duplicate_reports(events: list) -> list[str]:
     for ev in events:
         if not isinstance(ev, dict):
             continue
-        value = ev.get("value")
-        date = ev.get("date")
-        if value in (None, "") or not isinstance(date, str):
+        key = milestone_identity.report_group_key(ev, include_unit=False)
+        if key is None:
             continue
-        try:
-            value_key = round(float(value), 9)
-        except (TypeError, ValueError):
-            value_key = str(value).strip().lower()
-        # Normalise each record's corroboration keys once, outside the pair loop:
-        # tokenising titles is the only non-trivial work here and doing it per
-        # comparison would make a large group quadratic in string work.
-        buckets.setdefault((date, value_key, ev.get("category")), []).append((
-            ev,
-            str(ev.get("url") or "").strip().lower(),
-            _content_tokens(ev.get("title")),
-        ))
+        buckets.setdefault(key, []).append(ev)
 
     for key, group in buckets.items():
         if len(group) < 2:
             continue
-        for (a, url_a, tok_a), (b, url_b, tok_b) in combinations(group, 2):
-            if (url_a and url_a == url_b) or (tok_a and tok_b and (tok_a & tok_b)):
+        if len(group) > _MAX_DUP_BUCKET:
+            # A bucket this large is itself the finding: far more records claim the
+            # identical metric on the identical date than could be distinct
+            # results. Reporting the collision avoids a quadratic scan over data
+            # that is already known-broken, and points at the upstream source
+            # rather than at individual pairs.
+            issues.append(
+                f"{len(group)} records report the same metric on {key[0]} "
+                f"(value={key[1]}, category={key[-1]}); every one is a suspected "
+                "duplicate - fix the upstream source"
+            )
+            if len(issues) >= _MAX_DUP_ISSUES:
+                break
+            continue
+        # Delegates to the same predicate the unifier applies, so the validator
+        # cannot disagree with the merge about what counts as a duplicate.
+        for a, b in combinations(group, 2):
+            if milestone_identity.same_report(a, b):
                 issues.append(
                     f"duplicate report for date={key[0]} value={key[1]} "
-                    f"category={key[2]}: {a.get('id')} and {b.get('id')} "
+                    f"category={key[-1]}: {a.get('id')} and {b.get('id')} "
                     f"({a.get('title')!r} / {b.get('title')!r})"
                 )
                 if len(issues) >= _MAX_DUP_ISSUES:
