@@ -187,6 +187,12 @@
   const GEOCODE_CACHE_KEY = 'worldmap_geocode_cache_v1';
   const GEOCODE_CACHE_MAX_SIZE = 500;
 
+  // Single source of truth for the source-link URL scheme gate.
+  // Every renderer (worldmap, dashboard, widgets) must test the raw string
+  // against this before assigning to href. A mismatched gate would either
+  // let a javascript: URL through or fail CI on data the browser accepts.
+  const SOURCE_URL_RE = /^https?:\/\//i;
+
   // JSON.parse can succeed on the wrong type - the string "null" parses to null -
   // and every later geocodeCache[cacheKey] would then throw. loadEvents catches
   // that and falls back to sample data, so a corrupt cache entry would silently
@@ -1750,7 +1756,7 @@ function canonicalCategory(cat) {
       wrapper.appendChild(value);
     }
 
-    if (ev.url && /^https?:\/\//i.test(ev.url)) {
+    if (ev.url && SOURCE_URL_RE.test(ev.url)) {
       const link = document.createElement('a');
       link.href = ev.url;
       link.target = '_blank';
@@ -1954,7 +1960,7 @@ function canonicalCategory(cat) {
     title.textContent = zone.name;
     const meta = document.createElement('div');
     meta.style.cssText = 'color: var(--fg-subtle); font-size: 0.7rem; margin-top: 4px;';
-    if (zone.source && zone.url && /^https?:\/\//i.test(zone.url)) {
+    if (zone.source && zone.url && SOURCE_URL_RE.test(zone.url)) {
       const link = document.createElement('a');
       link.href = zone.url;
       link.target = '_blank';
@@ -2078,7 +2084,7 @@ function canonicalCategory(cat) {
     title.textContent = crisis.name;
     const meta = document.createElement('div');
     meta.style.cssText = 'color: var(--fg-subtle); font-size: 0.7rem; margin-top: 4px;';
-    if (crisis.source && crisis.url && /^https?:\/\//i.test(crisis.url)) {
+    if (crisis.source && crisis.url && SOURCE_URL_RE.test(crisis.url)) {
       const link = document.createElement('a');
       link.href = crisis.url;
       link.target = '_blank';
@@ -3075,6 +3081,7 @@ function initTimelineSlider() {
       CATEGORY_ALIASES,
       normalizeEvent,
       parseGeocodeCache,
+      SOURCE_URL_RE,
       isPlottable,
       normalizeZone,
       isZonePlottable,

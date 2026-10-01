@@ -25,7 +25,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 DATA_DIR = ROOT / "data"
-REQUIRED_FILES = ("events.json", "world_layers.json")
+REQUIRED_FILES = ("events.json", "world_layers.json", "milestones.json")
 
 # Single source of truth for the data contract (schema/worldmap-data.schema.json).
 # The defaults below keep this module runnable if the schema is ever removed,
@@ -345,6 +345,68 @@ def check_fleets(fleets: object, kind: str = "deployments") -> list[str]:
     return issues
 
 
+def check_milestones(data: object) -> list[str]:
+    """Validate the canonical milestones archive that feeds the dashboard,
+    widgets, and the timeline slider's year clustering. Mirrors the shapes
+    the front end expects in assets/js/neohiro-widgets.js and the timeline
+    code in assets/js/worldmap.js."""
+    issues: list[str] = []
+    if not isinstance(data, dict):
+        return ["top-level JSON must be an object"]
+    # Header check: version (any semver), last_update (required ISO-8601 UTC)
+    version = data.get("version")
+    if not isinstance(version, str) or re.fullmatch(r"\d+\.\d+\.\d+", version) is None:
+        issues.append(f"version must be a semver string, got {version!r}")
+    last_update = data.get("last_update")
+    if not isinstance(last_update, str) or not last_update:
+        issues.append("last_update must be a non-empty UTC timestamp string")
+    else:
+        try:
+            ts = _datetime.fromisoformat(last_update.replace("Z", "+00:00"))
+        except ValueError:
+            issues.append(f"last_update {last_update!r} is not parseable as an ISO-8601 timestamp")
+        else:
+            if ts.tzinfo is None or ts.tzinfo.utcoffset(ts) is None:
+                issues.append("last_update must carry a UTC offset (e.g. +00:00 or Z)")
+    cats = data.get("categories")
+    if not isinstance(cats, dict):
+        issues.append("categories must be an object")
+    else:
+        for cat_key, cat in cats.items():
+            if not isinstance(cat, dict):
+                issues.append(f"categories[{cat_key}]: must be an object")
+                continue
+            milestones = cat.get("milestones")
+            if not isinstance(milestones, list):
+                issues.append(f"categories[{cat_key}].milestones: must be a list")
+                continue
+            for i, m in enumerate(milestones):
+                if not isinstance(m, dict):
+                    issues.append(f"categories[{cat_key}].milestones[{i}]: entry must be an object")
+                    continue
+                if not isinstance(m.get("id"), str):
+                    issues.append(f"categories[{cat_key}].milestones[{i}].id: must be a string")
+                if not isinstance(m.get("title"), str):
+                    issues.append(f"categories[{cat_key}].milestones[{i}].title: must be a string")
+                if not isinstance(m.get("category"), str):
+                    issues.append(f"categories[{cat_key}].milestones[{i}].category: must be a string")
+                if not isinstance(m.get("subcategory"), str):
+                    issues.append(f"categories[{cat_key}].milestones[{i}].subcategory: must be a string")
+                if not _valid_event_date(m.get("date")):
+                    issues.append(f"categories[{cat_key}].milestones[{i}].date: must be a parseable date string")
+                geo = m.get("geolocation")
+                if not isinstance(geo, dict) or not _coord_ok(geo.get("lat"), geo.get("lon")):
+                    issues.append(f"categories[{cat_key}].milestones[{i}].geolocation: must be a finite lat/lon pair in range")
+                if not _valid_source_url(m.get("url")):
+                    issues.append(
+                        f"categories[{cat_key}].milestones[{i}].url: must be absent or an http(s) URL, got {m.get('url')!r}"
+                    )
+                for flag in ("is_record", "is_breakthrough", "is_new"):
+                    if flag in m and not isinstance(m[flag], bool):
+                        issues.append(f"categories[{cat_key}].milestones[{i}].{flag}: must be a boolean if present")
+    return issues
+
+
 def check_data(data: dict, filename: str) -> list[str]:
     if not isinstance(data, dict):
         return ["top-level JSON must be an object"]
@@ -363,6 +425,8 @@ def check_data(data: dict, filename: str) -> list[str]:
             + check_crisis_zones(data.get("crisis_zones"))
             + check_fleets(deployments, kind=kind)
         )
+    if filename == "milestones.json":
+        return check_milestones(data)
     return [f"unsupported data file: {filename}"]
 
 

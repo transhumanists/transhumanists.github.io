@@ -518,7 +518,11 @@
   }
 
   function renderMilestoneCard(m) {
-    var card = el('a', { 'class': 'nhw-ms-card', href: m.url || '#', target: '_blank', rel: 'noopener' });
+    var url = m.url && /^https?:\/\//i.test(m.url) ? m.url : null;
+    var tag = url ? 'a' : 'div';
+    var attrs = { 'class': 'nhw-ms-card' };
+    if (url) { attrs.href = url; attrs.target = '_blank'; attrs.rel = 'noopener'; }
+    var card = el(tag, attrs);
     card.style.setProperty('--ms-color', m.color || '#7c4dff');
     var header = el('div', { 'class': 'nhw-ms-header' });
     header.appendChild(el('span', { 'class': 'nhw-ms-icon', text: m.icon || '\uD83D\uDCCA' }));

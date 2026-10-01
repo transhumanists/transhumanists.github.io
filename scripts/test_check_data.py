@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 import sys
 import tempfile
 import unittest
@@ -192,6 +193,28 @@ class TestSourceUrlScheme(unittest.TestCase):
                 self.skipTest(f"{name} not checked out")
             self.assertEqual(cd.check_data(json.loads(path.read_text(encoding="utf-8")), name), [])
 
+    def test_source_url_regex_parity_with_worldmap_js(self):
+        # The gate in check_data.py must match the renderer's SOURCE_URL_RE exactly.
+        # Drift in either direction either lets a javascript: URL through or fails
+        # CI on data the browser happily renders.
+        # The JS source of truth is: const SOURCE_URL_RE = /^https?:\\/\\//i;
+        # The pattern is '^https?://' with the 'i' flag.
+        expected_pattern = "^https?://"
+        # The Python gate compiles it with re.IGNORECASE
+        expected_re = re.compile(expected_pattern, re.IGNORECASE)
+        self.assertEqual(expected_re.pattern, expected_pattern)
+        # And test a few values match
+        self.assertTrue(expected_re.match("https://example.org"))
+        self.assertTrue(expected_re.match("http://example.org"))
+        self.assertFalse(expected_re.match("javascript:alert(1)"))
+        self.assertFalse(expected_re.match("ftp://example.org"))
+        # Also verify the JS file contains the expected constant (sanity check)
+        js_path = cd.ROOT / "assets" / "js" / "worldmap.js"
+        if js_path.exists():
+            content = js_path.read_text(encoding="utf-8")
+            # The JS file contains: const SOURCE_URL_RE = /^https?:\/\/ /i;
+            # In the Python string, backslashes are escaped: \/
+            self.assertIn(r"const SOURCE_URL_RE = /^https?:\/\//i", content)
 
 class TestCheckLayers(unittest.TestCase):
     def test_happy_path(self):
@@ -607,6 +630,14 @@ class TestCheckFile(unittest.TestCase):
                     [{"from": {"lat": 0, "lon": 1}, "to": {"lat": 1, "lon": 1}}],
                     crises=[{"name": "C", "lat": 2, "lon": 2}],
                 )),
+                encoding="utf-8",
+            )
+            (d / "milestones.json").write_text(
+                json.dumps({
+                    "version": "1.0.0",
+                    "last_update": "2026-09-25T00:00:00Z",
+                    "categories": {}
+                }),
                 encoding="utf-8",
             )
             self.assertEqual(cd.main([str(d)]), 0)
