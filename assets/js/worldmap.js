@@ -35,16 +35,21 @@
   const MAP_LAT_NORTH = 76;
   const MAP_LAT_SOUTH = -66;
   const MAP_LAT_SPAN = MAP_LAT_NORTH - MAP_LAT_SOUTH;
-  // Terminator reach. Previously 64, which left a hard 8deg strip at top and bottom
-  // where the night shade simply stopped - read as a horizontal shadow line rather
-  // than a terminator curving off the edge of the globe. Raised to 70 so the curve
-  // runs out to within 6deg of each map edge. This does cross the 66.6 latitude
-  // where the hour angle saturates at the solstices and the curve flattens, which
-  // is the smear this constant originally guarded against; the residual cap fade
-  // (fadeNightIntoCaps) now covers only the last 6deg instead of 8, so a slight
-  // flattening near the polar edge remains possible. Raising it past ~74 would
-  // make the whole edge flat, which is why it stops here.
-  const TERMINATOR_LAT_LIMIT = 70;
+  // Terminator reach. Deliberately WIDER than the visible frame, so both the
+  // boundary curves and the night fill extend past the top and bottom edges.
+  //
+  // Stopping inside the frame was the bug: the night band is a closed polygon, so
+  // wherever it ended it left a straight horizontal seam across the full canvas
+  // width. That seam was drawn over the Arctic landmass and read as a grey band
+  // lying on top of the map rather than as part of the globe.
+  //
+  // Beyond ~66.6 degrees at the solstices the hour angle saturates and the
+  // boundary longitude becomes constant, so the curve runs vertically off the
+  // frame edge - which is exactly the "terminator curving off the globe" look,
+  // and is also physically right: at high latitude a pole is either fully dark or
+  // fully lit, so the night side spans a full 180 degrees of longitude there
+  // instead of pinching to a point.
+  const TERMINATOR_LAT_LIMIT = 84;
   const TOOLTIP_WIDTH = 260;
   const TOOLTIP_HEIGHT = 100;
   const TOOLTIP_OFFSET = 12;
@@ -52,13 +57,10 @@
   // Day/night palette. Deliberately disjoint from every CATEGORY_COLORS value
   // so the terminator never visually collides with a milestone category.
   const DAY_TINT = 'rgba(140, 200, 255, 0.07)';
-  // The night shade is built from one RGB triple so the polar-cap fade below can
-  // end on the exact same colour at zero alpha. It used to repeat the literal
-  // "rgba(2, 6, 14, ...)" in two places, which silently desynced if the shade
-  // was ever retuned.
-  const NIGHT_RGB = '2, 6, 14';
-  const NIGHT_FILL = `rgba(${NIGHT_RGB}, 0.45)`;
-  const NIGHT_FILL_CLEAR = `rgba(${NIGHT_RGB}, 0)`;
+  // The night shade. NIGHT_FILL_CLEAR and the RGB-triple indirection existed only
+  // for the polar-cap gradient, which no longer exists: the band is now sampled
+  // past both edges of the frame, so there is no seam to fade out.
+  const NIGHT_FILL = 'rgba(2, 6, 14, 0.45)';
   const SUNSET_BOUNDARY = 'rgba(255, 222, 178, ALPHA)';
   const SUNRISE_BOUNDARY = 'rgba(176, 188, 255, ALPHA)';
   const SUN_ICON = '#fff3c4';
@@ -76,6 +78,9 @@
 // Human Rights Violations landmark. Deliberately outside the category palette so
 // the layer can never be mistaken for a milestone category in the legend.
 const HUMAN_RIGHTS_COLOR = '#ff7043';
+// One full swell-and-fade cycle for a landmark. Long enough to read as a
+// breath rather than a flicker, short enough that the layer feels live.
+const HUMAN_RIGHTS_PULSE_MS = 2400;
   // Very transparent arrow tail line (barely visible) — 8% opacity
   const ARROW_TAIL_OPACITY = 0.08;
 
@@ -951,35 +956,6 @@ function canonicalCategory(cat) {
     }
   }
 
-  // The night band is built only down to +/-TERMINATOR_LAT_LIMIT, so it stops
-  // short of the poles. Fading the same shade across the leftover cap band keeps
-  // that stop from reading as a hard horizontal shadow line, and costs two
-  // fillRects. Each gradient is clipped to the canvas so it stays correct at any
-  // zoom/pan, and the band-edge gradient stop is derived from the same constant
-  // the terminator uses rather than a second magic number.
-  function fadeNightIntoCaps(w, h) {
-    const edgeTop = project(0, TERMINATOR_LAT_LIMIT).y;
-    const edgeBottom = project(0, -TERMINATOR_LAT_LIMIT).y;
-
-    // Top cap: shade at the band edge -> clear at the canvas top.
-    if (edgeTop > 0) {
-      const g = ctx.createLinearGradient(0, edgeTop, 0, 0);
-      g.addColorStop(0, NIGHT_FILL);
-      g.addColorStop(1, NIGHT_FILL_CLEAR);
-      ctx.fillStyle = g;
-      ctx.fillRect(0, 0, w, edgeTop);
-    }
-    // Bottom cap: shade at the band edge -> clear at the canvas bottom.
-    const from = Math.max(0, edgeBottom);
-    if (from < h) {
-      const g = ctx.createLinearGradient(0, edgeBottom, 0, h);
-      g.addColorStop(0, NIGHT_FILL);
-      g.addColorStop(1, NIGHT_FILL_CLEAR);
-      ctx.fillStyle = g;
-      ctx.fillRect(0, from, w, h - from);
-    }
-  }
-
   function drawTerminator() {
     if (!state.showTerminator) return;
 
@@ -1020,8 +996,9 @@ function canonicalCategory(cat) {
     strokeSoftBoundary(sunset, SUNSET_BOUNDARY);
     strokeSoftBoundary(sunrise, SUNRISE_BOUNDARY);
 
-    // ---- Fade the night shade out across the polar cap band ----
-    fadeNightIntoCaps(w, h);
+    // No polar cap fade: the night band is sampled past both edges of the frame,
+    // so there is no seam left to hide and nothing to soften. Fading here would
+    // lighten the pole while the terminator runs off the side of the map.
 
     // ---- Sun position marker (small sun icon, no dot) ----
     const sunPos = project(sun.lon, sun.lat);
@@ -1396,19 +1373,45 @@ function canonicalCategory(cat) {
 
   // A reported violation is a point occurrence, so these draw as landmarks rather
   // than an area ring: a ring would imply an affected extent we do not have.
+  //
+  // Landmarks pulse with a soft glow so the layer reads as live rather than as
+  // another set of static dots. The pulse is a function of wall-clock time only -
+  // no per-entry state - so it cannot desynchronise, and it costs nothing when the
+  // layer is off because drawHumanRightsLandmark returns immediately.
   function drawHumanRightsLandmark(entry, autoScale) {
     if (!state.showHumanRights) return;
     if (entry._hiddenByTimeline) return;
-    const p = project(entry.lat, entry.lon);
+    const p = project(entry.lon, entry.lat);
     if (!p) return;
     const done = entry.status && entry.status !== 'active' && entry.status !== 'ongoing';
-    const radius = Math.max(3, Math.min(8, (done ? 3.5 : 5) * autoScale));
+    const base = Math.max(3, Math.min(8, (done ? 3.5 : 5) * autoScale));
+    const alpha = done ? 0.35 : 0.85;
+
+    // Ease the pulse with a raised cosine so it swells and fades rather than
+    // stepping. Stagger by longitude so neighbouring landmarks do not breathe in
+    // lockstep, which reads as a single blinking blob rather than several.
+    const phase = (Date.now() / HUMAN_RIGHTS_PULSE_MS
+                   + (entry.lon + 180) / 360) % 1;
+    const pulse = 0.5 - 0.5 * Math.cos(phase * Math.PI * 2);
+
+    // Soft outer glow, painted first so the solid core sits on top of it.
+    const glowRadius = base * (1.9 + pulse * 1.1);
+    const gradient = ctx.createRadialGradient(p.x, p.y, base * 0.5, p.x, p.y, glowRadius);
+    gradient.addColorStop(0, withOpacity(HUMAN_RIGHTS_COLOR, (done ? 0.10 : 0.34) * (1 - pulse * 0.55)));
+    gradient.addColorStop(1, withOpacity(HUMAN_RIGHTS_COLOR, 0));
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, glowRadius, 0, Math.PI * 2);
+    ctx.fillStyle = gradient;
+    ctx.fill();
+
+    // Solid core, breathing slightly with the glow.
+    const radius = base * (0.86 + pulse * 0.24);
     ctx.beginPath();
     ctx.arc(p.x, p.y, radius, 0, Math.PI * 2);
-    ctx.fillStyle = withOpacity(HUMAN_RIGHTS_COLOR, done ? 0.35 : 0.85);
+    ctx.fillStyle = withOpacity(HUMAN_RIGHTS_COLOR, alpha);
     ctx.fill();
     ctx.lineWidth = 1.5;
-    ctx.strokeStyle = withOpacity('#ffffff', done ? 0.3 : 0.6);
+    ctx.strokeStyle = withOpacity('#ffffff', done ? 0.3 : 0.45 + pulse * 0.3);
     ctx.stroke();
   }
 
@@ -3527,6 +3530,7 @@ function initTimelineSlider() {
   landmarkColorFor,
   secondaryColorFor,
   HUMAN_RIGHTS_COLOR,
+  HUMAN_RIGHTS_PULSE_MS,
   normalizeHumanRight,
   isHumanRightPlottable,
   findHumanRight,

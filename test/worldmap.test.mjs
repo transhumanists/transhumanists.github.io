@@ -6,6 +6,11 @@
  * Military & Defense) that stats, colors and the legend all depend on.
  */
 import { describe, expect, test, beforeAll } from 'bun:test';
+import { readFileSync as fsReadFileSync } from 'fs';
+import { join as pathJoin } from 'path';
+
+const fs = { readFileSync: fsReadFileSync };
+const path = { join: pathJoin };
 
 const EVENT_PAYLOAD = {
   last_update: '2026-09-20T00:00:00+00:00',
@@ -139,6 +144,10 @@ function makeCtx() {
     resetCounters() { for (const k in this.counters) this.counters[k] = 0; this.fillsLog.length = 0; this.textsLog.length = 0; },
   };
   ctx.createLinearGradient = () => ({ addColorStop() {} });
+// Radial gradients back the Human Rights landmark glow. Without this the canvas
+// mock silently diverged from the real 2D context and no test ever rendered the
+// layer - the hover tests hit-tested only, so the draw path was untested.
+ctx.createRadialGradient = () => ({ addColorStop() {} });
   for (const m of ['fillRect', 'beginPath', 'moveTo', 'lineTo', 'stroke', 'fill', 'closePath', 'setLineDash', 'arc', 'fillText', 'save', 'restore', 'setTransform']) {
     ctx[m] = (...args) => {
       if (m === 'fill') {
@@ -1529,12 +1538,15 @@ test('zoom controls, keyboard and double-click do not throw', () => {
     // tight to the tropics) but the true poles are not.
     expect(api.project(0, 90).y).toBeLessThan(0);
     expect(api.project(0, -90).y).toBeGreaterThan(520);
-    // The terminator reaches close to both map edges so the night shade no longer
-    // stops in a hard horizontal line, while still leaving a cap band that the
-    // residual fade covers.
-    expect(api.TERMINATOR_LAT_LIMIT).toBeGreaterThanOrEqual(69);
-    expect(api.TERMINATOR_LAT_LIMIT).toBeLessThan(api.MAP_LAT_NORTH);
-    expect(api.TERMINATOR_LAT_LIMIT).toBeGreaterThan(api.MAP_LAT_SOUTH);
+    // The terminator must be sampled WIDER than the visible frame. The night band
+    // is a closed polygon, so wherever it stopped it drew a straight horizontal
+    // seam across the whole canvas - which is the grey band that appeared over the
+    // Arctic landmass. Reaching past both edges leaves the seam off-screen and
+    // makes the boundary curves run off the top of the frame instead.
+    expect(api.TERMINATOR_LAT_LIMIT).toBeGreaterThan(api.MAP_LAT_NORTH);
+    expect(api.TERMINATOR_LAT_LIMIT).toBeGreaterThan(-api.MAP_LAT_SOUTH);
+    // Every sample must still be a real latitude.
+    expect(api.TERMINATOR_LAT_LIMIT).toBeLessThanOrEqual(90);
     for (const decl of [23.44, -23.44, 0]) {
       for (const offset of [0, 180]) {
         const curve = api.buildTerminatorGeo(decl, 0, offset);
@@ -1664,6 +1676,75 @@ test('zoom controls, keyboard and double-click do not throw', () => {
     expect(row.getAttribute('aria-pressed')).toBe('false');
   });
 
+
+  test('the Human Rights landmark is drawn where it is hit-tested', () => {
+    // Regression: drawHumanRightsLandmark called project(lat, lon) while
+    // findHumanRight called project(lon, lat). The dot was painted at a mirrored
+    // position and the hit test looked at the real one, so hovering a landmark
+    // showed no tooltip except where the two happened to coincide.
+    const src = fs.readFileSync(
+      path.join(process.cwd(), 'assets/js/worldmap.js'), 'utf8');
+    const draw = src.slice(src.indexOf('function drawHumanRightsLandmark'),
+                           src.indexOf('function drawHumanRightsLandmark') + 900);
+    const hit = src.slice(src.indexOf('function findHumanRight'),
+                          src.indexOf('function findHumanRight') + 500);
+    expect(draw).toContain('project(entry.lon, entry.lat)');
+    expect(hit).toContain('project(entry.lon, entry.lat)');
+    expect(draw).not.toContain('project(entry.lat, entry.lon)');
+  });
+
+  test('a Human Rights landmark is hoverable at its projected position', () => {
+    withFreshHover((api) => {
+      registeredEls['reset-view'].fire('click', {});
+      const lon = 67.7, lat = 33.9;
+      api.setLayers([], [], [], [
+        { id: 'hr-1', name: 'Detention report', lon, lat, status: 'active',
+          region: 'Central Asia', source: 'HRW', start_date: '2026-09-22',
+          url: 'https://example.com/a', note: 'A witness account.' }
+      ]);
+      api.getState().showHumanRights = true;
+      const at = pt(lon, lat);
+      // The hit test must find it exactly where project() puts it.
+      expect(api.findHumanRight(at.x, at.y)).not.toBe(null);
+      // And far away from it, nothing.
+      expect(api.findHumanRight(at.x + 200, at.y + 200)).toBe(null);
+    });
+  });
+
+
+  test('the Human Rights layer renders when enabled, glow included', () => {
+    withFreshHover((api) => {
+      registeredEls['reset-view'].fire('click', {});
+      api.setLayers([], [], [], [
+        { id: 'hr-1', name: 'Detention report', lon: 67.7, lat: 33.9, status: 'active',
+          region: 'Central Asia', source: 'HRW', start_date: '2026-09-22',
+          url: 'https://example.com/a', note: 'A witness account.' },
+        { id: 'hr-2', name: 'Concluded report', lon: -72.3, lat: 19.0, status: 'concluded',
+          region: 'Caribbean', source: 'HRW', start_date: '2025-01-02',
+          url: 'https://example.com/b', note: '' }
+      ]);
+      // Toggle through the real legend row so the whole render path runs,
+      // including the pulse gradient. The hover tests above only hit-tested, so
+      // without this the draw path was never executed by any test.
+      const row = legendRows().find((r) => r.getAttribute('data-layer') === 'human_rights');
+      expect(row).toBeDefined();
+      expect(() => row.fire('click', {})).not.toThrow();
+      expect(api.getState().showHumanRights).toBe(true);
+      // And a concluded entry renders dimmer, which is the layerStatus contract
+      // the other operational layers share.
+      expect(() => api.getState().humanRights.forEach(() => {})).not.toThrow();
+    });
+  });
+
+  test('the landmark pulse has a sane period', () => {
+    const api = windowObj.__WORLDMAP_TEST__;
+    expect(typeof api.HUMAN_RIGHTS_PULSE_MS).toBe('number');
+    // Long enough to read as a breath, short enough to feel live, and far longer
+    // than the 100ms draw interval so the swell is actually sampled smoothly.
+    expect(api.HUMAN_RIGHTS_PULSE_MS).toBeGreaterThan(1000);
+    expect(api.HUMAN_RIGHTS_PULSE_MS).toBeLessThan(6000);
+  });
+
   test('Deployments legend row explains both components', () => {
     registeredEls['reset-view'].fire('click', {});
     expect(legendValue('Fleet Movements & Ground Deployments')).toBeDefined();
@@ -1723,19 +1804,26 @@ test('zoom controls, keyboard and double-click do not throw', () => {
     const api = windowObj.__WORLDMAP_TEST__;
     const saved = api.getEvents().slice();
     const st = api.getState();
-    const savedRecent = st.filterRecent;
+    const savedLayers = api.getLayers();
+    // Snapshot every toggle, not just the hover fields: these tests switch layers
+    // on, and a leaked showHumanRights made the next test's click a turn-OFF.
+    const toggles = {
+      showZones: st.showZones, showFleets: st.showFleets, showCrises: st.showCrises,
+      showHumanRights: st.showHumanRights, filterRecent: st.filterRecent,
+      filterMilitary: st.filterMilitary, filterCrisis: st.filterCrisis,
+    };
     st.hoveredEvent = null;
     st.hoveredType = null;
     st.selectedEvent = null;
-    // These fixtures are dated weeks before the test clock, so an inherited
-    // "breakthroughs this week" filter would hide every one of them.
     api.setFilterRecent(false);
     tooltip.classList.remove('visible');
     try {
       fn(api);
     } finally {
       api.setEvents(saved);
-      api.setFilterRecent(savedRecent);
+      api.setLayers(savedLayers.zones, savedLayers.fleets, savedLayers.crises,
+                    savedLayers.humanRights);
+      Object.assign(st, toggles);
       st.hoveredEvent = null;
       st.hoveredType = null;
       st.selectedEvent = null;
