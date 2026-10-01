@@ -116,7 +116,7 @@
       "description": "Toggleable operational layers rendered by assets/js/worldmap.js. Distinct from controls.events.categories: a layer is a separate data list in world_layers.json with its own visibility preference, and is NOT a milestone category, so it never appears in a category dropdown or in catalog filtering.",
       "layers": [
         {
-          "key": "conflict_zones",
+          "key": "zones",
           "legend_label": "Conflict Zones",
           "data_key": "conflict_zones",
           "shape": "ring",
@@ -148,7 +148,8 @@
           "default_on": false
         }
       ],
-      "layer_rule": "Every layer defaults OFF and is dim/invisible until the user enables it, including Human Rights Violations. A landmark-shaped layer renders its entries with the same tooltip treatment as milestones rather than as a ring."
+      "layer_rule": "Every layer defaults OFF and is dim/invisible until the user enables it, including Human Rights Violations. A landmark-shaped layer renders its entries with the same tooltip treatment as milestones rather than as a ring.",
+      "key_note": "'key' is the legend row / toggle name used by worldmap.js (the appendLayerRow key); 'data_key' is the top-level list in world_layers.json. They differ only for conflict zones, which the legend calls 'zones'."
     }
   },
   "files": {

@@ -1057,6 +1057,62 @@ class TestEventCategories(unittest.TestCase):
         for category in cd._CATEGORIES:
             self.assertIn(f"label: '{category}'", js)
 
+    def test_schema_declares_a_layer_contract(self):
+        layers = cd._SCHEMA["controls"].get("worldmap_layers", {}).get("layers")
+        self.assertIsInstance(layers, list, "schema should declare the toggleable layers")
+        for spec in layers:
+            with self.subTest(layer=spec.get("key")):
+                self.assertTrue(spec.get("key"))
+                self.assertTrue(spec.get("data_key"))
+                self.assertTrue(spec.get("legend_label"))
+                # Every operational layer must default OFF; a layer that appears on
+                # unasked was the complaint that motivated the defaults.
+                self.assertIs(spec.get("default_on"), False)
+
+    def test_python_and_js_legend_layers_match_the_schema(self):
+        # The category legend has a parity test; the layer legend did not, which
+        # is how the schema ended up declaring 'conflict_zones' as a legend key
+        # while worldmap.js registers that row as 'zones'.
+        layers = cd._SCHEMA["controls"]["worldmap_layers"]["layers"]
+        js_file = cd.ROOT / "assets" / "js" / "worldmap.js"
+        if not js_file.exists():
+            self.skipTest("worldmap.js not checked out")
+        js = js_file.read_text(encoding="utf-8")
+        for spec in layers:
+            with self.subTest(layer=spec["key"]):
+                # The legend row and its toggle both key off `key`.
+                self.assertIn(f"key: '{spec['key']}'", js)
+                self.assertIn(spec["legend_label"], js)
+
+    def test_every_js_layer_row_is_declared_in_the_schema(self):
+        # The other direction: an undocumented toggle would have no contract and
+        # no default-off guarantee.
+        layers = cd._SCHEMA["controls"]["worldmap_layers"]["layers"]
+        declared = {spec["key"] for spec in layers}
+        js_file = cd.ROOT / "assets" / "js" / "worldmap.js"
+        if not js_file.exists():
+            self.skipTest("worldmap.js not checked out")
+        import re
+        js = js_file.read_text(encoding="utf-8")
+        # Rows registered through appendLayerRow with a layer key.
+        registered = set(re.findall(r"appendLayerRow\(fragment, \{\s*key: '([^']+)'", js))
+        self.assertTrue(registered, "no legend layer rows found - parser is stale?")
+        self.assertEqual(registered - declared, set(),
+                         "legend rows missing from the schema contract")
+
+    def test_human_rights_is_a_layer_never_a_category(self):
+        # The user-visible contract for the Human Rights layer: it must never gain
+        # a category colour, a legend category row or a catalog filter.
+        categories = set(cd._CATEGORIES)
+        layers = {spec["key"] for spec in cd._SCHEMA["controls"]["worldmap_layers"]["layers"]}
+        self.assertNotIn("Human Rights Violations", categories)
+        self.assertIn("human_rights", layers)
+        js_file = cd.ROOT / "assets" / "js" / "worldmap.js"
+        if js_file.exists():
+            js = js_file.read_text(encoding="utf-8")
+            self.assertIn("Human Rights Violations", js)
+            self.assertNotIn("'Human Rights Violations': '#", js)
+
     def test_python_and_js_legend_order_matches_schema(self):
         import sync_milestones as sync
 
