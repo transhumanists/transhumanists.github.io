@@ -42,7 +42,7 @@
         "ISO datetime (Date-constructor fallback)"
       ],
       "calendar_validity": true,
-      "coordinates": "finite and in-range; (0,0) allowed because events ARE geocoded at load and some are intentionally global.",
+      "coordinates": "Optional. An event that could not be geocoded is published WITHOUT a geolocation key rather than dropped - it keeps every non-map appearance and the map simply draws no dot for it. When present, lat/lon must be finite and in range, and (0,0) is REJECTED: that is the project's no-location marker, and using it as a coordinate publishes a dot in the Gulf of Guinea.",
       "categories": [
         "Biotechnology & Biohacking",
         "Computing & AGI",
@@ -154,11 +154,14 @@
   },
   "files": {
     "events.json": {
-      "shape": "top-level object; events: list of { id, title, category, date, geolocation: { lat, lon }, ... }",
+      "shape": "top-level object; events: list of { id, title, category, date, value?, source?, url?, geolocation?: { lat, lon }, located?: false, tone?, sources? }",
       "rules": [
         "date is required and calendar-valid per controls.events",
-        "lat/lon finite and within controls.coordinate ranges",
-        "category must be one of controls.events.categories"
+        "category must be one of controls.events.categories",
+        "geolocation is OPTIONAL; when present it must be finite, in range, and not (0,0)",
+        "an unlocated event may carry \"located\": false as an informational marker; it is not required",
+        "tone, when present, is the secondary label of a two-tone category from controls.events.subtones",
+        "sources, when present, is a non-empty list naming every upstream that reported the result"
       ]
     },
     "world_layers.json": {

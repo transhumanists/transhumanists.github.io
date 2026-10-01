@@ -607,6 +607,56 @@ class TestSharedIdentityRule(unittest.TestCase):
                 self.assertIsNone(milestone_identity.report_group_key(rec, include_unit=False))
 
 
+class TestSchemaMatchesEnforcement(unittest.TestCase):
+    """The schema's written contract must match what check_data actually enforces.
+
+    Documentation that permits what the validator rejects is worse than no
+    documentation: it invites a contributor to publish (0,0), which is precisely
+    the null-island dot the validator exists to prevent. It did - the events
+    contract still said "(0,0) allowed" while the code rejected it.
+    """
+
+    def _schema(self):
+        return cd._SCHEMA
+
+    def test_coordinates_doc_does_not_permit_null_island(self):
+        doc = self._schema()["controls"]["events"]["coordinates"]
+        self.assertNotIn("(0,0) allowed", doc)
+        self.assertIn("no-location marker", doc)
+
+    def test_doc_states_geolocation_is_optional(self):
+        doc = self._schema()["controls"]["events"]["coordinates"]
+        self.assertIn("Optional", doc)
+
+    def test_documents_the_optional_geolocation_rule(self):
+        rules = " ".join(self._schema()["files"]["events.json"]["rules"])
+        self.assertIn("geolocation is OPTIONAL", rules)
+
+    def test_documents_the_informational_located_flag(self):
+        rules = " ".join(self._schema()["files"]["events.json"]["rules"])
+        self.assertIn("located", rules)
+
+    def test_shape_lists_the_optional_fields(self):
+        shape = self._schema()["files"]["events.json"]["shape"]
+        for field in ("geolocation?", "located?", "tone?", "sources?"):
+            with self.subTest(field=field):
+                self.assertIn(field, shape)
+
+    def test_documented_optionality_matches_enforcement(self):
+        # The doc says optional, so enforcement must agree: an event with no
+        # geolocation and no flag has to pass.
+        payload = _events_payload({
+            "title": "X", "category": "Robotics", "date": "2026-03-15"})
+        self.assertEqual(cd.check_events(payload["events"]), [])
+
+    def test_documented_rejection_of_null_island_matches_enforcement(self):
+        payload = _events_payload({
+            "title": "X", "category": "Robotics", "date": "2026-03-15",
+            "geolocation": {"lat": 0, "lon": 0}})
+        issues = cd.check_events(payload["events"])
+        self.assertTrue(any("no-location marker" in i for i in issues), issues)
+
+
 class TestUnlocatedEvents(unittest.TestCase):
     """A milestone that cannot be geocoded is published, not deleted.
 
