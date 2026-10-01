@@ -25,20 +25,26 @@
   const ZOOM_FACTOR = 1.1; // Used by zoomAt for keyboard/button zoom steps
   const HIT_RADIUS_BASE = 10;
   const CLICK_DRAG_THRESHOLD = 5;
-  // Default-view latitude window. The map crops the poles to +/-MAP_LAT_LIMIT so
-  // the far north/south stay visible as caps rather than filling half the canvas,
-  // and the day/night shading stops short of them entirely (see
-  // TERMINATOR_LAT_LIMIT), which is what keeps the terminator from smearing.
-  // 72 still contains every landmass anyone lives on and every milestone in the
-  // dataset (the furthest north is 59.4N, the furthest south 13.5S). This is the
-  // default view, so "reset view" returns to exactly this window.
-  const MAP_LAT_LIMIT = 72;
-  // The terminator's hour angle saturates at |lat| >= 90 - |declination| (66.6 at
-  // the solstices) and collapses to a constant longitude there, which smears into
-  // a hard horizontal shadow band. Stopping the curve at 64 keeps it strictly
-  // inside the worst-case saturation latitude, so the cap band above/below is
-  // simply left lit (see fadeNightIntoCaps) instead of being painted wrong.
-  const TERMINATOR_LAT_LIMIT = 64;
+// Default-view latitude window. The window is asymmetric on purpose: the land is
+  // not symmetric about the equator, and a symmetric window leaves a wide empty
+  // band of Southern Ocean below Antarctica while crowding the Arctic against the
+  // top edge. +76 / -66 keeps every landmass in frame (the dataset's extremes are
+  // 59.4N and 13.5S), trims the dead space underneath, and gives the northern
+  // coastlines room. The span is also slightly smaller than the previous symmetric
+  // +/-72, which zooms the geometry in a little as requested.
+  const MAP_LAT_NORTH = 76;
+  const MAP_LAT_SOUTH = -66;
+  const MAP_LAT_SPAN = MAP_LAT_NORTH - MAP_LAT_SOUTH;
+  // Terminator reach. Previously 64, which left a hard 8deg strip at top and bottom
+  // where the night shade simply stopped - read as a horizontal shadow line rather
+  // than a terminator curving off the edge of the globe. Raised to 70 so the curve
+  // runs out to within 6deg of each map edge. This does cross the 66.6 latitude
+  // where the hour angle saturates at the solstices and the curve flattens, which
+  // is the smear this constant originally guarded against; the residual cap fade
+  // (fadeNightIntoCaps) now covers only the last 6deg instead of 8, so a slight
+  // flattening near the polar edge remains possible. Raising it past ~74 would
+  // make the whole edge flat, which is why it stops here.
+  const TERMINATOR_LAT_LIMIT = 70;
   const TOOLTIP_WIDTH = 260;
   const TOOLTIP_HEIGHT = 100;
   const TOOLTIP_OFFSET = 12;
@@ -775,11 +781,12 @@ function canonicalCategory(cat) {
   ];
 
   // ---- Projection ----
-  // Longitude always spans the full 360deg across the canvas; latitude spans
-  // MAP_LAT_LIMIT, so the canvas top/bottom edges are the cropped polar edges.
+  // Longitude always spans the full 360deg across the canvas; latitude spans the
+  // asymmetric MAP_LAT_NORTH..MAP_LAT_SOUTH window, so the canvas top/bottom edges
+  // are the cropped polar edges.
   function project(lon, lat) {
     const x = (lon + 180) / 360 * state.width;
-    const y = (MAP_LAT_LIMIT - lat) / (MAP_LAT_LIMIT * 2) * state.height;
+    const y = (MAP_LAT_NORTH - lat) / MAP_LAT_SPAN * state.height;
     return { x: x * state.transform.scale + state.transform.tx, y: y * state.transform.scale + state.transform.ty };
   }
 
@@ -787,7 +794,7 @@ function canonicalCategory(cat) {
   // crisis zones) are declared in degrees and drawn as circles, so they follow
   // this — the same scale project() uses for latitude.
   function latDegToPx() {
-    return state.height / (MAP_LAT_LIMIT * 2);
+    return state.height / MAP_LAT_SPAN;
   }
 
   // ---- Sample data (LOCAL DEV ONLY) ----
@@ -3444,6 +3451,13 @@ function initTimelineSlider() {
       CATEGORY_STAT_MAP,
       CATEGORY_LEGEND,
       CATEGORY_ALIASES,
+  CATEGORY_SUBTONES,
+  landmarkColorFor,
+  secondaryColorFor,
+  HUMAN_RIGHTS_COLOR,
+  normalizeHumanRight,
+  isHumanRightPlottable,
+  findHumanRight,
       normalizeEvent,
       parseGeocodeCache,
       SOURCE_URL_RE,
@@ -3490,14 +3504,20 @@ function initTimelineSlider() {
       get GEOCODE_CACHE_MAX_BYTES() { return GEOCODE_CACHE_MAX_BYTES; },
       // Replace the loaded layer data (used to exercise fluo/dim + timeline
       // clustering deterministically without mutating the shared fixtures).
-      setLayers: (zones, fleets, crises) => {
+      setLayers: (zones, fleets, crises, humanRights) => {
         state.zones = (zones || []).map(normalizeZone).filter(isZonePlottable);
         state.fleets = (fleets || []).map(normalizeFleet).filter(isFleetPlottable);
         state.crises = (crises || []).map(normalizeZone).filter(isZonePlottable);
+        state.humanRights = (humanRights || []).map(normalizeHumanRight).filter(isHumanRightPlottable);
         updateStatsDisplay();
         renderLegend();
       },
-      getLayers: () => ({ zones: state.zones, fleets: state.fleets, crises: state.crises }),
+      getLayers: () => ({
+        zones: state.zones,
+        fleets: state.fleets,
+        crises: state.crises,
+        humanRights: state.humanRights
+      }),
       // Same pattern as setLayers but for milestone events (drives timeline
       // clustering tests deterministically).
       setEvents: (events) => {
@@ -3528,7 +3548,9 @@ function initTimelineSlider() {
       buildNightBand,
       // Screen projection + the default-view latitude window it crops to.
       project,
-      get MAP_LAT_LIMIT() { return MAP_LAT_LIMIT; },
+      get MAP_LAT_NORTH() { return MAP_LAT_NORTH; },
+      get MAP_LAT_SOUTH() { return MAP_LAT_SOUTH; },
+      get MAP_LAT_SPAN() { return MAP_LAT_SPAN; },
       get TERMINATOR_LAT_LIMIT() { return TERMINATOR_LAT_LIMIT; },
       get NIGHT_FILL() { return NIGHT_FILL; },
       // Pin the sun position (lat, lon) so day/night rendering is deterministic;

@@ -414,7 +414,7 @@ test('tooltip canonicalizes legacy category names', () => {
     registeredEls['reset-view'].fire('click', {});
     // 'UnknownX' at lat 0 / lon 0 → (400, 260), isolated dot. Its value equals its
     // title (metric-less events publish the title), so no .tt-value row is rendered.
-    canvas.fire('mousemove', { clientX: 400, clientY: 260, movementX: 0, movementY: 0 });
+    canvas.fire('mousemove', { clientX: pt(0, 0).x, clientY: pt(0, 0).y, movementX: 0, movementY: 0 });
     expect(tooltip.classList.contains('visible')).toBe(true);
     const wrapper = tooltip.children[0];
     expect(wrapper.children.find((c) => c.className === 'tt-title').textContent).toBe('UnknownX');
@@ -441,8 +441,8 @@ test('zoom controls, keyboard and double-click do not throw', () => {
     registeredEls['zoom-in'].fire('click', {});
     registeredEls['zoom-out'].fire('click', {});
     registeredEls['reset-view'].fire('click', {});
-    canvas.fire('dblclick', { clientX: 400, clientY: 260 });
-    canvas.fire('wheel', { clientX: 400, clientY: 260, deltaY: -100, preventDefault() {} });
+    canvas.fire('dblclick', { clientX: pt(0, 0).x, clientY: pt(0, 0).y });
+    canvas.fire('wheel', { clientX: pt(0, 0).x, clientY: pt(0, 0).y, deltaY: -100, preventDefault() {} });
     for (const key of ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', '+', '-', '0']) {
       canvas.fire('keydown', { key, target: canvas, preventDefault() {} });
     }
@@ -467,10 +467,10 @@ test('zoom controls, keyboard and double-click do not throw', () => {
     // to screen (400, 260), so the old tooltip position would be stale.
     canvas.fire('mousemove', { clientX: LONDON().x, clientY: LONDON().y, movementX: 0, movementY: 0 });
     expect(tooltip.classList.contains('visible')).toBe(true);
-    canvas.fire('dblclick', { clientX: 400, clientY: 260 });
+    canvas.fire('dblclick', { clientX: pt(0, 0).x, clientY: pt(0, 0).y });
     expect(tooltip.classList.contains('visible')).toBe(false);
     // A fresh hover over the relocated dot must re-open the tooltip.
-    canvas.fire('mousemove', { clientX: 400, clientY: 260, movementX: 0, movementY: 0 });
+    canvas.fire('mousemove', { clientX: pt(0, 0).x, clientY: pt(0, 0).y, movementX: 0, movementY: 0 });
     expect(tooltip.classList.contains('visible')).toBe(true);
   });
 
@@ -1121,6 +1121,11 @@ test('zoom controls, keyboard and double-click do not throw', () => {
   // the timeline-slider interaction is observable. lat 10 / lon 20 projects to
   // (444, 220) on the 800x520 stub.
   const STACK_SPOT = { lat: 10, lon: 20 };
+  // Screen position of the shared stack spot, derived from the projection rather
+  // than hard-coded: the default view uses an asymmetric latitude window, so a
+  // literal pixel silently drifts whenever the window is retuned. Lazy, because
+  // the test API does not exist yet at module-evaluation time.
+  const stackPt = () => pt(STACK_SPOT.lon, STACK_SPOT.lat);
   const STACKED_EVENTS = [
     { id: 'st-a', title: 'Stack A', category: 'Biotechnology', value: '1', source: 'S', url: 'https://example.com/a', date: '2026-04-01', geolocation: { ...STACK_SPOT } },
     { id: 'st-b', title: 'Stack B', category: 'Renewable Energy', value: '2', source: 'S', url: '', date: '2026-05-01', geolocation: { ...STACK_SPOT } },
@@ -1150,7 +1155,7 @@ test('zoom controls, keyboard and double-click do not throw', () => {
     expect(badgeTexts()).toEqual(['2']);
     // The dot under the cursor resolves to one of the visible members, never to
     // the milestone the timeline clustered away.
-    canvas.fire('mousemove', { clientX: 444, clientY: 220, movementX: 0, movementY: 0 });
+    canvas.fire('mousemove', { clientX: stackPt().x, clientY: stackPt().y, movementX: 0, movementY: 0 });
     expect(tooltipTitle()).toBe('Stack B');
     // Focusing a member (hover/pin) replaces the cluster with that single dot, so
     // the count badge is not painted on top of the milestone being described.
@@ -1158,7 +1163,7 @@ test('zoom controls, keyboard and double-click do not throw', () => {
     // genuine re-entry rather than a move between two visible dots.
     canvas.fire('mousemove', { clientX: EMPTY_CANVAS().x, clientY: EMPTY_CANVAS().y, movementX: 0, movementY: 0 });
     ctx.resetCounters();
-    canvas.fire('mousemove', { clientX: 444, clientY: 220, movementX: 0, movementY: 0 });
+    canvas.fire('mousemove', { clientX: stackPt().x, clientY: stackPt().y, movementX: 0, movementY: 0 });
     expect(tooltipTitle()).toBe('Stack B');
     expect(badgeTexts()).toEqual([]);
   });
@@ -1168,8 +1173,8 @@ test('zoom controls, keyboard and double-click do not throw', () => {
     api.setFilterRecent(false);
     api.setEvents(STACKED_EVENTS);
     api.setTimelineYear(2026);
-    canvas.fire('mousemove', { clientX: 444, clientY: 220, movementX: 0, movementY: 0 });
-    clickAt(444, 220);
+    canvas.fire('mousemove', { clientX: stackPt().x, clientY: stackPt().y, movementX: 0, movementY: 0 });
+    clickAt(stackPt().x, stackPt().y);
     // Opens on the member that was clicked (topmost), not always on 1/N.
     expect(tooltipTitle()).toBe('Stack B');
     expect(pagerIndex()).toBe('2/2');
@@ -1186,10 +1191,10 @@ test('zoom controls, keyboard and double-click do not throw', () => {
     expect(tooltipTitle()).toBe('Stack B');
     expect(pagerIndex()).toBe('2/2');
     // Pressing the pinned dot again unpins the whole popup, pager included.
-    clickAt(444, 220);
+    clickAt(stackPt().x, stackPt().y);
     expect(tooltip.classList.contains('visible')).toBe(false);
     // Re-opened by hover rather than pinned: leaving the dot closes it again.
-    canvas.fire('mousemove', { clientX: 444, clientY: 220, movementX: 0, movementY: 0 });
+    canvas.fire('mousemove', { clientX: stackPt().x, clientY: stackPt().y, movementX: 0, movementY: 0 });
     expect(tooltip.classList.contains('visible')).toBe(true);
     canvas.fire('mousemove', { clientX: EMPTY_CANVAS().x, clientY: EMPTY_CANVAS().y, movementX: 0, movementY: 0 });
     expect(tooltip.classList.contains('visible')).toBe(false);
@@ -1367,8 +1372,8 @@ test('zoom controls, keyboard and double-click do not throw', () => {
     api.setFilterRecent(false);
     api.setEvents(STACKED_EVENTS);
     api.setTimelineYear(2026);
-    canvas.fire('mousemove', { clientX: 444, clientY: 220, movementX: 0, movementY: 0 });
-    clickAt(444, 220);
+    canvas.fire('mousemove', { clientX: stackPt().x, clientY: stackPt().y, movementX: 0, movementY: 0 });
+    clickAt(stackPt().x, stackPt().y);
     const prev = pagerBtn('tt-pager-prev');
     const next = pagerBtn('tt-pager-next');
     // A <span> silently accepts `disabled` but never matches :disabled, so the
@@ -1401,7 +1406,7 @@ test('zoom controls, keyboard and double-click do not throw', () => {
     ctx.resetCounters();
     registeredEls['reset-view'].fire('click', {});
     expect(badgeTexts()).toEqual([]);
-    canvas.fire('mousemove', { clientX: 444, clientY: 220, movementX: 0, movementY: 0 });
+    canvas.fire('mousemove', { clientX: stackPt().x, clientY: stackPt().y, movementX: 0, movementY: 0 });
     expect(tooltipTitle()).toBe('Stack C');
     expect(tooltip.querySelector('.tt-pager')).toBe(null);
     // Back to the shared location: the badge returns.
@@ -1436,8 +1441,8 @@ test('zoom controls, keyboard and double-click do not throw', () => {
     api.setFilterRecent(false);
     api.setEvents(STACKED_EVENTS);
     api.setTimelineYear(2026);
-    canvas.fire('mousemove', { clientX: 444, clientY: 220, movementX: 0, movementY: 0 });
-    clickAt(444, 220);
+    canvas.fire('mousemove', { clientX: stackPt().x, clientY: stackPt().y, movementX: 0, movementY: 0 });
+    clickAt(stackPt().x, stackPt().y);
     expect(tooltip.classList.contains('visible')).toBe(true);
     // Sliding to 2025 removes every member of this stack, so the popup must not
     // be left floating over empty canvas.
@@ -1467,7 +1472,7 @@ test('zoom controls, keyboard and double-click do not throw', () => {
     expect(api.stackForEvent(api.getEvents()[0]).map((e) => e.title)).toEqual(['Fresh A']);
     // And a milestone that ages out is no longer clickable either.
     registeredEls['reset-view'].fire('click', {});
-    canvas.fire('mousemove', { clientX: 444, clientY: 220, movementX: 0, movementY: 0 });
+    canvas.fire('mousemove', { clientX: stackPt().x, clientY: stackPt().y, movementX: 0, movementY: 0 });
     expect(tooltipTitle()).toBe('Fresh A');
     // Restore the shared fixtures.
     setTestDay(TEST_DAY);
@@ -1486,8 +1491,8 @@ test('zoom controls, keyboard and double-click do not throw', () => {
     ]);
     api.setTimelineYear(2026);
     registeredEls['reset-view'].fire('click', {});
-    canvas.fire('mousemove', { clientX: 444, clientY: 220, movementX: 0, movementY: 0 });
-    clickAt(444, 220);
+    canvas.fire('mousemove', { clientX: stackPt().x, clientY: stackPt().y, movementX: 0, movementY: 0 });
+    clickAt(stackPt().x, stackPt().y);
     expect(tooltip.classList.contains('visible')).toBe(true);
     expect(tooltipTitle()).toBe('Pin B');
     // Midnight: both milestones leave the rolling window. Nothing is clicked and
@@ -1511,20 +1516,25 @@ test('zoom controls, keyboard and double-click do not throw', () => {
     // Longitude still spans the full 360deg across the canvas width.
     expect(api.project(-180, 0).x).toBe(0);
     expect(api.project(180, 0).x).toBe(800);
-    // Latitude spans the window, so the canvas edges are +/-MAP_LAT_LIMIT and the
-    // equator stays centred.
-    expect(api.MAP_LAT_LIMIT).toBe(72);
-    expect(api.project(0, api.MAP_LAT_LIMIT).y).toBe(0);
-    expect(api.project(0, 0).y).toBe(260);
-    expect(api.project(0, -api.MAP_LAT_LIMIT).y).toBe(520);
+    // Latitude spans an asymmetric window: trimmed below to cut the empty Southern
+    // Ocean band, extended above so the Arctic is not crowded against the edge.
+    // The equator therefore sits BELOW centre, which is the whole point.
+    expect(api.MAP_LAT_NORTH).toBe(76);
+    expect(api.MAP_LAT_SOUTH).toBe(-66);
+    expect(api.MAP_LAT_SPAN).toBe(142);
+    expect(api.project(0, api.MAP_LAT_NORTH).y).toBe(0);
+    expect(api.project(0, api.MAP_LAT_SOUTH).y).toBe(520);
+    expect(api.project(0, 0).y).toBeGreaterThan(260);
     // The caps are on-canvas (that is the point: the map is recentred, not cropped
     // tight to the tropics) but the true poles are not.
     expect(api.project(0, 90).y).toBeLessThan(0);
     expect(api.project(0, -90).y).toBeGreaterThan(520);
-    // The terminator stops strictly inside the saturation latitude, so the cap
-    // band is left lit instead of being painted a degenerate constant longitude.
-    expect(api.TERMINATOR_LAT_LIMIT).toBeLessThanOrEqual(66.5);
-    expect(api.TERMINATOR_LAT_LIMIT).toBeLessThan(api.MAP_LAT_LIMIT);
+    // The terminator reaches close to both map edges so the night shade no longer
+    // stops in a hard horizontal line, while still leaving a cap band that the
+    // residual fade covers.
+    expect(api.TERMINATOR_LAT_LIMIT).toBeGreaterThanOrEqual(69);
+    expect(api.TERMINATOR_LAT_LIMIT).toBeLessThan(api.MAP_LAT_NORTH);
+    expect(api.TERMINATOR_LAT_LIMIT).toBeGreaterThan(api.MAP_LAT_SOUTH);
     for (const decl of [23.44, -23.44, 0]) {
       for (const offset of [0, 180]) {
         const curve = api.buildTerminatorGeo(decl, 0, offset);
@@ -1542,11 +1552,11 @@ test('zoom controls, keyboard and double-click do not throw', () => {
       }
     }
     // "Reset view" restores exactly this window, not a zoomed-in one.
-    canvas.fire('dblclick', { clientX: 400, clientY: 260 });
+    canvas.fire('dblclick', { clientX: pt(0, 0).x, clientY: pt(0, 0).y });
     expect(api.getView()).not.toEqual({ scale: 1, tx: 0, ty: 0 });
     registeredEls['reset-view'].fire('click', {});
     expect(api.getView()).toEqual({ scale: 1, tx: 0, ty: 0 });
-    expect(api.project(0, api.MAP_LAT_LIMIT).y).toBe(0);
+    expect(api.project(0, api.MAP_LAT_NORTH).y).toBe(0);
   });
 
   test('co-located grouping tolerates ~3 m coordinate noise but splits ~300 km', () => {
@@ -1567,5 +1577,95 @@ test('zoom controls, keyboard and double-click do not throw', () => {
     expect(api.stackForEvent(api.getEvents()[0]).length).toBe(1);
     // Restore the shared fixtures.
     api.setEvents(EVENT_PAYLOAD.events);
+  });
+
+  // ---- Categories, sub-tones and the Human Rights layer ----------------------
+
+  test('Biohacking is one category with two colours, not two categories', () => {
+    const api = windowObj.__WORLDMAP_TEST__;
+    const keys = api.CATEGORY_LEGEND.map((c) => c.key);
+    // Single datalayer: exactly one legend entry, no standalone Biohacking row.
+    expect(keys.filter((k) => k === 'Biotechnology & Biohacking').length).toBe(1);
+    expect(keys).not.toContain('Biohacking');
+    const sub = api.CATEGORY_SUBTONES['Biotechnology & Biohacking'];
+    expect(sub).toBeDefined();
+    expect(sub.secondary).toBe('Biohacking');
+    expect(api.CATEGORY_COLORS['Biotechnology & Biohacking']).toBe('#00e676');
+    expect(sub.secondaryColor).not.toBe(api.CATEGORY_COLORS['Biotechnology & Biohacking']);
+    // A Biohacking record renders dark green; a plain one stays bright green.
+    expect(api.landmarkColorFor('Biotechnology & Biohacking', 'Biohacking')).toBe(sub.secondaryColor);
+    expect(api.landmarkColorFor('Biotechnology & Biohacking', undefined)).toBe('#00e676');
+    expect(api.secondaryColorFor('Biotechnology & Biohacking', 'Nonsense')).toBe(null);
+  });
+
+  test('the Biotechnology legend row draws both colours side by side', () => {
+    registeredEls['reset-view'].fire('click', {});
+    const row = legendRows().find((r) => r.getAttribute('data-category') === 'Biotechnology & Biohacking');
+    expect(row).toBeDefined();
+    const dots = row.children.filter((c) => (c.className || '').split(' ').includes('map-legend-dot'));
+    expect(dots.length).toBe(2);
+    expect(dots[0].style.background).toBe('#00e676');
+    expect(dots[1].style.background).toBe('#00a651');
+    // A single-colour category still gets exactly one dot.
+    const single = legendRows().find((r) => r.getAttribute('data-category') === 'Robotics');
+    expect(single.children.filter((c) => (c.className || '').split(' ').includes('map-legend-dot')).length).toBe(1);
+  });
+
+  test('legacy Biotechnology and Biohacking labels fold into the one category', () => {
+    const api = windowObj.__WORLDMAP_TEST__;
+    for (const legacy of ['Biotechnology', 'Biohacking', 'Biotech', 'Synthetic Biology']) {
+      expect(api.canonicalCategory(legacy)).toBe('Biotechnology & Biohacking');
+    }
+    expect(api.CATEGORY_ALIASES['Transportation']).toBe('Mobility & Logistics');
+    expect(api.CATEGORY_ALIASES['Logistics']).toBe('Mobility & Logistics');
+    expect(api.CATEGORY_ALIASES['Automation']).toBe('Robotics');
+  });
+
+  test('Robotics and Mobility sit in the requested legend positions', () => {
+    const order = windowObj.__WORLDMAP_TEST__.CATEGORY_LEGEND.map((c) => c.key);
+    // Robotics above Spaceflight & Aeronautics and under Cybersecurity.
+    expect(order.indexOf('Robotics')).toBe(order.indexOf('Cybersecurity') + 1);
+    expect(order.indexOf('Robotics')).toBe(order.indexOf('Spaceflight & Aeronautics') - 1);
+    // Mobility & Logistics under Renewable Energy and above Cybersecurity.
+    expect(order.indexOf('Mobility & Logistics')).toBe(order.indexOf('Renewable Energy') + 1);
+    expect(order.indexOf('Mobility & Logistics')).toBe(order.indexOf('Cybersecurity') - 1);
+  });
+
+  test('Human Rights Violations is a layer, not a category', () => {
+    const api = windowObj.__WORLDMAP_TEST__;
+    expect(api.CATEGORY_LEGEND.map((c) => c.key)).not.toContain('Human Rights Violations');
+    expect(api.CATEGORY_COLORS['Human Rights Violations']).toBeUndefined();
+    // Its colour sits outside the category palette on purpose.
+    expect(api.HUMAN_RIGHTS_COLOR).toBe('#ff7043');
+    expect(Object.values(api.CATEGORY_COLORS)).not.toContain(api.HUMAN_RIGHTS_COLOR);
+  });
+
+  test('Human Rights layer drops unplottable entries and starts empty', () => {
+    const api = windowObj.__WORLDMAP_TEST__;
+    expect(Array.isArray(api.getLayers().humanRights)).toBe(true);
+    api.setLayers([], [], [], [
+      { id: 'hr-1', name: 'Detention report', lat: 33.9, lon: 67.7, status: 'active' },
+      { id: 'hr-bad', name: 'Null island', lat: 0, lon: 0, status: 'active' },
+      { id: 'hr-bad2', name: 'No coords', status: 'active' },
+      'not an object'
+    ]);
+    const after = api.getLayers().humanRights;
+    expect(after.length).toBe(1);
+    expect(after[0].id).toBe('hr-1');
+    // Off by default, so it must not claim the pointer.
+    expect(api.findHumanRight(0, 0)).toBe(null);
+    api.setLayers([], [], [], []);
+  });
+
+  test('the Human Rights legend row is present and off by default', () => {
+    registeredEls['reset-view'].fire('click', {});
+    const row = legendRows().find((r) => r.getAttribute('data-layer') === 'human_rights');
+    expect(row).toBeDefined();
+    expect(row.getAttribute('aria-pressed')).toBe('false');
+  });
+
+  test('Deployments legend row explains both components', () => {
+    registeredEls['reset-view'].fire('click', {});
+    expect(legendValue('Fleet Movements & Ground Deployments')).toBeDefined();
   });
 });

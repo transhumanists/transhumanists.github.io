@@ -428,7 +428,17 @@ body {
 .map-tooltip .tt-title { font-weight: 700; color: var(--accent); margin-bottom: 4px; }.map-tooltip .tt-category { font-family: var(--font-mono); font-size: 0.7rem; color: var(--fg-subtle); text-transform: uppercase; letter-spacing: 0.06em; }
 .map-tooltip .tt-value { color: var(--green); font-family: var(--font-mono); font-weight: 700; }
 
-/* MAP TIMELINE SLIDER - Ultra Minimal, White Transparent */
+/* MAP TIMELINE SLIDER
+   Frame deliberately mirrors .map-legend: same dark translucent plate, same blur,
+   same 1px border, same radius, same monospace scale. Two panels on one map that
+   share a frame language read as one control surface instead of two bolted-on
+   widgets.
+
+   Transparency is raised relative to the previous white plate (0.13 -> 0.10 fill,
+   0.27 -> 0.20 border) so the map underneath stays readable through it. The
+   border is kept stronger than the fill on purpose: it is the only thing that
+   keeps the control detectable against a bright landmass or the pale polar caps,
+   so contrast is spent on the outline rather than the background. */
 .map-timeline {
     position: absolute;
     bottom: 12px;
@@ -438,10 +448,10 @@ body {
     max-width: 320px;
     min-width: 180px;
     height: 24px;
-    background: rgba(255,255,255,0.13);
-    backdrop-filter: blur(6px);
-    border: 1px solid rgba(255,255,255,0.27);
-    border-radius: 10px;
+    background: rgba(6, 11, 20, 0.58);
+    backdrop-filter: blur(8px);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
     padding: 4px 12px;
     z-index: 5;
     display: flex;
@@ -451,8 +461,8 @@ body {
 .map-timeline-track {
     flex: 1;
     height: 4px;
-    background: rgba(255,255,255,0.44);
-    box-shadow: 0 0 7px rgba(255,255,255,0.28);
+    background: rgba(255, 255, 255, 0.32);
+    box-shadow: 0 0 7px rgba(255, 255, 255, 0.18);
     border-radius: 2px;
     position: relative;
     cursor: pointer;
@@ -488,26 +498,28 @@ body {
   outline-offset: 1px;
 }
 
-/* Year label - clean, minimal, always visible */
+/* Year label - its own legend-style frame, so the digits read as a panel rather
+   than floating text, while staying more transparent than the slider itself. */
 .map-timeline-year-label {
   position: absolute;
-  top: -22px;
+  top: -24px;
   left: 50%;
   transform: translateX(-50%);
-  font-size: 0.65rem;
+  font-size: 0.6rem;
   font-weight: 600;
   font-family: var(--font-mono);
-  color: #fff;
-  text-shadow: 0 1px 2px rgba(0,0,0,0.35);
+  color: var(--fg);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
   white-space: nowrap;
   padding: 1px 8px;
-  background: rgba(255,255,255,0.18);
-  border: 1px solid rgba(255,255,255,0.24);
-  border-radius: 4px;
+  background: rgba(6, 11, 20, 0.62);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
   pointer-events: none;
   z-index: 11;
   transition: opacity 0.12s ease, transform 0.08s ease;
-  opacity: 0.98;
+  opacity: 0.95;
 }
 
 /* MILESTONES CATALOG */
