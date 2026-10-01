@@ -161,13 +161,14 @@
       ]
     },
     "world_layers.json": {
-      "version": "1.1.0",
-      "shape": "top-level object with conflict_zones, deployments and crisis_zones lists; fleet_movements accepted as the legacy alias for deployments",
+      "version": "1.2.0",
+      "shape": "top-level object with conflict_zones, deployments, crisis_zones and human_rights_violations lists; fleet_movements accepted as the legacy alias for deployments. 1.2.0 added human_rights_violations, an optional toggleable landmark layer that is NOT a milestone category.",
       "rules": [
         "every zone/fleet entry name/label + located pair (not null island)",
         "lifecycle status in status_values and dates per layer_lifecycle.date_pattern",
         "ids unique per list",
-        "top-level metadata: version equals this file's version and last_update is a non-empty ISO-8601 UTC timestamp (offset or Z)"
+        "top-level metadata: version equals this file's version and last_update is a non-empty ISO-8601 UTC timestamp (offset or Z)",
+        "human_rights_violations (1.2.0+): optional; when present each entry is a located pair (not null island), an id from status_values, and a unique id"
       ]
     }
   }

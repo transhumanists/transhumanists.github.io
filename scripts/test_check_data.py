@@ -19,7 +19,7 @@ def _events_payload(*events: dict) -> dict:
 
 
 def _layers_payload(zones: list[dict], fleets: list[dict], crises: list[dict] | None = None) -> dict:
-    payload = {"version": "1.1.0", "last_update": "2026-09-25T00:00:00+00:00",
+    payload = {"version": cd._FILE_VERSION, "last_update": "2026-09-25T00:00:00+00:00",
                "conflict_zones": zones, "fleet_movements": fleets}
     if crises is not None:
         payload["crisis_zones"] = crises
@@ -1092,7 +1092,7 @@ class TestEventCategories(unittest.TestCase):
 
 class TestWorldLayersHeader(unittest.TestCase):
     def _payload(self, **overrides: object) -> dict:
-        base = {"version": "1.1.0", "last_update": "2026-09-25T00:00:00+00:00",
+        base = {"version": cd._FILE_VERSION, "last_update": "2026-09-25T00:00:00+00:00",
                 "conflict_zones": [], "crisis_zones": [], "deployments": []}
         base.update(overrides)
         return base
@@ -1106,7 +1106,7 @@ class TestWorldLayersHeader(unittest.TestCase):
 
     def test_version_mismatch_fails(self):
         issues = cd.check_data(self._payload(version="1.0.0"), "world_layers.json")
-        self.assertTrue(any("does not match the schema's expected '1.1.0'" in i for i in issues))
+        self.assertTrue(any(f"expected '{cd._FILE_VERSION}'" in i for i in issues))
 
     def test_missing_or_empty_last_update_fails(self):
         for value in (None, "", 42):

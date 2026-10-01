@@ -27,7 +27,7 @@ import re
 import ssl
 import sys
 import urllib.request
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -65,22 +65,24 @@ VIOLATION_KEYWORDS = (
     "hate crime", "religious freedom", "conscription", "internment",
 )
 
-def _tls_context(host: str) -> ssl.SSLContext:
-    """Tolerant TLS, mirroring fetch_crisis_zones so both scripts behave alike."""
-    ctx = ssl.create_default_context()
-    try:
-        return ctx
-    except Exception:  # pragma: no cover - defensive
-        ctx.check_hostname = False
-        ctx.verify_mode = ssl.CERT_NONE
-        return ctx
+
+def _tls_context() -> ssl.SSLContext:
+    """Default TLS context.
+
+    Deliberately no "tolerant" fallback. An earlier version had one that set
+    CERT_NONE, which can never actually fire because create_default_context()
+    sits outside its try block - dead code that would have silently disabled
+    certificate verification on a feed whose contents get published as map
+    landmarks if it were ever reached.
+    """
+    return ssl.create_default_context()
 
 
 def fetch_url(url: str, timeout: int = 30) -> str | None:
     """GET a URL, returning decoded text or None. Never raises."""
     req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
     try:
-        with urllib.request.urlopen(req, timeout=timeout, context=_tls_context(url)) as resp:
+        with urllib.request.urlopen(req, timeout=timeout, context=_tls_context()) as resp:
             raw = resp.read(4 * 1024 * 1024)
             charset = resp.headers.get_content_charset() or "utf-8"
     except Exception as exc:  # network, TLS, HTTP status, size - all non-fatal
@@ -271,7 +273,7 @@ def _layer_schema_version() -> str:
         return "1.1.0"
 
 
-def merge_entries(existing: list, fresh: list, today: datetime) -> tuple[list, int, int]:
+def merge_entries(existing: list, fresh: list) -> tuple[list, int, int]:
     """Union new rows into the existing layer, keyed by id.
 
     Existing rows win on conflict so an established entry is never silently
@@ -338,7 +340,7 @@ def main() -> int:
         else:
             valid.append(entry)
 
-    merged, added, total = merge_entries(existing, valid, today)
+    merged, added, total = merge_entries(existing, valid)
     data["human_rights_violations"] = merged
     data["last_update"] = today.strftime("%Y-%m-%dT%H:%M:%S+00:00")
 

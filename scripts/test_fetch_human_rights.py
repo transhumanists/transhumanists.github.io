@@ -215,7 +215,7 @@ class TestMergeEntries(unittest.TestCase):
         }
 
     def test_new_entries_are_added(self):
-        merged, added, total = fhr.merge_entries([], [self._entry("hr-a")], TODAY)
+        merged, added, total = fhr.merge_entries([], [self._entry("hr-a")])
         self.assertEqual(added, 1)
         self.assertEqual(total, 1)
         self.assertEqual(merged[0]["id"], "hr-a")
@@ -223,25 +223,25 @@ class TestMergeEntries(unittest.TestCase):
     def test_existing_entries_are_never_removed(self):
         # The failure mode that matters most: a feed that stops publishing must not
         # make yesterday's reported violations vanish from the map.
-        merged, added, _ = fhr.merge_entries([self._entry("hr-old")], [], TODAY)
+        merged, added, _ = fhr.merge_entries([self._entry("hr-old")], [])
         self.assertEqual(added, 0)
         self.assertEqual([e["id"] for e in merged], ["hr-old"])
 
     def test_existing_row_wins_on_id_conflict(self):
         # Upstream rewriting a headline must not silently mutate a live landmark.
         existing = self._entry("hr-a", name="Established report")
-        merged, added, _ = fhr.merge_entries([existing], [self._entry("hr-a", name="New")], TODAY)
+        merged, added, _ = fhr.merge_entries([existing], [self._entry("hr-a", name="New")])
         self.assertEqual(added, 0)
         self.assertEqual(merged[0]["name"], "Established report")
 
     def test_output_is_sorted_newest_first(self):
         merged, _, _ = fhr.merge_entries(
-            [], [self._entry("hr-a"), dict(self._entry("hr-b"), start_date="2026-01-01")], TODAY)
+            [], [self._entry("hr-a"), dict(self._entry("hr-b"), start_date="2026-01-01")])
         dates = [e["start_date"] for e in merged]
         self.assertEqual(dates, sorted(dates, reverse=True))
 
     def test_duplicate_ids_in_existing_data_collapse(self):
-        merged, _, total = fhr.merge_entries([self._entry("hr-a"), self._entry("hr-a")], [], TODAY)
+        merged, _, total = fhr.merge_entries([self._entry("hr-a"), self._entry("hr-a")], [])
         self.assertEqual(total, 1)
         self.assertEqual(len(merged), 1)
 
