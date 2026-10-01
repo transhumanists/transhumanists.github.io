@@ -22,30 +22,10 @@
   <div class="page-wrapper">
     <header class="site-header" role="banner">
       <div class="container">
-        <a class="site-brand" href="{{ '/' | relative_url }}" aria-label="neohiro - Home">
-          <span class="logo-mark" aria-hidden="true">👽</span>
-          <span class="logo-text">neohiro</span>
+        <a class="site-brand" href="{{ '/' | relative_url }}" aria-label="transhumanists - Home">
+          <span class="logo-mark" aria-hidden="true">🧬</span>
+          <span class="logo-text">transhumanists</span>
         </a>
-        <nav class="site-nav" aria-label="Main navigation">
-          <a href="#featured-tools" class="nav-link">Tools</a>
-          <a href="#hardening-guides" class="nav-link">Guides</a>
-          <a href="{{ '/repositories/' | relative_url }}" class="nav-link">Repositories</a>
-          <a href="{{ '/media/' | relative_url }}" class="nav-link">Media</a>
-          <div class="nav-dropdown">
-            <button class="nav-link nav-dropdown-btn" aria-haspopup="true" aria-expanded="false">
-              Community <span aria-hidden="true">-_</span>
-            </button>
-            <div class="nav-dropdown-menu">
-              <a href="https://github.com/neohiro" class="nav-dropdown-item">Org Overview</a>
-              <a href="https://github.com/neohiro/windows/issues" class="nav-dropdown-item">Bug Reports</a>
-              <a href="https://github.com/neohiro/windows/security" class="nav-dropdown-item">Security Advisories</a>
-              <a href="https://github.com/neohiro/windows/discussions" class="nav-dropdown-item">Discussions</a>
-              <a href="{{ '/heartbeats/' | relative_url }}" class="nav-dropdown-item">Heartbeats</a>
-              <a href="https://github.com/sponsors/neohiro" class="nav-dropdown-item">Sponsor</a>
-            </div>
-          </div>
-          <a href="https://github.com/sponsors/neohiro" class="nav-link nav-sponsor" target="_blank" rel="noopener">Sponsor</a>
-        </nav>
       </div>
     </header>
 
@@ -55,16 +35,12 @@
 
     <footer class="site-footer" role="contentinfo">
       <div class="container">
-        {% include counter-widget.html %}
-        {% include footer-button-row.html org="neohiro" %}{% include ecosystem-network.html %}
+        <p style="text-align:center;color:var(--fg-muted);font-size:0.85rem;">&copy; {{ site.time | date: '%Y' }} transhumanists — Human Progress Dashboard</p>
       </div>
     </footer>
   </div>
 
-  {% include auth-bar.html %}
-
   <script src="{{ '/assets/js/main.js' | relative_url }}"></script>
   <script src="{{ '/assets/js/network-ux.js' | relative_url }}"></script>
-  <script src="{{ '/assets/js/auth-bar.js' | relative_url }}" defer></script>
 </body>
 </html>
