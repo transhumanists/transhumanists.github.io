@@ -211,9 +211,16 @@
   try {
     const cached = localStorage.getItem(GEOCODE_CACHE_KEY);
     if (cached) geocodeCache = parseGeocodeCache(cached);
+    // Enforce max size on load in case the stored cache grew beyond the limit.
+    const keys = Object.keys(geocodeCache);
+    if (keys.length > GEOCODE_CACHE_MAX_SIZE) {
+      const toRemove = keys.length - GEOCODE_CACHE_MAX_SIZE;
+      keys.slice(0, toRemove).forEach(k => delete geocodeCache[k]);
+    }
   } catch (_) {}
 
   let geocodeCacheDirty = false;
+  let geocodeCacheIntervalId = null;
   function saveGeocodeCache() {
     if (!geocodeCacheDirty) return;
     try {
@@ -222,9 +229,15 @@
     } catch (_) {}
   }
   // Persist cache periodically and on unload
-  setInterval(saveGeocodeCache, 30000);
-  window.addEventListener('beforeunload', saveGeocodeCache);
-  window.addEventListener('pagehide', saveGeocodeCache);
+  geocodeCacheIntervalId = setInterval(saveGeocodeCache, 30000);
+  window.addEventListener('beforeunload', () => {
+    saveGeocodeCache();
+    if (geocodeCacheIntervalId) clearInterval(geocodeCacheIntervalId);
+  });
+  window.addEventListener('pagehide', () => {
+    saveGeocodeCache();
+    if (geocodeCacheIntervalId) clearInterval(geocodeCacheIntervalId);
+  });
 
   // Known institution coordinates for intelligent geocoding fallback
   const INSTITUTION_COORDS = {

@@ -4,8 +4,6 @@ title: transhumanists — Human Progress Dashboard
 description: "Tracking milestones across biotech, AGI, quantum, energy, cyber, space & defense. Live world map of human progress."
 ---
 
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://api.github.com https://raw.githubusercontent.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'">
-
 <a class="skip-link" href="#main" style="position:absolute;top:-100%;left:50%;transform:translateX(-50%);background:var(--accent);color:#000;padding:8px 16px;border-radius:var(--radius-sm);z-index:1000;text-decoration:none;font-weight:600;">Skip to main content</a>
 
 <div class="hero" id="home">
