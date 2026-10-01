@@ -57,7 +57,7 @@
     {
       "id": "ev-ms-f9883157aeba",
       "title": "Gravity found to be holographic, collapsing space dimensions",
-      "category": "Quantum Gravity",
+      "category": "Quantum Physics",
       "value": "Gravity found to be holographic, collapsing space dimensions",
       "source": "Quanta Magazine",
       "url": "https://www.quantamagazine.org/gravity-seems-holographic-what-does-that-mean-for-reality-20260925/",
@@ -122,7 +122,7 @@
     {
       "id": "ev-ms-2457b1872a8c",
       "title": "Proof of Graph Sandwich Conjecture",
-      "category": "Mathematics",
+      "category": "Computing & AGI",
       "value": "Proof of Graph Sandwich Conjecture",
       "source": "International mathematics collaboration",
       "url": "https://www.quantamagazine.org/mathematicians-build-long-awaited-graph-sandwich-20260918/",
@@ -564,7 +564,7 @@
     {
       "id": "ev-ms-0ef07b4ce70b",
       "title": "ImmigrationReason: 12,375 USCIS AAO decisions dataset for legal reasoning",
-      "category": "Legal AI",
+      "category": "Computing & AGI",
       "value": "12375 decisions",
       "source": "Academic researchers",
       "url": "http://arxiv.org/abs/2608.20391v1",
@@ -629,7 +629,7 @@
     {
       "id": "ev-ms-10f19d45d95b",
       "title": "ML-driven Structural Pattern Mining of Inka Khipus",
-      "category": "Computational Archaeology",
+      "category": "Computing & AGI",
       "value": "0.86 F1 score",
       "source": "Open Khipu Repository",
       "url": "http://arxiv.org/abs/2607.00185v1",
@@ -642,7 +642,7 @@
     {
       "id": "ev-ms-fb74b2202f85",
       "title": "ML pipeline achieves 0.86 F1 classifying Inka khipu provenance and validates Santa Valley moiety structure",
-      "category": "Computational Archaeology",
+      "category": "Computing & AGI",
       "value": "0.86 F1 score",
       "source": "Academic researchers (Open Khipu Repository)",
       "url": "http://arxiv.org/abs/2607.00185v1",
@@ -746,7 +746,7 @@
     {
       "id": "ev-ms-6a684b1bc5a3",
       "title": "LV-ROVER-MLT achieves record-low CER 0.0074 in Maltese OCR competition",
-      "category": "Computer Vision",
+      "category": "Computing & AGI",
       "value": "0.0074 CER",
       "source": "LV-ROVER-MLT researchers",
       "url": "http://arxiv.org/abs/2607.00250v5",
@@ -772,7 +772,7 @@
     {
       "id": "ev-his-2023-10-12-vesuvius-challenge",
       "title": "Vesuvius Challenge - machine learning deciphers the first word from a charred Herculaneum papyrus",
-      "category": "Computational Archaeology",
+      "category": "Computing & AGI",
       "value": "Vesuvius Challenge - machine learning deciphers the first word from a charred Herculaneum papyrus",
       "source": "Vesuvius Challenge",
       "url": "https://en.wikipedia.org/wiki/Herculaneum_papyri",
@@ -1045,7 +1045,7 @@
     {
       "id": "ev-his-1997-12-01-ads-cft",
       "title": "Maldacena formulates the AdS/CFT correspondence (holographic duality)",
-      "category": "Quantum Gravity",
+      "category": "Quantum Physics",
       "value": "Maldacena formulates the AdS/CFT correspondence (holographic duality)",
       "source": "Institute for Advanced Study",
       "url": "https://en.wikipedia.org/wiki/AdS/CFT_correspondence",
@@ -1175,7 +1175,7 @@
     {
       "id": "ev-his-1976-07-01-four-color-theorem",
       "title": "Four color theorem proven with the aid of a computer",
-      "category": "Mathematics",
+      "category": "Computing & AGI",
       "value": "Four color theorem proven with the aid of a computer",
       "source": "University of Illinois Urbana-Champaign",
       "url": "https://en.wikipedia.org/wiki/Four_color_theorem",

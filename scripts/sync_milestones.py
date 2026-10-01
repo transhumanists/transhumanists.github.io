@@ -189,13 +189,44 @@ SITE_KEY_TO_DISPLAY = {
     "defense": "Military & Defense",
 }
 
-# Display names -> site snake_case keys.
-DISPLAY_TO_SITE_KEY = {v: k for k, v in SITE_KEY_TO_DISPLAY.items()}
-
+# Upstream display names that are not one of the seven canonical categories.
+# They fold into a canonical category here so the site never needs an "Other"
+# bucket: every milestone lands in a category that has a colour, a legend row and
+# a catalog filter. Mirrors CATEGORY_ALIASES in assets/js/worldmap.js - keep the
+# two in step (that map stays for legacy payloads and the dev sample data).
+CATEGORY_ALIASES = {
+    "Quantum Gravity": "Quantum Physics",
+    "Mathematics": "Computing & AGI",
+    "Computational Archaeology": "Computing & AGI",
+    "Computer Vision": "Computing & AGI",
+    "Legal AI": "Computing & AGI",
+}
 
 def slugify(name: str) -> str:
     """Coarse snake_case slug so unknown category names still get a stable key."""
     return re.sub(r"[^a-z0-9_]+", "_", (name or "").lower().replace("&", "")).strip("_")
+
+
+# Display names -> site snake_case keys, including the aliases.
+DISPLAY_TO_SITE_KEY = {v: k for k, v in SITE_KEY_TO_DISPLAY.items()}
+DISPLAY_TO_SITE_KEY.update(
+    {alias: DISPLAY_TO_SITE_KEY[canonical] for alias, canonical in CATEGORY_ALIASES.items()}
+)
+
+# Aliases resolve to the canonical bucket of their target category, so upstream
+# buckets for e.g. "Mathematics" merge into computing_agi instead of becoming a
+# category of their own. Both the display name and its snake_case slug are
+# registered because upstream may deliver either shape.
+UPSTREAM_TO_SITE_KEY.update(
+    {alias: DISPLAY_TO_SITE_KEY[canonical] for alias, canonical in CATEGORY_ALIASES.items()}
+)
+UPSTREAM_TO_SITE_KEY.update(
+    {slugify(alias): DISPLAY_TO_SITE_KEY[canonical] for alias, canonical in CATEGORY_ALIASES.items()}
+)
+
+# Every spelling that marks a bucket as a folded alias rather than the category
+# itself. Used to decide whose icon/colour wins when buckets merge.
+_ALIAS_KEYS = set(CATEGORY_ALIASES) | {slugify(alias) for alias in CATEGORY_ALIASES}
 
 
 # Reverse map: display name -> display name (for backward compat with upstream data)
@@ -210,6 +241,7 @@ DISPLAY_TO_DISPLAY.update({
     "Cybersecurity": "Cybersecurity",
     "Biotechnology": "Biotechnology",
 })
+DISPLAY_TO_DISPLAY.update(CATEGORY_ALIASES)
 
 
 def display_category(name: str) -> str:
@@ -226,17 +258,46 @@ def transform_upstream_to_site_format(upstream: dict) -> dict:
     """
     if not upstream or "categories" not in upstream:
         return upstream
-    site_categories = {}
+    site_categories: dict = {}
+    # Site keys whose bucket is already branded by a canonical (non-alias) entry.
+    canonical_keys: set = set()
     for upstream_key, cat_data in upstream.get("categories", {}).items():
         site_key = UPSTREAM_TO_SITE_KEY.get(upstream_key, upstream_key.lower().replace(" ", "_").replace("&", ""))
-        display_name = cat_data.get("name") or SITE_KEY_TO_DISPLAY.get(site_key, upstream_key)
+        # The canonical display name wins over the upstream one: a bucket that
+        # arrived as an alias must be labelled with the category it folded into.
+        display_name = SITE_KEY_TO_DISPLAY.get(site_key) or cat_data.get("name") or upstream_key
+        milestones = cat_data.get("milestones", [])
+        subcategories = cat_data.get("subcategories", [])
+        # Whether upstream described this site category under its own name
+        # rather than through an alias. An alias bucket borrows a colour/icon it
+        # was never branded with, so a real bucket always wins that metadata no
+        # matter which key the JSON happens to list first.
+        is_canonical = upstream_key == site_key or upstream_key not in _ALIAS_KEYS
+        existing = site_categories.get(site_key)
+        if existing:
+            # Two upstream buckets resolved to the same site category (e.g. an
+            # alias folding into a canonical one). Merge them - overwriting here
+            # would silently drop every milestone in one of the two buckets.
+            existing["milestones"].extend(milestones)
+            for sub in subcategories:
+                if sub not in existing["subcategories"]:
+                    existing["subcategories"].append(sub)
+            if is_canonical and site_key not in canonical_keys:
+                # This later bucket is the real one; promote its branding.
+                existing["icon"] = cat_data.get("icon", existing["icon"])
+                existing["color"] = cat_data.get("color", existing["color"])
+                canonical_keys.add(site_key)
+            continue
         site_categories[site_key] = {
             "name": display_name,
             "icon": cat_data.get("icon", "📌"),
             "color": cat_data.get("color", "#00d4ff"),
-            "subcategories": cat_data.get("subcategories", []),
-            "milestones": cat_data.get("milestones", []),
+            "subcategories": list(subcategories),
+            # Copied so merging a later bucket cannot mutate the parsed upstream.
+            "milestones": list(milestones),
         }
+        if is_canonical:
+            canonical_keys.add(site_key)
     return {
         "last_update": upstream.get("last_update", now_iso()),
         "version": upstream.get("version", "1.0.0"),

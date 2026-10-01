@@ -25,13 +25,23 @@
       "date_required": true,
       "accepted_shapes": ["YYYY-MM-DD", "D-M-YYYY", "D/M/YYYY", "partial YYYY / YYYY-MM", "ISO datetime (Date-constructor fallback)"],
       "calendar_validity": true,
-      "coordinates": "finite and in-range; (0,0) allowed because events ARE geocoded at load and some are intentionally global."
+      "coordinates": "finite and in-range; (0,0) allowed because events ARE geocoded at load and some are intentionally global.",
+      "categories": [
+        "Biotechnology",
+        "Computing & AGI",
+        "Quantum Physics",
+        "Renewable Energy",
+        "Cybersecurity",
+        "Spaceflight & Aeronautics",
+        "Military & Defense"
+      ],
+      "category_rule": "Exactly one of controls.events.categories, matched case-sensitively. There is deliberately no catch-all bucket: sync_milestones.py folds upstream legacy names (CATEGORY_ALIASES, e.g. \"Quantum Gravity\" -> \"Quantum Physics\") into a canonical category, so every milestone has a colour, a legend row and a catalog filter. An unknown category fails validation instead of silently rendering as \"Other\"."
     }
   },
   "files": {
     "events.json": {
       "shape": "top-level object; events: list of { id, title, category, date, geolocation: { lat, lon }, ... }",
-      "rules": ["date is required and calendar-valid per controls.events", "lat/lon finite and within controls.coordinate ranges"]
+      "rules": ["date is required and calendar-valid per controls.events", "lat/lon finite and within controls.coordinate ranges", "category must be one of controls.events.categories"]
     },
     "world_layers.json": {
       "version": "1.1.0",

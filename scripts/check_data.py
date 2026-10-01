@@ -45,6 +45,12 @@ _STATUS_VALUES = set(
 )
 _DATE_RE = re.compile(_LIFECYCLE_CTRL.get("date_pattern", r"^\d{4}(-\d{2}){0,2}$"))
 
+# The only categories an event may carry. Deliberately no catch-all: an unknown
+# category is a data bug, and quietly rendering it as "Other" hides it. Legacy
+# upstream names are folded into these by CATEGORY_ALIASES in sync_milestones.py.
+_CATEGORIES = _SCHEMA.get("controls", {}).get("events", {}).get("categories", [])
+_CATEGORY_SET = set(_CATEGORIES)
+
 # The schema version world_layers.json must carry (written by sync_layers.py /
 # fetch_crisis_zones.py, declared once in schema/worldmap-data.schema.json).
 _FILE_VERSION = _SCHEMA.get("files", {}).get("world_layers.json", {}).get("version", "1.1.0")
@@ -249,6 +255,11 @@ def check_events(events: object) -> list[str]:
             issues.append(f"events[{i}]: title must be a string")
         if not isinstance(ev.get("category"), str):
             issues.append(f"events[{i}]: category must be a string")
+        elif _CATEGORY_SET and ev["category"] not in _CATEGORY_SET:
+            issues.append(
+                f"events[{i}]: category {ev['category']!r} is not one of "
+                f"{sorted(_CATEGORY_SET)}"
+            )
         if not _valid_event_date(ev.get("date")):
             issues.append(f"events[{i}]: date must be a parseable date string")
         geo = ev.get("geolocation")

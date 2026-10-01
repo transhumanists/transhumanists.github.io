@@ -333,42 +333,42 @@ body {
   left: 12px;
   bottom: 12px;
   max-width: calc(100% - 24px);
-  background: rgba(6,11,20,0.85);
+  background: rgba(6,11,20,0.72);
   backdrop-filter: blur(8px);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  padding: 10px 14px;
-  font-size: 0.7rem;
+  padding: 7px 10px;
+  font-size: 0.62rem;
+  line-height: 1.25;
   font-family: var(--font-mono);
   z-index: 5;
-  min-width: 176px;
+  min-width: 138px;
   user-select: none;
  }
  .map-legend-controls {
    display: flex;
    flex-wrap: wrap;
-   gap: 6px;
-   margin-top: 10px;
-   padding-top: 10px;
+   gap: 4px;
+   margin-top: 7px;
+   padding-top: 7px;
    border-top: 1px solid var(--border);
  }
  .map-legend-title {
   color: var(--fg-subtle);
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  font-size: 0.65rem;
-  margin-bottom: 6px;
+  font-size: 0.56rem;
+  margin-bottom: 4px;
  }
  .map-legend-row {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 2px 0;
+  gap: 6px;
   color: var(--fg-muted);
   cursor: pointer;
   border-radius: 4px;
-  padding: 4px 6px;
-  margin: -2px -6px;
+  padding: 2px 4px;
+  margin: 0 -4px;
   transition: background 0.15s ease, opacity 0.15s ease;
  }
  .map-legend-row:hover {
@@ -379,26 +379,18 @@ body {
   outline: 2px solid var(--accent);
   outline-offset: 1px;
  }
- .map-legend-row[aria-pressed="false"] {
-  opacity: 0.4;
- }
- .map-legend-row[aria-pressed="false"] .map-legend-dot {
-  box-shadow: 0 0 0 2px rgba(255,255,255,0.15);
- }
+  .map-legend-row[aria-pressed="false"] {
+    opacity: 0.4;
+  }
+  .map-legend-row[aria-pressed="false"] .map-legend-dot {
+    box-shadow: 0 0 0 2px rgba(255,255,255,0.15);
+  }
 .map-legend-row[aria-pressed="false"] .map-legend-count {
     text-decoration: line-through;
   }
-  .map-legend-row--static {
-    cursor: default;
-    opacity: 0.6;
-  }
-  .map-legend-row--static:hover {
-    background: transparent;
-    color: var(--fg-muted);
-  }
-  .map-legend-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-  .map-legend-dot--ring { background: transparent !important; border: 2px solid; border-radius: 50%; }
-  .map-legend-dot--diamond { border-radius: 2px; transform: rotate(45deg); }
+  .map-legend-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+  .map-legend-dot--ring { background: transparent !important; border: 1.5px solid; border-radius: 50%; }
+  .map-legend-dot--diamond { border-radius: 1px; transform: rotate(45deg); }
   .map-legend-label { flex: 1; min-width: 0; }
 .map-legend-count {
   margin-left: auto;
@@ -1459,13 +1451,13 @@ body {
   .map-timeline-track { height: 3px; }
   .map-timeline-years { top: -16px; font-size: 0.5rem; }
   .map-timeline-handle { width: 18px; height: 18px; }
-  .map-legend { left: 8px; bottom: 8px; max-width: calc(100% - 16px); padding: 8px 10px; font-size: 0.6rem; min-width: 140px; }
-  .map-legend-title { font-size: 0.6rem; margin-bottom: 4px; }
-  .map-legend-row { gap: 6px; padding: 3px 4px; margin: -1px -4px; }
-  .map-legend-dot { width: 6px; height: 6px; }
-  .map-legend-label { font-size: 0.6rem; }
-  .map-legend-count { font-size: 0.6rem; }
-  .map-legend-controls { gap: 4px; margin-top: 6px; padding-top: 6px; }
+  .map-legend { left: 8px; bottom: 8px; max-width: calc(100% - 16px); padding: 6px 8px; font-size: 0.56rem; min-width: 116px; }
+  .map-legend-title { font-size: 0.52rem; margin-bottom: 3px; }
+  .map-legend-row { gap: 5px; padding: 2px 3px; margin: 0 -3px; }
+  .map-legend-dot { width: 5px; height: 5px; }
+  .map-legend-label { font-size: 0.56rem; }
+  .map-legend-count { font-size: 0.56rem; }
+  .map-legend-controls { gap: 4px; margin-top: 5px; padding-top: 5px; }
   .map-control-btn { padding: 3px 8px; font-size: 0.65rem; }
   .map-tooltip { font-size: 0.7rem; max-width: 200px; padding: 8px 10px; }
   .map-tooltip .tt-title { font-size: 0.75rem; margin-bottom: 3px; }
@@ -1489,11 +1481,11 @@ body {
   .map-timeline { height: 36px; padding: 6px 6px; }
   .map-timeline-track { height: 2px; }
   .map-timeline-handle { width: 16px; height: 16px; }
-  .map-legend { font-size: 0.55rem; min-width: 120px; padding: 6px 8px; }
-  .map-legend-title { font-size: 0.55rem; }
-  .map-legend-row { gap: 4px; padding: 2px 3px; }
+  .map-legend { font-size: 0.5rem; min-width: 100px; padding: 5px 6px; }
+  .map-legend-title { font-size: 0.48rem; }
+  .map-legend-row { gap: 4px; padding: 1px 3px; }
   .map-legend-dot { width: 5px; height: 5px; }
-  .map-legend-label { font-size: 0.55rem; }
+  .map-legend-label { font-size: 0.5rem; }
   .map-control-btn { padding: 2px 6px; font-size: 0.6rem; }
   .map-tooltip { font-size: 0.65rem; max-width: 180px; }
 }

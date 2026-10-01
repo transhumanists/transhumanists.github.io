@@ -533,6 +533,40 @@ test('zoom controls, keyboard and double-click do not throw', () => {
     }
   });
 
+  test('no "Other" legend row: every plottable event lands in a legend category', () => {
+    const api = windowObj.__WORLDMAP_TEST__;
+    const legendKeys = api.CATEGORY_LEGEND.map((c) => c.key);
+    // The site has no catch-all bucket, so an alias must always resolve to a
+    // legend key - otherwise the dot renders with no colour and no count.
+    expect(legendKeys.length).toBe(7);
+    expect(legendKeys).not.toContain('Other');
+    for (const alias of Object.keys(api.CATEGORY_ALIASES)) {
+      expect(legendKeys).toContain(api.CATEGORY_ALIASES[alias]);
+    }
+    // A category with no alias and no legend row is exactly the "Other" bug.
+    expect(api.CATEGORY_ALIASES['Mathematics']).toBe('Computing & AGI');
+    expect(api.CATEGORY_ALIASES['Quantum Gravity']).toBe('Quantum Physics');
+    // Fixture events carry old short names and a fully unknown category; the
+    // unknown one is located at (0,0) so isPlottable drops it, but every
+    // remaining event must still map onto a legend row.
+    const plotted = EVENT_PAYLOAD.events
+      .map((e) => api.normalizeEvent(e))
+      .filter((e) => api.isPlottable(e));
+    expect(plotted.length).toBeGreaterThan(0);
+    for (const ev of plotted) {
+      const canonical = api.CATEGORY_ALIASES[ev.category] || ev.category;
+      if (canonical === 'Totally Unknown') continue;
+      expect(legendKeys).toContain(canonical);
+    }
+    // Legend counts sum to the plottable events that carry a known category.
+    const known = plotted.filter((e) => {
+      const canonical = api.CATEGORY_ALIASES[e.category] || e.category;
+      return canonical !== 'Totally Unknown';
+    });
+    const sum = legendKeys.reduce((acc, k) => acc + Number(legendValue(k)), 0);
+    expect(sum).toBe(known.length);
+  });
+
   test('normalizeEvent fills defaults and isPlottable filters unusable events', () => {
     const api = windowObj.__WORLDMAP_TEST__;
     const full = api.normalizeEvent({

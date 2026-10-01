@@ -28,18 +28,18 @@ def _layers_payload(zones: list[dict], fleets: list[dict], crises: list[dict] | 
 class TestCheckEvents(unittest.TestCase):
     def test_happy_path(self):
         payload = _events_payload(
-            {"title": "X", "category": "Energy", "date": "2026-03-15",
+            {"title": "X", "category": "Renewable Energy", "date": "2026-03-15",
              "geolocation": {"lat": 1.5, "lon": 2.5}},
         )
         self.assertEqual(cd.check_events(payload["events"]), [])
 
     def test_missing_geolocation_fails(self):
-        payload = _events_payload({"title": "X", "category": "Energy", "date": "2026-03-15"})
+        payload = _events_payload({"title": "X", "category": "Renewable Energy", "date": "2026-03-15"})
         self.assertTrue(cd.check_events(payload["events"]))
 
     def test_nonfinite_coordinate_fails(self):
         payload = _events_payload(
-            {"title": "X", "category": "Biotech", "date": "2026-03-15",
+            {"title": "X", "category": "Biotechnology", "date": "2026-03-15",
              "geolocation": {"lat": 1e400, "lon": 0}},
         )
         issues = cd.check_events(payload["events"])
@@ -47,7 +47,7 @@ class TestCheckEvents(unittest.TestCase):
 
     def test_bool_coordinate_fails(self):
         payload = _events_payload(
-            {"title": "X", "category": "Biotech", "date": "2026-03-15",
+            {"title": "X", "category": "Biotechnology", "date": "2026-03-15",
              "geolocation": {"lat": True, "lon": 0}},
         )
         issues = cd.check_events(payload["events"])
@@ -55,7 +55,7 @@ class TestCheckEvents(unittest.TestCase):
 
     def test_out_of_range_fails(self):
         payload = _events_payload(
-            {"title": "X", "category": "Biotech", "date": "2026-03-15",
+            {"title": "X", "category": "Biotechnology", "date": "2026-03-15",
              "geolocation": {"lat": 91, "lon": 190}},
         )
         issues = cd.check_events(payload["events"])
@@ -63,21 +63,21 @@ class TestCheckEvents(unittest.TestCase):
 
     def test_bad_title_type_fails(self):
         payload = _events_payload(
-            {"title": 42, "category": "Biotech", "date": "2026-03-15",
+            {"title": 42, "category": "Biotechnology", "date": "2026-03-15",
              "geolocation": {"lat": 1, "lon": 1}},
         )
         self.assertTrue(any("title" in i for i in cd.check_events(payload["events"])))
 
     def test_missing_date_fails(self):
         payload = _events_payload(
-            {"title": "X", "category": "Energy", "geolocation": {"lat": 1, "lon": 1}},
+            {"title": "X", "category": "Renewable Energy", "geolocation": {"lat": 1, "lon": 1}},
         )
         issues = cd.check_events(payload["events"])
         self.assertTrue(any("date" in i for i in issues))
 
     def test_non_string_date_fails(self):
         payload = _events_payload(
-            {"title": "X", "category": "Energy", "date": 42,
+            {"title": "X", "category": "Renewable Energy", "date": 42,
              "geolocation": {"lat": 1, "lon": 1}},
         )
         issues = cd.check_events(payload["events"])
@@ -87,7 +87,7 @@ class TestCheckEvents(unittest.TestCase):
         # parseDateToISO would pass "2026-02-30" through unvalidated; the
         # validator must reject it so a non-date never renders on the map.
         payload = _events_payload(
-            {"title": "X", "category": "Energy", "date": "2026-02-30",
+            {"title": "X", "category": "Renewable Energy", "date": "2026-02-30",
              "geolocation": {"lat": 1, "lon": 1}},
         )
         issues = cd.check_events(payload["events"])
@@ -96,7 +96,7 @@ class TestCheckEvents(unittest.TestCase):
     def test_malformed_or_empty_date_fails(self):
         for bad in ("banana", "", "  ", "32/13/2026"):
             payload = _events_payload(
-                {"title": "X", "category": "Energy", "date": bad,
+                {"title": "X", "category": "Renewable Energy", "date": bad,
                  "geolocation": {"lat": 1, "lon": 1}},
             )
             issues = cd.check_events(payload["events"])
@@ -108,7 +108,7 @@ class TestCheckEvents(unittest.TestCase):
         # must keep the acceptance surface identical to the map's.
         for bad in ("20260315", "20260315T100000"):
             payload = _events_payload(
-                {"title": "X", "category": "Energy", "date": bad,
+                {"title": "X", "category": "Renewable Energy", "date": bad,
                  "geolocation": {"lat": 1, "lon": 1}},
             )
             issues = cd.check_events(payload["events"])
@@ -119,7 +119,7 @@ class TestCheckEvents(unittest.TestCase):
         for good in ("2026-03-15", "15/03/2026", "15-03-2026", "2026", "2026-03",
                      "2026-03-15T10:00:00", "2026-03-15T19:23:03+00:00"):
             payload = _events_payload(
-                {"title": "X", "category": "Energy", "date": good,
+                {"title": "X", "category": "Renewable Energy", "date": good,
                  "geolocation": {"lat": 1, "lon": 1}},
             )
             self.assertEqual(cd.check_events(payload["events"]), [], f"good date {good!r}")
@@ -426,6 +426,67 @@ class TestSchemaParity(unittest.TestCase):
         self.assertIn("=== 'active' || s === 'ongoing'", js)
 
 
+class TestEventCategories(unittest.TestCase):
+    """An event must name one of the canonical categories.
+
+    There is no "Other" bucket on this site, so a legacy or invented category is
+    a data bug that would otherwise render as an uncoloured dot.
+    """
+
+    def _event(self, category: object) -> dict:
+        return {"title": "X", "category": category, "date": "2026-03-15",
+                "geolocation": {"lat": 1.5, "lon": 2.5}}
+
+    def test_every_canonical_category_is_accepted(self):
+        for category in cd._CATEGORIES:
+            with self.subTest(category=category):
+                self.assertEqual(cd.check_events([self._event(category)]), [])
+
+    def test_other_category_fails(self):
+        issues = cd.check_events([self._event("Other")])
+        self.assertTrue(any("category" in i and "Other" in i for i in issues))
+
+    def test_legacy_upstream_category_fails(self):
+        # These are valid *upstream* names, but the sync folds them into a
+        # canonical bucket; reaching the published feed means the fold was
+        # bypassed, so validation must fail rather than hide the mismatch.
+        issues = cd.check_events([self._event("Quantum Gravity")])
+        self.assertTrue(any("category" in i for i in issues))
+
+    def test_non_string_category_still_reported_as_type_error(self):
+        issues = cd.check_events([self._event(42)])
+        self.assertTrue(any("must be a string" in i for i in issues))
+
+    def test_schema_declares_seven_categories_with_no_catch_all(self):
+        cats = cd._SCHEMA["controls"]["events"]["categories"]
+        self.assertEqual(len(cats), 7)
+        self.assertNotIn("Other", cats)
+        self.assertEqual(len(set(cats)), 7)
+
+    def test_python_and_js_legend_categories_match(self):
+        js_file = cd.ROOT / "assets" / "js" / "worldmap.js"
+        if not js_file.exists():
+            self.skipTest("worldmap.js not checked out")
+        js = js_file.read_text(encoding="utf-8")
+        # CATEGORY_LEGEND entries in worldmap.js must be the same seven names.
+        for category in cd._CATEGORIES:
+            self.assertIn(f"label: '{category}'", js)
+
+    def test_every_alias_target_is_a_canonical_category(self):
+        import sync_milestones as sync
+        self.assertTrue(sync.CATEGORY_ALIASES, "alias table should not be empty")
+        for alias, canonical in sync.CATEGORY_ALIASES.items():
+            with self.subTest(alias=alias):
+                self.assertIn(canonical, cd._CATEGORIES)
+
+    def test_published_events_use_canonical_categories(self):
+        events_file = cd.DATA_DIR / "events.json"
+        if not events_file.exists():
+            self.skipTest("events.json not checked out")
+        payload = json.loads(events_file.read_text(encoding="utf-8"))
+        self.assertEqual(cd.check_events(payload["events"]), [])
+
+
 class TestWorldLayersHeader(unittest.TestCase):
     def _payload(self, **overrides: object) -> dict:
         base = {"version": "1.1.0", "last_update": "2026-09-25T00:00:00+00:00",
@@ -468,7 +529,7 @@ class TestCheckFile(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             d = Path(tmp)
             (d / "events.json").write_text(
-                json.dumps(_events_payload({"title": "X", "category": "C", "date": "2026-03-15",
+                json.dumps(_events_payload({"title": "X", "category": "Cybersecurity", "date": "2026-03-15",
                                             "geolocation": {"lat": 0, "lon": 0}})),
                 encoding="utf-8",
             )

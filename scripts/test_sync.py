@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import contextlib
+import json
 import ssl
 import sys
 import unittest
@@ -213,6 +214,84 @@ class TestEvents(unittest.TestCase):
         m = make_milestone(id="ms-2", value=100, unit="MW", category="Energy")
         events = sm.build_events([m])
         self.assertEqual(events["events"][0]["value"], "100 MW")
+
+
+class TestCategoryAliases(unittest.TestCase):
+    """Legacy upstream names fold into a canonical category.
+
+    The site has no "Other" bucket, so every milestone must land in one of the
+    seven canonical categories that owns a colour, a legend row and a filter.
+    """
+
+    def test_every_alias_target_is_canonical(self):
+        for alias, canonical in sm.CATEGORY_ALIASES.items():
+            with self.subTest(alias=alias):
+                self.assertIn(canonical, sm.SITE_KEY_TO_DISPLAY.values())
+
+    def test_alias_resolves_from_display_name_and_snake_case(self):
+        for alias, canonical in sm.CATEGORY_ALIASES.items():
+            key = sm.DISPLAY_TO_SITE_KEY[canonical]
+            with self.subTest(alias=alias):
+                self.assertEqual(sm.UPSTREAM_TO_SITE_KEY[alias], key)
+                self.assertEqual(sm.UPSTREAM_TO_SITE_KEY[sm.slugify(alias)], key)
+                self.assertEqual(sm.display_category(alias), canonical)
+
+    def test_alias_buckets_merge_into_the_canonical_bucket(self):
+        upstream = {
+            "categories": {
+                "Mathematics": {"name": "Mathematics", "subcategories": ["graph_theory"],
+                                "milestones": [make_milestone(id="ms-math")]},
+                "Quantum Gravity": {"name": "Quantum Gravity", "subcategories": [],
+                                    "milestones": [make_milestone(id="ms-qg")]},
+                "Quantum Physics": {"name": "Quantum Physics", "subcategories": ["error_correction"],
+                                    "milestones": [make_milestone(id="ms-qp")]},
+            }
+        }
+        cats = sm.transform_upstream_to_site_format(upstream)["categories"]
+        # Alias buckets are gone, and no milestone was lost on the way.
+        self.assertEqual(sorted(cats), ["computing_agi", "quantum"])
+        self.assertEqual({m["id"] for m in cats["quantum"]["milestones"]}, {"ms-qg", "ms-qp"})
+        self.assertEqual([m["id"] for m in cats["computing_agi"]["milestones"]], ["ms-math"])
+
+    def test_merge_unions_subcategories_without_duplicates(self):
+        upstream = {
+            "categories": {
+                "Computer Vision": {"name": "Computer Vision", "subcategories": ["ocr", "shared"],
+                                    "milestones": [make_milestone(id="ms-cv")]},
+                "Computing & AGI": {"name": "Computing & AGI", "subcategories": ["shared", "benchmarks"],
+                                    "milestones": [make_milestone(id="ms-agi")]},
+            }
+        }
+        bucket = sm.transform_upstream_to_site_format(upstream)["categories"]["computing_agi"]
+        self.assertEqual(sorted(bucket["subcategories"]), ["benchmarks", "ocr", "shared"])
+
+    def test_merged_bucket_keeps_canonical_name_and_metadata(self):
+        upstream = {
+            "categories": {
+                "Legal AI": {"name": "Legal AI", "icon": "x", "color": "#ffffff",
+                             "subcategories": ["legal_datasets"],
+                             "milestones": [make_milestone(id="ms-1")]},
+                "computing_agi": {"name": "Computing & AGI", "icon": "ai", "color": "#ff0066",
+                                  "subcategories": ["agents"], "milestones": [make_milestone(id="ms-2")]},
+            }
+        }
+        bucket = sm.transform_upstream_to_site_format(upstream)["categories"]["computing_agi"]
+        self.assertEqual(bucket["name"], "Computing & AGI")
+        self.assertEqual(bucket["icon"], "ai")
+        self.assertEqual(bucket["color"], "#ff0066")
+
+    def test_published_records_are_canonicalised(self):
+        out = sm.build_site_categories(
+            [make_milestone(id="a", category="Mathematics")], {}
+        )
+        self.assertEqual(out["computing_agi"]["milestones"][0]["category"], "Computing & AGI")
+        self.assertEqual(out["computing_agi"]["name"], "Computing & AGI")
+
+    def test_build_site_categories_does_not_mutate_input(self):
+        source = make_milestone(id="a", category="Quantum Gravity")
+        snapshot = json.dumps(source, sort_keys=True)
+        sm.build_site_categories([source], {})
+        self.assertEqual(json.dumps(source, sort_keys=True), snapshot)
 
 
 class TestValidate(unittest.TestCase):
