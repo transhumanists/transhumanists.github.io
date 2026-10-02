@@ -1567,6 +1567,22 @@ class TestCheckFile(unittest.TestCase):
                 }),
                 encoding="utf-8",
             )
+            # The archive is validated too (ARCHIVE_FILES), so main() now expects it
+            # alongside the three REQUIRED_FILES. Without this the end-to-end test
+            # fails on a missing file rather than on anything it meant to assert.
+            (d / "milestones_history.json").write_text(
+                json.dumps([{
+                    "id": "ms-e2e-1",
+                    "category": "Cybersecurity",
+                    "subcategory": "general",
+                    "title": "Archived milestone",
+                    "date": "2026-03-15",
+                    "source": "Example",
+                    "url": "https://example.org/a",
+                    "geolocation": {"lat": 51.5, "lon": -0.12},
+                }]),
+                encoding="utf-8",
+            )
             self.assertEqual(cd.main([str(d)]), 0)
 
     def test_missing_file_is_an_error(self):

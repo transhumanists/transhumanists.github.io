@@ -623,6 +623,25 @@ def archive_record(m: dict, seen_on: str) -> dict:
     return rec
 
 
+def _scrub_inherited(rec: dict) -> dict:
+    """Apply the archive geolocation rule to a record read back off disk.
+
+    `archive_record` sanitises every record built from upstream, but records
+    inherited from the existing archive bypass it entirely - they are passed
+    through as-is. That is how a pre-fix (0,0) record stays in the file forever:
+    it is never rebuilt, so nothing ever re-examines it. Mirrored here so the
+    archive heals on the next run instead of needing a one-off repair script.
+    """
+    if not isinstance(rec, dict):
+        return rec
+    geo = rec.get("geolocation")
+    if geo is not None and _archive_geolocation(geo) is None:
+        out = {k: v for k, v in rec.items() if k != "geolocation"}
+        out["located"] = False
+        return out
+    return rec
+
+
 def merge_history(existing: list, current: list, seen_on: str) -> list:
     """Union current milestone records into the append-only archive.
 
@@ -634,6 +653,7 @@ def merge_history(existing: list, current: list, seen_on: str) -> list:
     by_id: dict[str, dict] = {}
     for rec in existing:
         if isinstance(rec, dict):
+            rec = _scrub_inherited(rec)
             by_id[rec.get("id", canonical_id(rec))] = rec
     for m in current:
         rec = archive_record(m, seen_on)
@@ -660,7 +680,10 @@ def merge_feed(current: list, history: list) -> list:
     by_id: dict[str, dict] = {}
     for rec in history:
         if isinstance(rec, dict):
-            by_id[rec.get("id", canonical_id(rec))] = rec
+            # Same reasoning as merge_history: history records are read back from
+            # disk and never rebuilt, so a stale (0,0) would otherwise persist.
+            cleaned = _scrub_inherited(rec)
+            by_id[cleaned.get("id", canonical_id(cleaned))] = cleaned
     for m in current:
         by_id[m.get("id", canonical_id(m))] = m
     feed = list(by_id.values())

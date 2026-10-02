@@ -35,6 +35,12 @@ ROOT = Path(__file__).resolve().parent.parent
 DATA_DIR = ROOT / "data"
 REQUIRED_FILES = ("events.json", "world_layers.json", "milestones.json")
 
+# Validated, but by a different function: the archive is a flat list of records
+# rather than a {categories: ...} document, so it cannot go through
+# check_milestones. It is still a published data file the map reads, so it gets the
+# same field and geolocation enforcement rather than being exempt by omission.
+ARCHIVE_FILES = ("milestones_history.json",)
+
 # Single source of truth for the data contract (schema/worldmap-data.schema.json).
 # The defaults below keep this module runnable if the schema is ever removed,
 # but the parity tests in test_check_data.py fail loudly in CI on any drift.
@@ -708,11 +714,56 @@ def _check_header(data: dict) -> list[str]:
     return issues
 
 
+def check_archive(data, filename: str) -> list[str]:
+    """Validate a flat archive record list (milestones_history.json).
+
+    Same contract as check_milestones, minus the category envelope: this file is a
+    list, one flat record per milestone, and it is what the year slider's historical
+    range is drawn from. It had no validator at all - 106 published records that
+    nothing checked. Present-but-wrong is an error; an absent geolocation is not,
+    matching the live milestones file.
+    """
+    if not isinstance(data, list):
+        return [f"{filename}: must be a JSON array of records"]
+    issues: list[str] = []
+    seen_ids: set[str] = set()
+    for i, rec in enumerate(data):
+        if not isinstance(rec, dict):
+            issues.append(f"{filename}[{i}]: must be an object")
+            continue
+        if not isinstance(rec.get("id"), str) or not rec["id"].strip():
+            issues.append(f"{filename}[{i}].id: must be a non-empty string")
+        elif rec["id"] in seen_ids:
+            issues.append(f"{filename}[{i}].id: duplicate id {rec['id']!r}")
+        else:
+            seen_ids.add(rec["id"])
+        for field in ("title", "category", "subcategory", "date", "source", "url"):
+            if not isinstance(rec.get(field), str) or not rec[field].strip():
+                issues.append(f"{filename}[{i}].{field}: must be a non-empty string")
+        if not _valid_event_date(rec.get("date")):
+            issues.append(f"{filename}[{i}].date: must be a parseable date string")
+        if not _valid_source_url(rec.get("url")):
+            issues.append(f"{filename}[{i}].url: must be absolute http(s)")
+        if rec.get("category") not in _CATEGORIES:
+            issues.append(f"{filename}[{i}].category: {rec.get('category')!r} is not a "
+                          "canonical category")
+        geo = rec.get("geolocation")
+        if geo is not None:
+            if not isinstance(geo, dict) or not _coord_ok(geo.get("lat"), geo.get("lon")):
+                issues.append(f"{filename}[{i}].geolocation: must be a finite lat/lon pair in range")
+            elif geo.get("lat") == 0.0 and geo.get("lon") == 0.0:
+                issues.append(f"{filename}[{i}].geolocation (0,0) is the no-location marker; "
+                              "omit the key instead of publishing null island")
+    return issues
+
+
 def check_file(path: Path) -> list[str]:
     try:
         data = json.loads(path.read_text(encoding="utf-8"))
     except Exception as exc:  # noqa: BLE001 - surface any read/parse failure
         return [f"unreadable/unparseable JSON: {exc}"]
+    if path.name in ARCHIVE_FILES:
+        return check_archive(data, path.name)
     return check_data(data, path.name)
 
 
@@ -722,6 +773,7 @@ def main(argv: list[str]) -> int:
     for root in roots:
         if root.is_dir():
             targets.extend(root / f for f in REQUIRED_FILES)
+            targets.extend(root / f for f in ARCHIVE_FILES)
         else:
             targets.append(root)
 
