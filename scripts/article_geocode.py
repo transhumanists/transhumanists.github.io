@@ -494,18 +494,50 @@ def load_cache() -> dict:
     if CACHE_PATH.exists():
         try:
             return json.loads(CACHE_PATH.read_text(encoding="utf-8")).get("articles", {})
-        except Exception:  # noqa: BLE001
+        except Exception:  # noqa: BLE001 - a corrupt cache must not block the run
             return {}
     return {}
 
 
-def save_cache(cache: dict) -> None:
+def save_cache(cache: dict, keep_urls: set[str] | None = None) -> None:
+    """Persist *derived outcomes only* - never the fetched page text.
+
+    An earlier version stored up to 200KB of extracted article text per URL: 108KB of
+    third-party prose committed to the repository and, because everything under data/
+    is published by Jekyll, republished on the live site. Nothing downstream needs the
+    text - the outcome is what the pipeline reads - so the cache now holds a content
+    hash plus the resolved coordinate and its evidence.
+
+    Two things are stripped on every write rather than trusted to be rewritten:
+
+      * any `text` key, which catches legacy entries from before this change. Those
+        survived a purge because their records had already been resolved and left the
+        unlocated queue, so `--refresh` never visited them again.
+      * entries for records no longer in the queue, so the file cannot grow without
+        bound as milestones get resolved.
+    """
+    clean = {}
+    for url, entry in cache.items():
+        if not isinstance(entry, dict):
+            continue
+        if "text" in entry:
+            entry = {k: v for k, v in entry.items() if k != "text"}
+        if keep_urls is not None and url not in keep_urls:
+            continue
+        clean[url] = entry
+    cache.clear()
+    cache.update(clean)
     CACHE_PATH.write_text(json.dumps({
-        "description": "Cached article-body geocoding evidence. Written only by "
-                       "scripts/article_geocode.py --refresh so the pipeline stays "
-                       "deterministic and offline.",
+        "description": "Derived article-body geocoding outcomes. Stores the resolved "
+                       "coordinate and the evidence for it - never the fetched page "
+                       "text. Written only by scripts/article_geocode.py --refresh.",
         "version": "1.0.0",
         "articles": cache}, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+
+
+def _text_digest(text: str) -> str:
+    import hashlib
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()[:16]
 
 
 def iter_unlocated(sources=("data/milestones.json", "data/milestones_history.json")):
@@ -549,29 +581,38 @@ def main() -> int:
             url = rec.get("url") or ""
             body, reason = fetch_text(url)
             if body is None:
-                cache[url] = {"text": None, "reason": reason}
+                cache[url] = {"fetched": None, "reason": reason}
                 print("  fetch failed  %-52s %s" % ((rec.get("title") or "")[:52], reason))
                 continue
-            cache[url] = {"text": body[:200_000]}
-            print("  fetched %6d chars  %s" % (len(body), (rec.get("title") or "")[:60]))
-        save_cache(cache)
-        print("cache written: %s" % CACHE_PATH.name)
+            outcome = resolve(rec, body)
+            cache[url] = {"fetched": _text_digest(body), "outcome": outcome}
+            print("  fetched %6d chars -> %-10s %s"
+                  % (len(body), "resolved" if outcome.get("located") else "no signal",
+                     (rec.get("title") or "")[:48]))
+        save_cache(cache, keep_urls={r.get("url") or "" for r in queue})
+        print("cache written: %s (%d entries)" % (CACHE_PATH.name, len(cache)))
 
     if not args.refresh and not args.apply and not args.report:
         ap.error("choose --report, --refresh or --apply")
 
     rows = []
+    replayed = False
     for rec in queue:
         url = rec.get("url") or ""
-        body = (cache.get(url) or {}).get("text")
-        outcome = resolve(rec, body)
+        entry = cache.get(url) or {}
+        outcome = entry.get("outcome")
+        if outcome is None:
+            # No cached body: fall back to the deterministic title/summary passes,
+            # which need no network and are what the pipeline itself uses.
+            outcome = resolve(rec)
+        else:
+            replayed = True
         rows.append((rec, outcome))
 
     resolved = [r for r in rows if r[1].get("located")]
     print("\n%d/%d unlocated records resolved%s"
           % (len(resolved), len(rows),
-             " from cached article bodies" if any(
-                 (cache.get(r[0].get("url") or "") or {}).get("text") for r in rows) else ""))
+             " (replayed from cached article bodies)" if replayed else ""))
     for rec, out in rows:
         title = (rec.get("title") or "")[:56]
         if out.get("located"):

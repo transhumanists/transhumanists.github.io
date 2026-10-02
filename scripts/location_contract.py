@@ -29,6 +29,8 @@ ORIGIN_EPSILON = 1e-6
 #   stated      - coordinates supplied by the upstream record itself
 #   institution - an institution or lab named in the article's own text
 #   place       - a place named in the article's own text
+#   article     - a demonym in the article's own text, naming a country neither
+#                 table lists ("Bosnian" -> Bosnia); the weakest placed signal
 #   subcategory - a weak hint carried by the subcategory label alone
 #   source      - the publisher or preprint server, as a last resort
 #   unlocated   - nothing matched; the record publishes without a dot
@@ -36,7 +38,8 @@ ORIGIN_EPSILON = 1e-6
 # "source" is the one worth distrusting: it places a Stanford paper at Nature's
 # London office. Surfacing the level lets a consumer weight or filter on it instead
 # of treating every dot as equally authoritative.
-CONFIDENCE_LEVELS = ("stated", "institution", "place", "subcategory", "source", "unlocated")
+CONFIDENCE_LEVELS = ("stated", "institution", "place", "article",
+                   "subcategory", "source", "unlocated")
 
 UNLOCATED = "unlocated"
 

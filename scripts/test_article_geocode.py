@@ -99,6 +99,55 @@ class TestTextExtraction(unittest.TestCase):
         self.assertEqual(ag.extract_text(""), "")
 
 
+class TestCacheHygiene(unittest.TestCase):
+    def test_cache_never_persists_page_text(self):
+        # Everything under data/ is published by Jekyll, so third-party article prose
+        # committed here is republished on the live site. An earlier version stored
+        # 108KB of it.
+        import json
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "cache.json"
+            original = ag.CACHE_PATH
+            ag.CACHE_PATH = path
+            try:
+                ag.save_cache({"https://e.org/a": {
+                    "text": "secrets of the fetched page",
+                    "fetched": "abc",
+                    "outcome": {"located": False, "reason": "no signal"}}})
+                stored = json.loads(path.read_text(encoding="utf-8"))
+            finally:
+                ag.CACHE_PATH = original
+        self.assertNotIn("text", stored["articles"]["https://e.org/a"])
+        self.assertIn("outcome", stored["articles"]["https://e.org/a"])
+
+    def test_cache_prunes_records_that_are_no_longer_queued(self):
+        import json
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "cache.json"
+            original = ag.CACHE_PATH
+            ag.CACHE_PATH = path
+            try:
+                ag.save_cache(
+                    {"https://e.org/keep": {"outcome": {"located": False}},
+                     "https://e.org/gone": {"outcome": {"located": False}}},
+                    keep_urls={"https://e.org/keep"})
+                stored = json.loads(path.read_text(encoding="utf-8"))
+            finally:
+                ag.CACHE_PATH = original
+        self.assertEqual(sorted(stored["articles"]), ["https://e.org/keep"])
+
+    def test_the_committed_cache_carries_no_text(self):
+        if not ag.CACHE_PATH.exists():
+            self.skipTest("no cache committed")
+        import json
+        stored = json.loads(ag.CACHE_PATH.read_text(encoding="utf-8"))
+        offenders = [u for u, v in stored["articles"].items()
+                     if isinstance(v, dict) and "text" in v]
+        self.assertEqual(offenders, [], "page text still stored: %s" % offenders[:3])
+
+
 class TestResolveIsPure(unittest.TestCase):
     def test_same_input_same_answer(self):
         rec = {"title": "Maltese OCR benchmarks", "summary": "Maltese corpus"}
