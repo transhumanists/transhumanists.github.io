@@ -244,5 +244,178 @@ class TestDataWriterCoordination(unittest.TestCase):
                 self.assertIn("git pull --rebase", runs)
 
 
+
+
+class TestVerifyReleaseCoversCI(unittest.TestCase):
+    """scripts/verify_release.py is the local mirror of CI.
+
+    It only pays off if it keeps running what CI runs. Two pushes this session passed
+    locally and went red in CI, so a check that exists in one place and not the other
+    is the failure mode worth guarding against.
+    """
+
+    def _ci(self):
+        import pathlib
+
+        return pathlib.Path(__file__).resolve().parents[1] / ".github" / "workflows" / "ci.yml"
+
+    def test_script_exists_and_is_executable_by_python(self):
+        import pathlib
+        import subprocess
+        import sys
+
+        script = pathlib.Path(__file__).resolve().parents[1] / "scripts" / "verify_release.py"
+        self.assertTrue(script.is_file())
+        # --help must not need any third-party package.
+        proc = subprocess.run([sys.executable, str(script), "--help"],
+                              capture_output=True, text=True)
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+
+    # Shell plumbing rather than a check: not something the local mirror has to run.
+    # `pip install` is dependency setup - the check that follows it is the one that
+    # has to be mirrored.
+    _SHELL_NOISE = ("set ", "export ", "mkdir", "cp ", "rm ", "test ", "grep ",
+                    "echo ", "#", "-", "env:", "if ", "fi", "done", "pip ")
+
+    def _ci_commands(self):
+        """Every real command CI runs, as (program, line) pairs.
+
+        Parsed generically rather than against a fixed list of known commands, so a
+        genuinely new CI step - a linter, a bundler, anything - shows up as uncovered
+        instead of being quietly ignored.
+        """
+        import pathlib
+        import re
+
+        root = pathlib.Path(__file__).resolve().parents[1]
+        ci = (root / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
+
+        commands = []
+        for m in re.finditer(r"run:\s*(?:\|\s*)?([^\n]+)", ci):
+            line = m.group(1).strip().strip("|").strip()
+            if not line or line.startswith(self._SHELL_NOISE):
+                continue
+            program = line.split()[0].rsplit("/", 1)[-1]
+            commands.append((program, line))
+        return commands
+
+    def test_ci_was_actually_parsed(self):
+        cmds = self._ci_commands()
+        self.assertGreaterEqual(len(cmds), 6,
+                                "expected to parse the CI steps, got %r" % cmds)
+        programs = {p for p, _ in cmds}
+        self.assertTrue({"python", "bun"} <= programs | {"python3"},
+                        "unexpected CI programs: %s" % sorted(programs))
+
+    def test_every_ci_command_is_covered(self):
+        """Each command CI runs must be reachable from verify_release.py.
+
+        A python step that runs a ``scripts/test_*.py`` module counts as covered by
+        the script's single ``pytest scripts/`` run - CI invokes those individually
+        only so its summary shows which area failed. Anything else has to appear in
+        the script by name.
+        """
+        import pathlib
+        import re
+
+        root = pathlib.Path(__file__).resolve().parents[1]
+        script_src = (root / "scripts" / "verify_release.py").read_text(encoding="utf-8")
+
+        uncovered = []
+        for program, line in self._ci_commands():
+            prog = program.lower()
+            if prog in ("python", "python3"):
+                if "-m pytest" in line or "pytest" in line:
+                    continue
+                mod = re.search(r"scripts/(\w+\.py)", line)
+                if not mod:
+                    uncovered.append(line)
+                    continue
+                name = mod.group(1)
+                if name.startswith("test_") or name in script_src:
+                    continue
+                uncovered.append(line)
+            elif prog == "bun":
+                if "test" in line or "build" in line:
+                    # Both bun invocations the script makes; assert the payload below.
+                    continue
+                uncovered.append(line)
+            else:
+                # A tool CI uses that the local mirror has never heard of.
+                uncovered.append(line)
+
+        self.assertEqual(uncovered, [], "CI runs commands verify_release.py "
+                                         "does not: %s" % uncovered)
+
+    def test_the_script_actually_runs_the_js_steps_ci_runs(self):
+        import pathlib
+
+        root = pathlib.Path(__file__).resolve().parents[1]
+        script_src = (root / "scripts" / "verify_release.py").read_text(encoding="utf-8")
+        self.assertIn('"test", "test/"', script_src)
+        self.assertIn("worldmap.js", script_src)
+        self.assertIn("check_data.py", script_src)
+        self.assertIn("determinism_gate.py", script_src)
+        self.assertIn("sync_milestones.py", script_src)
+
+    def test_the_unit_test_modules_are_all_discoverable_by_pytest(self):
+        """The claim above only holds if pytest actually collects them."""
+        import pathlib
+        import subprocess
+        import sys
+
+        root = pathlib.Path(__file__).resolve().parents[1]
+        proc = subprocess.run(
+            [sys.executable, "-m", "pytest", "scripts/", "-q", "--collect-only"],
+            cwd=str(root), capture_output=True, text=True)
+        self.assertEqual(proc.returncode, 0, proc.stdout[-800:])
+        for name in ("test_sync.py", "test_sync_layers.py",
+                     "test_fetch_crisis_zones.py", "test_fetch_human_rights.py",
+                     "test_determinism_gate.py", "test_geo_hints.py",
+                     "test_workflows.py", "test_check_data.py"):
+            self.assertIn(name, proc.stdout,
+                          "%s is not collected by the pytest step" % name)
+
+    def test_it_reports_the_pinned_bun_version(self):
+        import pathlib
+
+        import verify_release
+
+        root = pathlib.Path(__file__).resolve().parents[1]
+        ci = (root / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
+        self.assertIn(verify_release.CI_BUN_VERSION, ci,
+                      "CI_BUN_VERSION no longer matches the workflow pin")
+
+    def test_determinism_day_matches_ci(self):
+        import pathlib
+
+        import verify_release
+
+        root = pathlib.Path(__file__).resolve().parents[1]
+        ci = (root / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
+        self.assertIn(verify_release.DETERMINISM_TODAY, ci,
+                      "DETERMINISM_TODAY no longer matches the workflow")
+
+    def test_it_uses_only_the_standard_library(self):
+        import ast
+        import pathlib
+        import sys
+
+        stdlib = set(getattr(sys, "stdlib_module_names", ()))
+        script = pathlib.Path(__file__).resolve().parents[1] / "scripts" / "verify_release.py"
+        tree = ast.parse(script.read_text(encoding="utf-8"))
+        imported = set()
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Import):
+                imported.update(a.name.split(".")[0] for a in node.names)
+            elif isinstance(node, ast.ImportFrom) and node.level == 0 and node.module:
+                imported.add(node.module.split(".")[0])
+        third_party = imported - stdlib - {"verify_release"}
+        self.assertEqual(third_party, set(),
+                         "verify_release.py must run with no pip install")
+
+
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
