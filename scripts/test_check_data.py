@@ -1225,6 +1225,7 @@ class TestCoordinateParityWithTheClient(unittest.TestCase):
     def test_javascript_agrees_with_python_on_the_edges(self):
         # Run the real JS predicate under Bun and compare against the Python one on
         # the cases that matter, rather than eyeballing the two implementations.
+        import shutil
         import subprocess
         import tempfile
         js_body = """
@@ -1239,13 +1240,19 @@ class TestCoordinateParityWithTheClient(unittest.TestCase):
                        [91,0],[0,181],[NaN,5],[Infinity,5],[null,5],['5',5],[true,5]];
         console.log(JSON.stringify(cases.map(([a,b]) => hasPlottableCoords(a,b))));
         """
+        # Resolved before use: subprocess raises FileNotFoundError - which is an error,
+        # not a non-zero exit - when the binary is absent, and CI's sync-script job
+        # has no Bun on PATH. That job must skip, not fail.
+        bun = shutil.which("bun") or shutil.which("bun.exe")
+        if not bun:
+            self.skipTest("bun not on PATH (this job does not install it)")
         with tempfile.TemporaryDirectory() as tmp:
             script = pathlib.Path(tmp) / "probe.js"
             script.write_text(js_body, encoding="utf-8")
-            proc = subprocess.run(["bun", "run", str(script)], capture_output=True,
+            proc = subprocess.run([bun, "run", str(script)], capture_output=True,
                                   text=True, cwd=str(cd.ROOT))
             if proc.returncode != 0:
-                self.skipTest(f"bun unavailable: {proc.stderr[:120]}")
+                self.skipTest(f"bun probe failed: {proc.stderr[:120]}")
             js_results = json.loads(proc.stdout.strip().splitlines()[-1])
         cases = [(0, 0), (1e-9, -1e-9), (0, 139.69), (51.5, -0.12), (90, 0), (-90, 180),
                  (91, 0), (0, 181), (float("nan"), 5), (float("inf"), 5),
