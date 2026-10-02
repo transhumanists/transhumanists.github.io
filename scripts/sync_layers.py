@@ -48,9 +48,26 @@ WIKIPEDIA_REF = "https://en.wikipedia.org/wiki/List_of_ongoing_armed_conflicts"
 
 WORLD_LAYERS_FILE = Path("data/world_layers.json")
 
+
+def _load_zone_tier_radius() -> dict:
+    """Tier -> radius from the data contract, with a safe default if absent."""
+    schema_path = Path("schema/worldmap-data.schema.json")
+    try:
+        schema = json.loads(schema_path.read_text(encoding="utf-8"))
+        table = schema["controls"]["layer_lifecycle"]["zone_tier_radius"]
+        if isinstance(table, dict) and table:
+            return {str(k): float(v) for k, v in table.items()}
+    except (OSError, json.JSONDecodeError, KeyError, TypeError, ValueError):
+        pass
+    return {"major": 4.0, "minor": 3.0, "conflict": 2.5}
+
 # Wikipedia tier -> collision radius (degrees) for the map. Skirmishes are
 # parsed but never promoted to map zones (too noisy for a planet-wide view).
-TIER_RADIUS = {"major": 4.0, "minor": 3.0, "conflict": 2.5}
+#
+# Read from schema/worldmap-data.schema.json, the single source of truth: the
+# validator checks curated zones against the same table, so a tier can never be
+# drawn at one radius here and a different one there.
+TIER_RADIUS = _load_zone_tier_radius()
 TIER_ORDER = {"major": 0, "minor": 1, "conflict": 2}
 
 MAX_TOTAL_ZONES = 30

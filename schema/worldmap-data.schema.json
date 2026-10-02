@@ -30,7 +30,13 @@
       ],
       "empty_dates_allowed": true,
       "status_mapping": "worldmap.js layerStatus: '' | 'active' | 'ongoing' -> active; any other value -> concluded",
-      "ordering_rule": "equal-precision ISO dates order lexicographically (start <= end); mixed precision is only flagged when the earliest possible start instant is after the latest possible end instant (a provably empty window)."
+      "ordering_rule": "equal-precision ISO dates order lexicographically (start <= end); mixed precision is only flagged when the earliest possible start instant is after the latest possible end instant (a provably empty window).",
+      "zone_tier_radius": {
+        "major": 4.0,
+        "minor": 3.0,
+        "conflict": 2.5
+      },
+      "zone_tier_radius_note": "Radius in degrees at which a conflict zone of each significance tier is drawn. Single source of truth: sync_layers.TIER_RADIUS sizes generated zones and check_data validates curated ones against it. A zone with no `tier` has no radius rule and must be rejected, because the silent fallback is the smallest value - which is how Ukraine, Gaza and the Red Sea ended up rendered smaller than the Sahel insurgency."
     },
     "events": {
       "date_required": true,
@@ -170,9 +176,11 @@
       "rules": [
         "every zone/fleet entry name/label + located pair (not null island)",
         "lifecycle status in status_values and dates per layer_lifecycle.date_pattern",
+        "every conflict zone declares a `tier` from layer_lifecycle.zone_tier_radius",
+        "a conflict zone's radiusDeg equals the radius its tier maps to",
         "ids unique per list",
         "top-level metadata: version equals this file's version and last_update is a non-empty ISO-8601 UTC timestamp (offset or Z)",
-        "human_rights_violations (1.2.0+): optional; when present each entry is a located pair (not null island), an id from status_values, and a unique id"
+        "human_rights_violations (1.2.0+): optional; when present each entry is a located pair (not null island), a status from status_values, and a unique id"
       ]
     }
   }

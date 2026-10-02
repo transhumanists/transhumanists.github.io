@@ -94,7 +94,7 @@ def report_group_key(record: dict, *, include_unit: bool, category_resolver=None
 
 
 def is_specific_url(url: object) -> bool:
-    """Whether a URL points at a particular document rather than an org landing page.
+    """Whether a URL identifies a particular document rather than an org landing page.
 
     A bare origin such as ``https://spacex.com`` is cited by every milestone that
     company produces, so two records sharing one say nothing about being the same
@@ -104,6 +104,10 @@ def is_specific_url(url: object) -> bool:
     Parsed with urllib rather than by counting slashes: the host always contributes
     two, so a naive depth test cannot distinguish ``https://spacex.com`` from
     ``https://spacex.com/launches`` without also having to special-case schemes.
+
+    Scheme-agnostic by design. This is only ever asked "do these two records point at
+    the same place?", never "is this safe to render as a link" - publishing safety is
+    enforced separately by check_data._valid_source_url, which requires http(s).
     """
     if not isinstance(url, str):
         return False

@@ -443,15 +443,19 @@ def check_zones(zones: object, kind: str = "conflict_zones") -> list[str]:
     return issues
 
 
-# Radius a zone of each significance tier is drawn at. Mirrors TIER_RADIUS in
-# scripts/sync_layers.py, which sizes every generated zone; curated zones carry
-# their own radiusDeg and are held to the same table here.
+# Radius a zone of each significance tier is drawn at. Read from the schema, which
+# is the single source of truth for this table: sync_layers sizes every generated
+# zone from it, and curated zones are validated against it here. It previously
+# lived as a second hand-written copy in each file, with a comment admitting they
+# were meant to mirror each other - which is how they would have drifted.
 #
 # Three zones were committed with no `tier` at all and therefore no radius rule,
 # which silently defaulted them to the smallest value - so Ukraine, Gaza and the
 # Red Sea rendered smaller than the Sahel insurgency. That is the failure this
-# table now prevents.
-_ZONE_TIER_RADIUS = {"major": 4.0, "minor": 3.0, "conflict": 2.5}
+# rule now prevents.
+_ZONE_TIER_RADIUS = dict(
+    _LIFECYCLE_CTRL.get("zone_tier_radius") or {"major": 4.0, "minor": 3.0, "conflict": 2.5}
+)
 
 
 def _check_zone_tier_radius(items: list, kind: str) -> list[str]:

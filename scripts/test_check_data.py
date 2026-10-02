@@ -471,6 +471,31 @@ class TestSpecificUrlRule(unittest.TestCase):
             with self.subTest(url=url):
                 self.assertTrue(milestone_identity.is_specific_url(url))
 
+    def test_trailing_slash_is_still_a_bare_origin(self):
+        import milestone_identity
+
+        self.assertFalse(milestone_identity.is_specific_url("https://spacex.com/"))
+
+    def test_scheme_only_url_is_rejected(self):
+        import milestone_identity
+
+        self.assertFalse(milestone_identity.is_specific_url("https://"))
+
+    def test_non_url_input_is_rejected_not_raised(self):
+        import milestone_identity
+
+        for value in ("not a url", None, 42, [], {}):
+            with self.subTest(value=value):
+                self.assertFalse(milestone_identity.is_specific_url(value))
+
+    def test_scheme_is_not_considered(self):
+        # Documented behaviour: this only answers "do these two records point at
+        # the same place?". Render-safety is check_data._valid_source_url's job,
+        # which requires http(s).
+        import milestone_identity
+
+        self.assertTrue(milestone_identity.is_specific_url("ftp://e.com/f"))
+
     def test_two_spacex_flights_sharing_an_org_url_do_not_merge(self):
         import sync_milestones
 
@@ -481,7 +506,6 @@ class TestSpecificUrlRule(unittest.TestCase):
              "date": "2026-06-30", "category": "Spaceflight & Aeronautics",
              "url": "https://spacex.com"}
         self.assertFalse(sync_milestones._dedupe_same_report(a, b))
-        # And end to end, the two records must both survive the unifier.
         out, changes = sync_milestones.unify_duplicate_milestones([a, b])
         self.assertEqual(len(out), 2)
         self.assertEqual(changes, [])
@@ -499,15 +523,34 @@ class TestSpecificUrlRule(unittest.TestCase):
         out, _ = sync_milestones.unify_duplicate_milestones([a, b])
         self.assertEqual(len(out), 1)
 
+
+    def test_bare_origins_are_not_specific(self):
+        import milestone_identity
+
+        for url in ("https://spacex.com", "https://www.nature.com/",
+                    "http://example.org", "https://arxiv.org", ""):
+            with self.subTest(url=url):
+                self.assertFalse(milestone_identity.is_specific_url(url))
+
+    def test_document_urls_are_specific(self):
+        import milestone_identity
+
+        for url in ("https://arxiv.org/abs/2401.12345",
+                    "https://www.nature.com/articles/s41587-026-03307-w",
+                    "https://en.wikipedia.org/wiki/IBM_Q_System_One",
+                    "https://example.com/paper.pdf",
+                    "https://example.com/search?q=khipu"):
+            with self.subTest(url=url):
+                self.assertTrue(milestone_identity.is_specific_url(url))
+
     def test_title_tokens_still_merge_records_without_a_url(self):
         import sync_milestones
 
-        a = {"title": "Khipu mining result achieved", "value": "0.86", "unit": "x",
+        a = {"title": "Khipu mining result achieved", "value": "0.86",
              "date": "2026-06-30", "category": "Computing & AGI"}
-        b = {"title": "Khipu mining result reported", "value": "0.86", "unit": "x",
+        b = {"title": "Khipu mining result reported", "value": "0.86",
              "date": "2026-06-30", "category": "Computing & AGI"}
         self.assertTrue(sync_milestones._dedupe_same_report(a, b))
-
 
 class TestSharedIdentityRule(unittest.TestCase):
     """The unifier and the validator must agree on what a duplicate is.
@@ -942,6 +985,58 @@ class TestMergedSourcesField(unittest.TestCase):
             self._milestone("b", date="2026-01-01"),
         ])
         self.assertEqual(cd.check_milestones(data), [])
+
+
+class TestZoneTierRadiusSingleSource(unittest.TestCase):
+    """The tier/radius table must be declared once, in the schema.
+
+    It previously existed as a hand-written copy in check_data.py and another in
+    sync_layers.py, with a comment in the first admitting it was meant to mirror
+    the second. Two copies of a rendering contract drift; the schema already owns
+    the sibling contracts (status_values, date_pattern, categories), so it owns
+    this one too.
+    """
+
+    def test_validator_reads_the_schema_value(self):
+        declared = cd._LIFECYCLE_CTRL.get("zone_tier_radius")
+        self.assertIsInstance(declared, dict)
+        self.assertEqual(cd._ZONE_TIER_RADIUS, dict(declared))
+
+    def test_pipeline_reads_the_same_table(self):
+        import sync_layers
+
+        declared = cd._LIFECYCLE_CTRL.get("zone_tier_radius")
+        self.assertEqual(sync_layers.TIER_RADIUS,
+                         {str(k): float(v) for k, v in declared.items()})
+
+    def test_fallbacks_agree_with_the_schema(self):
+        # Each module keeps a hardcoded default so it still runs if the schema is
+        # missing from a checkout - the convention already used for _SCHEMA in this
+        # file. What must not happen is the fallback disagreeing with the contract,
+        # so assert the literals still match what the schema declares.
+        #
+        # Only literals carrying a decimal point are radii; TIER_ORDER next to them
+        # is an unrelated integer sort table.
+        declared = {str(k): float(v) for k, v in
+                    cd._LIFECYCLE_CTRL["zone_tier_radius"].items()}
+        pattern = (r'\{\s*"major":\s*([\d.]+),\s*"minor":\s*([\d.]+),'
+                   r'\s*"conflict":\s*([\d.]+)\s*\}')
+        for name in ("check_data.py", "sync_layers.py"):
+            src = (cd.ROOT / "scripts" / name).read_text(encoding="utf-8")
+            literals = [m for m in re.findall(pattern, src)
+                        if any("." in part for part in m)]
+            with self.subTest(module=name):
+                self.assertEqual(len(literals), 1,
+                                 "expected exactly one radius fallback literal")
+                found = dict(zip(("major", "minor", "conflict"),
+                                 (float(v) for v in literals[0])))
+                self.assertEqual(found, declared,
+                                 "the schema-missing fallback has drifted")
+
+    def test_schema_documents_the_rule(self):
+        rules = " ".join(cd._SCHEMA["files"]["world_layers.json"]["rules"])
+        self.assertIn("zone_tier_radius", rules)
+        self.assertIn("radiusDeg", rules)
 
 
 class TestZoneTierRadius(unittest.TestCase):
