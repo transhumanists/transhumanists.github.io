@@ -406,19 +406,32 @@ body {
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  width: 1.75em;
-  height: 1.75em;
+  width: 1.6em;
+  height: 1.6em;
   padding: 0;
   border: 1px solid transparent;
   border-radius: 3px;
   background: none;
   color: #fff;
   cursor: pointer;
+  /* The UA stylesheet gives button its own font-size (13.33px), so every em inside
+     this control meant 13.33px rather than the legend's font: the eye measured 13.3px
+     against a 9.4px label even at 1em. Inheriting makes the em-based box and the
+     em-based glyph mean the same thing as the rest of the frame. */
+  font-size: inherit;
+  font-family: inherit;
   line-height: 0;
  }
  .map-legend-bulk:hover { background: var(--accent-dim); border-color: var(--border); }
  .map-legend-bulk:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
- .map-legend-bulk svg { width: 1.4em; height: 1.4em; display: block; overflow: visible; }
+ /* The glyph is sized to the word beside it, which is what the control has to read as:
+   one eye, level with "CATEGORIES", not a button looming over a caption. Measured in a
+   real browser at 9.9px against a 9.4px label; at 1.4em it came out 23px on desktop
+   and 32px on a phone.
+
+   The button around it stays larger than the glyph so the control is still a
+   comfortable tap target - the slack lives in the button box, not in the drawing. */
+.map-legend-bulk svg { width: 1em; height: 1em; display: block; overflow: visible; }
  .map-legend-bulk .eye-lid {
   transform-origin: 6px 6px;
   transform: scaleY(0);
@@ -1713,16 +1726,20 @@ body {
   #world-map { height: auto; }
   #world-map-canvas { touch-action: none; }
 
-  /* The legend is 13 rows tall and was overflowing the map it sits on. Cap it to
-     the map's height and let it scroll; the fold toggle in its header still
-     collapses the category list, and now the whole frame can be scrolled rather
-     than clipped off the bottom of the screen. */
+  /* Bounded by both edges instead of by a max-height. With the frame now the map's own
+     ratio, a 390px phone gets a 141px-tall map, and a 13-row legend raised clear of
+     the timeline is taller than that: measured with max-height alone it began at
+     y=-15, above the top of the map. Anchoring top and bottom makes the height
+     derive from the space actually available, so it cannot overflow at any frame size,
+     and the rows scroll inside it. The fold toggle in the header still collapses the
+     category list. */
   .map-legend {
-    max-height: calc(100% - 16px);
+    top: 8px;
+    bottom: 52px;              /* clear of the timeline, which sits at bottom: 8px */
+    height: auto;
+    max-height: none;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
-    /* Clear the timeline, which is docked along the bottom edge on mobile. */
-    bottom: 52px;
   }
   .map-legend-head { position: sticky; top: -7px; background: rgba(6,11,20,0.94);
                      padding-top: 7px; z-index: 1; }
@@ -1762,7 +1779,7 @@ body {
 
 @media (max-width: 480px) {
   /* Same ratio, no floor. */
-  .map-legend { font-size: 0.5rem; min-width: 104px; bottom: 48px; }
+  .map-legend { font-size: 0.5rem; min-width: 104px; }
   .map-legend-row { min-height: 28px; }
   .map-tooltip { max-width: min(88vw, 300px); font-size: 0.72rem; }
 }
@@ -1774,7 +1791,7 @@ body {
      viewport without letterboxing. A vh-derived height here would be the wrong
      ratio and reintroduce the band. */
   #world-map { height: auto; min-height: 0; aspect-ratio: 360 / 142; }
-  .map-legend { max-height: calc(100% - 46px); font-size: 0.48rem; min-width: 96px; }
+  .map-legend { font-size: 0.48rem; min-width: 96px; }
   .map-legend-row { min-height: 26px; }
 }
 

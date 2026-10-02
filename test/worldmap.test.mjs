@@ -2525,6 +2525,59 @@ test('zoom controls, keyboard and double-click do not throw', () => {
     });
   });
 
+  // --- Browser fixture cannot drift from the real page -----------------------
+  // e2e/fixture.html carries a copy of the map widget's markup so the
+  // Playwright checks can run without Jekyll. A copy is a liability: if index.md gains
+  // an element the map needs, the fixture would keep serving the old shape and the
+  // browser checks would pass against markup the site no longer has.
+  describe('browser fixture matches the real page', () => {
+    const read = (rel) => fs.readFileSync(path.join(process.cwd(), rel), 'utf8');
+
+    test('the fixture carries every id the page gives the map widget', () => {
+      const page = read('index.md');
+      const fixture = read('e2e/fixture.html');
+      // Every id the widget markup declares, which is what worldmap.js looks up.
+      const widget = page.slice(page.indexOf('id="world-map"'));
+      const end = widget.indexOf('</section>');
+      const ids = [...(end > 0 ? widget.slice(0, end) : widget).matchAll(/id="([\w-]+)"/g)]
+        .map((m) => m[1]);
+      expect(ids.length).toBeGreaterThan(8);
+      const missing = ids.filter((id) => !fixture.includes('id="' + id + '"'));
+      expect(missing, 'fixture is missing ids the page has').toEqual([]);
+    });
+
+    test('the fixture loads the real stylesheet and script, not copies', () => {
+      const fixture = read('e2e/fixture.html');
+      expect(fixture).toContain('../assets/css/main.css');
+      expect(fixture).toContain('../assets/js/worldmap.js');
+    });
+
+    test('the browser config runs both a desktop and a phone viewport', () => {
+      const config = read('playwright.config.mjs');
+      expect(config).toMatch(/viewport:\s*\{\s*width:\s*1440/);
+      expect(config).toMatch(/viewport:\s*\{\s*width:\s*390/);
+    });
+
+    test('the Playwright specs live outside the bun unit suite', () => {
+      // They need a real browser. Keeping them out of test/ avoids an exclusion flag,
+      // which is not an option: Bun 1.2.14 - the version CI pins - ignores
+      // --path-ignore-patterns and runs them anyway.
+      const ci = read('.github/workflows/ci.yml');
+      expect(ci).toMatch(/run: bun test test\/\s*$/m);
+      expect(ci).not.toContain('--path-ignore-patterns');
+      const script = read('scripts/verify_release.py');
+      expect(script).toContain('JS_UNIT_ARGV = ["test", "test/"]');
+    });
+
+    test('nothing under test/ can be a Playwright spec', () => {
+      const { readdirSync } = require('node:fs');
+      const names = readdirSync(path.join(process.cwd(), 'test'));
+      for (const n of names) {
+        expect(n.endsWith('.spec.mjs'), n + ' would be run by bun as a test').toBe(false);
+      }
+    });
+  });
+
   // --- Geography is clipped to the map plate -----------------------------------
   // Having fitted the world inside the canvas, the vertical graticule lines run pole
   // to pole and the terminator tints the full canvas, so both carry on into the

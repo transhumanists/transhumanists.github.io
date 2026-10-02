@@ -86,6 +86,30 @@ def _pip_packages(run: str) -> set:
     return pkgs
 
 
+def _node_dev_dependencies():
+    """Names in package.json that a `bun install` step puts on disk.
+
+    `bunx playwright` resolves the locally installed @playwright/test rather than
+    fetching from the network, so it counts as installed - provided the job also runs
+    `bun install`, which the token audit below enforces separately.
+    """
+    import json
+    import pathlib
+
+    pkg = pathlib.Path(__file__).resolve().parents[1] / "package.json"
+    if not pkg.is_file():
+        return set()
+    try:
+        data = json.loads(pkg.read_text(encoding="utf-8"))
+    except ValueError:
+        return set()
+    names = set()
+    for key in ("dependencies", "devDependencies"):
+        for dep in (data.get(key) or {}):
+            names.add(dep.split("@")[0] if not dep.startswith("@") else dep.split("@")[1])
+    return names
+
+
 class TestWorkflowDependencies(unittest.TestCase):
     """Any tool a step runs must have been installed by that job."""
 
@@ -98,12 +122,17 @@ class TestWorkflowDependencies(unittest.TestCase):
             for job_name, job in (data.get("jobs") or {}).items():
                 steps = job.get("steps") or []
                 installed = set(PREINSTALLED)
+                # Node tooling comes from package.json via `bun install`, and `bunx`
+                # resolves those local devDependencies rather than fetching anything.
+                installed |= _node_dev_dependencies()
                 for step in steps:
                     run = step.get("run") or ""
                     if "pip install" in run:
                         installed |= _pip_packages(run)
                     if "bun" in (step.get("uses") or ""):
                         installed.add("bun")
+                    if "bun install" in run:
+                        installed.add("bunx")
                 for step in steps:
                     for token in _commands(step.get("run") or ""):
                         if token not in installed:
@@ -335,7 +364,11 @@ class TestVerifyReleaseCoversCI(unittest.TestCase):
                 if name.startswith("test_") or name in script_src:
                     continue
                 uncovered.append(line)
-            elif prog == "bun":
+            elif prog in ("bun", "bunx"):
+                # `bun install` and `bunx <tool> install` are dependency and browser
+                # provisioning, the same category as `pip install`.
+                if " install" in line:
+                    continue
                 if "test" in line or "build" in line:
                     # Both bun invocations the script makes; assert the payload below.
                     continue

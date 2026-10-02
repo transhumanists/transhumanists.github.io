@@ -1,0 +1,8 @@
+{
+  "name": "transhumanists-worldmap",
+  "private": true,
+  "type": "module",
+  "devDependencies": {
+    "@playwright/test": "^1.44.0"
+  }
+}

@@ -163,6 +163,50 @@ jobs:
           python scripts/determinism_gate.py "$RUNNER_TEMP/gen-a" "$RUNNER_TEMP/gen-b" \
             --idempotent "$RUNNER_TEMP/gen-a"
 
+  browser-layout:
+    name: Browser layout checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.2.14"
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install deps
+        run: bun install --frozen-lockfile
+
+      - name: Install Chromium
+        run: bunx playwright install --with-deps chromium
+
+      # Measures the layout a browser actually produces. The unit suite runs against a
+      # hand-written DOM fake, which cannot see a frame that is too tall or a legend
+      # that leaves its container - both of which shipped this session. These assert
+      # measurements rather than pixel baselines: a baseline needs a human to approve
+      # the current appearance and then fails on every legitimate restyle.
+      - name: Layout checks
+        run: bunx playwright test
+
+      # Screenshots for a human to look at, not an assertion.
+      - name: Upload screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: map-screenshots
+          path: |
+            test-results/
+            playwright-report/
+          retention-days: 7
+          if-no-files-found: ignore
+
   data-check:
     name: Validate map data files
     runs-on: ubuntu-latest

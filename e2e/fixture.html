@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<!-- Matches index.md: the responsive rules are viewport-width driven, so a desktop
+     meta viewport would make the "phone" project test desktop widths. -->
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>worldmap layout fixture</title>
+<!-- The real stylesheet, not a copy. These checks exist to catch layout regressions
+     in the shipped CSS, so styling a fixture differently would defeat the point. -->
+<link rel="stylesheet" href="../assets/css/main.css">
+<style>
+  /* Only enough page furniture for the layout to have a width to be measured in. */
+  body { margin: 0; }
+  .container { max-width: 1200px; margin: 0 auto; padding: 16px; }
+</style>
+</head>
+<body>
+<div class="container">
+
+<!-- The map widget markup below is copied verbatim from index.md. A test asserts the
+     fixture carries every id worldmap.js needs, so this cannot silently rot. -->
+<div id="world-map">
+  <canvas id="world-map-canvas"></canvas>
+  <div class="map-overlay" aria-live="polite">
+    <div class="map-hint-row">
+      <button id="filter-recent" class="map-hint" aria-pressed="false">
+        <span class="map-hint-dot" style="background: var(--green);"></span>
+        <span class="map-hint-title">
+          <span id="map-stat-active">&mdash;</span>
+          <span>breakthrough(s) this week</span>
+        </span>
+      </button>
+    </div>
+    <div class="map-hint-row">
+      <button id="filter-military" class="map-hint" aria-pressed="false">
+        <span class="map-hint-dot" style="background: var(--red);"></span>
+        <span class="map-hint-title">
+          <span id="map-stat-conflicts">&mdash;</span>
+          <span>active conflict zones,</span>
+          <span id="map-stat-fleets">&mdash;</span>
+          <span>deployments</span>
+        </span>
+      </button>
+    </div>
+    <div class="map-hint-row">
+      <button id="filter-crisis" class="map-hint" aria-pressed="false">
+        <span class="map-hint-dot" style="background: var(--yellow);"></span>
+        <span class="map-hint-title">
+          <span id="map-stat-crises">&mdash;</span>
+          <span>crisis zones</span>
+        </span>
+      </button>
+    </div>
+  </div>
+  <div class="map-timeline" id="map-timeline" role="slider" aria-label="Timeline" aria-valuemin="2024" aria-valuemax="2026" aria-valuenow="2026" tabindex="0">
+    <div class="map-timeline-track" id="map-timeline-track">
+      <div class="map-timeline-years" id="map-timeline-years"></div>
+      <div class="map-timeline-handle" id="map-timeline-handle" role="slider" aria-label="Year" tabindex="0"></div>
+    </div>
+    <div class="map-timeline-year-label" id="map-timeline-year-label"></div>
+  </div>
+  <div class="map-tooltip" id="map-tooltip" role="tooltip"></div>
+</div>
+
+<!-- The dropdowns under test, carrying the shared class index.md gives them. -->
+<div class="catalog-controls">
+  <label for="catalog-category-filter">Filter:</label>
+  <select id="catalog-category-filter" class="select-field">
+    <option value="all">All Categories</option>
+    <option value="biotechnology">Biotechnology</option>
+    <option value="quantum">Quantum Physics</option>
+  </select>
+  <label for="catalog-year-filter">Year:</label>
+  <div style="display: inline-flex; align-items: center; gap: 6px;">
+    <button id="catalog-year-prev" class="stepper-btn" aria-label="Previous year">&lsaquo;</button>
+    <select id="catalog-year-filter" class="select-field" style="min-width: 80px;">
+      <option value="all">All years</option>
+      <option value="2026">2026</option>
+    </select>
+    <button id="catalog-year-next" class="stepper-btn" aria-label="Next year">&rsaquo;</button>
+  </div>
+</div>
+
+</div>
+
+<script>
+// The map widget refuses to draw substituted sample data off a real origin, so this
+// stands in for a developer machine for the duration of the check.
+window.__WORLDMAP_TEST__ = { getTodayISO: () => '2026-10-01' };
+</script>
+<script src="../assets/js/worldmap.js"></script>
+</body>
+</html>

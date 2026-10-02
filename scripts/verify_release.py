@@ -38,6 +38,12 @@ ROOT = Path(__file__).resolve().parents[1]
 # point is to make the difference visible rather than to block on it.
 CI_BUN_VERSION = "1.2.14"
 
+# The JS unit suite, defined once so the cross-version run cannot drift from it.
+# The Playwright specs live in e2e/ precisely so no exclusion flag is needed:
+# Bun 1.2.14 - the version CI pins - ignores --path-ignore-patterns and runs them
+# anyway, failing for want of a browser.
+JS_UNIT_ARGV = ["test", "test/"]
+
 # Pinned regeneration date so the determinism gate compares like with like. Matches CI.
 DETERMINISM_TODAY = "2026-10-01"
 
@@ -100,18 +106,20 @@ def _determinism(env: dict[str, str]) -> tuple[bool, str]:
              str(tmpd / "gen-a" / "data" / "milestones.json")], env)
 
 
-def _build_steps(bun: str, tmpdir: Path, skip_determinism: bool
-                 ) -> list[tuple[str, list[str] | None]]:
+def _build_steps(bun: str, tmpdir: Path, skip_determinism: bool,
+                 skip_browser: bool) -> list[tuple[str, list[str] | None]]:
     """(label, argv) pairs. argv of None means the in-process determinism check."""
     steps: list[tuple[str, list[str] | None]] = [
         ("Python unit tests", [sys.executable, "-m", "pytest", "scripts/", "-q"]),
         ("Data validation", [sys.executable, "scripts/check_data.py"]),
-        ("JS unit tests", [bun, "test", "test/"]),
+        ("JS unit tests", [bun] + JS_UNIT_ARGV),
         ("JS static parse", [bun, "build", "assets/js/worldmap.js",
                              "--no-bundle", "--outdir", str(tmpdir / "parse-check")]),
     ]
     if not skip_determinism:
         steps.append(("Data regeneration is deterministic", None))
+    if not skip_browser:
+        steps.append(("Browser layout checks", [bun, "x", "playwright", "test"]))
     return steps
 
 
@@ -124,6 +132,8 @@ def main() -> int:
                     help="extra bun binary to cross-check the JS suite against")
     ap.add_argument("--skip-determinism", action="store_true",
                     help="omit the regenerate-and-compare gate (faster inner loop)")
+    ap.add_argument("--skip-browser", action="store_true",
+                    help="omit the Playwright layout checks")
     ap.add_argument("--quiet", action="store_true",
                     help="print only the summary and any failures")
     args = ap.parse_args()
@@ -137,16 +147,31 @@ def main() -> int:
     env = _env()
     started = time.time()
     failures: list[tuple[str, str]] = []
+    skipped: list[str] = []
     total_steps = 0
 
     with tempfile.TemporaryDirectory() as tmp:
         tmpdir = Path(tmp)
-        for label, argv in _build_steps(bun, tmpdir, args.skip_determinism):
+        for label, argv in _build_steps(bun, tmpdir, args.skip_determinism,
+                                         args.skip_browser):
             total_steps += 1
+            step_skipped = None
             t0 = time.time()
             ok, detail = _determinism(env) if argv is None else _run(argv, env)
+            if (not ok and argv is not None and argv[1:3] == ["x", "playwright"]
+                    and "Cannot find package" in detail):
+                # Not a layout failure - this machine has no Playwright installed.
+                # Reported as skipped rather than passed, so a green run never claims
+                # a check it did not make.
+                detail = ""
+                step_skipped = label
             dt = time.time() - t0
-            if ok:
+            if step_skipped:
+                skipped.append(step_skipped)
+                if not args.quiet:
+                    print("  skip  %-42s          (no Playwright installed)"
+                          % label)
+            elif ok:
                 if not args.quiet:
                     print("  ok    %-42s %5.1fs" % (label, dt))
             else:
@@ -156,7 +181,7 @@ def main() -> int:
         for extra in args.also_bun:
             total_steps += 1
             label = "JS unit tests (%s)" % _bun_version(extra)
-            ok, detail = _run([extra, "test", "test/"], env)
+            ok, detail = _run([extra] + JS_UNIT_ARGV, env)
             if ok:
                 if not args.quiet:
                     print("  ok    %-42s" % label)
@@ -179,7 +204,10 @@ def main() -> int:
             print("\n--- %s ---\n%s" % (label, detail or "(no output)"))
         return 1
 
-    print("all %d steps passed in %.1fs" % (total_steps, total))
+    if skipped:
+        print("%d of %d steps skipped: %s"
+              % (len(skipped), total_steps, ", ".join(skipped)))
+    print("all %d steps passed in %.1fs" % (total_steps - len(skipped), total))
     return 0
 
 
