@@ -1,6 +1,6 @@
 {
   "version": "1.2.0",
-  "last_update": "2026-10-02T05:44:00+00:00",
+  "last_update": "2026-10-02T12:41:57+00:00",
   "conflict_zones": [
     {
       "id": "zone-ukraine",
@@ -1153,6 +1153,18 @@
     }
   ],
   "human_rights_violations": [
+    {
+      "id": "hr-7a5faf6589",
+      "name": "US: Rights Concerns for Maritime Operations Near Ecuador",
+      "region": "South America",
+      "lat": -1.8,
+      "lon": -78.2,
+      "status": "active",
+      "start_date": "2026-10-02",
+      "note": "A group of detained fishermen are transported on a National Police bus to the Community Surveillance Unit (UVC) from the port of Manta, Ecuador, on September 4, 2026. © 2026 ARIEL OCHOA / AFP via Getty Images (Washington, DC) – United States forces intercepted and destroyed eight",
+      "source": "Human Rights Watch",
+      "url": "https://www.hrw.org/news/2026/10/02/us-rights-concerns-for-maritime-operations-near-ecuador"
+    },
     {
       "id": "hr-ae9f520080",
       "name": "United Arab Emirates: A Year On, Critic Remains in Detention",
