@@ -1,6 +1,6 @@
 {
   "version": "1.2.0",
-  "last_update": "2026-10-02T12:41:57+00:00",
+  "last_update": "2026-10-02T22:17:29+00:00",
   "conflict_zones": [
     {
       "id": "zone-ukraine",
@@ -1164,6 +1164,18 @@
       "note": "A group of detained fishermen are transported on a National Police bus to the Community Surveillance Unit (UVC) from the port of Manta, Ecuador, on September 4, 2026. © 2026 ARIEL OCHOA / AFP via Getty Images (Washington, DC) – United States forces intercepted and destroyed eight",
       "source": "Human Rights Watch",
       "url": "https://www.hrw.org/news/2026/10/02/us-rights-concerns-for-maritime-operations-near-ecuador"
+    },
+    {
+      "id": "hr-5113ca71f6",
+      "name": "US ICE Detains Son of Slain Philippine Journalist",
+      "region": "North America",
+      "lat": 39.8,
+      "lon": -98.6,
+      "status": "active",
+      "start_date": "2026-10-02",
+      "note": "Immigration Customs Enforcement processing center which consists of East and West wings, located in Adelanto, California on May 18, 2025. © 2025 Getty Images The United States Immigration and Customs Enforcement (ICE) on September 21 detained Mark Mabasa, the 40-year old son of s",
+      "source": "Human Rights Watch",
+      "url": "https://www.hrw.org/news/2026/10/02/us-ice-detains-son-of-slain-philippine-journalist"
     },
     {
       "id": "hr-ae9f520080",
