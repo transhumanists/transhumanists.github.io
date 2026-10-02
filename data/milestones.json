@@ -1,8 +1,570 @@
 {
-  "last_update": "2026-10-02T07:29:04+00:00",
+  "last_update": "2026-10-02T17:01:42+00:00",
   "version": "1.0.0",
   "schema": "https://transhumanists.github.io/schema/milestone-v1.json",
   "categories": {
+    "computing_agi": {
+      "name": "Computing & AGI",
+      "icon": "🧠",
+      "color": "#448aff",
+      "subcategories": [
+        "frontier_models",
+        "agentic_ai",
+        "gpu_efficiency",
+        "benchmarks",
+        "time_to_train",
+        "inference_cost",
+        "code_generation",
+        "math_reasoning",
+        "multimodal",
+        "low_resource_speech"
+      ],
+      "milestones": [
+        {
+          "id": "ms-4ff7841d61d0",
+          "title": "TutlAit v1: first crowdsourced Moroccan Tamazight speech dataset with Arabic transcriptions and regional accent labels",
+          "summary": "First publicly available Moroccan Tamazight speech corpus with Modern Standard Arabic transcriptions and explicit regional accent labels, collected via a dedicated crowdsourcing web application.",
+          "category": "Computing & AGI",
+          "subcategory": "low_resource_speech",
+          "value": null,
+          "unit": null,
+          "source": "arXiv",
+          "date": "2026-10-02",
+          "url": "https://arxiv.org/abs/2609.38219",
+          "is_record": true,
+          "is_breakthrough": true,
+          "is_new": true,
+          "category_key": "computing_agi",
+          "located": false,
+          "location_confidence": "unlocated"
+        },
+        {
+          "id": "ms-4c82e9a77bfd",
+          "title": "BACKDROP benchmark evaluates agent robustness under real-world disturbances",
+          "summary": "BACKDROP introduces a new benchmark that quantifies how much agent capability degrades when everyday hazards like conflicting instructions or environmental changes are introduced during task execution",
+          "category": "Computing & AGI",
+          "subcategory": "benchmarks",
+          "value": null,
+          "unit": null,
+          "source": "arXiv",
+          "date": "2026-10-02",
+          "url": "https://arxiv.org/abs/2609.38469",
+          "is_record": false,
+          "is_breakthrough": true,
+          "is_new": false,
+          "category_key": "computing_agi",
+          "located": false,
+          "location_confidence": "unlocated"
+        },
+        {
+          "id": "ms-847b6f6830b8",
+          "title": "Forecast-Dojo: Replayable Benchmark for LLM Forecasting Agents",
+          "summary": "Forecast-Dojo introduces a replayable environment with 1,568 Polymarket events and 18.8M tokens for benchmarking and training LLM forecasting agents using historical prediction-market data.",
+          "category": "Computing & AGI",
+          "subcategory": "benchmarks",
+          "value": 1568,
+          "unit": "events",
+          "source": "arXiv preprint",
+          "date": "2026-09-25",
+          "url": "https://arxiv.org/abs/2609.28876",
+          "is_record": false,
+          "is_breakthrough": false,
+          "is_new": false,
+          "category_key": "computing_agi",
+          "located": false,
+          "location_confidence": "unlocated"
+        },
+        {
+          "id": "ms-0a47a34ebd2d",
+          "title": "New evaluation protocol detects sequential reappearance in diffusion model unlearning",
+          "summary": "Researchers identify sequential reappearance in diffusion data-point unlearning and propose a target-level evaluation protocol to track forgetting persistence across sequential deletion requests.",
+          "category": "Computing & AGI",
+          "subcategory": "benchmarks",
+          "value": null,
+          "unit": null,
+          "source": "arXiv (Cornell University)",
+          "date": "2026-09-23",
+          "url": "https://arxiv.org/abs/2609.25166",
+          "is_record": false,
+          "is_breakthrough": true,
+          "is_new": false,
+          "category_key": "computing_agi",
+          "located": false,
+          "location_confidence": "unlocated"
+        },
+        {
+          "id": "ms-2457b1872a8c",
+          "category": "Computing & AGI",
+          "subcategory": "graph_theory",
+          "title": "Proof of Graph Sandwich Conjecture",
+          "value": null,
+          "unit": null,
+          "source": "International mathematics collaboration",
+          "url": "https://www.quantamagazine.org/mathematicians-build-long-awaited-graph-sandwich-20260918/",
+          "date": "2026-09-18",
+          "geolocation": {
+            "lat": 56.1,
+            "lon": -106.3
+          },
+          "category_key": "computing_agi"
+        },
+        {
+          "id": "ms-a5b1f04cd153",
+          "title": "STAM: State-Transition-Aware Memory for Clinical LLM Agents",
+          "summary": "STAM introduces a state-transition-aware memory framework enabling LLM agents to track patient state changes while preserving clinical history for improved reasoning over medical records.",
+          "category": "Computing & AGI",
+          "subcategory": "agentic_ai",
+          "value": null,
+          "unit": null,
+          "source": "arXiv",
+          "date": "2026-09-01",
+          "url": "https://arxiv.org/abs/2609.38490",
+          "is_record": false,
+          "is_breakthrough": true,
+          "is_new": false,
+          "category_key": "computing_agi",
+          "located": false,
+          "location_confidence": "unlocated"
+        },
+        {
+          "id": "ai-001",
+          "subcategory": "frontier_models",
+          "title": "MMLU benchmark",
+          "value": 94.7,
+          "unit": "%",
+          "source": "OpenAI GPT-6",
+          "date": "2026-08-19",
+          "url": "https://openai.com",
+          "geolocation": {
+            "lat": 37.7749,
+            "lon": -122.4194
+          },
+          "category": "Computing & AGI",
+          "is_new": false,
+          "category_key": "computing_agi"
+        },
+        {
+          "id": "ai-002",
+          "subcategory": "agentic_ai",
+          "title": "HumanEval pass@1",
+          "value": 98.4,
+          "unit": "%",
+          "source": "Anthropic Claude-4",
+          "date": "2026-08-15",
+          "url": "https://anthropic.com",
+          "geolocation": {
+            "lat": 37.7749,
+            "lon": -122.4194
+          },
+          "category": "Computing & AGI",
+          "is_new": false,
+          "category_key": "computing_agi"
+        },
+        {
+          "id": "ai-003",
+          "subcategory": "frontier_models",
+          "title": "Training compute (FLOP)",
+          "value": 2.4e+25,
+          "unit": "FLOP",
+          "source": "Google Gemini-Ultra",
+          "date": "2026-08-01",
+          "url": "https://deepmind.google",
+          "geolocation": {
+            "lat": 37.4219,
+            "lon": -122.084
+          },
+          "category": "Computing & AGI",
+          "is_new": false,
+          "category_key": "computing_agi"
+        },
+        {
+          "id": "ai-004",
+          "subcategory": "gpu_efficiency",
+          "title": "Training TFLOPS/W",
+          "value": 2.1,
+          "unit": "TFLOPS/W",
+          "source": "NVIDIA GB300",
+          "date": "2026-07-28",
+          "url": "https://nvidia.com",
+          "geolocation": {
+            "lat": 37.3688,
+            "lon": -122.0363
+          },
+          "category": "Computing & AGI",
+          "is_new": false,
+          "category_key": "computing_agi"
+        },
+        {
+          "id": "ai-005",
+          "subcategory": "agentic_ai",
+          "title": "Autonomous task completion rate",
+          "value": 87.3,
+          "unit": "%",
+          "source": "AutoGPT v4",
+          "date": "2026-07-20",
+          "url": "https://github.com/Significant-Gravitas/AutoGPT",
+          "geolocation": {
+            "lat": 37.7749,
+            "lon": -122.4194
+          },
+          "category": "Computing & AGI",
+          "is_new": false,
+          "category_key": "computing_agi"
+        },
+        {
+          "id": "ms-cede87aeb630",
+          "title": "Seed2.0 model achieves world-leading reasoning and multimodal capabilities",
+          "summary": "Seed2.0 model series demonstrates world-leading reasoning, visual understanding, and search capabilities for complex real-world tasks, serving hundreds of millions of users.",
+          "category": "Computing & AGI",
+          "subcategory": "frontier_models",
+          "value": null,
+          "unit": null,
+          "source": "ByteDance",
+          "date": "2026-06-30",
+          "url": "http://arxiv.org/abs/2607.00248v1",
+          "is_record": true,
+          "is_breakthrough": true,
+          "is_new": false,
+          "geolocation": {
+            "lat": 39.9042,
+            "lon": 116.4074
+          },
+          "category_key": "computing_agi"
+        },
+        {
+          "id": "ms-fc6083e0cc69",
+          "title": "ORACLE-2 Omni achieves 0.73 macro F1 for real-time transient classification using multimodal data",
+          "summary": "A new multimodal AI model deployed on the ZTF alert stream improves early classification of astronomical transients by up to 40% over light-curve-only methods.",
+          "category": "Computing & AGI",
+          "subcategory": "multimodal",
+          "value": 0.73,
+          "unit": "macro F1",
+          "source": "Zwicky Transient Facility collaboration",
+          "date": "2026-06-30",
+          "url": "http://arxiv.org/abs/2607.00228v1",
+          "is_record": true,
+          "is_breakthrough": true,
+          "is_new": false,
+          "geolocation": {
+            "lat": 34.1377,
+            "lon": -118.1253
+          },
+          "category_key": "computing_agi"
+        },
+        {
+          "id": "ms-46a7d8543058",
+          "title": "Mnemosyne introduces Agentic Transaction Processing with formal safety guarantees for AI workflows",
+          "summary": "New Agentic Transaction Processing framework proves four safety properties and achieves 5.2-6.6% throughput overhead while rejecting all targeted violations in benchmarks.",
+          "category": "Computing & AGI",
+          "subcategory": "agentic_ai",
+          "value": 5.9,
+          "unit": "% throughput overhead",
+          "source": "Unknown",
+          "date": "2026-06-30",
+          "url": "http://arxiv.org/abs/2607.00269v3",
+          "is_record": false,
+          "is_breakthrough": true,
+          "is_new": false,
+          "category_key": "computing_agi",
+          "located": false,
+          "location_confidence": "unlocated"
+        },
+        {
+          "id": "ms-10f19d45d95b",
+          "category": "Computing & AGI",
+          "subcategory": "pattern_mining",
+          "title": "ML-driven Structural Pattern Mining of Inka Khipus",
+          "value": 0.86,
+          "unit": "F1 score",
+          "source": "Open Khipu Repository",
+          "url": "http://arxiv.org/abs/2607.00185v1",
+          "date": "2026-06-30",
+          "located": false,
+          "location_confidence": "unlocated",
+          "sources": [
+            "Open Khipu Repository",
+            "Academic researchers (Open Khipu Repository)"
+          ],
+          "category_key": "computing_agi"
+        },
+        {
+          "id": "ms-0ef07b4ce70b",
+          "category": "Computing & AGI",
+          "subcategory": "legal_datasets",
+          "title": "ImmigrationReason: 12,375 USCIS AAO decisions dataset for legal reasoning",
+          "value": 12375,
+          "unit": "decisions",
+          "source": "Academic researchers",
+          "url": "http://arxiv.org/abs/2608.20391v1",
+          "date": "2026-06-30",
+          "located": false,
+          "location_confidence": "unlocated",
+          "category_key": "computing_agi"
+        },
+        {
+          "id": "ms-09edac1db332",
+          "title": "Evaluation-as-Search adaptive probing finds 2.5× more grounding failures in meeting assistants",
+          "summary": "A new adaptive evaluation framework (EaS) and MeetingProbe benchmark reveal LLM meeting assistants fail on 7.1% of targeted queries versus 2.9% for random probing, identifying eight discourse-pragmati",
+          "category": "Computing & AGI",
+          "subcategory": "benchmarks",
+          "value": 2.5,
+          "unit": "x",
+          "source": "Research Team",
+          "date": "2026-06-30",
+          "url": "http://arxiv.org/abs/2608.20392v1",
+          "is_record": true,
+          "is_breakthrough": true,
+          "is_new": false,
+          "category_key": "computing_agi",
+          "located": false,
+          "location_confidence": "unlocated"
+        },
+        {
+          "id": "ms-d6824a356960",
+          "title": "EgoSafetyBench: Diagnostic Egocentric Video Benchmark for Embodied VLM Safety Guards",
+          "summary": "New 1,200-scenario egocentric video benchmark with half-second annotations and contrastive ladders evaluates VLMs as streaming safety guards for embodied agents across situational and visual-channel d",
+          "category": "Computing & AGI",
+          "subcategory": "benchmarks",
+          "value": 1200,
+          "unit": "scenarios",
+          "source": "Research Consortium",
+          "date": "2026-06-30",
+          "url": "http://arxiv.org/abs/2607.00218v1",
+          "is_record": true,
+          "is_breakthrough": true,
+          "is_new": false,
+          "category_key": "computing_agi",
+          "located": false,
+          "location_confidence": "unlocated"
+        },
+        {
+          "id": "ms-110c8b5371e0",
+          "title": "ASPIRE achieves up to 77% improvement on robot manipulation benchmarks via autonomous skill discovery",
+          "summary": "ASPIRE, a continual learning system for autonomous robot skill programming, surpasses prior methods by up to 77% on LIBERO-Pro, 72% on Robosuite bimanual handover, and 32% on BEHAVIOR-1K household tas",
+          "category": "Computing & AGI",
+          "subcategory": "agentic_ai",
+          "value": 77,
+          "unit": "percent improvement",
+          "source": "ASPIRE research team",
+          "date": "2026-06-30",
+          "url": "http://arxiv.org/abs/2607.00272v1",
+          "is_record": true,
+          "is_breakthrough": true,
+          "is_new": false,
+          "category_key": "computing_agi",
+          "located": false,
+          "location_confidence": "unlocated"
+        },
+        {
+          "id": "ms-6a684b1bc5a3",
+          "category": "Computing & AGI",
+          "subcategory": "ocr",
+          "title": "LV-ROVER-MLT achieves record-low CER 0.0074 in Maltese OCR competition",
+          "value": 0.0074,
+          "unit": "CER",
+          "source": "LV-ROVER-MLT researchers",
+          "url": "http://arxiv.org/abs/2607.00250v5",
+          "date": "2026-01-01",
+          "geolocation": {
+            "lat": 35.9,
+            "lon": 14.4
+          },
+          "category_key": "computing_agi"
+        },
+        {
+          "id": "his-2023-10-12-vesuvius-challenge",
+          "category": "Computing & AGI",
+          "subcategory": "ml_structural_analysis",
+          "title": "Vesuvius Challenge - machine learning deciphers the first word from a charred Herculaneum papyrus",
+          "value": null,
+          "unit": null,
+          "source": "Vesuvius Challenge",
+          "url": "https://en.wikipedia.org/wiki/Herculaneum_papyri",
+          "date": "2023-10-12",
+          "geolocation": {
+            "lat": 40.8518,
+            "lon": 14.2681
+          },
+          "category_key": "computing_agi"
+        },
+        {
+          "id": "his-2023-03-14-gpt4",
+          "category": "Computing & AGI",
+          "subcategory": "language_models",
+          "title": "GPT-4 stabilises frontier multimodal reasoning",
+          "value": null,
+          "unit": null,
+          "source": "OpenAI",
+          "url": "https://en.wikipedia.org/wiki/GPT-4",
+          "date": "2023-03-14",
+          "geolocation": {
+            "lat": 37.7749,
+            "lon": -122.4194
+          },
+          "category_key": "computing_agi"
+        },
+        {
+          "id": "his-2022-11-30-chatgpt",
+          "category": "Computing & AGI",
+          "subcategory": "language_models",
+          "title": "ChatGPT launches and reaches 100 million users faster than any previous app",
+          "value": 100,
+          "unit": "M users in 2 months",
+          "source": "OpenAI",
+          "url": "https://en.wikipedia.org/wiki/ChatGPT",
+          "date": "2022-11-30",
+          "geolocation": {
+            "lat": 37.7749,
+            "lon": -122.4194
+          },
+          "category_key": "computing_agi"
+        },
+        {
+          "id": "his-2020-06-11-gpt3",
+          "category": "Computing & AGI",
+          "subcategory": "language_models",
+          "title": "GPT-3 demonstrates few-shot learning at 175 billion parameters",
+          "value": 175,
+          "unit": "B parameters",
+          "source": "OpenAI",
+          "url": "https://en.wikipedia.org/wiki/GPT-3",
+          "date": "2020-06-11",
+          "geolocation": {
+            "lat": 37.7749,
+            "lon": -122.4194
+          },
+          "category_key": "computing_agi"
+        },
+        {
+          "id": "his-2017-06-12-transformer",
+          "category": "Computing & AGI",
+          "subcategory": "language_models",
+          "title": "The Transformer architecture is introduced in 'Attention Is All You Need'",
+          "value": null,
+          "unit": null,
+          "source": "Google Brain",
+          "url": "https://en.wikipedia.org/wiki/Transformer_(deep_learning_architecture)",
+          "date": "2017-06-12",
+          "geolocation": {
+            "lat": 43.6532,
+            "lon": -79.3832
+          },
+          "category_key": "computing_agi"
+        },
+        {
+          "id": "his-2016-03-15-alphago",
+          "category": "Computing & AGI",
+          "subcategory": "machine_learning",
+          "title": "AlphaGo defeats Lee Sedol in the ancient game of Go",
+          "value": null,
+          "unit": null,
+          "source": "DeepMind",
+          "url": "https://en.wikipedia.org/wiki/AlphaGo",
+          "date": "2016-03-15",
+          "geolocation": {
+            "lat": 37.5665,
+            "lon": 126.978
+          },
+          "category_key": "computing_agi"
+        },
+        {
+          "id": "his-2012-09-30-alexnet",
+          "category": "Computing & AGI",
+          "subcategory": "machine_learning",
+          "title": "AlexNet wins ImageNet and ignites the deep-learning era",
+          "value": 15.3,
+          "unit": "top-5 error %",
+          "source": "University of Toronto",
+          "url": "https://en.wikipedia.org/wiki/AlexNet",
+          "date": "2012-09-30",
+          "geolocation": {
+            "lat": 43.6532,
+            "lon": -79.3832
+          },
+          "category_key": "computing_agi"
+        },
+        {
+          "id": "his-1997-05-11-deep-blue",
+          "category": "Computing & AGI",
+          "subcategory": "machine_learning",
+          "title": "Deep Blue becomes the first computer to beat a world chess champion in a match",
+          "value": null,
+          "unit": null,
+          "source": "IBM",
+          "url": "https://en.wikipedia.org/wiki/Deep_Blue_(chess_computer)",
+          "date": "1997-05-11",
+          "geolocation": {
+            "lat": 40.758,
+            "lon": -73.9683
+          },
+          "category_key": "computing_agi"
+        },
+        {
+          "id": "his-1976-07-01-four-color-theorem",
+          "category": "Computing & AGI",
+          "subcategory": "graph_theory",
+          "title": "Four color theorem proven with the aid of a computer",
+          "value": null,
+          "unit": null,
+          "source": "University of Illinois Urbana-Champaign",
+          "url": "https://en.wikipedia.org/wiki/Four_color_theorem",
+          "date": "1976-07-01",
+          "geolocation": {
+            "lat": 40.102,
+            "lon": -88.2272
+          },
+          "category_key": "computing_agi"
+        },
+        {
+          "id": "his-1971-11-15-intel-4004",
+          "category": "Computing & AGI",
+          "subcategory": "computing_power",
+          "title": "Intel 4004 - the first commercially available microprocessor",
+          "value": null,
+          "unit": null,
+          "source": "Intel",
+          "url": "https://en.wikipedia.org/wiki/Intel_4004",
+          "date": "1971-11-15",
+          "geolocation": {
+            "lat": 37.3541,
+            "lon": -121.9552
+          },
+          "category_key": "computing_agi"
+        },
+        {
+          "id": "his-1969-10-29-arpanet",
+          "category": "Computing & AGI",
+          "subcategory": "networking",
+          "title": "ARPANET sends its first host-to-host message",
+          "value": null,
+          "unit": null,
+          "source": "UCLA / SRI International",
+          "url": "https://en.wikipedia.org/wiki/ARPANET",
+          "date": "1969-10-29",
+          "geolocation": {
+            "lat": 34.0689,
+            "lon": -118.4452
+          },
+          "category_key": "computing_agi"
+        },
+        {
+          "id": "his-1945-11-15-eniac",
+          "category": "Computing & AGI",
+          "subcategory": "computing_power",
+          "title": "ENIAC becomes operational - the first general-purpose electronic computer",
+          "value": null,
+          "unit": null,
+          "source": "University of Pennsylvania",
+          "url": "https://en.wikipedia.org/wiki/ENIAC",
+          "date": "1945-11-15",
+          "geolocation": {
+            "lat": 39.9526,
+            "lon": -75.1652
+          },
+          "category_key": "computing_agi"
+        }
+      ]
+    },
     "biotechnology": {
       "name": "Biotechnology & Biohacking",
       "icon": "🧬",
@@ -34,7 +596,7 @@
           "url": "https://www.nature.com/articles/s41587-026-03307-w",
           "is_record": false,
           "is_breakthrough": true,
-          "is_new": true,
+          "is_new": false,
           "geolocation": {
             "lat": 32.0603,
             "lon": 118.7969
@@ -93,6 +655,26 @@
           "date": "2026-09-28",
           "url": "https://www.nature.com/articles/s41587-026-03330-x",
           "is_record": true,
+          "is_breakthrough": true,
+          "is_new": false,
+          "geolocation": {
+            "lat": 32.0603,
+            "lon": 118.7969
+          },
+          "category_key": "biotechnology"
+        },
+        {
+          "id": "ms-f725a993460b",
+          "title": "AI-accelerated discovery of thermostable mRNA–LNP vaccines",
+          "summary": "Data-efficient AI enables rapid identification of thermostable mRNA–lipid nanoparticle vaccine formulations, advancing vaccine stability and deployment.",
+          "category": "Biotechnology & Biohacking",
+          "subcategory": "synthetic_biology",
+          "value": null,
+          "unit": null,
+          "source": "Nature Biotechnology",
+          "date": "2026-09-28",
+          "url": "https://www.nature.com/articles/s41587-026-03331-w",
+          "is_record": false,
           "is_breakthrough": true,
           "is_new": false,
           "geolocation": {
@@ -899,513 +1481,6 @@
             "lon": -118.1253
           },
           "category_key": "quantum"
-        }
-      ]
-    },
-    "computing_agi": {
-      "name": "Computing & AGI",
-      "icon": "🧠",
-      "color": "#448aff",
-      "subcategories": [
-        "frontier_models",
-        "agentic_ai",
-        "gpu_efficiency",
-        "benchmarks",
-        "time_to_train",
-        "inference_cost",
-        "code_generation",
-        "math_reasoning",
-        "multimodal"
-      ],
-      "milestones": [
-        {
-          "id": "ms-847b6f6830b8",
-          "title": "Forecast-Dojo: Replayable Benchmark for LLM Forecasting Agents",
-          "summary": "Forecast-Dojo introduces a replayable environment with 1,568 Polymarket events and 18.8M tokens for benchmarking and training LLM forecasting agents using historical prediction-market data.",
-          "category": "Computing & AGI",
-          "subcategory": "benchmarks",
-          "value": 1568,
-          "unit": "events",
-          "source": "arXiv preprint",
-          "date": "2026-09-25",
-          "url": "https://arxiv.org/abs/2609.28876",
-          "is_record": false,
-          "is_breakthrough": false,
-          "is_new": false,
-          "category_key": "computing_agi",
-          "located": false,
-          "location_confidence": "unlocated"
-        },
-        {
-          "id": "ms-0a47a34ebd2d",
-          "title": "New evaluation protocol detects sequential reappearance in diffusion model unlearning",
-          "summary": "Researchers identify sequential reappearance in diffusion data-point unlearning and propose a target-level evaluation protocol to track forgetting persistence across sequential deletion requests.",
-          "category": "Computing & AGI",
-          "subcategory": "benchmarks",
-          "value": null,
-          "unit": null,
-          "source": "arXiv (Cornell University)",
-          "date": "2026-09-23",
-          "url": "https://arxiv.org/abs/2609.25166",
-          "is_record": false,
-          "is_breakthrough": true,
-          "is_new": false,
-          "category_key": "computing_agi",
-          "located": false,
-          "location_confidence": "unlocated"
-        },
-        {
-          "id": "ms-2457b1872a8c",
-          "category": "Computing & AGI",
-          "subcategory": "graph_theory",
-          "title": "Proof of Graph Sandwich Conjecture",
-          "value": null,
-          "unit": null,
-          "source": "International mathematics collaboration",
-          "url": "https://www.quantamagazine.org/mathematicians-build-long-awaited-graph-sandwich-20260918/",
-          "date": "2026-09-18",
-          "geolocation": {
-            "lat": 56.1,
-            "lon": -106.3
-          },
-          "category_key": "computing_agi"
-        },
-        {
-          "id": "ai-001",
-          "subcategory": "frontier_models",
-          "title": "MMLU benchmark",
-          "value": 94.7,
-          "unit": "%",
-          "source": "OpenAI GPT-6",
-          "date": "2026-08-19",
-          "url": "https://openai.com",
-          "geolocation": {
-            "lat": 37.7749,
-            "lon": -122.4194
-          },
-          "category": "Computing & AGI",
-          "is_new": false,
-          "category_key": "computing_agi"
-        },
-        {
-          "id": "ai-002",
-          "subcategory": "agentic_ai",
-          "title": "HumanEval pass@1",
-          "value": 98.4,
-          "unit": "%",
-          "source": "Anthropic Claude-4",
-          "date": "2026-08-15",
-          "url": "https://anthropic.com",
-          "geolocation": {
-            "lat": 37.7749,
-            "lon": -122.4194
-          },
-          "category": "Computing & AGI",
-          "is_new": false,
-          "category_key": "computing_agi"
-        },
-        {
-          "id": "ai-003",
-          "subcategory": "frontier_models",
-          "title": "Training compute (FLOP)",
-          "value": 2.4e+25,
-          "unit": "FLOP",
-          "source": "Google Gemini-Ultra",
-          "date": "2026-08-01",
-          "url": "https://deepmind.google",
-          "geolocation": {
-            "lat": 37.4219,
-            "lon": -122.084
-          },
-          "category": "Computing & AGI",
-          "is_new": false,
-          "category_key": "computing_agi"
-        },
-        {
-          "id": "ai-004",
-          "subcategory": "gpu_efficiency",
-          "title": "Training TFLOPS/W",
-          "value": 2.1,
-          "unit": "TFLOPS/W",
-          "source": "NVIDIA GB300",
-          "date": "2026-07-28",
-          "url": "https://nvidia.com",
-          "geolocation": {
-            "lat": 37.3688,
-            "lon": -122.0363
-          },
-          "category": "Computing & AGI",
-          "is_new": false,
-          "category_key": "computing_agi"
-        },
-        {
-          "id": "ai-005",
-          "subcategory": "agentic_ai",
-          "title": "Autonomous task completion rate",
-          "value": 87.3,
-          "unit": "%",
-          "source": "AutoGPT v4",
-          "date": "2026-07-20",
-          "url": "https://github.com/Significant-Gravitas/AutoGPT",
-          "geolocation": {
-            "lat": 37.7749,
-            "lon": -122.4194
-          },
-          "category": "Computing & AGI",
-          "is_new": false,
-          "category_key": "computing_agi"
-        },
-        {
-          "id": "ms-cede87aeb630",
-          "title": "Seed2.0 model achieves world-leading reasoning and multimodal capabilities",
-          "summary": "Seed2.0 model series demonstrates world-leading reasoning, visual understanding, and search capabilities for complex real-world tasks, serving hundreds of millions of users.",
-          "category": "Computing & AGI",
-          "subcategory": "frontier_models",
-          "value": null,
-          "unit": null,
-          "source": "ByteDance",
-          "date": "2026-06-30",
-          "url": "http://arxiv.org/abs/2607.00248v1",
-          "is_record": true,
-          "is_breakthrough": true,
-          "is_new": false,
-          "geolocation": {
-            "lat": 39.9042,
-            "lon": 116.4074
-          },
-          "category_key": "computing_agi"
-        },
-        {
-          "id": "ms-fc6083e0cc69",
-          "title": "ORACLE-2 Omni achieves 0.73 macro F1 for real-time transient classification using multimodal data",
-          "summary": "A new multimodal AI model deployed on the ZTF alert stream improves early classification of astronomical transients by up to 40% over light-curve-only methods.",
-          "category": "Computing & AGI",
-          "subcategory": "multimodal",
-          "value": 0.73,
-          "unit": "macro F1",
-          "source": "Zwicky Transient Facility collaboration",
-          "date": "2026-06-30",
-          "url": "http://arxiv.org/abs/2607.00228v1",
-          "is_record": true,
-          "is_breakthrough": true,
-          "is_new": true,
-          "geolocation": {
-            "lat": 34.1377,
-            "lon": -118.1253
-          },
-          "category_key": "computing_agi"
-        },
-        {
-          "id": "ms-46a7d8543058",
-          "title": "Mnemosyne introduces Agentic Transaction Processing with formal safety guarantees for AI workflows",
-          "summary": "New Agentic Transaction Processing framework proves four safety properties and achieves 5.2-6.6% throughput overhead while rejecting all targeted violations in benchmarks.",
-          "category": "Computing & AGI",
-          "subcategory": "agentic_ai",
-          "value": 5.9,
-          "unit": "% throughput overhead",
-          "source": "Unknown",
-          "date": "2026-06-30",
-          "url": "http://arxiv.org/abs/2607.00269v3",
-          "is_record": false,
-          "is_breakthrough": true,
-          "is_new": false,
-          "category_key": "computing_agi",
-          "located": false,
-          "location_confidence": "unlocated"
-        },
-        {
-          "id": "ms-10f19d45d95b",
-          "category": "Computing & AGI",
-          "subcategory": "pattern_mining",
-          "title": "ML-driven Structural Pattern Mining of Inka Khipus",
-          "value": 0.86,
-          "unit": "F1 score",
-          "source": "Open Khipu Repository",
-          "url": "http://arxiv.org/abs/2607.00185v1",
-          "date": "2026-06-30",
-          "located": false,
-          "location_confidence": "unlocated",
-          "sources": [
-            "Open Khipu Repository",
-            "Academic researchers (Open Khipu Repository)"
-          ],
-          "category_key": "computing_agi"
-        },
-        {
-          "id": "ms-0ef07b4ce70b",
-          "category": "Computing & AGI",
-          "subcategory": "legal_datasets",
-          "title": "ImmigrationReason: 12,375 USCIS AAO decisions dataset for legal reasoning",
-          "value": 12375,
-          "unit": "decisions",
-          "source": "Academic researchers",
-          "url": "http://arxiv.org/abs/2608.20391v1",
-          "date": "2026-06-30",
-          "located": false,
-          "location_confidence": "unlocated",
-          "category_key": "computing_agi"
-        },
-        {
-          "id": "ms-09edac1db332",
-          "title": "Evaluation-as-Search adaptive probing finds 2.5× more grounding failures in meeting assistants",
-          "summary": "A new adaptive evaluation framework (EaS) and MeetingProbe benchmark reveal LLM meeting assistants fail on 7.1% of targeted queries versus 2.9% for random probing, identifying eight discourse-pragmati",
-          "category": "Computing & AGI",
-          "subcategory": "benchmarks",
-          "value": 2.5,
-          "unit": "x",
-          "source": "Research Team",
-          "date": "2026-06-30",
-          "url": "http://arxiv.org/abs/2608.20392v1",
-          "is_record": true,
-          "is_breakthrough": true,
-          "is_new": false,
-          "category_key": "computing_agi",
-          "located": false,
-          "location_confidence": "unlocated"
-        },
-        {
-          "id": "ms-d6824a356960",
-          "title": "EgoSafetyBench: Diagnostic Egocentric Video Benchmark for Embodied VLM Safety Guards",
-          "summary": "New 1,200-scenario egocentric video benchmark with half-second annotations and contrastive ladders evaluates VLMs as streaming safety guards for embodied agents across situational and visual-channel d",
-          "category": "Computing & AGI",
-          "subcategory": "benchmarks",
-          "value": 1200,
-          "unit": "scenarios",
-          "source": "Research Consortium",
-          "date": "2026-06-30",
-          "url": "http://arxiv.org/abs/2607.00218v1",
-          "is_record": true,
-          "is_breakthrough": true,
-          "is_new": false,
-          "category_key": "computing_agi",
-          "located": false,
-          "location_confidence": "unlocated"
-        },
-        {
-          "id": "ms-110c8b5371e0",
-          "title": "ASPIRE achieves up to 77% improvement on robot manipulation benchmarks via autonomous skill discovery",
-          "summary": "ASPIRE, a continual learning system for autonomous robot skill programming, surpasses prior methods by up to 77% on LIBERO-Pro, 72% on Robosuite bimanual handover, and 32% on BEHAVIOR-1K household tas",
-          "category": "Computing & AGI",
-          "subcategory": "agentic_ai",
-          "value": 77,
-          "unit": "percent improvement",
-          "source": "ASPIRE research team",
-          "date": "2026-06-30",
-          "url": "http://arxiv.org/abs/2607.00272v1",
-          "is_record": true,
-          "is_breakthrough": true,
-          "is_new": false,
-          "category_key": "computing_agi",
-          "located": false,
-          "location_confidence": "unlocated"
-        },
-        {
-          "id": "ms-6a684b1bc5a3",
-          "category": "Computing & AGI",
-          "subcategory": "ocr",
-          "title": "LV-ROVER-MLT achieves record-low CER 0.0074 in Maltese OCR competition",
-          "value": 0.0074,
-          "unit": "CER",
-          "source": "LV-ROVER-MLT researchers",
-          "url": "http://arxiv.org/abs/2607.00250v5",
-          "date": "2026-01-01",
-          "geolocation": {
-            "lat": 35.9,
-            "lon": 14.4
-          },
-          "category_key": "computing_agi"
-        },
-        {
-          "id": "his-2023-10-12-vesuvius-challenge",
-          "category": "Computing & AGI",
-          "subcategory": "ml_structural_analysis",
-          "title": "Vesuvius Challenge - machine learning deciphers the first word from a charred Herculaneum papyrus",
-          "value": null,
-          "unit": null,
-          "source": "Vesuvius Challenge",
-          "url": "https://en.wikipedia.org/wiki/Herculaneum_papyri",
-          "date": "2023-10-12",
-          "geolocation": {
-            "lat": 40.8518,
-            "lon": 14.2681
-          },
-          "category_key": "computing_agi"
-        },
-        {
-          "id": "his-2023-03-14-gpt4",
-          "category": "Computing & AGI",
-          "subcategory": "language_models",
-          "title": "GPT-4 stabilises frontier multimodal reasoning",
-          "value": null,
-          "unit": null,
-          "source": "OpenAI",
-          "url": "https://en.wikipedia.org/wiki/GPT-4",
-          "date": "2023-03-14",
-          "geolocation": {
-            "lat": 37.7749,
-            "lon": -122.4194
-          },
-          "category_key": "computing_agi"
-        },
-        {
-          "id": "his-2022-11-30-chatgpt",
-          "category": "Computing & AGI",
-          "subcategory": "language_models",
-          "title": "ChatGPT launches and reaches 100 million users faster than any previous app",
-          "value": 100,
-          "unit": "M users in 2 months",
-          "source": "OpenAI",
-          "url": "https://en.wikipedia.org/wiki/ChatGPT",
-          "date": "2022-11-30",
-          "geolocation": {
-            "lat": 37.7749,
-            "lon": -122.4194
-          },
-          "category_key": "computing_agi"
-        },
-        {
-          "id": "his-2020-06-11-gpt3",
-          "category": "Computing & AGI",
-          "subcategory": "language_models",
-          "title": "GPT-3 demonstrates few-shot learning at 175 billion parameters",
-          "value": 175,
-          "unit": "B parameters",
-          "source": "OpenAI",
-          "url": "https://en.wikipedia.org/wiki/GPT-3",
-          "date": "2020-06-11",
-          "geolocation": {
-            "lat": 37.7749,
-            "lon": -122.4194
-          },
-          "category_key": "computing_agi"
-        },
-        {
-          "id": "his-2017-06-12-transformer",
-          "category": "Computing & AGI",
-          "subcategory": "language_models",
-          "title": "The Transformer architecture is introduced in 'Attention Is All You Need'",
-          "value": null,
-          "unit": null,
-          "source": "Google Brain",
-          "url": "https://en.wikipedia.org/wiki/Transformer_(deep_learning_architecture)",
-          "date": "2017-06-12",
-          "geolocation": {
-            "lat": 43.6532,
-            "lon": -79.3832
-          },
-          "category_key": "computing_agi"
-        },
-        {
-          "id": "his-2016-03-15-alphago",
-          "category": "Computing & AGI",
-          "subcategory": "machine_learning",
-          "title": "AlphaGo defeats Lee Sedol in the ancient game of Go",
-          "value": null,
-          "unit": null,
-          "source": "DeepMind",
-          "url": "https://en.wikipedia.org/wiki/AlphaGo",
-          "date": "2016-03-15",
-          "geolocation": {
-            "lat": 37.5665,
-            "lon": 126.978
-          },
-          "category_key": "computing_agi"
-        },
-        {
-          "id": "his-2012-09-30-alexnet",
-          "category": "Computing & AGI",
-          "subcategory": "machine_learning",
-          "title": "AlexNet wins ImageNet and ignites the deep-learning era",
-          "value": 15.3,
-          "unit": "top-5 error %",
-          "source": "University of Toronto",
-          "url": "https://en.wikipedia.org/wiki/AlexNet",
-          "date": "2012-09-30",
-          "geolocation": {
-            "lat": 43.6532,
-            "lon": -79.3832
-          },
-          "category_key": "computing_agi"
-        },
-        {
-          "id": "his-1997-05-11-deep-blue",
-          "category": "Computing & AGI",
-          "subcategory": "machine_learning",
-          "title": "Deep Blue becomes the first computer to beat a world chess champion in a match",
-          "value": null,
-          "unit": null,
-          "source": "IBM",
-          "url": "https://en.wikipedia.org/wiki/Deep_Blue_(chess_computer)",
-          "date": "1997-05-11",
-          "geolocation": {
-            "lat": 40.758,
-            "lon": -73.9683
-          },
-          "category_key": "computing_agi"
-        },
-        {
-          "id": "his-1976-07-01-four-color-theorem",
-          "category": "Computing & AGI",
-          "subcategory": "graph_theory",
-          "title": "Four color theorem proven with the aid of a computer",
-          "value": null,
-          "unit": null,
-          "source": "University of Illinois Urbana-Champaign",
-          "url": "https://en.wikipedia.org/wiki/Four_color_theorem",
-          "date": "1976-07-01",
-          "geolocation": {
-            "lat": 40.102,
-            "lon": -88.2272
-          },
-          "category_key": "computing_agi"
-        },
-        {
-          "id": "his-1971-11-15-intel-4004",
-          "category": "Computing & AGI",
-          "subcategory": "computing_power",
-          "title": "Intel 4004 - the first commercially available microprocessor",
-          "value": null,
-          "unit": null,
-          "source": "Intel",
-          "url": "https://en.wikipedia.org/wiki/Intel_4004",
-          "date": "1971-11-15",
-          "geolocation": {
-            "lat": 37.3541,
-            "lon": -121.9552
-          },
-          "category_key": "computing_agi"
-        },
-        {
-          "id": "his-1969-10-29-arpanet",
-          "category": "Computing & AGI",
-          "subcategory": "networking",
-          "title": "ARPANET sends its first host-to-host message",
-          "value": null,
-          "unit": null,
-          "source": "UCLA / SRI International",
-          "url": "https://en.wikipedia.org/wiki/ARPANET",
-          "date": "1969-10-29",
-          "geolocation": {
-            "lat": 34.0689,
-            "lon": -118.4452
-          },
-          "category_key": "computing_agi"
-        },
-        {
-          "id": "his-1945-11-15-eniac",
-          "category": "Computing & AGI",
-          "subcategory": "computing_power",
-          "title": "ENIAC becomes operational - the first general-purpose electronic computer",
-          "value": null,
-          "unit": null,
-          "source": "University of Pennsylvania",
-          "url": "https://en.wikipedia.org/wiki/ENIAC",
-          "date": "1945-11-15",
-          "geolocation": {
-            "lat": 39.9526,
-            "lon": -75.1652
-          },
-          "category_key": "computing_agi"
         }
       ]
     },

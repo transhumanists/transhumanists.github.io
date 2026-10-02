@@ -109,6 +109,60 @@
         "2023": 3,
         "2026": 63
       }
+    },
+    {
+      "measured_at": "2026-10-02T17:01:45Z",
+      "digest": "bb0384ada8d34a05",
+      "unique": 110,
+      "located": 95,
+      "unlocated": 15,
+      "null_island": 0,
+      "years_populated": 31,
+      "years_empty": 51,
+      "by_category": {
+        "Biotechnology & Biohacking": 28,
+        "Computing & AGI": 33,
+        "Quantum Physics": 13,
+        "Renewable Energy": 7,
+        "Mobility & Logistics": 0,
+        "Cybersecurity": 9,
+        "Robotics & Drones": 0,
+        "Spaceflight & Aeronautics": 11,
+        "Military & Defense": 9
+      },
+      "by_year": {
+        "1945": 2,
+        "1953": 1,
+        "1954": 1,
+        "1957": 1,
+        "1961": 1,
+        "1969": 2,
+        "1971": 1,
+        "1973": 1,
+        "1976": 1,
+        "1981": 2,
+        "1983": 2,
+        "1988": 1,
+        "1991": 1,
+        "1994": 1,
+        "1996": 1,
+        "1997": 2,
+        "2003": 1,
+        "2007": 1,
+        "2010": 1,
+        "2011": 1,
+        "2012": 3,
+        "2014": 1,
+        "2015": 1,
+        "2016": 1,
+        "2017": 1,
+        "2019": 1,
+        "2020": 3,
+        "2021": 2,
+        "2022": 2,
+        "2023": 3,
+        "2026": 67
+      }
     }
   ]
 }

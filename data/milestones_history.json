@@ -1,5 +1,35 @@
 [
   {
+    "id": "ms-4ff7841d61d0",
+    "category": "Computing & AGI",
+    "subcategory": "low_resource_speech",
+    "title": "TutlAit v1: first crowdsourced Moroccan Tamazight speech dataset with Arabic transcriptions and regional accent labels",
+    "value": null,
+    "unit": null,
+    "source": "arXiv",
+    "url": "https://arxiv.org/abs/2609.38219",
+    "date": "2026-10-02",
+    "first_seen": "2026-10-02",
+    "last_seen": "2026-10-02",
+    "located": false,
+    "location_confidence": "unlocated"
+  },
+  {
+    "id": "ms-4c82e9a77bfd",
+    "category": "Computing & AGI",
+    "subcategory": "benchmarks",
+    "title": "BACKDROP benchmark evaluates agent robustness under real-world disturbances",
+    "value": null,
+    "unit": null,
+    "source": "arXiv",
+    "url": "https://arxiv.org/abs/2609.38469",
+    "date": "2026-10-02",
+    "first_seen": "2026-10-02",
+    "last_seen": "2026-10-02",
+    "located": false,
+    "location_confidence": "unlocated"
+  },
+  {
     "id": "ms-2a45f74dd818",
     "category": "Biotechnology & Biohacking",
     "subcategory": "ml_perturbation",
@@ -65,6 +95,23 @@
       "lon": 118.7969
     },
     "first_seen": "2026-09-30",
+    "last_seen": "2026-10-02"
+  },
+  {
+    "id": "ms-f725a993460b",
+    "category": "Biotechnology & Biohacking",
+    "subcategory": "synthetic_biology",
+    "title": "AI-accelerated discovery of thermostable mRNA–LNP vaccines",
+    "value": null,
+    "unit": null,
+    "source": "Nature Biotechnology",
+    "url": "https://www.nature.com/articles/s41587-026-03331-w",
+    "date": "2026-09-28",
+    "geolocation": {
+      "lat": 32.0603,
+      "lon": 118.7969
+    },
+    "first_seen": "2026-10-02",
     "last_seen": "2026-10-02"
   },
   {
@@ -245,6 +292,21 @@
     },
     "first_seen": "2026-09-27",
     "last_seen": "2026-10-02"
+  },
+  {
+    "id": "ms-a5b1f04cd153",
+    "category": "Computing & AGI",
+    "subcategory": "agentic_ai",
+    "title": "STAM: State-Transition-Aware Memory for Clinical LLM Agents",
+    "value": null,
+    "unit": null,
+    "source": "arXiv",
+    "url": "https://arxiv.org/abs/2609.38490",
+    "date": "2026-09-01",
+    "first_seen": "2026-10-02",
+    "last_seen": "2026-10-02",
+    "located": false,
+    "location_confidence": "unlocated"
   },
   {
     "id": "bio-001",

@@ -1,7 +1,35 @@
 {
-  "last_update": "2026-10-02T07:29:04+00:00",
+  "last_update": "2026-10-02T17:01:42+00:00",
   "version": "1.0.0",
   "events": [
+    {
+      "id": "ev-ms-4ff7841d61d0",
+      "title": "TutlAit v1: first crowdsourced Moroccan Tamazight speech dataset with Arabic transcriptions and regional accent labels",
+      "category": "Computing & AGI",
+      "value": "TutlAit v1: first crowdsourced Moroccan Tamazight speech dataset with Arabic transcriptions and regional accent labels",
+      "source": "arXiv",
+      "url": "https://arxiv.org/abs/2609.38219",
+      "date": "2026-10-02",
+      "location_confidence": "source",
+      "geolocation": {
+        "lat": 42.444,
+        "lon": -76.5019
+      }
+    },
+    {
+      "id": "ev-ms-4c82e9a77bfd",
+      "title": "BACKDROP benchmark evaluates agent robustness under real-world disturbances",
+      "category": "Computing & AGI",
+      "value": "BACKDROP benchmark evaluates agent robustness under real-world disturbances",
+      "source": "arXiv",
+      "url": "https://arxiv.org/abs/2609.38469",
+      "date": "2026-10-02",
+      "location_confidence": "source",
+      "geolocation": {
+        "lat": 42.444,
+        "lon": -76.5019
+      }
+    },
     {
       "id": "ev-ms-2a45f74dd818",
       "title": "Deep learning perturbation models outperform baselines on calibrated metrics",
@@ -51,6 +79,20 @@
       "value": "37 °C",
       "source": "Nature Biotechnology",
       "url": "https://www.nature.com/articles/s41587-026-03330-x",
+      "date": "2026-09-28",
+      "location_confidence": "stated",
+      "geolocation": {
+        "lat": 32.0603,
+        "lon": 118.7969
+      }
+    },
+    {
+      "id": "ev-ms-f725a993460b",
+      "title": "AI-accelerated discovery of thermostable mRNA–LNP vaccines",
+      "category": "Biotechnology & Biohacking",
+      "value": "AI-accelerated discovery of thermostable mRNA–LNP vaccines",
+      "source": "Nature Biotechnology",
+      "url": "https://www.nature.com/articles/s41587-026-03331-w",
       "date": "2026-09-28",
       "location_confidence": "stated",
       "geolocation": {
@@ -207,6 +249,20 @@
       "geolocation": {
         "lat": 32.0603,
         "lon": 118.7969
+      }
+    },
+    {
+      "id": "ev-ms-a5b1f04cd153",
+      "title": "STAM: State-Transition-Aware Memory for Clinical LLM Agents",
+      "category": "Computing & AGI",
+      "value": "STAM: State-Transition-Aware Memory for Clinical LLM Agents",
+      "source": "arXiv",
+      "url": "https://arxiv.org/abs/2609.38490",
+      "date": "2026-09-01",
+      "location_confidence": "source",
+      "geolocation": {
+        "lat": 42.444,
+        "lon": -76.5019
       }
     },
     {

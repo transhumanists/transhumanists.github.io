@@ -1,9 +1,9 @@
 {
-  "last_update": "2026-10-02T07:29:04+00:00",
+  "last_update": "2026-10-02T17:01:42+00:00",
   "bucket": "month",
   "first": "1945-07-01",
   "last": "2026-10-01",
-  "total": 106,
+  "total": 110,
   "days": [
     {
       "date": "1945-07-01",
@@ -3903,11 +3903,11 @@
     },
     {
       "date": "2026-09-01",
-      "count": 14
+      "count": 16
     },
     {
       "date": "2026-10-01",
-      "count": 1
+      "count": 3
     }
   ],
   "spikes": [
@@ -3918,7 +3918,7 @@
     },
     {
       "date": "2026-09-28",
-      "count": 3,
+      "count": 4,
       "reason": "New ionizable lipid LC-1 enables efficient LNP delivery of large gene editors to multiple tissues; Lipid nanoparticles optimized for large RNA cargo enhance in vivo genome editing; AI-guided optimization yields thermostable mRNA vaccines stable at 37°C for 2 months"
     },
     {
