@@ -1630,8 +1630,10 @@ body {
   .map-tooltip .tt-link { font-size: 0.65rem; margin-top: 4px; }
   .map-hint-row .map-hint { padding: 1px 0; }
 
-  /* Mobile world map timeline */
-  .map-timeline { bottom: 60px; } /* Above carousel */
+  /* Mobile world map timeline.
+     The 60px lift this used to carry is superseded by the docked rule further
+     down. It was labelled "Above carousel", but the highlights carousel is
+     outside #world-map entirely, so it could not have been the reason. */
   .map-timeline-track { height: 3px; }
   .map-timeline-years { top: -16px; font-size: 0.5rem; }
   .map-timeline-handle { width: 18px; height: 18px; }
@@ -1731,8 +1733,11 @@ body {
   .map-legend-row { min-height: 30px; }
   .map-legend-bulk { width: 2.4em; height: 2.4em; }
 
-  /* Timeline sits under the map on a phone instead of floating over it, so it
-     cannot cover the lower third of the world. */
+  /* Timeline docked to the bottom edge of the map widget.
+     It is absolutely positioned inside #world-map, so it still floats over the map;
+     what changes is that it no longer rides 60px up. The legend is raised to
+     bottom: 52px above it, so the two stack instead of overlapping - which is the
+     whole reason for the offset on both rules. */
   .map-timeline { bottom: 8px; left: 8px; right: 8px; }
 
   /* Filter rows wrap rather than running off the right edge. */

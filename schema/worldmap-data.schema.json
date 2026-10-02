@@ -36,7 +36,7 @@
         "minor": 3.0,
         "conflict": 2.5
       },
-      "zone_tier_radius_note": "Radius in degrees at which a conflict zone of each significance tier is drawn. Single source of truth: sync_layers.TIER_RADIUS sizes generated zones and check_data validates curated ones against it. A zone with no `tier` has no radius rule and must be rejected, because the silent fallback is the smallest value - which is how Ukraine, Gaza and the Red Sea ended up rendered smaller than the Sahel insurgency."
+      "zone_tier_radius_note": "Radius in degrees at which a conflict zone of each significance tier is drawn. This block is the single source of truth: sync_layers.py reads it to size generated zones (TIER_RADIUS) and check_data.py reads it to validate curated zones (_ZONE_TIER_RADIUS). Both keep a literal fallback for a checkout with no schema, and tests assert those fallbacks still equal this table. A zone with no `tier` has no radius rule and must be rejected, because the silent fallback is the smallest value - which is how Ukraine, Gaza and the Red Sea ended up rendered smaller than the Sahel insurgency."
     },
     "events": {
       "date_required": true,
