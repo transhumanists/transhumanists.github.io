@@ -151,6 +151,13 @@ function makeCtx() {
     fillsLog: [],
     // Text log: { text, x, y } for every fillText() (stack count badges).
     textsLog: [],
+    // Clip log: the rect() most recently set, for every clip(). Real CanvasRendering
+    // Context2D has both methods; without them the geography clip was a no-op under
+    // test, which is exactly the kind of silent divergence that hides a rendering
+    // bug - and the clip is what keeps the terminator and the pole-to-pole graticule
+    // out of the letterbox margin.
+    clipsLog: [],
+    _lastRect: null,
     _path: [],
     resetCounters() { for (const k in this.counters) this.counters[k] = 0; this.fillsLog.length = 0; this.textsLog.length = 0; },
   };
@@ -159,7 +166,7 @@ function makeCtx() {
 // mock silently diverged from the real 2D context and no test ever rendered the
 // layer - the hover tests hit-tested only, so the draw path was untested.
 ctx.createRadialGradient = () => ({ addColorStop() {} });
-  for (const m of ['fillRect', 'beginPath', 'moveTo', 'lineTo', 'stroke', 'fill', 'closePath', 'setLineDash', 'arc', 'fillText', 'save', 'restore', 'setTransform']) {
+  for (const m of ['fillRect', 'beginPath', 'moveTo', 'lineTo', 'stroke', 'fill', 'closePath', 'setLineDash', 'arc', 'fillText', 'save', 'restore', 'setTransform', 'rect', 'clip', 'clearRect']) {
     ctx[m] = (...args) => {
       if (m === 'fill') {
         ctx.counters.fills++;
@@ -170,6 +177,10 @@ ctx.createRadialGradient = () => ({ addColorStop() {} });
       else if (m === 'arc') ctx.counters.arcs++;
       else if (m === 'fillText') ctx.textsLog.push({ text: String(args[0]), x: args[1], y: args[2] });
       else if (m === 'beginPath') ctx._path = [];
+      else if (m === 'rect') {
+        ctx._lastRect = { x: args[0], y: args[1], w: args[2], h: args[3] };
+        ctx._path.push({ x: args[0], y: args[1] });
+      } else if (m === 'clip') ctx.clipsLog.push(ctx._lastRect);
     };
   }
   return ctx;
@@ -2360,6 +2371,92 @@ test('zoom controls, keyboard and double-click do not throw', () => {
     windowObj.__WORLDMAP_TEST__.resizeNow();
   }
 
+  // --- Geography is clipped to the map plate -----------------------------------
+  // Having fitted the world inside the canvas, the vertical graticule lines run pole
+  // to pole and the terminator tints the full canvas, so both carry on into the
+  // letterbox margin where no coastline is drawn. That reads as a shaded border
+  // around the map rather than as map.
+  describe('geography is clipped to the map plate', () => {
+    const api = () => windowObj.__WORLDMAP_TEST__;
+
+    const size = (w, h) => {
+      const canvas = registeredEls['world-map-canvas'];
+      canvas.clientWidth = w;
+      canvas.clientHeight = h;
+      canvas.getBoundingClientRect = () => ({ left: 0, top: 0, width: w, height: h });
+      api().resizeNow();
+    };
+
+    afterEach(() => size(CANVAS_W, CANVAS_H));
+
+    test('the canvas is asked to clip once per frame', () => {
+      size(800, 520);
+      ctx.clipsLog.length = 0;
+      api().resizeNow();
+      expect(ctx.clipsLog.length).toBe(1);
+      expect(ctx.clipsLog[0]).toBeTruthy();
+    });
+
+    test('the clip is exactly the map plate', () => {
+      size(800, 520);
+      ctx.clipsLog.length = 0;
+      api().resizeNow();
+      const b = api().mapBox();
+      const r = ctx.clipsLog[0];
+      expect(r.x).toBeCloseTo(b.x, 6);
+      expect(r.y).toBeCloseTo(b.y, 6);
+      expect(r.w).toBeCloseTo(b.w, 6);
+      expect(r.h).toBeCloseTo(b.h, 6);
+    });
+
+    test('the clip does not cover the whole canvas', () => {
+      // If it did, the margin would be shaded like the map and fitting the
+      // projection would buy nothing.
+      size(1200, 580);
+      ctx.clipsLog.length = 0;
+      api().resizeNow();
+      const r = ctx.clipsLog[0];
+      expect(r.h).toBeLessThan(580);
+      expect(r.w * r.h).toBeLessThan(1200 * 580);
+    });
+
+    test('the clip follows zoom', () => {
+      size(800, 520);
+      const before = api().mapScreenRect();
+      registeredEls['zoom-in'].fire('click', {});
+      const after = api().mapScreenRect();
+      expect(after.w).toBeGreaterThan(before.w);
+      expect(after.h).toBeGreaterThan(before.h);
+      ctx.clipsLog.length = 0;
+      api().resizeNow();
+      expect(ctx.clipsLog[0].w).toBeCloseTo(after.w, 6);
+      expect(ctx.clipsLog[0].h).toBeCloseTo(after.h, 6);
+    });
+
+    test('mapScreenRect agrees with where project() puts the plate corners', () => {
+      size(800, 520);
+      registeredEls['reset-view'].fire('click', {});
+      const r = api().mapScreenRect();
+      const nw = api().project(-180, api().MAP_LAT_NORTH);
+      expect(nw.x).toBeCloseTo(r.x, 6);
+      expect(nw.y).toBeCloseTo(r.y, 6);
+      const se = api().project(180, api().MAP_LAT_SOUTH);
+      expect(se.x).toBeCloseTo(r.x + r.w, 6);
+      expect(se.y).toBeCloseTo(r.y + r.h, 6);
+    });
+
+    test('reset view returns the plate to the fitted box', () => {
+      size(800, 520);
+      registeredEls['zoom-in'].fire('click', {});
+      registeredEls['reset-view'].fire('click', {});
+      const r = api().mapScreenRect();
+      const b = api().mapBox();
+      expect(r.x).toBeCloseTo(b.x, 6);
+      expect(r.y).toBeCloseTo(b.y, 6);
+      expect(r.w).toBeCloseTo(b.w, 6);
+    });
+  });
+
   // --- normalizeEvent idempotency ---------------------------------------------
   // Regression: normalise() rewrites geolocation into flat lat/lon and drops the
   // geolocation object, so feeding its own output back through setEvents() found no
@@ -2759,11 +2856,18 @@ test('zoom controls, keyboard and double-click do not throw', () => {
       });
     });
 
-    test('the cluster lead owns the location', () => {
+    test('the first member is the lead, and it is what gets hit', () => {
+      // Deliberately no flag on the entries: the lead is simply group[0], the entry
+      // whose projection is the cluster centre. An earlier version wrote a `_hrLead`
+      // marker that nothing ever read.
       withRights([hr('a', 53.9, 27.6), hr('b', 53.9, 27.6)], (api) => {
         const [group] = api.visibleHumanRightClusters();
-        expect(group[0]._hrLead).toBe(true);
-        expect(group[1]._hrLead).toBe(false);
+        expect(group[0].id).toBe('a');
+        const at = pt(27.6, 53.9);
+        expect(api.findHumanRight(at.x, at.y).id).toBe('a');
+        for (const e of api.getLayers().humanRights) {
+          expect(e._hrLead).toBeUndefined();
+        }
       });
     });
 
@@ -2785,14 +2889,69 @@ test('zoom controls, keyboard and double-click do not throw', () => {
         const hit = api.findHumanRight(at.x, at.y);
         expect(hit).not.toBe(null);
         expect(hit.id).toBe('a');
-        expect(hit._clusterCount).toBe(2);
+        expect(api.humanRightClusterSize(hit)).toBe(2);
       });
     });
 
     test('a lone report is not labelled as a cluster', () => {
       withRights([hr('a', 53.9, 27.6)], (api) => {
         const at = pt(27.6, 53.9);
-        expect(api.findHumanRight(at.x, at.y)._clusterCount).toBe(1);
+        expect(api.humanRightClusterSize(api.findHumanRight(at.x, at.y))).toBe(1);
+      });
+    });
+
+    test('the cluster size is derived, not cached on the entry', () => {
+      // Regression guard: findHumanRight used to write the count onto the object it
+      // returned, so the number described "the last hit" rather than the landmark,
+      // and any caller building a tooltip from an entry the hit test had not just
+      // touched would show a stale number.
+      withRights([hr('a', 53.9, 27.6), hr('b', 53.9, 27.6)], (api) => {
+        const at = pt(27.6, 53.9);
+        const hit = api.findHumanRight(at.x, at.y);
+        expect(hit._clusterCount).toBeUndefined();
+        // Still correct with no hit needed first.
+        expect(api.humanRightClusterSize(hit)).toBe(2);
+      });
+    });
+
+    test('a report hidden by the timeline is not counted', () => {
+      // Concluded entries, so the year filter actually reaches them: an active
+      // entry is deliberately plotted from its start year onward and stays visible.
+      withRights([
+        { ...hr('a', 53.9, 27.6), status: 'concluded', end_date: '2026-06-01' },
+        { ...hr('b', 53.9, 27.6), status: 'concluded', end_date: '2026-06-01' },
+      ], (api) => {
+        api.setTimelineYear(1999);
+        expect(api.visibleHumanRightClusters().length).toBe(0);
+        const lead = api.getLayers().humanRights[0];
+        expect(api.humanRightClusterSize(lead)).toBe(0);
+        // Nothing left to hit, either.
+        const at = pt(27.6, 53.9);
+        expect(api.findHumanRight(at.x, at.y)).toBe(null);
+      });
+    });
+
+    test('the year slider reaches the landmark layer at all', () => {
+      // Regression: filterLayersByYear covered zones, fleets and crises but never
+      // landmarks, so every _hiddenByTimeline check on this layer was permanently
+      // false and moving the slider did nothing to it.
+      withRights([
+        { ...hr('a', 53.9, 27.6), status: 'concluded', end_date: '2026-06-01' },
+      ], (api) => {
+        api.setTimelineYear(2026);
+        expect(api.visibleHumanRightClusters().length).toBe(1);
+        api.setTimelineYear(1999);
+        expect(api.visibleHumanRightClusters().length).toBe(0);
+      });
+    });
+
+    test('an active landmark stays visible across years, like every other layer', () => {
+      withRights([hr('a', 53.9, 27.6)], (api) => {
+        api.setTimelineYear(2026);
+        expect(api.visibleHumanRightClusters().length).toBe(1);
+        // Still-active entries are plotted from their start year onward.
+        api.setTimelineYear(2030);
+        expect(api.visibleHumanRightClusters().length).toBe(1);
       });
     });
 

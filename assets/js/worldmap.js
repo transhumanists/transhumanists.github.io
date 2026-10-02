@@ -901,6 +901,22 @@ function canonicalCategory(cat) {
     return state._box;
   }
 
+  // The map plate in screen space, i.e. mapBox() after the pan/zoom transform.
+// Anything painted as geography has to be clipped to this: project() fits the world
+// inside the canvas and centres it, so without a clip the vertical graticule lines
+// and the terminator tint carry on into the letterbox margin where no coastline is
+// drawn, which reads as a shaded border around the map rather than as map.
+function mapScreenRect() {
+    const b = mapBox();
+    const t = state.transform;
+    return {
+      x: b.x * t.scale + t.tx,
+      y: b.y * t.scale + t.ty,
+      w: b.w * t.scale,
+      h: b.h * t.scale,
+    };
+  }
+
   function project(lon, lat) {
     const b = mapBox();
     const x = b.x + (lon + 180) / 360 * b.w;
@@ -1185,6 +1201,16 @@ function canonicalCategory(cat) {
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, w, h);
 
+    // Graticule, coastlines and terminator are all geography, so they are confined
+    // to the map plate. Only the plate background fills the whole canvas, which is
+    // what makes the margin read as surround. Clipping to the *transformed* rect
+    // keeps the frame correct while panning and zoomed in.
+    const plate = mapScreenRect();
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(plate.x, plate.y, plate.w, plate.h);
+    ctx.clip();
+
     ctx.strokeStyle = 'rgba(0, 212, 255, 0.05)';
     ctx.lineWidth = 1;
     for (let lon = -180; lon <= 180; lon += 30) {
@@ -1218,6 +1244,8 @@ function canonicalCategory(cat) {
       ctx.fill();
       ctx.stroke();
     });
+
+    ctx.restore();
 
     drawTerminator();
 
@@ -1518,16 +1546,23 @@ function canonicalCategory(cat) {
       const group = humanRightStackMap.get(k);
       if (group) group.push(h); else humanRightStackMap.set(k, [h]);
     }
-    // Mark the member that owns the location so draw/hit-test agree on which entry
-    // is the cluster centre, exactly like the milestone stack.
-    for (const group of humanRightStackMap.values()) {
-      for (let i = 0; i < group.length; i++) group[i]._hrLead = i === 0;
-    }
     return humanRightStackMap;
   }
 
   function humanRightStackFor(h) {
     return humanRightStackMap.get(humanRightStackKey(h)) || [h];
+  }
+
+  // How many visible reports this landmark stands for. Several reports can share
+  // one country centroid, in which case the marker is a fan and the tooltip has to
+  // say so. Derived on demand rather than cached on the entry: findHumanRight used
+  // to write this onto the object it returned, which meant the count was a property
+  // of "the last hit" rather than of the landmark, and any caller that built a
+  // tooltip from an entry the hit test had not just touched would show a stale
+  // number.
+  function humanRightClusterSize(h) {
+    if (!h) return 0;
+    return humanRightStackFor(h).filter(e => !e._hiddenByTimeline).length;
   }
 
   // Timeline-filtered clusters, so a cluster never mixes hidden and shown members.
@@ -1893,8 +1928,7 @@ function canonicalCategory(cat) {
     const hitRadius = HUMAN_RIGHTS_HIT_RADIUS;
     const hitRadiusSq = hitRadius * hitRadius;
     // Walk clusters so a fan of several reports is one target and the returned
-    // entry is always the lead, which owns the projected centre. _clusterCount
-    // rides along for the tooltip.
+    // entry is always the lead, which owns the projected centre.
     let best = null;
     let bestDist = Infinity;
     for (const group of visibleHumanRightClusters()) {
@@ -1909,8 +1943,6 @@ function canonicalCategory(cat) {
         best = lead;
       }
     }
-    if (!best) return null;
-    best._clusterCount = humanRightStackFor(best).filter(h => !h._hiddenByTimeline).length;
     return best;
   }
 
@@ -2717,7 +2749,7 @@ function showTooltip(ev, x, y) {
     }
     // Several reports can geocode to one country centroid. Without this line the
     // legend count reads as a bug: the marker is a fan, not a single report.
-    const clusterCount = entry._clusterCount || 0;
+    const clusterCount = humanRightClusterSize(entry);
     if (clusterCount > 1) {
       const shared = document.createElement('div');
       shared.style.cssText = 'color: var(--fg-muted); font-size: 0.72rem; margin-top: 4px;';
@@ -3671,6 +3703,12 @@ function filterLayersByYear(year) {
   state.zones.forEach(z => { z._hiddenByTimeline = !layerVisibleInYear(z, year); });
   state.fleets.forEach(f => { f._hiddenByTimeline = !layerVisibleInYear(f, year); });
   state.crises.forEach(c => { c._hiddenByTimeline = !layerVisibleInYear(c, year); });
+  // Landmarks are an operational layer too and carry the same start/end dates and
+  // status as the zones above, so the slider has to reach them. It did not: nothing
+  // ever set _hiddenByTimeline on these entries, which left every _hiddenByTimeline
+  // check in drawHumanRightsLandmark, findHumanRight and visibleHumanRightClusters
+  // permanently false. Moving the slider appeared to do nothing at all to this layer.
+  state.humanRights.forEach(h => { h._hiddenByTimeline = !layerVisibleInYear(h, year); });
 }
 
 // Timeline slider initialization
@@ -3919,12 +3957,14 @@ function initTimelineSlider() {
   toggleAllCategories,
   renderLegend,
   mapBox,
+  mapScreenRect,
   project,
   // Resize synchronously and redraw. Tests need a canvas change to take effect
   // before the next assertion; the production path uses the debounced
   // scheduleResize() instead.
   resizeNow() { applyResize(); draw(); },
   humanRightStackFor,
+  humanRightClusterSize,
   visibleHumanRightClusters,
   isNearAnchor,
   sameLocationCluster,

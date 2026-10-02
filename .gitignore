@@ -11,3 +11,11 @@ test_hdx.py
 .idea/
 .DS_Store
 Thumbs.db
+
+# Agent scratch tooling (never part of the site)
+opencode/
+
+# Test/automation run artifacts
+playwright-report/
+test-results/
+.ruff_cache/
