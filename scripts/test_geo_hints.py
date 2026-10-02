@@ -117,6 +117,48 @@ class TestMatchPlace(unittest.TestCase):
         self.assertTrue(region)
 
 
+class TestCompiledMatchers(unittest.TestCase):
+    """The precompiled table must stay equivalent to PLACE_COORDS.
+
+    match_place used to rebuild every pattern on each call, which cost ~380us per
+    invocation because the pipeline calls it several times per milestone. The
+    patterns are now compiled once at import - but a cached table can silently
+    fall out of step with the dict it was built from, so it is checked here.
+    """
+
+    def test_every_eligible_key_has_a_matcher(self):
+        eligible = {k for k in geo_hints.PLACE_COORDS if len(k) >= 4}
+        self.assertEqual({name for name, _p, _c in geo_hints._MATCHERS}, eligible)
+
+    def test_matcher_count_matches_the_table(self):
+        self.assertEqual(len(geo_hints._MATCHERS),
+                         len([k for k in geo_hints.PLACE_COORDS if len(k) >= 4]))
+
+    def test_each_matcher_carries_its_own_coordinates(self):
+        for name, _pattern, coords in geo_hints._MATCHERS:
+            with self.subTest(name=name):
+                self.assertEqual(coords, geo_hints.PLACE_COORDS[name])
+
+    def test_each_matcher_matches_its_own_name(self):
+        for name, pattern, _coords in geo_hints._MATCHERS:
+            with self.subTest(name=name):
+                self.assertIsNotNone(pattern.search(name.lower()),
+                                     f"compiled pattern does not match its own key {name!r}")
+
+    def test_short_keys_are_excluded(self):
+        for name, _pattern, _coords in geo_hints._MATCHERS:
+            with self.subTest(name=name):
+                self.assertGreaterEqual(len(name), 4)
+
+    def test_matching_is_still_longest_name_first(self):
+        # Order in _MATCHERS is the specificity guarantee; rebuilding it unsorted
+        # would silently let a short name shadow a longer one.
+        lengths = [len(name) for name, _p, _c in geo_hints._MATCHERS]
+        self.assertEqual(lengths, sorted(lengths, reverse=True))
+        self.assertEqual(geo_hints.match_place("the democratic republic of the congo")[0],
+                         "democratic republic of the congo")
+
+
 class TestConvenienceAccessors(unittest.TestCase):
     def test_place_coords_returns_a_pair(self):
         self.assertEqual(geo_hints.place_coords("a study from Malta"), (35.9, 14.5))

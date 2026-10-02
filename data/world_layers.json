@@ -1,6 +1,6 @@
 {
   "version": "1.2.0",
-  "last_update": "2026-10-01T23:38:44+00:00",
+  "last_update": "2026-10-02T00:11:31+00:00",
   "conflict_zones": [
     {
       "id": "zone-ukraine",
@@ -8,14 +8,15 @@
       "region": "Eastern Europe",
       "lat": 48.0,
       "lon": 37.8,
-      "radiusDeg": 2.5,
+      "radiusDeg": 4.0,
       "status": "active",
       "start_date": "2022-02-24",
       "end_date": "",
       "note": "Russia–Ukraine line of contact",
       "source": "ISW",
       "url": "https://www.understandingwar.org",
-      "last_news_year": 2022
+      "last_news_year": 2026,
+      "tier": "major"
     },
     {
       "id": "zone-gaza",
@@ -23,14 +24,15 @@
       "region": "Middle East",
       "lat": 31.3,
       "lon": 34.3,
-      "radiusDeg": 2.5,
+      "radiusDeg": 4.0,
       "status": "active",
       "start_date": "2023-10-07",
       "end_date": "",
       "note": "Gaza–Israel conflict",
       "source": "UN OCHA",
       "url": "https://www.unocha.org",
-      "last_news_year": 2023
+      "last_news_year": 2026,
+      "tier": "major"
     },
     {
       "id": "zone-red-sea",
@@ -38,14 +40,15 @@
       "region": "Middle East",
       "lat": 13.5,
       "lon": 43.0,
-      "radiusDeg": 2.5,
+      "radiusDeg": 4.0,
       "status": "active",
       "start_date": "2023-11-19",
       "end_date": "",
       "note": "Maritime security zone",
       "source": "IMSC",
       "url": "https://www.maritimeglobalsecurity.org",
-      "last_news_year": 2023
+      "last_news_year": 2026,
+      "tier": "major"
     },
     {
       "id": "zone-israel-palestine",
@@ -77,7 +80,7 @@
       "end_date": "",
       "source": "Wikipedia (List of ongoing armed conflicts)",
       "url": "https://en.wikipedia.org/wiki/List_of_ongoing_armed_conflicts",
-      "last_news_year": 1948
+      "last_news_year": 2026
     },
     {
       "id": "zone-congolese-conflicts",
@@ -100,7 +103,7 @@
       "end_date": "",
       "source": "Wikipedia (List of ongoing armed conflicts)",
       "url": "https://en.wikipedia.org/wiki/List_of_ongoing_armed_conflicts",
-      "last_news_year": 1960
+      "last_news_year": 2026
     },
     {
       "id": "zone-sahel-insurgency",
@@ -131,7 +134,7 @@
       "end_date": "",
       "source": "Wikipedia (List of ongoing armed conflicts)",
       "url": "https://en.wikipedia.org/wiki/List_of_ongoing_armed_conflicts",
-      "last_news_year": 2002
+      "last_news_year": 2026
     },
     {
       "id": "zone-mexican-drug-war",
@@ -155,7 +158,7 @@
       "end_date": "",
       "source": "Wikipedia (List of ongoing armed conflicts)",
       "url": "https://en.wikipedia.org/wiki/List_of_ongoing_armed_conflicts",
-      "last_news_year": 2006
+      "last_news_year": 2026
     },
     {
       "id": "zone-myanmar-civil-war",
@@ -177,7 +180,7 @@
       "end_date": "",
       "source": "Wikipedia (List of ongoing armed conflicts)",
       "url": "https://en.wikipedia.org/wiki/List_of_ongoing_armed_conflicts",
-      "last_news_year": 1948
+      "last_news_year": 2026
     },
     {
       "id": "zone-somali-civil-war",
@@ -198,7 +201,7 @@
       "end_date": "",
       "source": "Wikipedia (List of ongoing armed conflicts)",
       "url": "https://en.wikipedia.org/wiki/List_of_ongoing_armed_conflicts",
-      "last_news_year": 2002
+      "last_news_year": 2026
     },
     {
       "id": "zone-sudanese-civil-wars",
@@ -222,7 +225,7 @@
       "end_date": "",
       "source": "Wikipedia (List of ongoing armed conflicts)",
       "url": "https://en.wikipedia.org/wiki/List_of_ongoing_armed_conflicts",
-      "last_news_year": 1955
+      "last_news_year": 2026
     },
     {
       "id": "zone-afghanistan-conflict",
@@ -242,7 +245,7 @@
       "end_date": "",
       "source": "Wikipedia (List of ongoing armed conflicts)",
       "url": "https://en.wikipedia.org/wiki/List_of_ongoing_armed_conflicts",
-      "last_news_year": 1978
+      "last_news_year": 2026
     },
     {
       "id": "zone-cameroonian-conflicts",
@@ -263,7 +266,7 @@
       "end_date": "",
       "source": "Wikipedia (List of ongoing armed conflicts)",
       "url": "https://en.wikipedia.org/wiki/List_of_ongoing_armed_conflicts",
-      "last_news_year": 2012
+      "last_news_year": 2026
     },
     {
       "id": "zone-colombian-conflict",
@@ -301,7 +304,7 @@
       "end_date": "",
       "source": "Wikipedia (List of ongoing armed conflicts)",
       "url": "https://en.wikipedia.org/wiki/List_of_ongoing_armed_conflicts",
-      "last_news_year": 2018
+      "last_news_year": 2026
     },
     {
       "id": "zone-insurgencies-in-iran",
@@ -321,7 +324,7 @@
       "end_date": "",
       "source": "Wikipedia (List of ongoing armed conflicts)",
       "url": "https://en.wikipedia.org/wiki/List_of_ongoing_armed_conflicts",
-      "last_news_year": 1918
+      "last_news_year": 2026
     },
     {
       "id": "zone-cabinda-war",
@@ -339,7 +342,7 @@
       "end_date": "",
       "source": "Wikipedia (List of ongoing armed conflicts)",
       "url": "https://en.wikipedia.org/wiki/List_of_ongoing_armed_conflicts",
-      "last_news_year": 1975
+      "last_news_year": 2026
     },
     {
       "id": "zone-civil-conflict-in-the-philippines",
@@ -357,7 +360,7 @@
       "end_date": "",
       "source": "Wikipedia (List of ongoing armed conflicts)",
       "url": "https://en.wikipedia.org/wiki/List_of_ongoing_armed_conflicts",
-      "last_news_year": 1969
+      "last_news_year": 2026
     },
     {
       "id": "zone-ethnic-violence-in-papua-new-guinea",
@@ -375,7 +378,7 @@
       "end_date": "",
       "source": "Wikipedia (List of ongoing armed conflicts)",
       "url": "https://en.wikipedia.org/wiki/List_of_ongoing_armed_conflicts",
-      "last_news_year": 1988
+      "last_news_year": 2026
     },
     {
       "id": "zone-honduran-gang-crackdown",
@@ -393,7 +396,7 @@
       "end_date": "",
       "source": "Wikipedia (List of ongoing armed conflicts)",
       "url": "https://en.wikipedia.org/wiki/List_of_ongoing_armed_conflicts",
-      "last_news_year": 2022
+      "last_news_year": 2026
     },
     {
       "id": "zone-insurgencies-in-turkey",
@@ -432,7 +435,7 @@
       "end_date": "",
       "source": "Wikipedia (List of ongoing armed conflicts)",
       "url": "https://en.wikipedia.org/wiki/List_of_ongoing_armed_conflicts",
-      "last_news_year": 2017
+      "last_news_year": 2026
     },
     {
       "id": "zone-iraqi-conflict",
@@ -450,7 +453,7 @@
       "end_date": "",
       "source": "Wikipedia (List of ongoing armed conflicts)",
       "url": "https://en.wikipedia.org/wiki/List_of_ongoing_armed_conflicts",
-      "last_news_year": 2003
+      "last_news_year": 2026
     },
     {
       "id": "zone-kashmir-conflict",
@@ -470,7 +473,7 @@
       "end_date": "",
       "source": "Wikipedia (List of ongoing armed conflicts)",
       "url": "https://en.wikipedia.org/wiki/List_of_ongoing_armed_conflicts",
-      "last_news_year": 1947
+      "last_news_year": 2026
     },
     {
       "id": "zone-libyan-crisis",
@@ -488,7 +491,7 @@
       "end_date": "",
       "source": "Wikipedia (List of ongoing armed conflicts)",
       "url": "https://en.wikipedia.org/wiki/List_of_ongoing_armed_conflicts",
-      "last_news_year": 2011
+      "last_news_year": 2026
     },
     {
       "id": "zone-papua-conflict",
@@ -506,7 +509,7 @@
       "end_date": "",
       "source": "Wikipedia (List of ongoing armed conflicts)",
       "url": "https://en.wikipedia.org/wiki/List_of_ongoing_armed_conflicts",
-      "last_news_year": 1962
+      "last_news_year": 2026
     },
     {
       "id": "zone-syria-aftermath",
@@ -528,7 +531,7 @@
       "end_date": "",
       "source": "Wikipedia (List of ongoing armed conflicts)",
       "url": "https://en.wikipedia.org/wiki/List_of_ongoing_armed_conflicts",
-      "last_news_year": 2011
+      "last_news_year": 2026
     },
     {
       "id": "zone-central-african-republic-civil-war",
@@ -549,7 +552,7 @@
       "end_date": "",
       "source": "Wikipedia (List of ongoing armed conflicts)",
       "url": "https://en.wikipedia.org/wiki/List_of_ongoing_armed_conflicts",
-      "last_news_year": 2012
+      "last_news_year": 2026
     },
     {
       "id": "zone-ecuadorian-conflict",
@@ -568,7 +571,7 @@
       "end_date": "",
       "source": "Wikipedia (List of ongoing armed conflicts)",
       "url": "https://en.wikipedia.org/wiki/List_of_ongoing_armed_conflicts",
-      "last_news_year": 1993
+      "last_news_year": 2026
     },
     {
       "id": "zone-ethiopian-civil-wars",
@@ -608,7 +611,7 @@
       "end_date": "",
       "source": "Wikipedia (List of ongoing armed conflicts)",
       "url": "https://en.wikipedia.org/wiki/List_of_ongoing_armed_conflicts",
-      "last_news_year": 2010
+      "last_news_year": 2026
     }
   ],
   "crisis_zones": [

@@ -124,7 +124,7 @@
         },
         {
           "key": "deployments",
-          "legend_label": "Fleet Movements & Ground Deployments",
+          "legend_label": "Ground Deployments & Fleet Movements",
           "data_key": "deployments",
           "shape": "diamond",
           "default_on": false,

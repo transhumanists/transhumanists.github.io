@@ -328,7 +328,7 @@ describe('worldmap', () => {
     expect(legendValue('Military & Defense')).toBe('2');   // aliased 'Defense' + canonical
     // Military layers now show simple labels with actual counts
     expect(legendValue('Conflict Zones')).toBe('3');
-    expect(legendValue('Fleet Movements & Ground Deployments')).toBe('9');
+    expect(legendValue('Ground Deployments & Fleet Movements')).toBe('9');
     expect(legendValue('Crisis Zones')).toBe('5');
   });
 
@@ -344,7 +344,7 @@ describe('worldmap', () => {
     expect(Number(registeredEls['map-stat-conflicts'].textContent)).toBe(3);
     expect(ctx.counters.arcs).toBeGreaterThan(0);              // redraw happened
     expect(Number(registeredEls['map-stat-fleets'].textContent)).toBe(9); // fleets also enabled
-    expect(legendValue('Fleet Movements & Ground Deployments')).toBe('9');          // deployments layer present
+    expect(legendValue('Ground Deployments & Fleet Movements')).toBe('9');          // deployments layer present
 
     rowByLayer('zones').fire('click', {});                     // toggle zones back off
     expect(rowByLayer('zones').getAttribute('aria-pressed')).toBe('false');
@@ -777,8 +777,11 @@ test('zoom controls, keyboard and double-click do not throw', () => {
     expect(first.from).toEqual({ lat: 40, lon: 15 });
     // Direction handling, including the deterministic "global" fallback.
     expect(api.fleetEndpoints({ kind: 'mobilization', lat: 10, lon: 10, direction: 'WEST' }).from.lon).toBe(15);
-    expect(api.fleetEndpoints({ kind: 'rotation', lat: 10, lon: 10, direction: 'north' }).from.lat).toBe(15);
-    expect(api.fleetEndpoints({ kind: 'rotation', lat: 10, lon: 10, direction: 'south' }).from.lat).toBe(5);
+    // The tail sits BEHIND the destination, so a "north" heading puts the tail at
+    // a lower latitude. These two used to assert the opposite sign, which is how
+    // the arrow ended up pointing south while the tooltip read "Heading: North".
+    expect(api.fleetEndpoints({ kind: 'rotation', lat: 10, lon: 10, direction: 'north' }).from.lat).toBe(5);
+    expect(api.fleetEndpoints({ kind: 'rotation', lat: 10, lon: 10, direction: 'south' }).from.lat).toBe(15);
     const global = api.fleetEndpoints({ kind: 'infantry', lat: 12, lon: 34 });
     expect(Number.isFinite(global.from.lat)).toBe(true);
     expect(Number.isFinite(global.from.lon)).toBe(true);
@@ -1776,9 +1779,108 @@ test('zoom controls, keyboard and double-click do not throw', () => {
     });
   });
 
+
+  test('SOURCE_URL_RE admits only http(s), never a script scheme', () => {
+    const api = windowObj.__WORLDMAP_TEST__;
+    const re = api.SOURCE_URL_RE;
+    // Third-party feed content lands in tooltips as link hrefs, so the scheme
+    // guard is a security boundary rather than a formatting nicety.
+    for (const good of ['https://example.com/a', 'http://example.com/b',
+                        'HTTPS://EXAMPLE.COM/C']) {
+      expect(re.test(good)).toBe(true);
+    }
+    for (const bad of ['javascript:alert(1)', 'JaVaScRiPt:alert(1)',
+                       'data:text/html,<script>alert(1)</script>',
+                       'vbscript:msgbox(1)', 'file:///etc/passwd',
+                       ' javascript:alert(1)', '\njavascript:alert(1)']) {
+      expect(re.test(bad)).toBe(false);
+    }
+  });
+
+  test('a javascript: source url never becomes a link href', () => {
+    withFreshHover((api) => {
+      registeredEls['reset-view'].fire('click', {});
+      api.setEvents([mkEvent('a', 'Hostile source', 8.5417, 47.3769)]);
+      api.getEvents()[0].url = 'javascript:alert(1)';
+      hoverAt(8.5417, 47.3769);
+      expect(tooltip.classList.contains('visible')).toBe(true);
+      const hrefs = [];
+      const walk = (node) => {
+        for (const c of node.children || []) {
+          if ((c.tagName || '').toUpperCase() === 'A') hrefs.push(c.href);
+          walk(c);
+        }
+      };
+      walk(tooltip);
+      // Either no link at all, or never a dangerous one.
+      for (const href of hrefs) expect(href).not.toContain('javascript:');
+    });
+  });
+
+
+  test('a ground deployment arrow points the way its heading says', () => {
+    const api = windowObj.__WORLDMAP_TEST__;
+    // Regression: the latitude cases were signed the opposite way to the
+    // longitude ones. A deployment tagged "Heading: North" placed its tail NORTH
+    // of the destination, so the arrowhead pointed south - while the tooltip read
+    // "Heading: North". east/west were already correct, which is what made the
+    // asymmetry easy to miss in review.
+    const LAT = 34.22, LON = 77.56;
+    const cases = [
+      ['north', 1],   // travel: latitude must increase
+      ['south', -1],  // travel: latitude must decrease
+      ['east', 1],    // travel: longitude must increase
+      ['west', -1],   // travel: longitude must decrease
+    ];
+    for (const [direction, sign] of cases) {
+      const ends = api.fleetEndpoints({
+        id: 'd', kind: 'deployment', lat: LAT, lon: LON, direction, status: 'active'
+      });
+      expect(ends).not.toBe(null);
+      const dLat = ends.to.lat - ends.from.lat;
+      const dLon = ends.to.lon - ends.from.lon;
+      if (direction === 'north' || direction === 'south') {
+        expect(Math.sign(dLat)).toBe(sign);
+        // Heading purely north/south: no sideways component.
+        expect(dLon).toBe(0);
+      } else {
+        expect(Math.sign(dLon)).toBe(sign);
+        expect(dLat).toBe(0);
+      }
+      // The destination is always the stored deployment point.
+      expect(ends.to.lat).toBe(LAT);
+      expect(ends.to.lon).toBe(LON);
+    }
+  });
+
+  test('the committed India-China LAC deployment arrow points north', () => {
+    const api = windowObj.__WORLDMAP_TEST__;
+    // The entry as it ships in data/world_layers.json.
+    const ends = api.fleetEndpoints({
+      id: 'inf-india-china-border', kind: 'deployment',
+      lat: 34.22, lon: 77.56, direction: 'north', status: 'active'
+    });
+    // Tail south of the destination, so the arrowhead is at the north end.
+    expect(ends.from.lat).toBeLessThan(ends.to.lat);
+    expect(ends.from.lon).toBe(ends.to.lon);
+  });
+
   test('Deployments legend row explains both components', () => {
     registeredEls['reset-view'].fire('click', {});
-    expect(legendValue('Fleet Movements & Ground Deployments')).toBeDefined();
+      expect(legendValue('Ground Deployments & Fleet Movements')).toBeDefined();
+      // The row draws two dots and the label names two components, so the label's
+      // word order has to match the dot order or the legend misreports which
+      // colour is which.
+      const row = legendRows().find((r) => r.getAttribute('data-layer') === 'deployments');
+      const dots = row.children.filter(
+        (c) => (c.className || '').split(' ').includes('map-legend-dot'));
+      expect(dots.length).toBe(2);
+      const label = row.children.find((c) => c.className === 'map-legend-label').textContent;
+      const words = label.replace('&', '').trim().split(/\s+/).map((w) => w.toLowerCase());
+      const order = ['ground', 'fleet'];
+      expect(words.filter((w) => order.includes(w))).toEqual(order);
+      // And the two colours differ, so the dots are meaningful.
+      expect(dots[0].style.background).not.toBe(dots[1].style.background);
   });
 
   // ---- Hover arbitration ----------------------------------------------------

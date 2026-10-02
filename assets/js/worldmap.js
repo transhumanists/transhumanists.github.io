@@ -1474,11 +1474,28 @@ function canonicalCategory(cat) {
     let fromLat = destLat;
     const dir = fleet.direction ? String(fleet.direction).toLowerCase() : 'global';
 
-    if (dir === 'east') { fromLon = destLon - 5; fromLat = destLat; }
-    else if (dir === 'west') { fromLon = destLon + 5; fromLat = destLat; }
-    else if (dir === 'north') { fromLon = destLon; fromLat = destLat + 5; }
-    else if (dir === 'south') { fromLon = destLon; fromLat = destLat - 5; }
-    else {
+    // A ground deployment is a point plus a compass heading, so the tail is
+    // synthesized 5 degrees BEHIND the destination and the arrowhead lands on the
+    // destination. "Behind" means the opposite of travel, hence every offset is
+    // the negation of the direction: north travels to higher latitude, so its tail
+    // sits at a lower one.
+    //
+    // This was previously signed the other way for the latitude cases only - east
+    // and west were right, north and south were inverted, so a deployment tagged
+    // "Heading: North" drew an arrowhead pointing south. Expressing all four as one
+    // table keeps the symmetry obvious and stops the halves drifting apart again.
+    const TAIL_OFFSET_DEG = 5;
+    const BACK_OFFSETS = {
+      east: [-TAIL_OFFSET_DEG, 0],   // travel +lon, so tail is west of it
+      west: [TAIL_OFFSET_DEG, 0],
+      north: [0, -TAIL_OFFSET_DEG],  // travel +lat, so tail is south of it
+      south: [0, TAIL_OFFSET_DEG],
+    };
+    const offset = BACK_OFFSETS[dir];
+    if (offset) {
+      fromLon = destLon + offset[0];
+      fromLat = destLat + offset[1];
+    } else {
       // Global/no direction: deterministic offset based on fleet properties.
       const seed = (destLon * 7 + destLat * 13) % 6;
       fromLon = destLon - 3 + seed;
@@ -2895,7 +2912,7 @@ const fragment = document.createDocumentFragment();
       });
       appendLayerRow(fragment, {
         key: 'deployments',
-        label: 'Fleet Movements & Ground Deployments',
+        label: 'Ground Deployments & Fleet Movements',
         visible: deploymentsVisible,
         splitColors: [GROUND_COLOR, FLEET_COLOR],
         count: String(state.fleets.length),

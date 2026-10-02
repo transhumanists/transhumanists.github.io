@@ -443,6 +443,41 @@ def check_zones(zones: object, kind: str = "conflict_zones") -> list[str]:
     return issues
 
 
+# Radius a zone of each significance tier is drawn at. Mirrors TIER_RADIUS in
+# scripts/sync_layers.py, which sizes every generated zone; curated zones carry
+# their own radiusDeg and are held to the same table here.
+#
+# Three zones were committed with no `tier` at all and therefore no radius rule,
+# which silently defaulted them to the smallest value - so Ukraine, Gaza and the
+# Red Sea rendered smaller than the Sahel insurgency. That is the failure this
+# table now prevents.
+_ZONE_TIER_RADIUS = {"major": 4.0, "minor": 3.0, "conflict": 2.5}
+
+
+def _check_zone_tier_radius(items: list, kind: str) -> list[str]:
+    """A zone's declared tier must agree with the radius it is drawn at."""
+    issues: list[str] = []
+    for i, zone in enumerate(items):
+        if not isinstance(zone, dict):
+            continue
+        tier = zone.get("tier")
+        radius = zone.get("radiusDeg")
+        if tier is None:
+            issues.append(
+                f"{kind}[{i}] ({zone.get('id')}): no `tier`, so the radius defaults to "
+                f"the smallest value; declare one of {sorted(_ZONE_TIER_RADIUS)}")
+            continue
+        if tier not in _ZONE_TIER_RADIUS:
+            issues.append(f"{kind}[{i}] ({zone.get('id')}): unknown tier {tier!r}")
+            continue
+        expected = _ZONE_TIER_RADIUS[tier]
+        if isinstance(radius, (int, float)) and radius != expected:
+            issues.append(
+                f"{kind}[{i}] ({zone.get('id')}): tier {tier!r} should be drawn at "
+                f"radiusDeg {expected}, but the record says {radius}")
+    return issues
+
+
 def check_crisis_zones(zones: object) -> list[str]:
     # Crisis zones share the conflict-zone contract consumed by the front end
     # (normalizeZone/isLayerActive), so they must satisfy the same checks.
@@ -624,6 +659,8 @@ def check_data(data: dict, filename: str) -> list[str]:
         return (
             _check_header(data)
             + check_zones(data.get("conflict_zones"))
+        + _check_zone_tier_radius(data.get("conflict_zones") or [],
+                                       "conflict_zones")
             + check_crisis_zones(data.get("crisis_zones"))
             + check_fleets(deployments, kind=kind)
             + check_human_rights(data.get("human_rights_violations"))

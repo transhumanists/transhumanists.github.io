@@ -408,12 +408,38 @@ def normalize_lifecycle_zone(zone: dict) -> dict:
     zone.setdefault("status", "active")
     zone["start_date"] = _clean_date(zone.get("start_date"))
     zone["end_date"] = _clean_date(zone.get("end_date"))
-    # Track last news year for stale-zone detection: Wikipedia-derived zones
+    # Track last news year for stale-layer detection: Wikipedia-derived zones
     # carry the year parsed from Wikipedia's start column; curated zones
     # (news-derived) default to current year so they stay bright.
-    if not zone.get("last_news_year"):
-        start_year = _cell_year(zone.get("start_date") or "")
-        zone["last_news_year"] = start_year if start_year else date.today().year
+    #
+    # Two repairs live here.
+    #
+    # 1. Absent value -> current year, never the start year. This previously used
+    #    the start year, contradicting the comment directly above and inverting
+    #    the intent: a curated zone was dimmed by the year it began. A start date
+    #    is not a recency signal.
+    #
+    # 2. A stored value equal to the start year is the *fingerprint of that old
+    #    bug*, not a news date. An earlier version back-filled it from start_date
+    #    for every zone lacking an explicit marker, and 29 of the 30 committed
+    #    zones still carry it - including ones whose start year is 1918 or 1947.
+    #    Because the artifact is indistinguishable from a genuine reading, it is
+    #    re-derived whenever it appears on a zone the curators still assert is
+    #    active with no end date. `status` is exactly that assertion, so it wins
+    #    over a year that was never observed.
+    #
+    # A genuinely quiet layer is still dimmed: it would need `status: concluded`
+    # or an end_date, and both are honoured by the tier logic downstream. This
+    # only stops the age of a conflict from being read as evidence it is over.
+    start_year = _cell_year(zone.get("start_date") or "")
+    stored = zone.get("last_news_year")
+    asserted_active = (zone.get("status") or "active") == "active" and not zone.get("end_date")
+    is_start_year_artifact = (
+        isinstance(stored, int) and start_year is not None and stored == start_year
+    )
+
+    if not stored or (is_start_year_artifact and asserted_active):
+        zone["last_news_year"] = date.today().year
     return zone
 
 

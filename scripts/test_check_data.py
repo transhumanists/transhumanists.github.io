@@ -944,6 +944,82 @@ class TestMergedSourcesField(unittest.TestCase):
         self.assertEqual(cd.check_milestones(data), [])
 
 
+class TestZoneTierRadius(unittest.TestCase):
+    """A zone's significance tier must agree with the radius it is drawn at.
+
+    Ukraine, Gaza and the Red Sea were committed with no `tier` at all, so no
+    radius rule applied and they fell to the smallest value - rendering the most
+    heavily reported conflicts on the map smaller than the Sahel insurgency. That
+    default is silent, which is what made it survive.
+    """
+
+    def _zone(self, **over):
+        base = {"id": "z", "name": "Z", "lat": 10, "lon": 10, "status": "active",
+                "radiusDeg": 2.5}
+        base.update(over)
+        return base
+
+    def test_matching_tier_and_radius_passes(self):
+        for tier, radius in (("major", 4.0), ("minor", 3.0), ("conflict", 2.5)):
+            with self.subTest(tier=tier):
+                self.assertEqual(
+                    cd._check_zone_tier_radius(
+                        [self._zone(tier=tier, radiusDeg=radius)], "z"), [])
+
+    def test_missing_tier_is_reported(self):
+        issues = cd._check_zone_tier_radius([self._zone()], "z")
+        self.assertTrue(issues)
+        self.assertIn("no `tier`", issues[0])
+
+    def test_tier_radius_mismatch_is_reported(self):
+        issues = cd._check_zone_tier_radius(
+            [self._zone(tier="major", radiusDeg=2.5)], "z")
+        self.assertTrue(issues)
+        self.assertIn("radiusDeg 4.0", issues[0])
+
+    def test_unknown_tier_is_reported(self):
+        issues = cd._check_zone_tier_radius(
+            [self._zone(tier="apocalyptic", radiusDeg=2.5)], "z")
+        self.assertTrue(issues)
+        self.assertIn("unknown tier", issues[0])
+
+    def test_non_object_entries_are_skipped_not_crashed(self):
+        # check_zones reports these; this helper must not raise on them.
+        self.assertEqual(cd._check_zone_tier_radius(["nope", None], "z"), [])
+
+    def test_committed_zones_all_declare_a_consistent_tier(self):
+        path = cd.DATA_DIR / "world_layers.json"
+        if not path.exists():
+            self.skipTest("world_layers.json not present")
+        import json
+        data = json.loads(path.read_text(encoding="utf-8"))
+        self.assertEqual(
+            cd._check_zone_tier_radius(data.get("conflict_zones") or [], "conflict_zones"),
+            [])
+
+    def test_committed_heavy_conflicts_are_major(self):
+        # The specific regression: these three must not fall back to the smallest
+        # radius now that the rule is enforced.
+        path = cd.DATA_DIR / "world_layers.json"
+        if not path.exists():
+            self.skipTest("world_layers.json not present")
+        import json
+        data = json.loads(path.read_text(encoding="utf-8"))
+        zones = {z.get("id"): z for z in (data.get("conflict_zones") or [])}
+        for zone_id in ("zone-ukraine", "zone-gaza", "zone-red-sea"):
+            if zone_id not in zones:
+                continue
+            with self.subTest(zone=zone_id):
+                self.assertEqual(zones[zone_id].get("tier"), "major")
+                self.assertEqual(zones[zone_id].get("radiusDeg"), 4.0)
+
+    def test_completed_pipeline_zones_still_pass(self):
+        path = cd.DATA_DIR / "world_layers.json"
+        if not path.exists():
+            self.skipTest("world_layers.json not present")
+        self.assertEqual(cd.check_file(path), [])
+
+
 class TestCheckUniqueIds(unittest.TestCase):
     def test_duplicate_zone_id_fails(self):
         zones = [
@@ -1261,7 +1337,7 @@ class TestCheckFile(unittest.TestCase):
             )
             (d / "world_layers.json").write_text(
                 json.dumps(_layers_payload(
-                    [{"name": "Z", "lat": 1, "lon": 1}],
+                    [{"name": "Z", "lat": 1, "lon": 1, "tier": "conflict", "radiusDeg": 2.5}],
                     [{"from": {"lat": 0, "lon": 1}, "to": {"lat": 1, "lon": 1}}],
                     crises=[{"name": "C", "lat": 2, "lon": 2}],
                 )),
