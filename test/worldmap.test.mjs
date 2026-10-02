@@ -100,8 +100,13 @@ function makeEl() {
     fire(type, ev) {
       // Real events carry stopPropagation; handlers defensively call it, so the
       // fake has to as well or every such handler throws under test.
-      const event = Object.assign({ stopped: false }, ev);
+      const event = Object.assign({ stopped: false, defaultPrevented: false }, ev);
       event.stopPropagation = () => { event.stopped = true; };
+      // Handlers call this defensively on every key they consume. Without it,
+      // handleKeyDown threw on the first key it handled - and the test that was
+      // meant to cover Escape was passing only because its event never reached the
+      // handler at all.
+      event.preventDefault = () => { event.defaultPrevented = true; };
       for (const fn of this.listeners[type] || []) fn(event);
       return event;
     },
@@ -2328,6 +2333,15 @@ test('zoom controls, keyboard and double-click do not throw', () => {
     const css = () => readAsset('assets/css/main.css');
     const page = () => readAsset('index.md');
 
+    // Matched against the whole stylesheet rather than a slice of it. These rules
+    // used to be found by splitting on the literal 'option {', which silently stopped
+    // matching the moment optgroup joined the selector list - so the test was
+    // asserting against an empty string and passing.
+    const optionBlock = () => {
+      const found = css().match(/\.select-field option[^{]*\{([^}]*)\}/);
+      return found ? found[1] : '';
+    };
+
     test('no select is styled inline any more', () => {
       // The old markup carried a background/colour declaration per select, which is
       // exactly what left the popup unstyled.
@@ -2347,10 +2361,19 @@ test('zoom controls, keyboard and double-click do not throw', () => {
     });
 
     test('options get an explicit opaque background and foreground', () => {
-      // This is the part that actually fixes the popup: option elements are UA-drawn.
-      const rule = css().split('option {')[1] || '';
-      expect(rule).toContain('--bg-card');
-      expect(rule).toContain('var(--fg)');
+      // The part that actually fixes the popup: option elements are UA-drawn, so
+      // nothing about them can be inherited. Token plus solid fallback, so neither
+      // can resolve to transparent.
+      const rule = optionBlock();
+      expect(rule).not.toBe('');
+      expect(rule).toMatch(
+        /background-color:\s*var\(--bg-card,\s*#[0-9a-f]{3,6}\)/);
+      expect(rule).toMatch(/color:\s*var\(--fg,\s*#[0-9a-f]{3,6}\)/);
+    });
+
+    test('optgroup is covered too, or a grouped list reverts to transparent', () => {
+      // A grouped <select> paints its group header from optgroup, not option.
+      expect(css()).toMatch(/optgroup\s*\{[^}]*background-color/);
     });
 
     test('color-scheme is declared so the UA popup follows the theme', () => {
@@ -2362,12 +2385,14 @@ test('zoom controls, keyboard and double-click do not throw', () => {
       expect(css()).toContain('background-image: url("data:image/svg+xml');
     });
 
-    test('options are not left to the OS light palette', () => {
-      // A regression guard worth stating: if someone removes the option rule the
-      // list silently goes transparent again and no functional test notices.
-      const c = css();
-      expect(c).toMatch(
-        /\.select-field option,[\s\S]{0,200}background-color:\s*var\(--bg-card\)/);
+    test('the expanding category panel cannot be translucent', () => {
+      // "Milestone Categories" is a list of expanding panels rather than a <select>,
+      // and it sits over the page, so a translucent background there reads as the
+      // content behind showing through instead of as a panel.
+      const found = css().match(/\.category-milestones \{([^}]*)\}/);
+      expect(found).not.toBe(null);
+      expect(found[1]).toMatch(/background:\s*var\(--bg-card,\s*#[0-9a-f]{3,6}\)/);
+      expect(found[1]).toContain('isolation: isolate');
     });
   });
 
@@ -2388,7 +2413,6 @@ test('zoom controls, keyboard and double-click do not throw', () => {
     windowObj.__WORLDMAP_TEST__.resizeNow();
   }
 
-  // --- Degenerate canvas and untrusted persistence ------------------------------
   describe('robustness: degenerate canvas and untrusted storage', () => {
     const api = () => windowObj.__WORLDMAP_TEST__;
 
@@ -3087,8 +3111,11 @@ test('zoom controls, keyboard and double-click do not throw', () => {
         // what matters is that the pinned landmark is painted differently.
         const src = fs.readFileSync(
           path.join(process.cwd(), 'assets/js/worldmap.js'), 'utf8');
-        const draw = src.slice(src.indexOf('function drawHumanRightsLandmark'),
-                               src.indexOf('function drawHumanRightsLandmark') + 2600);
+        // Slice to the end of the function rather than a fixed character count: the
+        // orb painter grew, and a magic window silently started asserting nothing.
+        const from = src.indexOf('function drawHumanRightsLandmark');
+        const to = src.indexOf('\n  function ', from + 10);
+        const draw = src.slice(from, to > 0 ? to : from + 8000);
         expect(draw).toContain('state.selectedHumanRight === entry');
         expect(draw).toContain("ctx.strokeStyle = '#ffffff'");
       });
@@ -3098,6 +3125,155 @@ test('zoom controls, keyboard and double-click do not throw', () => {
   // --- Human Rights landmark clustering -----------------------------------------
   // Regression: the legend said 5 reports but only 4 markers existed, because two
   // Belarus entries shared one country centroid and drew on top of each other. The
+  // --- Layer tooltips pin like milestone tooltips ---------------------------
+  // Zones, ground deployments and crisis rings were hover-only, so the popup
+  // vanished the moment the pointer moved and the source link inside it could never
+  // be clicked - the exact affordance milestones and landmarks already had.
+  describe('layer tooltips pin', () => {
+    const ZONE = {
+      id: 'zone-1', name: 'Test conflict', lat: 35.7, lon: 139.7,
+      status: 'active', start_date: '2026-01-01', radiusDeg: 4,
+      tier: 'major', source: 'ACLED', url: 'https://example.com/zone',
+    };
+
+    const withZone = (fn) => withFreshHover((a) => {
+      registeredEls['reset-view'].fire('click', {});
+      a.setLayers([ZONE], [], [], []);
+      a.getState().filterMilitary = true;
+      a.getState().showZones = true;
+      a.setFilterRecent(false);
+      fn(a);
+    });
+
+    const click = (at) => {
+      canvas.fire('mousedown', { clientX: at.x, clientY: at.y });
+      windowObj.fire('mouseup', { clientX: at.x, clientY: at.y });
+    };
+
+    const findAnchor = (node) => {
+      if (node.tagName === 'A') return node;
+      for (const c of node.children || []) {
+        const hit = findAnchor(c);
+        if (hit) return hit;
+      }
+      return null;
+    };
+
+    test('clicking a zone pins it', () => {
+      withZone((a) => {
+        click(pt(ZONE.lon, ZONE.lat));
+        expect(a.getState().selectedLayer).not.toBe(null);
+        expect(a.getState().selectedLayerType).toBe('zone');
+        expect(tooltip.classList.contains('visible')).toBe(true);
+      });
+    });
+
+    test('a pinned zone popup survives the pointer leaving', () => {
+      withZone((a) => {
+        click(pt(ZONE.lon, ZONE.lat));
+        canvas.fire('mousemove', { clientX: 5, clientY: 5 });
+        expect(tooltip.classList.contains('visible')).toBe(true);
+        expect(a.getState().selectedLayer).not.toBe(null);
+      });
+    });
+
+    test('the zone source link is reachable', () => {
+      withZone(() => {
+        click(pt(ZONE.lon, ZONE.lat));
+        const link = findAnchor(tooltip.children[0]);
+        expect(link).not.toBe(null);
+        expect(link.href).toBe(ZONE.url);
+      });
+    });
+
+    test('clicking it again unpins', () => {
+      withZone((a) => {
+        const at = pt(ZONE.lon, ZONE.lat);
+        click(at);
+        expect(a.getState().selectedLayer).not.toBe(null);
+        click(at);
+        expect(a.getState().selectedLayer).toBe(null);
+        expect(tooltip.classList.contains('visible')).toBe(false);
+      });
+    });
+
+    test('clicking empty canvas unpins', () => {
+      withZone((a) => {
+        click(pt(ZONE.lon, ZONE.lat));
+        click({ x: 4, y: 4 });
+        expect(a.getState().selectedLayer).toBe(null);
+      });
+    });
+
+    test('pinning a zone clears a pinned milestone', () => {
+      withFreshHover((a) => {
+        registeredEls['reset-view'].fire('click', {});
+        a.setFilterRecent(false);
+        a.setEvents([{ id: 'solo', title: 'Solo', category: 'Quantum Physics',
+                       value: '1', source: 'S', url: 'https://example.com/s',
+                       date: '2026-08-04',
+                       geolocation: { lat: 40.7, lon: -74.0 } }]);
+        a.setLayers([ZONE], [], [], []);
+        a.getState().filterMilitary = true;
+        a.getState().showZones = true;
+
+        click(pt(-74.0, 40.7));
+        expect(a.getState().selectedEvent).not.toBe(null);
+        click(pt(ZONE.lon, ZONE.lat));
+        expect(a.getState().selectedLayer).not.toBe(null);
+        expect(a.getState().selectedEvent).toBe(null);
+      });
+    });
+
+    test('Escape clears a pinned zone', () => {
+      withZone((a) => {
+        click(pt(ZONE.lon, ZONE.lat));
+        expect(a.getState().selectedLayer).not.toBe(null);
+        // target must be the canvas: handleKeyDown ignores events from elsewhere.
+        canvas.fire('keydown', { key: 'Escape', target: canvas });
+        expect(a.getState().selectedLayer).toBe(null);
+      });
+    });
+  });
+
+  // --- Human Rights orbs ------------------------------------------------------
+  // Repainted as halo + breathing shell + core so the layer reads as an orb like
+  // the milestone landmarks. The constraint that matters: everything painted stays
+  // inside the radius the hit test derives, or a pointer just off the glow finds
+  // nothing.
+  describe('human rights orb painting', () => {
+    const src = fs.readFileSync(
+      path.join(process.cwd(), 'assets/js/worldmap.js'), 'utf8');
+    const body = src.slice(src.indexOf('function drawHumanRightsLandmark'));
+
+    test('it paints three passes in order: halo, shell, core', () => {
+      const halo = body.indexOf('const halo =');
+      const shell = body.indexOf('const shellR =');
+      const core = body.indexOf('const core =');
+      expect(halo).toBeGreaterThan(-1);
+      expect(shell).toBeGreaterThan(halo);
+      expect(core).toBeGreaterThan(shell);
+    });
+
+    test('the shell runs on its own phase, out of step with the core', () => {
+      // Same-phase rings read as one uniform scale rather than a living orb.
+      expect(body).toContain('const shellPhase = (pulse + 0.35) % 1;');
+    });
+
+    test('nothing is painted outside the derived hit radius', () => {
+      expect(body).toContain('const maxR = HUMAN_RIGHTS_CORE_MAX *');
+      expect(body).toContain('if (shellR <= maxR)');
+      expect(body).toContain('haloR = base * (HUMAN_RIGHTS_GLOW_INNER + HUMAN_RIGHTS_GLOW_PULSE) * 0.55');
+    });
+
+    test('the hit radius still equals the envelope the orb is drawn in', () => {
+      const api = windowObj.__WORLDMAP_TEST__;
+      expect(api.HUMAN_RIGHTS_HIT_RADIUS).toBe(
+        api.HUMAN_RIGHTS_CORE_MAX *
+        (api.HUMAN_RIGHTS_GLOW_INNER + api.HUMAN_RIGHTS_GLOW_PULSE));
+    });
+  });
+
   // layer had no answer for several reports at one location, unlike milestones.
   describe('human rights landmark clustering', () => {
     const hr = (id, lat, lon) => ({ id, lat, lon, name: id, status: 'active',

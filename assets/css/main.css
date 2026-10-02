@@ -1037,7 +1037,11 @@ body {
   left: 0;
   right: 0;
   z-index: 50;
-  background: var(--bg-card);
+  /* Solid, and stacked above the grid: this is a dropdown list that expands over the
+     page, so anything translucent in it reads as the map showing through rather than
+     as a panel. */
+  background: var(--bg-card, #e8efff);
+  isolation: isolate;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   box-shadow: var(--shadow-lg);
@@ -1057,7 +1061,7 @@ body {
   justify-content: space-between.
   gap: 12px;
   padding: 12px 14px;
-  background: var(--bg-elevated).
+  background: var(--bg-elevated, #ffffff);
   border: 1px solid var(--border).
   border-radius: var(--radius-sm).
   margin-bottom: 8px.
@@ -1390,12 +1394,18 @@ body {
   outline: 2px solid var(--accent);
   outline-offset: 1px;
 }
+/* The option list is drawn by the user agent, so it is the one surface these
+   stylesheets cannot style by inheritance - it has to be stated outright. A solid
+   fallback follows the token so the list can never resolve to transparent, in either
+   colour scheme, even if --bg-card is later given an alpha. */
 .select-field option,
 .metric-timeline-controls select option,
-.catalog-controls select option {
-  background-color: var(--bg-card);
-  color: var(--fg);
+.catalog-controls select option,
+optgroup {
+  background-color: var(--bg-card, #e8efff);
+  color: var(--fg, #0a1628);
   font-family: var(--font-ui);
+  font-size: 0.85rem;
 }
 /* Year steppers flanking the year select. Same plate, border and radius as the
    select they sit next to, so the three read as one control instead of three. */

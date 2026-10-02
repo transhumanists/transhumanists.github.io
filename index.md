@@ -139,7 +139,7 @@ description: "Tracking milestones across biotech, AGI, quantum, energy, cyber, s
   <div class="container">
     <header class="section-header">
       <h2>Milestone Categories</h2>
-      <p class="section-subtitle">The 7 verticals that drive human progress — click to expand</p>
+      <p class="section-subtitle">The 9 verticals that drive human progress — click to expand</p>
     </header>
 
     <div class="milestones-grid">

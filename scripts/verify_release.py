@@ -55,6 +55,14 @@ def _env() -> dict[str, str]:
     return env
 
 
+def _declared_bun_version() -> str:
+    """The version in .bun-version, or the CI pin when that file is absent."""
+    try:
+        return (ROOT / ".bun-version").read_text(encoding="utf-8").strip()
+    except OSError:
+        return CI_BUN_VERSION
+
+
 def _bun_version(bun: str) -> str:
     try:
         out = subprocess.run([bun, "--version"], capture_output=True,
@@ -212,11 +220,14 @@ def main() -> int:
     version = _bun_version(bun)
     total = time.time() - started
     print()
+    pinned = _declared_bun_version()
     if version == CI_BUN_VERSION:
         print("bun %s (matches CI)" % version)
     else:
-        print("bun %s  <-- CI pins %s; a green run here does not guarantee CI"
-              % (version, CI_BUN_VERSION))
+        detail = "bun %s  <-- the project pins %s" % (version, pinned)
+        if pinned != CI_BUN_VERSION:
+            detail += ", CI pins %s" % CI_BUN_VERSION
+        print(detail + "; a green run here does not guarantee CI")
 
     if failures:
         print("\n%d of %d steps FAILED in %.1fs" % (len(failures), total_steps, total))

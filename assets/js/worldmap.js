@@ -622,6 +622,8 @@ height: 0,
       dataLoadError: null,
       hiddenCategories: new Set(),
   selectedHumanRight: null,
+  selectedLayer: null,
+  selectedLayerType: null,
   _box: null, _boxW: -1, _boxH: -1,
       foldedCategories: false,  // whether the entire categories section is folded
       zones: [],
@@ -1629,15 +1631,68 @@ function mapScreenRect() {
                    + (entry.lon + 180) / 360) % 1;
     const pulse = 0.5 - 0.5 * Math.cos(phase * Math.PI * 2);
 
-    // Soft outer glow, painted first so the solid core sits on top of it.
-    const glowRadius = base * (HUMAN_RIGHTS_GLOW_INNER + pulse * HUMAN_RIGHTS_GLOW_PULSE);
-    const gradient = ctx.createRadialGradient(p.x, p.y, base * 0.5, p.x, p.y, glowRadius);
-    gradient.addColorStop(0, withOpacity(HUMAN_RIGHTS_COLOR, (done ? 0.10 : 0.34) * (1 - pulse * 0.55)));
-    gradient.addColorStop(1, withOpacity(HUMAN_RIGHTS_COLOR, 0));
+    // Painted as an orb in three passes - halo, breathing shell, core - which is the
+    // language the milestone landmarks already use, so the two layers read as one
+    // system instead of one being a plain dot and the other a smudge.
+    //
+    // Everything stays inside HUMAN_RIGHTS_CORE_MAX * (GLOW_INNER + GLOW_PULSE),
+    // because that product is what HUMAN_RIGHTS_HIT_RADIUS is derived from: paint
+    // outside it and the hit test no longer covers what is drawn.
+    const maxR = HUMAN_RIGHTS_CORE_MAX * (HUMAN_RIGHTS_GLOW_INNER + HUMAN_RIGHTS_GLOW_PULSE);
+
+    // 1. Halo. A wide, very soft wash that gives the orb a presence on the map
+    //    without competing with the coastline underneath it.
+    const haloR = base * (HUMAN_RIGHTS_GLOW_INNER + HUMAN_RIGHTS_GLOW_PULSE) * 0.55;
+    const halo = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, Math.max(haloR, 1));
+    halo.addColorStop(0, withOpacity(HUMAN_RIGHTS_COLOR,
+      (done ? 0.16 : 0.42) * (1 - pulse * 0.45)));
+    halo.addColorStop(0.55, withOpacity(HUMAN_RIGHTS_COLOR,
+      (done ? 0.06 : 0.14) * (1 - pulse * 0.45)));
+    halo.addColorStop(1, withOpacity(HUMAN_RIGHTS_COLOR, 0));
     ctx.beginPath();
-    ctx.arc(p.x, p.y, glowRadius, 0, Math.PI * 2);
-    ctx.fillStyle = gradient;
+    ctx.arc(p.x, p.y, haloR, 0, Math.PI * 2);
+    ctx.fillStyle = halo;
     ctx.fill();
+
+    // 2. Breathing shell. A crisp ring that expands and fades on its own cycle,
+    //    slightly out of phase with the core so the orb never looks like a single
+    //    uniform scale. Staggered by longitude upstream, so neighbouring landmarks
+    //    do not breathe in lockstep.
+    const shellPhase = (pulse + 0.35) % 1;
+    const shellR = base * (1.25 + shellPhase * 1.15);
+    if (shellR <= maxR) {
+      ctx.save();
+      ctx.globalAlpha = alpha * (1 - shellPhase) * 0.7;
+      ctx.strokeStyle = HUMAN_RIGHTS_COLOR;
+      ctx.lineWidth = 1.1;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, shellR, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    // 3. Core. Bright and small, with a soft inner falloff so it reads as a lit
+    //    sphere rather than a flat disc.
+    const core = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, base);
+    core.addColorStop(0, withOpacity('#ffffff', done ? 0.55 : 0.95));
+    core.addColorStop(0.35, withOpacity(HUMAN_RIGHTS_COLOR, done ? 0.5 : 0.95));
+    core.addColorStop(1, withOpacity(HUMAN_RIGHTS_COLOR, done ? 0.1 : 0.35));
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, base * (1 + pulse * 0.12), 0, Math.PI * 2);
+    ctx.fillStyle = core;
+    ctx.fill();
+
+    // A single specular highlight, offset up-left, which is what makes a flat circle
+    // read as a sphere. Cheap: one small filled arc.
+    if (!done) {
+      ctx.save();
+      ctx.globalAlpha = 0.5;
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.arc(p.x - base * 0.3, p.y - base * 0.3, base * 0.22, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
 
     // Selected landmark: a bright ring, matching how a pinned milestone reads, so
     // it is obvious the popup is docked here rather than merely hovered.
@@ -1977,6 +2032,44 @@ function mapScreenRect() {
     return best;
   }
 
+  // Landmarks are the one layer that pins; zones, deployments and crisis rings were
+  // hover-only, so their tooltips vanished the moment the pointer moved and the source
+  // link inside them could never be clicked. Same treatment as a milestone now.
+  //
+  // One finder for all three so the pin/unpin path does not have to know which
+  // layer it was, and so the precedence matches the hover order above it.
+  function findLayerAt(x, y) {
+    const zone = findZone(x, y);
+    if (zone) return { entry: zone, type: 'zone' };
+    const deploy = findDeployment(x, y);
+    if (deploy) return { entry: deploy, type: 'deployment' };
+    const crisis = findCrisis(x, y);
+    if (crisis) return { entry: crisis, type: 'crisis' };
+    return null;
+  }
+
+  // Draw the layer's popup docked at the marker rather than under the cursor.
+  function pinTooltipToLayer(entry, type) {
+    if (!tooltip || !entry) return;
+    const p = project(entry.lon !== undefined ? entry.lon : 0,
+                       entry.lat !== undefined ? entry.lat : 0);
+    if (!p) return;
+    if (type === 'zone') showZoneTooltip(entry, p.x, p.y);
+    else if (type === 'deployment') showDeploymentTooltip(entry, p.x, p.y);
+    else if (type === 'crisis') showCrisisTooltip(entry, p.x, p.y);
+  }
+
+  // Is the pinned layer still drawable? Switching its layer off, or filtering it
+  // away, has to release the popup rather than leave it floating over a map it no
+  // longer describes.
+  function layerIsHidden(entry, type) {
+    if (!entry) return true;
+    if (type === 'zone') return !state.showZones || !state.filterMilitary;
+    if (type === 'deployment') return !state.showFleets || !state.filterMilitary;
+    if (type === 'crisis') return !state.showCrises || !state.filterCrisis;
+    return true;
+  }
+
   // ---- Tooltip hover handlers ----
   function handleTooltipMouseEnter() { state.tooltipHover = true; }
   function handleTooltipMouseLeave() {
@@ -2012,6 +2105,24 @@ function mapScreenRect() {
     // A pinned (selected) event keeps its popup persistent so the pointer can
     // travel to it and click the "View source" link; hovering a different dot
     // re-pins it in place instead of letting the popup chase the cursor.
+    // Same for a docked zone, deployment or crisis ring.
+    if (state.selectedLayer && !state.selectedEvent && !state.selectedHumanRight) {
+      const layer = findLayerAt(x, y);
+      if (layer) {
+        canvas.style.cursor = 'pointer';
+        state.hoveredType = layer.type;
+        if (layer.entry !== state.selectedLayer) {
+          state.selectedLayer = layer.entry;
+          state.selectedLayerType = layer.type;
+          pinTooltipToLayer(layer.entry, layer.type);
+          draw();
+        }
+        return;
+      }
+      canvas.style.cursor = 'grab';
+      return;
+    }
+
     // A docked landmark behaves like a docked milestone: the popup stays put, the
     // cursor keeps its pointer feedback over the target, and only a click on the
     // landmark itself or empty canvas closes it.
@@ -2223,8 +2334,25 @@ canvas.style.cursor = hit ? 'pointer' : 'grab';
             pinTooltipToHumanRight(rightsHit);
           }
         } else {
-          // Empty canvas closes a pinned popup.
-          dismissTooltip();
+          // Zones, deployments and crisis rings. They were hover-only, so their
+          // tooltips could never be pinned and the source link inside them was
+          // unreachable - the same defect the landmark branch above had.
+          const layer = findLayerAt(x, y);
+          if (layer) {
+            if (layer.entry === state.selectedLayer &&
+                layer.type === state.selectedLayerType) {
+              dismissTooltip();
+            } else {
+              state.selectedLayer = layer.entry;
+              state.selectedLayerType = layer.type;
+              state.selectedEvent = null;
+              state.selectedHumanRight = null;
+              pinTooltipToLayer(layer.entry, layer.type);
+            }
+          } else {
+            // Empty canvas closes a pinned popup.
+            dismissTooltip();
+          }
         }
       } else if (hit === state.selectedEvent) {
         // Clicking the pinned dot again unpins it (identity, not id: two
@@ -2505,6 +2633,8 @@ function showTooltip(ev, x, y) {
     }
     state.selectedEvent = null;
     state.selectedHumanRight = null;
+    state.selectedLayer = null;
+    state.selectedLayerType = null;
     state.hoveredEvent = null;
     state.hoveredType = null;
     state.stackIndex = 0;
@@ -2536,6 +2666,11 @@ function showTooltip(ev, x, y) {
     const targets = [state.selectedEvent, state.hoveredEvent].filter((t) => t && typeof t.category === 'string');
     if (targets.some(eventIsHidden)) { dismissTooltip(); return; }
     if (state.selectedHumanRight && humanRightIsHidden(state.selectedHumanRight)) {
+      dismissTooltip();
+      return;
+    }
+    if (state.selectedLayer &&
+        layerIsHidden(state.selectedLayer, state.selectedLayerType)) {
       dismissTooltip();
     }
   }

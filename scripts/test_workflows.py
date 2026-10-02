@@ -364,6 +364,27 @@ class TestLockfileMatchesThePinnedToolchain(unittest.TestCase):
         self.assertEqual(_bunx_tools("bun x playwright install"), set())
         self.assertEqual(_bunx_tools("bun install --frozen-lockfile"), set())
 
+    def test_the_version_file_matches_every_ci_pin(self):
+        # .bun-version exists so a contributor does not have to go and read the
+        # workflow to learn the expected toolchain. It is only useful if it agrees
+        # with automation, so that is what is asserted.
+        import pathlib
+
+        import verify_release
+
+        root = pathlib.Path(__file__).resolve().parents[1]
+        f = root / ".bun-version"
+        self.assertTrue(f.is_file(), ".bun-version is missing")
+        pinned = f.read_text(encoding="utf-8").strip()
+        self.assertEqual(pinned, verify_release.CI_BUN_VERSION)
+
+        ci = (root / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
+        import re as _re
+
+        in_ci = set(_re.findall(r'bun-version:\s*"([\d.]+)"', ci))
+        self.assertEqual(len(in_ci), 1, "CI pins more than one bun version: %s" % in_ci)
+        self.assertEqual(pinned, in_ci.pop())
+
     def test_the_browser_job_pins_bun_explicitly(self):
         # It has to install dependencies, so a lockfile it cannot read is fatal there.
         import pathlib
