@@ -5,7 +5,7 @@
  * the category-name canonicalization fix (Quantum Physics / Renewable Energy /
  * Military & Defense) that stats, colors and the legend all depend on.
  */
-import { describe, expect, test, beforeAll } from 'bun:test';
+import { describe, expect, test, beforeAll, beforeEach } from 'bun:test';
 import { readFileSync as fsReadFileSync } from 'fs';
 import { join as pathJoin } from 'path';
 
@@ -77,7 +77,11 @@ function makeEl() {
     classList: makeClassList(),
     offsetWidth: 0,
     offsetHeight: 0,
-    setAttribute(k, v) { this.attrs[k] = String(v); },
+    setAttribute(k, v) {
+      this.attrs[k] = String(v);
+      // Browsers reflect the class attribute onto className.
+      if (k === 'class') this.className = String(v);
+    },
     getAttribute(k) { return this.attrs[k]; },
     hasAttribute(k) { return k in this.attrs; },
     appendChild(c) { this.children.push(c); return c; },
@@ -93,7 +97,14 @@ function makeEl() {
     },
     addEventListener(type, fn) { (this.listeners[type] ||= []).push(fn); },
     removeEventListener() {},
-    fire(type, ev) { for (const fn of this.listeners[type] || []) fn(ev); },
+    fire(type, ev) {
+      // Real events carry stopPropagation; handlers defensively call it, so the
+      // fake has to as well or every such handler throws under test.
+      const event = Object.assign({ stopped: false }, ev);
+      event.stopPropagation = () => { event.stopped = true; };
+      for (const fn of this.listeners[type] || []) fn(event);
+      return event;
+    },
     // Real DOM: a node contains itself (used by the keyboard handler guard).
     contains(c) { return c === this; },
     // Enough of querySelector for the tooltip pager: '.class' lookups, deepest
@@ -174,6 +185,19 @@ const windowObj = {
   fire(type, ev) { for (const fn of this._listeners[type] || []) fn(ev); },
 };
 
+// In a browser localStorage is a global. The module under test uses the bare
+// name, so it has to exist on globalThis or every read throws and is swallowed by
+// its try/catch - which would make persistence untestable. In-memory, per run.
+globalThis.localStorage = (() => {
+  const map = new Map();
+  return {
+    getItem: (k) => (map.has(String(k)) ? map.get(String(k)) : null),
+    setItem: (k, v) => { map.set(String(k), String(v)); },
+    removeItem: (k) => { map.delete(String(k)); },
+    clear: () => map.clear(),
+  };
+})();
+
 const tooltip = makeEl();
 tooltip.offsetWidth = 150;
 tooltip.offsetHeight = 200;
@@ -223,6 +247,13 @@ const documentObj = {
   // real browser, so the fake records it instead of pretending every node is
   // the same element.
   createElement: (tag) => Object.assign(makeEl(), { tagName: String(tag || '').toUpperCase() }),
+  // SVG lives in a separate namespace, so the eye toggle has to build its icon
+  // with createElementNS. Same node shape - the fake never renders, it only
+  // records what the code asked for.
+  createElementNS: (ns, tag) => Object.assign(makeEl(), {
+    tagName: String(tag || '').toUpperCase(),
+    namespaceURI: String(ns || ''),
+  }),
   createDocumentFragment() {
     const f = { isFragment: true, children: [] };
     f.appendChild = (c) => { f.children.push(c); return c; };
@@ -1688,12 +1719,21 @@ test('zoom controls, keyboard and double-click do not throw', () => {
     const src = fs.readFileSync(
       path.join(process.cwd(), 'assets/js/worldmap.js'), 'utf8');
     const draw = src.slice(src.indexOf('function drawHumanRightsLandmark'),
-                           src.indexOf('function drawHumanRightsLandmark') + 900);
+                           src.indexOf('function drawHumanRightsLandmark') + 1600);
     const hit = src.slice(src.indexOf('function findHumanRight'),
-                          src.indexOf('function findHumanRight') + 500);
-    expect(draw).toContain('project(entry.lon, entry.lat)');
-    expect(hit).toContain('project(entry.lon, entry.lat)');
-    expect(draw).not.toContain('project(entry.lat, entry.lon)');
+                          src.indexOf('function findHumanRight') + 900);
+
+    // Assert the invariant - longitudes first, latitudes second - rather than one
+    // variable name. Hit-testing now walks clusters and projects the cluster lead,
+    // so pinning `entry` would fail on a correct implementation the next time a
+    // variable is renamed. A regression guard that breaks on refactors is a
+    // regression guard that gets deleted instead of repaired.
+    const LON_FIRST = /project\(\s*\w+\.lon\s*,\s*\w+\.lat\s*\)/;
+    const LAT_FIRST = /project\(\s*\w+\.lat\s*,\s*\w+\.lon\s*\)/;
+    expect(draw).toMatch(LON_FIRST);
+    expect(hit).toMatch(LON_FIRST);
+    expect(draw).not.toMatch(LAT_FIRST);
+    expect(hit).not.toMatch(LAT_FIRST);
   });
 
   test('a Human Rights landmark is hoverable at its projected position', () => {
@@ -2046,4 +2086,253 @@ test('zoom controls, keyboard and double-click do not throw', () => {
 
 
 
+
+
+  // --- Bulk milestone visibility eye -------------------------------------------
+  // The eye has to stay in step with the per-row switches, including when the user
+  // works through them one at a time, and must never touch the operational layers
+  // that sit below the category rows in the same frame.
+  //
+  // Reached by walking the legend tree rather than document.getElementById: the
+  // test DOM only indexes elements that existed before the test ran, and the eye
+  // is built during renderLegend.
+  describe('bulk milestone visibility eye', () => {
+    const api = () => windowObj.__WORLDMAP_TEST__;
+    const byClass = (root, cls) =>
+      root.children.find((c) => c.className === cls) || null;
+    const head = () => byClass(registeredEls['map-legend'], 'map-legend-head');
+    const eye = () => (head() ? head().children[head().children.length - 1] : null);
+    const eyeSvg = () => eye().children[0];
+    // Milestone category rows only; operational layer rows carry data-layer.
+    const categoryRows = () => legendRows().filter((r) => !r.attrs['data-layer']);
+    const layerRow = (key) =>
+      legendRows().find((r) => r.attrs['data-layer'] === key);
+    const render = () => api().renderLegend();
+
+    // Category visibility is module state that outlives a single test, so each
+    // case starts from a known frame instead of inheriting the previous one.
+    beforeEach(() => {
+      globalThis.localStorage.clear();
+      api().getState().hiddenCategories.clear();
+      render();
+    });
+
+    test('the eye sits in the legend header beside CATEGORIES', () => {
+      render();
+      expect(head()).toBeTruthy();
+      expect(byClass(head(), 'map-legend-title').textContent).toBe('CATEGORIES');
+      expect(eye().id).toBe('map-legend-bulk-visibility');
+    });
+
+    test('it is last in the header row, i.e. on the right', () => {
+      render();
+      const kids = head().children;
+      expect(kids[kids.length - 1].id).toBe('map-legend-bulk-visibility');
+      expect(kids[0].className).toBe('map-legend-title');
+    });
+
+    test('it is a real button, so it is reachable by keyboard', () => {
+      render();
+      expect(eye().tagName).toBe('BUTTON');
+      expect(eye().type).toBe('button');
+    });
+
+    test('it is a white drawn eye, not an icon glyph', () => {
+      render();
+      const svg = eyeSvg();
+      expect(svg.tagName).toBe('SVG');
+      expect(svg.namespaceURI).toBe('http://www.w3.org/2000/svg');
+      const white = svg.children.filter((c) => c.getAttribute('stroke') === '#fff');
+      expect(white.length).toBeGreaterThan(0);
+    });
+
+    test('it has both a lid and an iris, which is what lets it close', () => {
+      render();
+      const svg = eyeSvg();
+      expect(svg.children.some((c) => c.className === 'eye-lid')).toBe(true);
+      expect(svg.children.some((c) => c.className === 'eye-iris')).toBe(true);
+      // The CSS closes it by scaling the lid over the iris and fading the iris.
+      const css = fs.readFileSync(path.join(process.cwd(), 'assets/css/main.css'), 'utf8');
+      expect(css).toContain('.map-legend-bulk[aria-pressed="true"] .eye-lid');
+      expect(css).toContain('.map-legend-bulk[aria-pressed="true"] .eye-iris');
+    });
+
+    test('it starts open, because everything is visible by default', () => {
+      render();
+      expect(eye().getAttribute('aria-pressed')).toBe('false');
+      expect(api().areAllCategoriesHidden()).toBe(false);
+    });
+
+    test('clicking it hides every milestone category', () => {
+      render();
+      eye().fire('click', {});
+      expect(api().areAllCategoriesHidden()).toBe(true);
+      for (const row of categoryRows()) {
+        expect(row.getAttribute('aria-pressed')).toBe('false');
+      }
+    });
+
+    test('clicking it again restores every milestone category', () => {
+      render();
+      eye().fire('click', {});
+      eye().fire('click', {});
+      expect(api().areAllCategoriesHidden()).toBe(false);
+      for (const row of categoryRows()) {
+        expect(row.getAttribute('aria-pressed')).toBe('true');
+      }
+    });
+
+    test('hiding categories one at a time eventually closes the eye', () => {
+      render();
+      for (const row of categoryRows()) {
+        row.fire('click', {});
+        // Updated in place, not rebuilt, so the node must survive the row click.
+        expect(eye().id).toBe('map-legend-bulk-visibility');
+      }
+      expect(api().areAllCategoriesHidden()).toBe(true);
+      expect(eye().getAttribute('aria-pressed')).toBe('true');
+    });
+
+    test('re-selecting one category by hand reopens the eye', () => {
+      render();
+      for (const row of categoryRows()) row.fire('click', {});
+      expect(eye().getAttribute('aria-pressed')).toBe('true');
+      categoryRows()[0].fire('click', {});
+      expect(api().areAllCategoriesHidden()).toBe(false);
+      expect(eye().getAttribute('aria-pressed')).toBe('false');
+    });
+
+    test('with the eye closed, clicking it shows all again', () => {
+      render();
+      for (const row of categoryRows()) row.fire('click', {});
+      eye().fire('click', {});
+      expect(api().areAllCategoriesHidden()).toBe(false);
+    });
+
+    test('a partially hidden set leaves the eye open', () => {
+      render();
+      categoryRows()[0].fire('click', {});
+      expect(api().areAllCategoriesHidden()).toBe(false);
+      expect(eye().getAttribute('aria-pressed')).toBe('false');
+    });
+
+    test('it never touches the operational layers below the categories', () => {
+      render();
+      const keys = ['zones', 'deployments', 'crises', 'human_rights'];
+      const before = keys.map((k) => layerRow(k).getAttribute('aria-pressed'));
+      eye().fire('click', {});
+      expect(api().areAllCategoriesHidden()).toBe(true);
+      expect(keys.map((k) => layerRow(k).getAttribute('aria-pressed'))).toEqual(before);
+      eye().fire('click', {});
+      expect(keys.map((k) => layerRow(k).getAttribute('aria-pressed'))).toEqual(before);
+    });
+
+    test('the layer rows are not counted as milestone categories', () => {
+      render();
+      expect(categoryRows().length).toBe(9);
+      eye().fire('click', {});
+      expect(api().getState().hiddenCategories.size).toBe(9);
+    });
+
+    test('the label says what the click will do', () => {
+      render();
+      expect(eye().getAttribute('aria-label')).toBe('Hide all milestone categories');
+      eye().fire('click', {});
+      expect(eye().getAttribute('aria-label')).toBe('Show all milestone categories');
+    });
+
+    test('bulk hiding survives a reload through localStorage', () => {
+      render();
+      eye().fire('click', {});
+      const stored = JSON.parse(
+        globalThis.localStorage.getItem('worldmap_hidden_categories'));
+      expect(stored.length).toBe(9);
+      expect(stored).toContain('Quantum Physics');
+    });
+
+    test('the eye is excluded from the category count', () => {
+      render();
+      // 9 categories + 4 operational layers, unchanged by the new control.
+      expect(legendRows().length).toBe(13);
+    });
+  });
+
+  // --- Human Rights landmark clustering -----------------------------------------
+  // Regression: the legend said 5 reports but only 4 markers existed, because two
+  // Belarus entries shared one country centroid and drew on top of each other. The
+  // layer had no answer for several reports at one location, unlike milestones.
+  describe('human rights landmark clustering', () => {
+    const hr = (id, lat, lon) => ({ id, lat, lon, name: id, status: 'active',
+                                    start_date: '2026-01-01' });
+
+    const withRights = (entries, fn) => withFreshHover((api) => {
+      registeredEls['reset-view'].fire('click', {});
+      api.setLayers([], [], [], entries);
+      api.getState().showHumanRights = true;
+      fn(api);
+    });
+
+    test('two reports at one location become a single fanned cluster', () => {
+      withRights([hr('a', 53.9, 27.6), hr('b', 53.9, 27.6)], (api) => {
+        const clusters = api.visibleHumanRightClusters();
+        expect(clusters.length).toBe(1);
+        expect(clusters[0].length).toBe(2);
+      });
+    });
+
+    test('the cluster lead owns the location', () => {
+      withRights([hr('a', 53.9, 27.6), hr('b', 53.9, 27.6)], (api) => {
+        const [group] = api.visibleHumanRightClusters();
+        expect(group[0]._hrLead).toBe(true);
+        expect(group[1]._hrLead).toBe(false);
+      });
+    });
+
+    test('distinct locations stay separate', () => {
+      withRights([hr('a', 53.9, 27.6), hr('b', 17.6, 8.1)], (api) => {
+        expect(api.visibleHumanRightClusters().length).toBe(2);
+      });
+    });
+
+    test('float noise in a shared country centroid still clusters', () => {
+      withRights([hr('a', 53.9, 27.6), hr('b', 53.90001, 27.60001)], (api) => {
+        expect(api.visibleHumanRightClusters().length).toBe(1);
+      });
+    });
+
+    test('the hit test returns the lead and reports how many reports it stands for', () => {
+      withRights([hr('a', 53.9, 27.6), hr('b', 53.9, 27.6)], (api) => {
+        const at = pt(27.6, 53.9);
+        const hit = api.findHumanRight(at.x, at.y);
+        expect(hit).not.toBe(null);
+        expect(hit.id).toBe('a');
+        expect(hit._clusterCount).toBe(2);
+      });
+    });
+
+    test('a lone report is not labelled as a cluster', () => {
+      withRights([hr('a', 53.9, 27.6)], (api) => {
+        const at = pt(27.6, 53.9);
+        expect(api.findHumanRight(at.x, at.y)._clusterCount).toBe(1);
+      });
+    });
+
+    test('no report is lost: the cluster still holds every entry', () => {
+      withRights([hr('a', 53.9, 27.6), hr('b', 53.9, 27.6)], (api) => {
+        expect(api.getLayers().humanRights.length).toBe(2);
+        for (const e of api.getLayers().humanRights) {
+          expect(api.humanRightStackFor(e).length).toBe(2);
+        }
+      });
+    });
+
+    test('clusters are rebuilt when the data is replaced', () => {
+      withRights([hr('a', 53.9, 27.6), hr('b', 53.9, 27.6)], (api) => {
+        expect(api.visibleHumanRightClusters().length).toBe(1);
+        api.setLayers([], [], [], [hr('c', 10, 10), hr('d', 20, 20)]);
+        expect(api.visibleHumanRightClusters().length).toBe(2);
+      });
+    });
+
+});
 });

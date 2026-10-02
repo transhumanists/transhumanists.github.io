@@ -769,6 +769,61 @@ function canonicalCategory(cat) {
     return !state.hiddenCategories.has(canonical);
   }
 
+  // Bulk visibility for milestone categories.
+  //
+  // Deliberately scoped to CATEGORY_LEGEND only: Conflict Zones, Ground
+  // Deployments and Human Rights Violations are operational layers with their own
+  // switches further down the same frame, and a "hide everything" control that
+  // also switched those off would be lying about what it does.
+  //
+  // Derived, never stored. The eye has to agree with the per-row switches after
+  // the user clicks them one at a time, and the only way to guarantee that is to
+  // compute it from the same state the rows read.
+  function areAllCategoriesHidden() {
+    return CATEGORY_LEGEND.every(c => state.hiddenCategories.has(c.key));
+  }
+
+  function setAllCategoriesHidden(hidden) {
+    if (hidden) {
+      CATEGORY_LEGEND.forEach(c => state.hiddenCategories.add(c.key));
+    } else {
+      state.hiddenCategories.clear();
+    }
+    try {
+      localStorage.setItem(STORAGE_KEY_HIDDEN_CATEGORIES,
+        JSON.stringify(Array.from(state.hiddenCategories)));
+    } catch (_) {}
+    rebuildStackMap();
+    dismissTooltip();
+    renderLegend();
+    draw();
+  }
+
+  function toggleAllCategories() {
+    setAllCategoriesHidden(!areAllCategoriesHidden());
+  }
+
+  // Apply the derived state to a button node. Separate from the lookup below so a
+  // freshly built button can be initialised while it is still in hand, instead of
+  // depending on it being findable in the document a moment later.
+  function applyBulkVisibilityState(btn) {
+    if (!btn) return;
+    const allHidden = areAllCategoriesHidden();
+    btn.setAttribute('aria-pressed', String(allHidden));
+    const label = allHidden
+      ? 'Show all milestone categories'
+      : 'Hide all milestone categories';
+    btn.setAttribute('aria-label', label);
+    btn.setAttribute('title', label);
+  }
+
+  // Keep the eye in step after an individual row click, without rebuilding the
+  // whole legend (which would drop keyboard focus mid-interaction).
+  function syncBulkVisibilityButton() {
+    applyBulkVisibilityState(
+      document.getElementById('map-legend-bulk-visibility'));
+  }
+
   function toggleCategory(cat) {
     const canonical = canonicalCategory(cat);
     if (state.hiddenCategories.has(canonical)) {
@@ -787,6 +842,7 @@ function canonicalCategory(cat) {
     rebuildStackMap();
     // A popup can be pointing at a milestone that is no longer drawn.
     dismissTooltip();
+    syncBulkVisibilityButton();
     draw();
     updateStatsDisplay();
     renderLegend();
@@ -1169,9 +1225,13 @@ function canonicalCategory(cat) {
     // Human Rights Violations: landmarks, not rings, and independent of the
     // military/crisis filters. Off by default like every operational layer.
     if (state.showHumanRights) {
-      const visibleRights = state.humanRights.filter(h => !h._hiddenByTimeline);
-      const rightsScale = visibleRights.length > 30 ? Math.min(1, 30 / visibleRights.length) : 1;
-      visibleRights.forEach(h => drawHumanRightsLandmark(h, rightsScale));
+      // Iterate clusters, not entries: one landmark per location, fanned when a
+      // cluster holds more than one. Scaling is by distinct location, since that
+      // is what determines how crowded the map looks.
+      const rightsClusters = visibleHumanRightClusters();
+      const rightsScale = rightsClusters.length > 30
+        ? Math.min(1, 30 / rightsClusters.length) : 1;
+      rightsClusters.forEach(group => drawHumanRightsLandmark(group[0], rightsScale, group));
     }
   }
 
@@ -1392,11 +1452,60 @@ function canonicalCategory(cat) {
   // A reported violation is a point occurrence, so these draw as landmarks rather
   // than an area ring: a ring would imply an affected extent we do not have.
   //
+  // ---- Human Rights landmark clustering -------------------------------------
+  // Two reports about the same country geocode to the same country centroid, so
+  // the layer drew them on top of each other at one pixel and the legend count
+  // disagreed with what was visible: five entries, four dots, one of them
+  // invisible. Milestones already solve this with stackKey/drawStack, so the
+  // landmarks now group the same way and fan apart instead of overplotting.
+  //
+  // Deliberately looser than STACK_ROUND_DIGITS (4): these coordinates are country
+  // centroids reused verbatim from the fetcher's lookup table, so identical values
+  // mean "same country", and the tolerance only needs to absorb float noise.
+  const HUMAN_RIGHTS_STACK_DIGITS = 1;
+  let humanRightStackMap = new Map();
+
+  function humanRightStackKey(h) {
+    if (h._hrStackKey) return h._hrStackKey;
+    const f = (n) => Number(n.toFixed(HUMAN_RIGHTS_STACK_DIGITS));
+    h._hrStackKey = f(h.lat) + ',' + f(h.lon);
+    return h._hrStackKey;
+  }
+
+  function rebuildHumanRightStackMap() {
+    humanRightStackMap = new Map();
+    for (const h of state.humanRights) {
+      const k = humanRightStackKey(h);
+      const group = humanRightStackMap.get(k);
+      if (group) group.push(h); else humanRightStackMap.set(k, [h]);
+    }
+    // Mark the member that owns the location so draw/hit-test agree on which entry
+    // is the cluster centre, exactly like the milestone stack.
+    for (const group of humanRightStackMap.values()) {
+      for (let i = 0; i < group.length; i++) group[i]._hrLead = i === 0;
+    }
+    return humanRightStackMap;
+  }
+
+  function humanRightStackFor(h) {
+    return humanRightStackMap.get(humanRightStackKey(h)) || [h];
+  }
+
+  // Timeline-filtered clusters, so a cluster never mixes hidden and shown members.
+  function visibleHumanRightClusters() {
+    const out = [];
+    for (const group of humanRightStackMap.values()) {
+      const shown = group.filter(h => !h._hiddenByTimeline);
+      if (shown.length) out.push(shown);
+    }
+    return out;
+  }
+
   // Landmarks pulse with a soft glow so the layer reads as live rather than as
   // another set of static dots. The pulse is a function of wall-clock time only -
   // no per-entry state - so it cannot desynchronise, and it costs nothing when the
   // layer is off because drawHumanRightsLandmark returns immediately.
-  function drawHumanRightsLandmark(entry, autoScale) {
+  function drawHumanRightsLandmark(entry, autoScale, cluster) {
     if (!state.showHumanRights) return;
     if (entry._hiddenByTimeline) return;
     const p = project(entry.lon, entry.lat);
@@ -1424,6 +1533,36 @@ function canonicalCategory(cat) {
     ctx.arc(p.x, p.y, glowRadius, 0, Math.PI * 2);
     ctx.fillStyle = gradient;
     ctx.fill();
+
+    // Cluster fan. Without this the extra reports were not merely unlabelled, they
+    // were literally invisible underneath the first one at the same pixel.
+    if (cluster && cluster.length > 1) {
+      ctx.save();
+      ctx.globalAlpha = 0.85;
+      drawStack(p.x, p.y, cluster.length, HUMAN_RIGHTS_COLOR);
+      ctx.restore();
+      ctx.save();
+      ctx.globalAlpha = 0.55;
+      ctx.strokeStyle = withOpacity(HUMAN_RIGHTS_COLOR, 0.8);
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, base + 2.5, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+
+      // The fanned markers sit a few pixels outboard of the glow, so label them
+      // separately - otherwise the count is unreadable against the map.
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = '#ffffff';
+      ctx.font = '600 9px system-ui, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.shadowColor = 'rgba(0,0,0,0.85)';
+      ctx.shadowBlur = 3;
+      ctx.fillText(String(cluster.length), p.x + 11, p.y - 11);
+      ctx.restore();
+    }
 
     // Solid core, breathing slightly with the glow.
     const radius = base * (0.86 + pulse * 0.24);
@@ -1702,14 +1841,26 @@ function canonicalCategory(cat) {
     // Derived from the widest painted landmark, not a separate magic number.
     const hitRadius = HUMAN_RIGHTS_HIT_RADIUS;
     const hitRadiusSq = hitRadius * hitRadius;
-    for (const entry of state.humanRights) {
-      if (entry._hiddenByTimeline) continue;
-      const p = project(entry.lon, entry.lat);
+    // Walk clusters so a fan of several reports is one target and the returned
+    // entry is always the lead, which owns the projected centre. _clusterCount
+    // rides along for the tooltip.
+    let best = null;
+    let bestDist = Infinity;
+    for (const group of visibleHumanRightClusters()) {
+      const lead = group[0];
+      const p = project(lead.lon, lead.lat);
+      if (!p) continue;
       const dx = p.x - px;
       const dy = p.y - py;
-      if (dx * dx + dy * dy < hitRadiusSq) return entry;
+      const dist = dx * dx + dy * dy;
+      if (dist < hitRadiusSq && dist < bestDist) {
+        bestDist = dist;
+        best = lead;
+      }
     }
-    return null;
+    if (!best) return null;
+    best._clusterCount = humanRightStackFor(best).filter(h => !h._hiddenByTimeline).length;
+    return best;
   }
 
   // ---- Tooltip hover handlers ----
@@ -2448,6 +2599,16 @@ function showTooltip(ev, x, y) {
       note.textContent = entry.note;
       wrapper.appendChild(note);
     }
+    // Several reports can geocode to one country centroid. Without this line the
+    // legend count reads as a bug: the marker is a fan, not a single report.
+    const clusterCount = entry._clusterCount || 0;
+    if (clusterCount > 1) {
+      const shared = document.createElement('div');
+      shared.style.cssText = 'color: var(--fg-muted); font-size: 0.72rem; margin-top: 4px;';
+      shared.textContent = clusterCount + ' reports at this location';
+      wrapper.appendChild(shared);
+    }
+
     const meta = document.createElement('div');
     meta.style.cssText = 'color: var(--fg-subtle); font-size: 0.7rem; margin-top: 4px;';
     const bits = [entry.region, entry.start_date].filter(Boolean).join(' \u00b7 ');
@@ -2813,6 +2974,11 @@ function showTooltip(ev, x, y) {
       });
 
 const fragment = document.createDocumentFragment();
+
+      // Header row: the fold control on the left, the bulk eye on the right.
+      const head = document.createElement('div');
+      head.className = 'map-legend-head';
+
       const title = document.createElement('div');
       title.className = 'map-legend-title';
       title.textContent = 'CATEGORIES';
@@ -2832,7 +2998,48 @@ const fragment = document.createDocumentFragment();
           renderLegend();
         }
       });
-      fragment.appendChild(title);
+      head.appendChild(title);
+
+      // White eye, drawn rather than an icon font so it scales with the frame and
+      // needs no extra asset. The lid is a stroke that rotates down over the iris.
+      const bulk = document.createElement('button');
+      bulk.type = 'button';
+      bulk.id = 'map-legend-bulk-visibility';
+      bulk.className = 'map-legend-bulk';
+      bulk.addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleAllCategories();
+      });
+      const eyeNs = 'http://www.w3.org/2000/svg';
+      const svg = document.createElementNS(eyeNs, 'svg');
+      svg.setAttribute('viewBox', '0 0 12 12');
+      svg.setAttribute('aria-hidden', 'true');
+      svg.setAttribute('focusable', 'false');
+      const outline = document.createElementNS(eyeNs, 'path');
+      outline.setAttribute('d', 'M1.1 6 C3 2.9 4.5 2.4 6 2.4 C7.5 2.4 9 2.9 10.9 6'
+        + ' C9 9.1 7.5 9.6 6 9.6 C4.5 9.6 3 9.1 1.1 6 Z');
+      outline.setAttribute('fill', 'none');
+      outline.setAttribute('stroke', '#fff');
+      outline.setAttribute('stroke-width', '1.1');
+      outline.setAttribute('stroke-linejoin', 'round');
+      const iris = document.createElementNS(eyeNs, 'circle');
+      iris.setAttribute('class', 'eye-iris');
+      iris.setAttribute('cx', '6');
+      iris.setAttribute('cy', '6');
+      iris.setAttribute('r', '1.7');
+      iris.setAttribute('fill', '#fff');
+      const lid = document.createElementNS(eyeNs, 'path');
+      lid.setAttribute('class', 'eye-lid');
+      lid.setAttribute('d', 'M1.2 6 L10.8 6');
+      lid.setAttribute('stroke', '#fff');
+      lid.setAttribute('stroke-width', '1.4');
+      lid.setAttribute('stroke-linecap', 'round');
+      svg.append(outline, iris, lid);
+      bulk.appendChild(svg);
+      applyBulkVisibilityState(bulk);
+      head.appendChild(bulk);
+
+      fragment.appendChild(head);
 
       // Wrapper for category rows that can be folded with animation
       const categoriesWrapper = document.createElement('div');
@@ -3264,6 +3471,7 @@ const fragment = document.createDocumentFragment();
       state.humanRights = Array.isArray(data.human_rights_violations)
         ? data.human_rights_violations.map(normalizeHumanRight).filter(isHumanRightPlottable)
         : [];
+      rebuildHumanRightStackMap();
     } catch (err) {
       if (err.name === 'AbortError') return;
       console.warn('[worldmap] Failed to load world_layers.json, using empty layers:', err);
@@ -3271,6 +3479,7 @@ const fragment = document.createDocumentFragment();
       state.fleets = [];
       state.crises = [];
       state.humanRights = [];
+      rebuildHumanRightStackMap();
     }
   }
 
@@ -3578,6 +3787,11 @@ function initTimelineSlider() {
   normalizeHumanRight,
   isHumanRightPlottable,
   findHumanRight,
+  areAllCategoriesHidden,
+  toggleAllCategories,
+  renderLegend,
+  humanRightStackFor,
+  visibleHumanRightClusters,
   isNearAnchor,
   sameLocationCluster,
   PROXIMITY_RADIUS,
@@ -3632,6 +3846,7 @@ function initTimelineSlider() {
         state.fleets = (fleets || []).map(normalizeFleet).filter(isFleetPlottable);
         state.crises = (crises || []).map(normalizeZone).filter(isZonePlottable);
         state.humanRights = (humanRights || []).map(normalizeHumanRight).filter(isHumanRightPlottable);
+        rebuildHumanRightStackMap();
         updateStatsDisplay();
         renderLegend();
       },

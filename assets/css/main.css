@@ -361,13 +361,58 @@ body {
    padding-top: 5px;
    border-top: 1px solid var(--border);
  }
+ .map-legend-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 3px;
+ }
  .map-legend-title {
   color: var(--fg-subtle);
   text-transform: uppercase;
   letter-spacing: 0.08em;
   font-size: 0.5rem;
-  margin-bottom: 3px;
+  flex: 1;
+  min-width: 0;
+  /* Pinned so the eye's lid sits on the cap line of the word rather than
+     floating above or below it. The label is fixed-size text; the eye is a
+     replaced element with its own intrinsic size, so without an explicit height
+     the two boxes disagree by a pixel or two. */
+  line-height: 1.18;
  }
+
+ /* Bulk milestone visibility toggle.
+    Sized in em off the legend's own font-size so it tracks the frame under both
+    the desktop rule and the narrow-screen rule that shrinks .map-legend. The lid
+    rotates over the iris to close it; the eye never changes box size, so the
+    header cannot reflow as it opens and closes. */
+ .map-legend-bulk {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 1.75em;
+  height: 1.75em;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  background: none;
+  color: #fff;
+  cursor: pointer;
+  line-height: 0;
+ }
+ .map-legend-bulk:hover { background: var(--accent-dim); border-color: var(--border); }
+ .map-legend-bulk:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+ .map-legend-bulk svg { width: 1.4em; height: 1.4em; display: block; overflow: visible; }
+ .map-legend-bulk .eye-lid {
+  transform-origin: 6px 6px;
+  transform: scaleY(0);
+  transition: transform 0.16s ease;
+ }
+ .map-legend-bulk[aria-pressed="true"] .eye-lid { transform: scaleY(1); }
+ .map-legend-bulk[aria-pressed="true"] { opacity: 0.55; }
+ .map-legend-bulk .eye-iris { transition: opacity 0.16s ease; }
+ .map-legend-bulk[aria-pressed="true"] .eye-iris { opacity: 0; }
  .map-legend-row {
   display: flex;
   align-items: center;
