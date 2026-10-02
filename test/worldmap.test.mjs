@@ -2472,6 +2472,59 @@ test('zoom controls, keyboard and double-click do not throw', () => {
     });
   });
 
+  // --- README matches the map ----------------------------------------------
+  // The README documented 7 verticals while CATEGORY_LEGEND has 9, and described a
+  // legend header and tooltip behaviour that no longer exist. Documentation drift is
+  // only caught if something checks it.
+  describe('README documents the map accurately', () => {
+    const api = () => windowObj.__WORLDMAP_TEST__;
+    const readme = () => fs.readFileSync(path.join(process.cwd(), 'README.md'), 'utf8');
+
+    test('every legend category is named in the README', () => {
+      const doc = readme();
+      const missing = api().CATEGORY_LEGEND
+        .map((c) => c.key)
+        .filter((key) => !doc.includes(key));
+      expect(missing).toEqual([]);
+    });
+
+    test('the README vertical count matches the legend', () => {
+      const doc = readme();
+      const claimed = doc.match(/## The (\d+) Verticals We Track/);
+      expect(claimed).not.toBe(null);
+      expect(Number(claimed[1])).toBe(api().CATEGORY_LEGEND.length);
+    });
+
+    test('no vertical was dropped when one was folded into another', () => {
+      // Robotics and Mobility & Logistics were added and Biohacking folded into
+      // Biotechnology without the list being touched.
+      const doc = readme();
+      expect(doc).toContain('Robotics');
+      expect(doc).toContain('Mobility & Logistics');
+      expect(doc).toContain('Biotechnology & Biohacking');
+      expect(doc).not.toContain('## The 7 Verticals');
+    });
+
+    test('the four operational layers are documented as layers, not categories', () => {
+      const doc = readme();
+      expect(doc).toContain('Operational layers');
+      expect(doc).toContain('Human Rights Violations');
+      expect(doc).toContain('Conflict Zones');
+      expect(doc).toContain('Crisis Zones');
+      expect(doc).toContain('Ground Deployments');
+    });
+
+    test('the stale legend header is gone', () => {
+      expect(readme()).not.toContain('Categories \u00b7 live');
+    });
+
+    test('the projection is described as fitted rather than stretched', () => {
+      const doc = readme();
+      expect(doc).toMatch(/fitted inside the canvas/);
+      expect(doc).toMatch(/360\s*:\s*142/);
+    });
+  });
+
   // --- Geography is clipped to the map plate -----------------------------------
   // Having fitted the world inside the canvas, the vertical graticule lines run pole
   // to pole and the terminator tints the full canvas, so both carry on into the

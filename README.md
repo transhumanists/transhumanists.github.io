@@ -13,11 +13,23 @@ A live dashboard of scientific, technological, and strategic breakthroughs — s
 
 ## Dashboard world map
 
-The front page renders a live equirectangular world map (`assets/js/worldmap.js`) with no external dependencies:
+The front page renders a live equirectangular world map (`assets/js/worldmap.js`) with no external
+dependencies. The world is fitted inside the canvas at its natural 360:142 ratio and centred
+rather than stretched, so a phone-shaped canvas is never distorted and a degree of longitude is
+always the same number of pixels as a degree of latitude; geography is clipped to that fitted
+plate. The map provides:
 
 - **Event dots** colored by category (`data/events.json`), with a day/night terminator overlay and sun position
-- **Clickable tooltips** — category, metric value, source, date, and a *View source* link to the original report
-- **Category legend** (`Categories · live`) with per-vertical event counts
+- **Click-to-pin tooltips** — category, metric value, source, date, and a *View source* link to the
+  original report. A popup stays docked at its marker so that link is reachable, for milestones and
+  for Human Rights landmarks alike
+- **Category legend** (`CATEGORIES`) with per-vertical event counts, plus a bulk-visibility eye that
+  hides or restores every category at once. It follows the per-row switches in both directions —
+  hiding categories one at a time closes it, re-selecting a single one reopens it — and
+  deliberately leaves the operational layers below it alone
+- **Operational layers**, each with its own switch and count: Conflict Zones, Ground Deployments &
+  Fleet Movements, Crisis Zones, and Human Rights Violations. These are map layers rather than
+  categories, and all four are off by default
 - **Interaction** — drag to pan, wheel/double-click/`+`/`-` to zoom, `0` to reset, and `+` / `−` / `⟲` buttons in the overlay
 - **Keyboard accessible** (arrow keys pan, `+`/`-` zoom, `0` reset)
 
@@ -33,15 +45,21 @@ GitHub Actions runs `bun test` and a static parse check on every push/PR to `mai
 
 ---
 
-## The 7 Verticals We Track
+## The 9 Verticals We Track
 
-🧬 **Biotechnology** — gene editing, implants, microscopy, longevity, synthetic biology, neuroscience
+Listed in legend order. `CATEGORY_LEGEND` in `assets/js/worldmap.js` is the authority.
+
+🧬 **Biotechnology & Biohacking** — gene editing, implants, microscopy, longevity, synthetic biology, neuroscience, grinder/DIY biohacking
 🧠 **Computing & AGI** — frontier models, agentic AI, GPU efficiency, benchmarks
 ⚛️ **Quantum Physics** — qubit counts, error correction, time crystals, supremacy, networking
 ⚡ **Renewable Energy** — fusion, solar efficiency, battery density, wind, storage
+🚚 **Mobility & Logistics** — autonomy, freight, ports, rail, aviation, last-mile
 🛡️ **Cybersecurity** — exploits, mitigations, encryption, threat intel, zero-days
+🤖 **Robotics** — humanoids, manipulation, drones, industrial and surgical robotics
 🚀 **Spaceflight & Aeronautics** — launch, payload, deep space, hypersonic, reusability
 🌍 **Military & Defense** — range, radius, fleet movements, contracts, air defense, naval, cyber ops
+
+Biotechnology & Biohacking is one category drawn in two colors, not two categories.
 
 ---
 
