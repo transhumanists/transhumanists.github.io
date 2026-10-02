@@ -264,20 +264,6 @@ def classify_tone(m: dict) -> str | None:
     return None
 
 
-# Legend order. Distinct from the site-key map above (which only maps names) because
-# the map has a deliberate visual reading order: most human-progress categories
-# first, then infrastructure, then the operational ones.
-SITE_KEY_LEGEND_ORDER = [
-    "biotechnology",
-    "computing_agi",
-    "quantum",
-    "energy",
-    "mobility",
-    "cybersecurity",
-    "robotics",
-    "spaceflight",
-    "defense",
-]
 
 # Upstream display names that are not one of the canonical categories.
 # They fold into a canonical category here so the site never needs an "Other"
@@ -636,7 +622,6 @@ def merge_feed(current: list, history: list) -> list:
 # exactly the rule the unifier applies; see that module's docstring.
 _content_tokens = milestone_identity.content_tokens
 _dedupe_same_report = milestone_identity.same_report
-_DEDUPE_STOPWORDS = milestone_identity.DEDUPE_STOPWORDS
 
 
 def _dedupe_category_key(category: object) -> str:

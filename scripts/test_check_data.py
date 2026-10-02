@@ -1163,23 +1163,38 @@ class TestEventCategories(unittest.TestCase):
             self.assertIn("Human Rights Violations", js)
             self.assertNotIn("'Human Rights Violations': '#", js)
 
-    def test_python_and_js_legend_order_matches_schema(self):
-        import sync_milestones as sync
+    def test_rendered_legend_order_matches_the_schema(self):
+        # The visual reading order is a product decision that must be declared
+        # once: schema/worldmap-data.schema.json is authoritative and worldmap.js
+        # renders in that order.
+        #
+        # Previously this also asserted sync_milestones.SITE_KEY_LEGEND_ORDER,
+        # a third copy that nothing in production read - a declaration that could
+        # drift with nothing to notice. The renderer is the thing that matters, so
+        # that is what is compared.
+        import re
 
         js_file = cd.ROOT / "assets" / "js" / "worldmap.js"
         if not js_file.exists():
             self.skipTest("worldmap.js not checked out")
         js = js_file.read_text(encoding="utf-8")
-        # The visual reading order is a product decision, but it must be declared
-        # once. The schema is authoritative; JS must render in that order.
-        for display in cd._SCHEMA["controls"]["events"]["category_order"]:
-            self.assertIn(f"label: '{display}'", js)
-        self.assertEqual(
-            list(sync.SITE_KEY_LEGEND_ORDER),
-            [sync.DISPLAY_TO_SITE_KEY[d] for d in
-             cd._SCHEMA["controls"]["events"]["category_order"]],
-            "sync_milestones.SITE_KEY_LEGEND_ORDER disagrees with the schema",
-        )
+
+        order = cd._SCHEMA["controls"]["events"]["category_order"]
+        rendered = re.findall(r"\{\s*key: '([^']+)',\s*label: '([^']+)'\s*\}", js)
+        self.assertTrue(rendered, "no category legend entries found - parser is stale?")
+        # Strip the module/layer rows that share this shape; compare the category
+        # rows by their declared label.
+        rendered_labels = [label for _key, label in rendered]
+        declared = [d for d in order if d in rendered_labels]
+        self.assertEqual(rendered_labels[:len(declared)], declared,
+                         "worldmap.js renders categories in a different order "
+                         "than the schema declares")
+
+    def test_no_third_declaration_of_the_legend_order(self):
+        # The order is declared in the schema and rendered in worldmap.js. A
+        # Python copy with no consumer is a copy that can drift.
+        src = (cd.ROOT / "scripts" / "sync_milestones.py").read_text(encoding="utf-8")
+        self.assertNotIn("SITE_KEY_LEGEND_ORDER", src)
 
     def test_every_alias_target_is_a_canonical_category(self):
         import sync_milestones as sync
