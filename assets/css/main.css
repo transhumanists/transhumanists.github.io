@@ -1316,6 +1316,9 @@ body {
   background-repeat: no-repeat;
   background-position: right 11px center;
   background-size: 10px 6px;
+  /* Windows High Contrast ignores background-color unless told not to, which would
+     undo the opaque option background this whole block exists to provide. */
+  forced-color-adjust: none;
 }
 .select-field:hover,
 .metric-timeline-controls select:hover,
@@ -1333,11 +1336,6 @@ body {
   color: var(--fg);
   font-family: var(--font-ui);
 }
-/* Windows High Contrast ignores background-color unless it is told not to. */
-.select-field,
-.metric-timeline-controls select,
-.catalog-controls select { forced-color-adjust: none; }
-
 /* Year steppers flanking the year select. Same plate, border and radius as the
    select they sit next to, so the three read as one control instead of three. */
 .stepper-btn {
