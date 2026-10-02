@@ -17,7 +17,7 @@ test.beforeEach(async ({ page }) => {
   const errors = [];
   page.on('pageerror', (e) => errors.push(e.message));
   page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
-  await page.goto('/test/browser/fixture.html');
+  await page.goto('/e2e/fixture.html');
   await page.waitForFunction(() => {
     const el = document.getElementById('map-legend');
     return !!el && el.querySelectorAll('.map-legend-row').length > 0;
@@ -104,33 +104,153 @@ test('the legend reaches every row without being clipped away', async ({ page })
   expect(clipped).toBe(false);
 });
 
-test('the eye is present, white, and level with the CATEGORIES label', async ({ page }) => {
-  const eye = page.locator('#map-legend-bulk-visibility');
-  await expect(eye).toBeVisible();
+test('the eye wears the CATEGORIES colours and sits just smaller than the word',
+  async ({ page }) => {
+    const eye = page.locator('#map-legend-bulk-visibility');
+    await expect(eye).toBeVisible();
 
-  // The brief was an eye of the same height as the word CATEGORIES, so it is the
-  // GLYPH that gets measured, not the button: the button is deliberately larger so
-  // the control stays a comfortable tap target.
-  const glyph = await page.locator('#map-legend-bulk-visibility svg').boundingBox();
-  const titleBox = await page.locator('.map-legend-title').boundingBox();
-  expect(Math.abs(glyph.height - titleBox.height)).toBeLessThan(2);
+    // Same colour as the caption, so they read as one piece of chrome. currentColor
+    // carries it into the SVG's strokes.
+    const titleColour = await page.locator('.map-legend-title')
+      .evaluate((el) => getComputedStyle(el).color);
+    const eyeColour = await eye.evaluate((el) => getComputedStyle(el).color);
+    expect(eyeColour).toBe(titleColour);
+    const lid = await page.locator('#map-legend-bulk-visibility .eye-lid')
+      .getAttribute('stroke');
+    expect(lid).toBe('currentColor');
 
-  // Vertically centred on the word it sits beside.
-  const glyphMid = glyph.y + glyph.height / 2;
-  const titleMid = titleBox.y + titleBox.height / 2;
-  expect(Math.abs(glyphMid - titleMid)).toBeLessThan(2);
+    // Smaller than the word in BOTH states.
+    const glyph = page.locator('#map-legend-bulk-visibility svg');
+    const titleBox = await page.locator('.map-legend-title').boundingBox();
+    for (const pressed of ['false', 'true']) {
+      await eye.evaluate((el, v) => el.setAttribute('aria-pressed', v), pressed);
+      const g = await glyph.boundingBox();
+      expect(g.height, 'glyph vs caption when aria-pressed=' + pressed)
+        .toBeLessThan(titleBox.height);
+    }
+    await eye.evaluate((el) => el.setAttribute('aria-pressed', 'false'));
 
-  // On the right of the header.
-  expect(glyph.x).toBeGreaterThan(titleBox.x);
+    // Vertically centred on the word, and on the right of it.
+    const g = await glyph.boundingBox();
+    expect(Math.abs((g.y + g.height / 2) - (titleBox.y + titleBox.height / 2)))
+      .toBeLessThan(2);
+    expect(g.x).toBeGreaterThan(titleBox.x);
+  });
 
-  // And the button is still a hit target rather than a hairline.
-  const eyeBox = await eye.boundingBox();
-  expect(eyeBox.height).toBeGreaterThanOrEqual(glyph.height);
+test('CATEGORIES is bigger than the eye and folds from the whole header row',
+  async ({ page }) => {
+    const head = page.locator('.map-legend-head');
+    const title = page.locator('.map-legend-title');
+    const eye = page.locator('#map-legend-bulk-visibility');
 
-  const stroke = await page.locator('#map-legend-bulk-visibility .eye-lid')
-    .getAttribute('stroke');
-  expect(stroke.toLowerCase()).toBe('#fff');
-});
+    // Every click re-measures. Folding rebuilds the legend, which moves the header,
+    // so coordinates captured up front go stale after the first toggle - and a stale
+    // coordinate silently lands on the frame background and does nothing.
+    const box = async (loc) => loc.boundingBox();
+
+    const clickHeadTop = async () => {
+      const b = await box(head);
+      await page.mouse.click(b.x + 6, b.y + 1);
+    };
+    const clickHeadBottom = async () => {
+      const b = await box(head);
+      await page.mouse.click(b.x + 6, b.y + b.height - 1);
+    };
+    const clickInFrontOfWord = async () => {
+      const h = await box(head);
+      const t = await box(title);
+      const x = t.x + t.width + 4;
+      expect(x, 'there is whitespace between the word and the eye')
+        .toBeLessThan(h.x + h.width);
+      await page.mouse.click(x, t.y + t.height / 2);
+    };
+    const clickWord = async () => {
+      const t = await box(title);
+      await page.mouse.click(t.x + 4, t.y + t.height / 2);
+    };
+    const clickEye = async () => {
+      const e = await box(eye);
+      await page.mouse.click(e.x + e.width / 2, e.y + e.height / 2);
+    };
+
+    // Collapse state is read from the inline max-height, which is assigned at once,
+    // rather than from the wrapper's box, which is mid-transition for 150ms after a
+    // click and would race the animation.
+    const folded = () => page.evaluate(() =>
+      document.querySelector('.map-legend-categories').style.maxHeight);
+
+    const t0 = await box(title);
+    const h0 = await box(head);
+    const eyeGlyph = await page.locator('#map-legend-bulk-visibility svg').boundingBox();
+    // CATEGORIES is the bigger of the two - expressed as a relationship, because a
+    // fixed pixel threshold would just be a font-size assertion that breaks the first
+    // time a breakpoint scales it.
+    expect(t0.height).toBeGreaterThan(eyeGlyph.height);
+    // The click target is the row, not the word: strictly taller, so there is
+    // whitespace above and below to aim at.
+    expect(h0.height).toBeGreaterThan(t0.height + 3);
+
+    await expect(title).toHaveAttribute('aria-pressed', 'false');
+
+    await clickHeadTop();
+    await expect(title).toHaveAttribute('aria-pressed', 'true');
+    expect(await folded()).toBe('0px');
+
+    await clickHeadBottom();
+    await expect(title).toHaveAttribute('aria-pressed', 'false');
+    expect(await folded()).not.toBe('0px');
+
+    await clickInFrontOfWord();
+    await expect(title).toHaveAttribute('aria-pressed', 'true');
+    await clickInFrontOfWord();
+    await expect(title).toHaveAttribute('aria-pressed', 'false');
+
+    await clickWord();
+    await expect(title).toHaveAttribute('aria-pressed', 'true');
+
+    // The eye must NOT fold the list: it has its own job.
+    await clickEye();
+    await expect(title).toHaveAttribute('aria-pressed', 'true');
+    await expect(eye).toHaveAttribute('aria-pressed', 'true');
+  });
+
+test('every legend label sits on one line', async ({ page }) => {
+    const rows = await page.locator('#map-legend .map-legend-row').evaluateAll(
+      (els) => els.map((e) => {
+        const label = e.querySelector('.map-legend-label');
+        if (!label) return null;
+        const cs = getComputedStyle(label);
+        const lh = parseFloat(cs.lineHeight) || parseFloat(cs.fontSize) * 1.2;
+        return {
+          text: label.textContent.trim(),
+          height: label.getBoundingClientRect().height,
+          truncated: label.scrollWidth > label.clientWidth + 1,
+          lines: Math.round(label.getBoundingClientRect().height / lh),
+        };
+      }),
+    );
+    const labels = rows.filter(Boolean);
+    expect(labels.length).toBe(13);
+    for (const l of labels) {
+      expect(l.lines, l.text + ' wrapped onto ' + l.lines + ' lines').toBe(1);
+      expect(l.truncated, l.text + ' was ellipsised').toBe(false);
+    }
+    // The longest label really is in there, so this is not passing on short rows.
+    expect(labels.some((l) => l.text.includes('Fleet Movements'))).toBe(true);
+  });
+
+test('the widened frame still clears South America', async ({ page }, testInfo) => {
+    // Equirectangular: lon -60 is where South America starts, about a third across.
+    // Only meaningful on a wide map - on a 358px phone the legend is most of the frame
+    // by necessity, and there is no map underneath it to cover.
+    test.skip(testInfo.project.name !== 'desktop',
+              'the South America constraint applies to the wide layout');
+    const legend = await page.locator('#map-legend').boundingBox();
+    const map = await page.locator('#world-map').boundingBox();
+    const fraction = (legend.x + legend.width - map.x) / map.width;
+    expect(fraction, 'legend right edge as a fraction of the map')
+      .toBeLessThan((-60 + 180) / 360);
+  });
 
 test('the eye opens and closes the whole category set, and nothing else', async ({ page }) => {
   const eye = page.locator('#map-legend-bulk-visibility');

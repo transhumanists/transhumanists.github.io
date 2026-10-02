@@ -2181,13 +2181,30 @@ test('zoom controls, keyboard and double-click do not throw', () => {
       expect(eye().type).toBe('button');
     });
 
-    test('it is a white drawn eye, not an icon glyph', () => {
+    test('it is a drawn eye that takes the caption colour, not an icon glyph', () => {
       render();
       const svg = eyeSvg();
       expect(svg.tagName).toBe('SVG');
       expect(svg.namespaceURI).toBe('http://www.w3.org/2000/svg');
-      const white = svg.children.filter((c) => c.getAttribute('stroke') === '#fff');
-      expect(white.length).toBeGreaterThan(0);
+      // currentColor, so the button's CSS colour reaches the strokes and the eye reads
+      // as part of the CATEGORIES caption rather than a white badge sitting on it.
+      const painted = svg.children.filter(
+        (c) => c.getAttribute('stroke') === 'currentColor' ||
+               c.getAttribute('fill') === 'currentColor');
+      expect(painted.length).toBe(svg.children.length);
+      const css = fs.readFileSync(
+        path.join(process.cwd(), 'assets/css/main.css'), 'utf8');
+      expect(css).toMatch(/\.map-legend-bulk\s*\{[^}]*color:\s*var\(--fg-subtle\)/);
+    });
+
+    test('the glyph is smaller than the caption it labels', () => {
+      render();
+      const css = fs.readFileSync(
+        path.join(process.cwd(), 'assets/css/main.css'), 'utf8');
+      const glyph = css.match(/\.map-legend-bulk svg \{[^}]*width:\s*([\d.]+)em/);
+      expect(glyph).not.toBe(null);
+      // 1em would be the caption's own size; the eye is deliberately under it.
+      expect(Number(glyph[1])).toBeLessThan(1);
     });
 
     test('it has both a lid and an iris, which is what lets it close', () => {
@@ -2195,7 +2212,7 @@ test('zoom controls, keyboard and double-click do not throw', () => {
       const svg = eyeSvg();
       expect(svg.children.some((c) => c.className === 'eye-lid')).toBe(true);
       expect(svg.children.some((c) => c.className === 'eye-iris')).toBe(true);
-      // The CSS closes it by scaling the lid over the iris and fading the iris.
+      // The CSS closes it by scaling the lid over the iris and fading the irisris.
       const css = fs.readFileSync(path.join(process.cwd(), 'assets/css/main.css'), 'utf8');
       expect(css).toContain('.map-legend-bulk[aria-pressed="true"] .eye-lid');
       expect(css).toContain('.map-legend-bulk[aria-pressed="true"] .eye-iris');

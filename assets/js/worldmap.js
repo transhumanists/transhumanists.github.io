@@ -3168,16 +3168,21 @@ const fragment = document.createDocumentFragment();
       title.setAttribute('tabindex', '0');
       title.setAttribute('aria-pressed', String(state.foldedCategories));
       title.setAttribute('aria-label', 'Toggle categories visibility');
-      title.style.cursor = 'pointer';
-      title.addEventListener('click', () => {
+
+      // The click target is the whole header row, not the seven-pixel-tall word. The
+      // empty space in front of, above, under and behind CATEGORIES - right up to the
+      // eye - toggles the list, which is where a pointer actually goes. Keyboard focus
+      // stays on the word itself, where role="button" and tabindex live, because a
+      // <button> inside a role="button" is invalid ARIA.
+      const toggleFolded = () => {
         state.foldedCategories = !state.foldedCategories;
         renderLegend();
-      });
+      };
+      head.addEventListener('click', toggleFolded);
       title.addEventListener('keydown', e => {
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
-          state.foldedCategories = !state.foldedCategories;
-          renderLegend();
+          toggleFolded();
         }
       });
       head.appendChild(title);
@@ -3201,7 +3206,7 @@ const fragment = document.createDocumentFragment();
       outline.setAttribute('d', 'M1.1 6 C3 2.9 4.5 2.4 6 2.4 C7.5 2.4 9 2.9 10.9 6'
         + ' C9 9.1 7.5 9.6 6 9.6 C4.5 9.6 3 9.1 1.1 6 Z');
       outline.setAttribute('fill', 'none');
-      outline.setAttribute('stroke', '#fff');
+      outline.setAttribute('stroke', 'currentColor');
       outline.setAttribute('stroke-width', '1.1');
       outline.setAttribute('stroke-linejoin', 'round');
       const iris = document.createElementNS(eyeNs, 'circle');
@@ -3209,11 +3214,11 @@ const fragment = document.createDocumentFragment();
       iris.setAttribute('cx', '6');
       iris.setAttribute('cy', '6');
       iris.setAttribute('r', '1.7');
-      iris.setAttribute('fill', '#fff');
+      iris.setAttribute('fill', 'currentColor');
       const lid = document.createElementNS(eyeNs, 'path');
       lid.setAttribute('class', 'eye-lid');
       lid.setAttribute('d', 'M1.2 6 L10.8 6');
-      lid.setAttribute('stroke', '#fff');
+      lid.setAttribute('stroke', 'currentColor');
       lid.setAttribute('stroke-width', '1.4');
       lid.setAttribute('stroke-linecap', 'round');
       svg.append(outline, iris, lid);

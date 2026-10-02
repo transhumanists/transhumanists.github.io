@@ -1,0 +1,38 @@
+feat: bigger CATEGORIES, an eye in its colours, and a header-wide fold target
+
+Four legend changes, verified in a real browser at 1440px and 390px.
+
+CATEGORIES is bigger (0.5 -> 0.58rem), and the responsive overrides were raised to
+match rather than left to override it back down on a phone.
+
+The eye now wears the caption's colours. Its strokes and iris are currentColor and
+the button takes --fg-subtle, so the two read as one piece of chrome instead of a
+white badge sitting on a muted label. Open and closed carry the same weight, because
+the lid rotating over the iris is what states the condition; dimming the control as
+well made the closed state look disabled rather than closed. The glyph is 0.74em, a
+little under the caption, in both states. The button stays larger than the glyph so
+it remains a tap target - the slack lives in the box, not in the drawing.
+
+The fold target is the whole header row. Previously only the seven-pixel-tall word
+was clickable, so the empty space in front of, above, under and behind it - which is
+where a pointer actually goes - did nothing. worldmap.js now listens on the header
+row, with padding that gives it real height. Keyboard focus and role=button stay on
+the word itself, because nesting one button role inside another is invalid ARIA. The
+eye stops propagation, so it keeps its own job.
+
+The frame is wide enough that no label wraps: 292px, sized off "Ground Deployments &
+Fleet Movements" at 36 characters. The right edge lands at 25.3% of the map, where
+South America starts at 33.3%, and a test holds that line. Labels are nowrap with an
+ellipsis fallback rather than wrapping the count onto a second line.
+
+Two bugs found while testing this, both mine:
+
+- I left a stopPropagation on the title, which meant clicking the word itself no
+  longer folded anything - the very first thing the change was meant to make work.
+- The fold test measured the header once and reused the coordinates, which went
+  stale the moment folding rebuilt the legend and moved it. It re-measures before
+  every click now.
+
+Asserted as relationships rather than pixel thresholds (the caption is taller than
+the eye, the row is taller than the caption), because a fixed threshold is only a
+font-size assertion that breaks the first time a breakpoint scales it.
