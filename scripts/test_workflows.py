@@ -275,6 +275,74 @@ class TestDataWriterCoordination(unittest.TestCase):
 
 
 
+class TestLockfileMatchesThePinnedToolchain(unittest.TestCase):
+    """bun.lock must be readable by the Bun that CI installs.
+
+    This bit once already: running `bun install` under a newer Bun rewrote the lockfile
+    in the newer text format, CI's Bun 1.2.14 could not parse it, and every job in the
+    browser-layout workflow failed at "Install deps" before running a single check. The
+    failure was loud but far from the cause.
+    """
+
+    def _lockfile_version(self):
+        import pathlib
+
+        lock = pathlib.Path(__file__).resolve().parents[1] / "bun.lock"
+        self.assertTrue(lock.is_file(), "bun.lock is missing")
+        raw = lock.read_text(encoding="utf-8").strip()
+        self.assertTrue(
+            raw.startswith("{"),
+            "bun.lock is not JSON; a newer Bun wrote it in its text format, which the "
+            "Bun version CI pins cannot parse. Regenerate it with that version: "
+            "`bun install` under the pinned Bun.")
+        # Not json.loads: Bun emits trailing commas, so the file is JSON5-ish and a
+        # strict parse fails on exactly the line after the version.
+        import re
+
+        m = re.search(r'"lockfileVersion"\s*:\s*(\d+)', raw)
+        self.assertIsNotNone(m, "bun.lock has no lockfileVersion")
+        return int(m.group(1))
+
+    def test_lockfile_is_the_version_ci_can_read(self):
+        import re
+        import pathlib
+
+        root = pathlib.Path(__file__).resolve().parents[1]
+        ci = (root / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
+        pinned = set(re.findall(r'bun-version:\s*"([\d.]+)"', ci))
+        self.assertTrue(pinned, "CI no longer pins a bun-version")
+        # Bun 1.2.x writes lockfileVersion 1; the text format arrived later.
+        oldest = min(pinned, key=lambda v: [int(p) for p in v.split(".")])
+        major_minor = [int(p) for p in oldest.split(".")[:2]]
+        expected = 1 if major_minor <= [1, 2] else None
+        self.assertIsNotNone(expected, "unexpected pinned Bun %s" % oldest)
+        self.assertEqual(self._lockfile_version(), expected)
+
+    def test_the_browser_job_pins_bun_explicitly(self):
+        # It has to install dependencies, so a lockfile it cannot read is fatal there.
+        import pathlib
+
+        root = pathlib.Path(__file__).resolve().parents[1]
+        ci = (root / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
+        self.assertIn("browser-layout:", ci)
+        job = ci.split("browser-layout:", 1)[1].split("\n  data-check:", 1)[0]
+        self.assertIn("bun-version", job)
+        self.assertIn("--frozen-lockfile", job)
+
+    def test_package_json_exists_for_the_lockfile_to_belong_to(self):
+        # bun.lock already referenced @playwright/test while package.json was absent,
+        # which is why the install step had nothing to resolve against.
+        import json
+        import pathlib
+
+        root = pathlib.Path(__file__).resolve().parents[1]
+        pkg = root / "package.json"
+        self.assertTrue(pkg.is_file(), "package.json is missing")
+        data = json.loads(pkg.read_text(encoding="utf-8"))
+        self.assertIn("@playwright/test",
+                      (data.get("devDependencies") or {}))
+
+
 class TestVerifyReleaseCoversCI(unittest.TestCase):
     """scripts/verify_release.py is the local mirror of CI.
 

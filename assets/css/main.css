@@ -541,6 +541,15 @@ body {
    border is kept stronger than the fill on purpose: it is the only thing that
    keeps the control detectable against a bright landmass or the pale polar caps,
    so contrast is spent on the outline rather than the background. */
+/* TIMELINE
+   Deliberately the legend's frame language: same dark translucent plate, same blur,
+   same 1px border, same radius, same monospace scale. Two panels on one map that
+   share a frame read as one control surface rather than two bolted-on widgets.
+
+   The track stays 4px and the handle 14px at every breakpoint. The responsive block
+   used to thin the track to 3px and then 2px on a phone, which is what made the
+   slider look washed out: a 2px line at 0.32 alpha over a 0.58 plate has almost
+   nothing left. Sizing comes from this rule alone. */
 .map-timeline {
     position: absolute;
     bottom: 12px;
@@ -1661,9 +1670,7 @@ body {
   .map-hint-dot { width: 6px; height: 6px; }
   .map-hint-title { font-size: 0.7rem; }
   .map-timeline { bottom: 8px; left: 8px; right: 8px; height: 40px; padding: 6px 8px; }
-  .map-timeline-track { height: 3px; }
   .map-timeline-years { top: -16px; font-size: 0.5rem; }
-  .map-timeline-handle { width: 18px; height: 18px; }
   .map-legend { left: 8px; bottom: 8px; max-width: calc(100% - 16px); padding: 4px 6px; font-size: 0.5rem; min-width: 100px; }
   .map-legend-title { font-size: 0.6rem; margin-bottom: 3px; }
   .map-legend-row { gap: 5px; padding: 2px 3px; margin: 0 -3px; }
@@ -1683,9 +1690,7 @@ body {
      The 60px lift this used to carry is superseded by the docked rule further
      down. It was labelled "Above carousel", but the highlights carousel is
      outside #world-map entirely, so it could not have been the reason. */
-  .map-timeline-track { height: 3px; }
   .map-timeline-years { top: -16px; font-size: 0.5rem; }
-  .map-timeline-handle { width: 18px; height: 18px; }
   .map-timeline-years { top: -14px; font-size: 0.5rem; }
 }
 
@@ -1693,8 +1698,6 @@ body {
 @media (max-width: 480px) {
   .map-overlay { top: 4px; left: 4px; right: 4px; }
   .map-timeline { height: 36px; padding: 6px 6px; }
-  .map-timeline-track { height: 2px; }
-  .map-timeline-handle { width: 16px; height: 16px; }
   .map-legend { font-size: 0.46rem; min-width: 92px; padding: 3px 5px; left: 4px; bottom: 4px; }
   .map-legend-title { font-size: 0.56rem; }
   .map-legend-row { gap: 4px; padding: 1px 3px; }

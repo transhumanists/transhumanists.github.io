@@ -290,6 +290,52 @@ test('hiding categories one at a time closes the eye by itself', async ({ page }
     .toHaveAttribute('aria-pressed', 'false');
 });
 
+test('the timeline keeps the legend frame and its contrast at every width',
+  async ({ page }) => {
+    // The timeline is meant to share the legend's frame language: same dark plate,
+    // same blur, same border, same radius. It also has to keep its contrast at every
+    // breakpoint - the responsive block used to thin the track to 3px and then 2px on
+    // a phone, and a 2px line at 0.32 alpha over a 0.58 plate reads as washed out.
+    const legend = page.locator('#map-legend');
+    const plate = page.locator('.map-timeline');
+
+    // Same plate treatment as the legend frame.
+    const styles = await page.evaluate(() => {
+      const g = (sel, props) => {
+        const el = document.querySelector(sel);
+        const cs = getComputedStyle(el);
+        return Object.fromEntries(props.map((p) => [p, cs[p]]));
+      };
+      return {
+        legend: g('.map-legend', ['backgroundColor', 'backdropFilter', 'borderRadius']),
+        timeline: g('.map-timeline', ['backgroundColor', 'backdropFilter', 'borderRadius']),
+      };
+    });
+    expect(styles.timeline.backdropFilter).toBe(styles.legend.backdropFilter);
+    expect(styles.timeline.borderRadius).toBe(styles.legend.borderRadius);
+
+    // Track and handle never shrink below the redesign's dimensions.
+    const sizes = await page.evaluate(() => {
+      const r = (sel) => {
+        const el = document.querySelector(sel);
+        return el.getBoundingClientRect();
+      };
+      return {
+        track: r('.map-timeline-track').height,
+        handle: r('.map-timeline-handle').height,
+        trackColour: getComputedStyle(document.querySelector('.map-timeline-track'))
+          .backgroundColor,
+        handleColour: getComputedStyle(document.querySelector('.map-timeline-handle'))
+          .backgroundColor,
+      };
+    });
+    expect(sizes.track, 'track height').toBeGreaterThanOrEqual(4);
+    expect(sizes.handle, 'handle height').toBeGreaterThanOrEqual(14);
+    // The handle is opaque white; the track is the redesign's translucent white.
+    expect(sizes.handleColour).toBe('rgb(255, 255, 255)');
+    expect(sizes.trackColour).toBe('rgba(255, 255, 255, 0.32)');
+  });
+
 test('the dropdowns are readable rather than transparent', async ({ page }) => {
   // The original complaint: the closed control looked fine, the opened list did not,
   // because option elements are drawn by the user agent.
