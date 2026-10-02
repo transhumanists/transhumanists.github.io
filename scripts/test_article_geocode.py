@@ -99,6 +99,45 @@ class TestTextExtraction(unittest.TestCase):
         self.assertEqual(ag.extract_text(""), "")
 
 
+class TestFetchIsGuarded(unittest.TestCase):
+    """The URLs come from an upstream this repository does not control.
+
+    A hostile or compromised upstream could plant a URL pointing at cloud metadata
+    or an internal service, and whoever runs --refresh would fetch it from their own
+    machine. Narrow exposure - the flag is operator-invoked, never in CI - but not
+    zero.
+    """
+
+    def test_private_and_loopback_addresses_are_refused(self):
+        for url in ("http://127.0.0.1/", "http://localhost:8080/x",
+                    "http://[::1]/", "https://10.0.0.5/internal",
+                    "https://192.168.1.1/", "http://169.254.169.254/latest/meta-data/"):
+            ok, why = ag._public_host(url)
+            self.assertFalse(ok, "%s should be refused" % url)
+            self.assertTrue(why, "refusal should say why")
+
+    def test_non_http_schemes_are_refused(self):
+        for url in ("file:///etc/passwd", "ftp://example.org/x", "gopher://x/"):
+            ok, _ = ag._public_host(url)
+            self.assertFalse(ok, url)
+
+    def test_a_public_host_is_allowed(self):
+        ok, why = ag._public_host("https://example.org/article")
+        self.assertTrue(ok, why)
+
+    def test_fetch_refuses_before_any_request_is_made(self):
+        text, reason = ag.fetch_text("http://169.254.169.254/latest/meta-data/")
+        self.assertIsNone(text)
+        self.assertIn("public", reason)
+
+    def test_redirects_are_revalidated(self):
+        # Validating only the first URL is not enough: a public host can 302 to the
+        # metadata service, so the handler has to re-check every hop.
+        self.assertTrue(issubclass(ag._NoPrivateRedirects,
+                                   __import__("urllib.request",
+                                              fromlist=["request"]).HTTPRedirectHandler))
+
+
 class TestCacheHygiene(unittest.TestCase):
     def test_cache_never_persists_page_text(self):
         # Everything under data/ is published by Jekyll, so third-party article prose

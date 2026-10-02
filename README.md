@@ -52,6 +52,21 @@ in the repository instead of only in the workflow YAML. `verify_release.py` trea
 that file as the local expectation and still compares it against the version CI
 installs, so the two drifting apart is reported rather than silently accepted.
 
+**Geocoding from the article.** `python scripts/article_geocode.py --report` shows
+what still has no location and why - including the "ambiguous" and "uncorroborated"
+refusals, which is where the honest gaps are. `--refresh` fetches article bodies for
+those records and stores the *derived outcome* (coordinate, confidence, evidence) in
+`data/geocode_cache.json`; it deliberately never keeps the fetched text, since
+everything under `data/` is published and third-party prose does not belong on the
+site. `--apply` writes the resolved coordinates back.
+
+Evidence is scored rather than first-matched: title outranks summary, an affiliation
+outranks both, and a record only gets a dot when two independent routes agree or it
+beats a rival by a clear margin. Everything else stays unlocated on purpose - a
+missing dot is visibly missing, a wrong one is confidently wrong. Fetching is limited
+to public addresses, and each redirect hop is re-checked, because the URLs come from
+an upstream this repository does not control.
+
 **Where a dot came from.** Every published event and archive record carries
 `location_confidence`, naming the evidence pass that placed it: `stated` (the
 upstream record had its own coordinate), `institution` (a lab named in the text),

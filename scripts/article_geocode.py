@@ -182,17 +182,70 @@ def _tls_context() -> ssl.SSLContext:
     return ssl.create_default_context()
 
 
+def _public_host(url: str) -> tuple[bool, str]:
+    """True if every address `url`'s host resolves to is a routable public address.
+
+    The URLs come out of data/milestones.json, which upstream supplies and the cron
+    commits. A compromised or hostile upstream could plant a URL pointing at
+    169.254.169.254 or an internal service, and the next person to run --refresh
+    would fetch it from their own machine. That is a narrow exposure - the flag is
+    operator-invoked, not in CI - but "narrow" is not "none", and the check is a
+    dozen lines.
+    """
+    import ipaddress
+    import socket
+    from urllib.parse import urlsplit
+
+    parts = urlsplit(url)
+    if parts.scheme not in ("http", "https"):
+        return False, "scheme not allowed"
+    host = parts.hostname
+    if not host:
+        return False, "no host"
+    try:
+        infos = socket.getaddrinfo(host, parts.port or (443 if parts.scheme == "https" else 80),
+                                   proto=socket.IPPROTO_TCP)
+    except OSError as exc:
+        return False, "dns: %s" % exc.strerror
+    for info in infos:
+        addr = info[4][0]
+        try:
+            ip = ipaddress.ip_address(addr)
+        except ValueError:
+            return False, "unparseable address %r" % addr
+        if not ip.is_global:
+            return False, "%s is not a public address" % ip
+    return True, ""
+
+
+class _NoPrivateRedirects(urllib.request.HTTPRedirectHandler):
+    """Re-validate the host on every redirect hop.
+
+    Validating only the first URL is not enough: a public host can 302 to
+    169.254.169.254, so each hop goes through the same check.
+    """
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        ok, why = _public_host(newurl)
+        if not ok:
+            raise urllib.error.URLError("redirect to %s blocked: %s" % (newurl, why))
+        return super().redirect_request(req, fp, code, msg, headers, newurl)
+
+
 def fetch_text(url: str) -> tuple[str | None, str]:
     """Fetch a URL and return (extracted text, reason-if-None)."""
     if not url or not url.startswith(("http://", "https://")):
         return None, "no usable url"
+    ok, why = _public_host(url)
+    if not ok:
+        return None, why
     req = urllib.request.Request(url, headers={
         "User-Agent": USER_AGENT,
         "Accept": "text/html,application/xhtml+xml,application/json;q=0.9,*/*;q=0.5",
     })
     try:
-        with urllib.request.urlopen(req, timeout=TIMEOUT,
-                                    context=_tls_context()) as resp:
+        opener = urllib.request.build_opener(_NoPrivateRedirects())
+        with opener.open(req, timeout=TIMEOUT) as resp:
             raw = resp.read(MAX_BYTES)
             ctype = resp.headers.get("Content-Type", "")
     except urllib.error.HTTPError as exc:
@@ -430,13 +483,11 @@ def resolve(record: dict, body: str | None = None) -> dict:
         # overlap rather than on evidence.
         body_voted: set[str] = set()
         for window in affiliation_windows(body):
-            for key in _candidates(window, 0.0, False):
+            for key, (_score, evidence) in _candidates(window, 0.0, False).items():
                 if key in body_voted:
                     continue
                 body_voted.add(key)
-                for k2, (score, ev2) in _candidates(window, W_AFFILIATION, False).items():
-                    if k2 == key:
-                        offer(k2, ev2, W_AFFILIATION, _kind_of(k2))
+                offer(key, evidence, W_AFFILIATION, _kind_of(key))
 
     if not merged:
         return {"located": False, "reason": "no place, institution or demonym found"}
