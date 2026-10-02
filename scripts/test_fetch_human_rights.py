@@ -281,3 +281,56 @@ class TestPublishedLayer(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
+
+
+_strip_html = fhr._strip_html
+
+
+class TestSummaryChrome(unittest.TestCase):
+    """Page furniture must not survive into a tooltip.
+
+    HRW article bodies open with a photo figure whose caption control is real text
+    in the markup, so stripping tags left "Click to expand Image" welded to the
+    front of the summary - it appeared in front of the summaries on the map.
+    """
+
+    def test_leading_caption_control_is_removed(self):
+        out = _strip_html("Click to expand Image Samuel Peter Oyay (Beirut) "
+                          "\u2013 A commentator remains in prison.")
+        self.assertFalse(out.lower().startswith("click to expand"))
+        self.assertTrue(out.startswith("Samuel Peter Oyay"))
+        self.assertIn("remains in prison", out)
+
+    def test_it_is_removed_from_markup_too(self):
+        self.assertEqual(_strip_html("<p>Click to expand Image</p><p>Real text.</p>"),
+                         "Real text.")
+
+    def test_case_insensitive(self):
+        self.assertEqual(_strip_html("click to expand image Caption."), "Caption.")
+
+    def test_prose_mentioning_the_phrase_survives(self):
+        # Regression guard: an unanchored pattern turned "the user must click to
+        # expand image data" into "the user must data".
+        for text in ("The user must click to expand image data before analysis.",
+                     "Researchers click to enlarge images to inspect damage.",
+                     "Summary text. Click to expand Image Caption credit (Beirut)."):
+            with self.subTest(text=text):
+                self.assertEqual(_strip_html(text), text)
+
+    def test_a_normal_summary_is_untouched(self):
+        text = "Authorities have not disclosed the legal basis for the detention."
+        self.assertEqual(_strip_html(text), text)
+
+    def test_committed_data_carries_no_caption_chrome(self):
+        import json
+        import pathlib
+
+        path = pathlib.Path(__file__).resolve().parents[1] / "data" / "world_layers.json"
+        if not path.exists():
+            self.skipTest("data/world_layers.json not present")
+        data = json.loads(path.read_text(encoding="utf-8"))
+        for entry in data.get("human_rights_violations", []):
+            note = (entry.get("note") or "")
+            with self.subTest(entry=entry.get("id")):
+                self.assertNotIn("click to expand image", note.lower())
+

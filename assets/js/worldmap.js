@@ -617,6 +617,7 @@ height: 0,
       // the on-map notice so an empty map is explained rather than mysterious.
       dataLoadError: null,
       hiddenCategories: new Set(),
+  selectedHumanRight: null,
       foldedCategories: false,  // whether the entire categories section is folded
       zones: [],
       fleets: [],
@@ -1534,6 +1535,18 @@ function canonicalCategory(cat) {
     ctx.fillStyle = gradient;
     ctx.fill();
 
+    // Selected landmark: a bright ring, matching how a pinned milestone reads, so
+    // it is obvious the popup is docked here rather than merely hovered.
+    if (state.selectedHumanRight === entry) {
+      ctx.save();
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 1.8;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, base + 4, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+    }
+
     // Cluster fan. Without this the extra reports were not merely unlabelled, they
     // were literally invisible underneath the first one at the same pixel.
     if (cluster && cluster.length > 1) {
@@ -1898,6 +1911,26 @@ function canonicalCategory(cat) {
     // A pinned (selected) event keeps its popup persistent so the pointer can
     // travel to it and click the "View source" link; hovering a different dot
     // re-pins it in place instead of letting the popup chase the cursor.
+    // A docked landmark behaves like a docked milestone: the popup stays put, the
+    // cursor keeps its pointer feedback over the target, and only a click on the
+    // landmark itself or empty canvas closes it.
+    if (state.selectedHumanRight && !state.selectedEvent) {
+      const hit = findHumanRight(x, y);
+      if (hit) {
+        canvas.style.cursor = 'pointer';
+        state.hoveredType = 'human_rights';
+        if (hit !== state.selectedHumanRight) {
+          // Re-dock in place on a different landmark, same as milestones.
+          state.selectedHumanRight = hit;
+          pinTooltipToHumanRight(hit);
+          draw();
+        }
+        return;
+      }
+      canvas.style.cursor = 'grab';
+      return;
+    }
+
     if (state.selectedEvent) {
       const hit = findEvent(x, y);
       if (hit && hit !== state.selectedEvent) {
@@ -2070,14 +2103,35 @@ canvas.style.cursor = hit ? 'pointer' : 'grab';
     } else {
       const hit = findEvent(x, y);
       if (!hit) {
-        // Empty canvas closes a pinned popup.
-        dismissTooltip();
+        // Landmarks are not milestones, so findEvent cannot see them. Without this
+        // branch a click on a Human Rights landmark found nothing and dismissed
+        // the popup - the layer had hover but no docking at all.
+        const rightsHit = findHumanRight(x, y);
+        if (rightsHit) {
+          // Identity, not id: two reports at one country centroid are distinct
+          // entries, and clicking either should pin that one.
+          if (rightsHit === state.selectedHumanRight) {
+            dismissTooltip();
+          } else {
+            state.selectedHumanRight = rightsHit;
+            // A milestone may already be docked. Leaving it selected would keep two
+            // popups claiming to be pinned and let the milestone hover branch fight
+            // the landmark one for the same pointer.
+            state.selectedEvent = null;
+            state.hoveredEvent = null;
+            pinTooltipToHumanRight(rightsHit);
+          }
+        } else {
+          // Empty canvas closes a pinned popup.
+          dismissTooltip();
+        }
       } else if (hit === state.selectedEvent) {
         // Clicking the pinned dot again unpins it (identity, not id: two
         // milestones at one location can share a generated id).
         dismissTooltip();
       } else {
         state.selectedEvent = hit;
+        state.selectedHumanRight = null;
         pinTooltipToEvent(hit);
       }
     }
@@ -2333,6 +2387,15 @@ function showTooltip(ev, x, y) {
   // Remove the tooltip AND forget which event it pointed at (including any
   // pinned selection). Forgetting is what lets the next mousemove re-open it
   // cleanly after a pan/zoom/drag moved the dots underneath the pointer.
+  // Dock a landmark popup at the landmark rather than under the cursor, so it
+  // survives the pointer travelling away to read it or reach its source link.
+  function pinTooltipToHumanRight(entry) {
+    if (!tooltip || !entry) return;
+    const p = project(entry.lon, entry.lat);
+    if (!p) return;
+    showHumanRightsTooltip(entry, p.x, p.y);
+  }
+
   function dismissTooltip() {
     // Clean up pager event listeners before hiding
     if (tooltip && typeof tooltip.querySelector === 'function') {
@@ -2340,6 +2403,7 @@ function showTooltip(ev, x, y) {
       if (pager && pager._cleanup) pager._cleanup();
     }
     state.selectedEvent = null;
+    state.selectedHumanRight = null;
     state.hoveredEvent = null;
     state.hoveredType = null;
     state.stackIndex = 0;
@@ -2354,11 +2418,25 @@ function showTooltip(ev, x, y) {
     return state.filterRecent && !isInRolling7Days(ev.date, currentDayISO());
   }
 
+  // A docked landmark is released when it stops being drawable: the layer switched
+  // off, the timeline filtered it away, or the data was replaced without it. Same
+  // reasoning as eventIsHidden for milestones - a popup anchored to nothing is
+  // just a stale panel covering the map.
+  function humanRightIsHidden(entry) {
+    if (!entry) return true;
+    if (!state.showHumanRights) return true;
+    if (entry._hiddenByTimeline) return true;
+    return !state.humanRights.includes(entry);
+  }
+
   function dismissTooltipIfTargetHidden() {
     // Layer popups (zone / crisis / deployment) carry no category and are not
     // affected by the milestone filters, so only milestones are checked.
     const targets = [state.selectedEvent, state.hoveredEvent].filter((t) => t && typeof t.category === 'string');
-    if (targets.some(eventIsHidden)) dismissTooltip();
+    if (targets.some(eventIsHidden)) { dismissTooltip(); return; }
+    if (state.selectedHumanRight && humanRightIsHidden(state.selectedHumanRight)) {
+      dismissTooltip();
+    }
   }
 
   // ---- Zone/Deployment Tooltips ----
@@ -2812,6 +2890,9 @@ function showTooltip(ev, x, y) {
     } else if (name === 'human_rights') {
       state.showHumanRights = !state.showHumanRights;
       try { localStorage.setItem(STORAGE_KEY_SHOW_HUMAN_RIGHTS, String(state.showHumanRights)); } catch (_) {}
+      // Switching the layer off while one of its popups is docked would leave the
+      // panel floating over a map it no longer describes.
+      if (!state.showHumanRights) dismissTooltip();
     }
     // If enabling a military layer, also enable the military filter
     if ((name === 'zones' && state.showZones) || (name === 'fleets' && state.showFleets) || (name === 'deployments' && state.showFleets)) {
@@ -3847,6 +3928,11 @@ function initTimelineSlider() {
         state.crises = (crises || []).map(normalizeZone).filter(isZonePlottable);
         state.humanRights = (humanRights || []).map(normalizeHumanRight).filter(isHumanRightPlottable);
         rebuildHumanRightStackMap();
+        // A docked landmark may not exist in the replacement data.
+        if (state.selectedHumanRight
+            && !state.humanRights.includes(state.selectedHumanRight)) {
+          dismissTooltip();
+        }
         updateStatsDisplay();
         renderLegend();
       },

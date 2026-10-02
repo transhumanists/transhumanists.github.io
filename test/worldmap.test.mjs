@@ -1988,6 +1988,11 @@ test('zoom controls, keyboard and double-click do not throw', () => {
     st.hoveredEvent = null;
     st.hoveredType = null;
     st.selectedEvent = null;
+    // tooltipHover is only cleared by a real mouseleave, which never fires here.
+    // A leaked true makes handleMouseUp treat every press as "over the popup" and
+    // return early, so nothing can be pinned at all.
+    st.tooltipHover = false;
+    st.selectedHumanRight = null;
     api.setFilterRecent(false);
     tooltip.classList.remove('visible');
     try {
@@ -2000,6 +2005,8 @@ test('zoom controls, keyboard and double-click do not throw', () => {
       st.hoveredEvent = null;
       st.hoveredType = null;
       st.selectedEvent = null;
+      st.selectedHumanRight = null;
+      st.tooltipHover = false;
       st.stackIndex = 0;
       tooltip.classList.remove('visible');
     }
@@ -2254,6 +2261,175 @@ test('zoom controls, keyboard and double-click do not throw', () => {
       render();
       // 9 categories + 4 operational layers, unchanged by the new control.
       expect(legendRows().length).toBe(13);
+    });
+  });
+
+  // --- Human Rights click-to-pin docking --------------------------------------
+  // Regression: mouseup only ever called findEvent, and a landmark is not a
+  // milestone. Clicking one found nothing and fell through to dismissTooltip, so
+  // the layer had hover but no docking - the popup vanished the moment the pointer
+  // moved and its source link was unreachable.
+  describe('human rights click-to-pin docking', () => {
+    const api = () => windowObj.__WORLDMAP_TEST__;
+    const HR = { id: 'hr-1', name: 'Detention report', lon: 67.7, lat: 33.9,
+                 status: 'active', region: 'Central Asia', source: 'HRW',
+                 start_date: '2026-09-22', url: 'https://example.com/a',
+                 note: 'A witness account.' };
+
+    // Category visibility is module state that outlives a test, and the eye suite
+    // hides all nine categories - which would make findEvent miss and this suite
+    // fail for an unrelated reason.
+    beforeEach(() => {
+      windowObj.__WORLDMAP_TEST__.getState().hiddenCategories.clear();
+      windowObj.__WORLDMAP_TEST__.getState().selectedHumanRight = null;
+      windowObj.__WORLDMAP_TEST__.getState().selectedEvent = null;
+    });
+
+    const withLandmark = (fn) => withFreshHover((api) => {
+      registeredEls['reset-view'].fire('click', {});
+      api.setLayers([], [], [], [HR]);
+      api.getState().showHumanRights = true;
+      fn(api);
+    });
+
+    const click = (at) => {
+      canvas.fire('mousedown', { clientX: at.x, clientY: at.y });
+      windowObj.fire('mouseup', { clientX: at.x, clientY: at.y });
+    };
+
+    test('clicking a landmark pins it', () => {
+      withLandmark((api) => {
+        const at = pt(HR.lon, HR.lat);
+        click(at);
+        expect(api.getState().selectedHumanRight).not.toBe(null);
+        expect(api.getState().selectedHumanRight.id).toBe('hr-1');
+        expect(tooltip.classList.contains('visible')).toBe(true);
+      });
+    });
+
+    test('a pinned landmark is not dismissed by the pointer leaving', () => {
+      withLandmark((api) => {
+        click(pt(HR.lon, HR.lat));
+        // Travel well away, as a reader would.
+        canvas.fire('mousemove', { clientX: 5, clientY: 5 });
+        expect(tooltip.classList.contains('visible')).toBe(true);
+        expect(api.getState().selectedHumanRight).not.toBe(null);
+      });
+    });
+
+    test('the popup is docked at the landmark, not left under the cursor', () => {
+      withLandmark(() => {
+        click(pt(HR.lon, HR.lat));
+        const at = pt(HR.lon, HR.lat);
+        const tx = Number(tooltip.style.left.replace('px', ''));
+        const ty = Number(tooltip.style.top.replace('px', ''));
+        expect(tx).not.toBe(5);
+        expect(ty).not.toBe(5);
+        // Offset from the marker, as every docked popup is.
+        expect(tx === at.x && ty === at.y).toBe(false);
+      });
+    });
+
+    test('clicking the pinned landmark again unpins it', () => {
+      withLandmark((api) => {
+        const at = pt(HR.lon, HR.lat);
+        click(at);
+        expect(api.getState().selectedHumanRight).not.toBe(null);
+        click(at);
+        expect(api.getState().selectedHumanRight).toBe(null);
+        expect(tooltip.classList.contains('visible')).toBe(false);
+      });
+    });
+
+    test('clicking empty canvas unpins it', () => {
+      withLandmark((api) => {
+        click(pt(HR.lon, HR.lat));
+        click({ x: 5, y: 5 });
+        expect(api.getState().selectedHumanRight).toBe(null);
+      });
+    });
+
+    test('the source link stays reachable while docked', () => {
+      withLandmark(() => {
+        click(pt(HR.lon, HR.lat));
+        // The landmark tooltip styles its source link inline rather than with the
+        // milestone tt-link class, so find the anchor itself.
+        const findAnchor = (node) => {
+          if (node.tagName === 'A') return node;
+          for (const c of node.children || []) {
+            const hit = findAnchor(c);
+            if (hit) return hit;
+          }
+          return null;
+        };
+        const link = findAnchor(tooltip.children[0]);
+        expect(link).toBeDefined();
+        expect(link.href).toBe(HR.url);
+        // The landmark tooltip assigns href/target/rel as DOM properties, the way
+        // the milestone tooltip does, so read them back the same way.
+        expect(link.target).toBe('_blank');
+        expect(link.rel).toBe('noopener noreferrer');
+      });
+    });
+
+    test('pinning a landmark clears a pinned milestone, and vice versa', () => {
+      withFreshHover((api) => {
+        registeredEls['reset-view'].fire('click', {});
+        // Its own event, so the outcome does not depend on the shared fixture
+        // being loaded or on a neighbouring test's filters.
+        const solo = { id: 'solo-1', title: 'Solo', category: 'Quantum Physics',
+                       value: '1', source: 'S', url: 'https://example.com/s',
+                       date: '2026-08-04',
+                       geolocation: { lat: 40.7, lon: -74.0 } };
+        api.setEvents([solo]);
+        api.setLayers([], [], [], [HR]);
+        api.getState().showHumanRights = true;
+
+        click(pt(-74.0, 40.7));
+        expect(api.getState().selectedEvent).not.toBe(null);
+        expect(api.getState().selectedHumanRight).toBe(null);
+
+        click(pt(HR.lon, HR.lat));
+        expect(api.getState().selectedHumanRight).not.toBe(null);
+        expect(api.getState().selectedEvent).toBe(null);
+
+        click(pt(-74.0, 40.7));
+        expect(api.getState().selectedEvent).not.toBe(null);
+        expect(api.getState().selectedHumanRight).toBe(null);
+      });
+    });
+
+    test('an off layer cannot be docked', () => {
+      withFreshHover((api) => {
+        registeredEls['reset-view'].fire('click', {});
+        api.setLayers([], [], [], [HR]);
+        api.getState().showHumanRights = false;
+        click(pt(HR.lon, HR.lat));
+        expect(api.getState().selectedHumanRight).toBe(null);
+      });
+    });
+
+    test('toggling the layer off releases the pinned landmark', () => {
+      withLandmark((api) => {
+        click(pt(HR.lon, HR.lat));
+        expect(api.getState().selectedHumanRight).not.toBe(null);
+        api.setLayers([], [], [], []);
+        expect(tooltip.classList.contains('visible')).toBe(false);
+      });
+    });
+
+    test('the selected landmark is drawn with a ring', () => {
+      withLandmark((api) => {
+        click(pt(HR.lon, HR.lat));
+        // read source rather than a counter: draw() is not on the test hook, and
+        // what matters is that the pinned landmark is painted differently.
+        const src = fs.readFileSync(
+          path.join(process.cwd(), 'assets/js/worldmap.js'), 'utf8');
+        const draw = src.slice(src.indexOf('function drawHumanRightsLandmark'),
+                               src.indexOf('function drawHumanRightsLandmark') + 2600);
+        expect(draw).toContain('state.selectedHumanRight === entry');
+        expect(draw).toContain("ctx.strokeStyle = '#ffffff'");
+      });
     });
   });
 

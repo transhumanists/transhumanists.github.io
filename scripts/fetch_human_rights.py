@@ -99,6 +99,31 @@ _TAG_RE = {
 }
 
 
+# Chrome that is not content. HRW article bodies open with a photo figure whose
+# caption control is real text in the markup ("Click to expand Image"), so tag
+# stripping leaves it welded to the front of the summary and every tooltip starts
+# with it.
+#
+# Anchored, not free-floating. An earlier version matched the phrase anywhere and
+# happily turned "the user must click to expand image data" into "the user must
+# data". It only ever appears as a standalone UI string at the start of a body or
+# straight after a separator, so those are the only positions that count - a
+# capitalised word after the phrase is the tell that it is prose.
+_BOILERPLATE_RE = re.compile(
+    r"(?:\A|(?<=[\u00b7|\u2013\u2014]))[\s]*"
+    r"(?:click\s+to\s+(?:expand|enlarge)\s+image"
+    r"|view\s+full[- ]size\s+image"
+    r"|click\s+image\s+to\s+expand)"
+    r"(?![A-Za-z])[\s\u00b7|:\-,\u2013]*",
+    re.I,
+)
+
+
+def _strip_chrome(text: str) -> str:
+    """Remove page furniture that survived tag stripping."""
+    return _BOILERPLATE_RE.sub(" ", text)
+
+
 def _strip_html(raw: str) -> str:
     """Plain text from an HTML fragment.
 
@@ -112,6 +137,7 @@ def _strip_html(raw: str) -> str:
     text = html.unescape(text)
     # Feeds also embed replacement characters for smart quotes and dashes.
     text = text.replace("\ufffd", "'")
+    text = _strip_chrome(text)
     return re.sub(r"\s+", " ", text).strip()
 
 
