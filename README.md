@@ -35,13 +35,41 @@ plate. The map provides:
 
 Legend colors, stat tiles and tooltips all resolve categories through a canonical alias map, so legacy names such as `Energy`, `Quantum` and `Defense` are treated as `Renewable Energy`, `Quantum Physics` and `Military & Defense`.
 
-**Tests** (no external deps, run with [Bun](https://bun.sh)):
+**Tests.** The unit suites need nothing but [Bun](https://bun.sh) and Python:
 
 ```sh
-bun test test/
+python -m pytest scripts/ -q     # pipeline, validator, workflow lint
+bun test test/                   # map widget unit tests
 ```
 
-GitHub Actions runs `bun test` and a static parse check on every push/PR to `main`.
+`python scripts/verify_release.py` runs everything CI runs, in CI's order, plus the
+determinism gate, and is what a local `pre-push` hook calls. It compares your Bun
+against the version CI pins and says so, because a green run on the wrong Bun is the
+failure mode it exists to catch. `--skip-determinism` is the fast inner loop and
+`--also-bun /path/to/other-bun` cross-checks the JS suite against a second toolchain.
+
+GitHub Actions runs six jobs on every push/PR to `main`: the JS suite and a static parse
+check, the Python suites, data validation, a determinism gate over two regenerations,
+a Jekyll build for Pages, and real-browser layout checks.
+
+**Browser checks.** `e2e/` holds Playwright specs that measure the layout a browser
+actually produces, at 1440px and 390px, against the shipped CSS and JS. They assert
+measurements rather than pixel baselines — a baseline needs a human to approve the
+current appearance and then fails on every legitimate restyle — and CI publishes the
+screenshots as artifacts for anyone who wants to look.
+
+```sh
+bun install
+bunx playwright install chromium
+bunx playwright test
+```
+
+The unit suite runs against a hand-written DOM fake, which is fast but cannot see a
+frame that is too tall or a legend that leaves its container. Both shipped once. The
+browser checks are what caught them.
+
+Note: `bun install` under a newer Bun rewrites `bun.lock` in a format CI's pinned Bun
+cannot read. Regenerate it with the pinned version; a test enforces this.
 
 ---
 

@@ -86,6 +86,16 @@ def _pip_packages(run: str) -> set:
     return pkgs
 
 
+def _bunx_tools(run: str):
+    """Tool names launched through `bunx` in a run block."""
+    out = set()
+    for raw in run.replace("\\\n", " ").splitlines():
+        for m in re.finditer(r"\bbunx\s+([\w@/.-]+)", raw):
+            name = m.group(1).rsplit("/", 1)[-1]
+            out.add(name.lstrip("@"))
+    return out
+
+
 def _node_dev_dependencies():
     """Names in package.json that a `bun install` step puts on disk.
 
@@ -121,24 +131,51 @@ class TestWorkflowDependencies(unittest.TestCase):
             data = yaml.safe_load(path.read_text(encoding="utf-8"))
             for job_name, job in (data.get("jobs") or {}).items():
                 steps = job.get("steps") or []
-                installed = set(PREINSTALLED)
-                # Node tooling comes from package.json via `bun install`, and `bunx`
-                # resolves those local devDependencies rather than fetching anything.
-                installed |= _node_dev_dependencies()
+
+                # Per job, not per line: a `bun install` step makes every bunx tool
+                # used anywhere in that job resolvable. Matching the tool inside the
+                # install line itself finds nothing, because that line never names a
+                # tool - which is how the previous version passed while checking
+                # nothing.
+                installed = set(PREINSTALLED) | _node_dev_dependencies()
+                has_node_install = False
+                bunx_tools = set()
                 for step in steps:
                     run = step.get("run") or ""
                     if "pip install" in run:
                         installed |= _pip_packages(run)
+                    if "bun install" in run:
+                        installed.add("bun")
+                        has_node_install = True
                     if "bun" in (step.get("uses") or ""):
                         installed.add("bun")
-                    if "bun install" in run:
-                        installed.add("bunx")
+                    bunx_tools |= _bunx_tools(run)
+                if has_node_install:
+                    installed |= {"bunx:" + t for t in bunx_tools}
+                    installed.add("bunx")
+
                 for step in steps:
-                    for token in _commands(step.get("run") or ""):
+                    run = step.get("run") or ""
+                    for token in _commands(run):
+                        if token == "bunx":
+                            # Report the tool, not just the launcher, so a failure
+                            # says what was unresolvable.
+                            for tool in _bunx_tools(run):
+                                if "bunx:" + tool not in installed:
+                                    problems.append(
+                                        f"{path.name}:{job_name} runs "
+                                        f"`bunx {tool}` with no install step")
+                            continue
                         if token not in installed:
                             problems.append(
                                 f"{path.name}:{job_name} runs {token!r} "
                                 f"with no install step")
+
+                if bunx_tools and not has_node_install:
+                    problems.append(
+                        f"{path.name}:{job_name} uses bunx "
+                        f"({', '.join(sorted(bunx_tools))}) with no `bun install`")
+
         self.assertEqual(problems, [], "\n".join(problems))
 
     def test_python_dash_m_modules_are_installed(self):
@@ -318,6 +355,15 @@ class TestLockfileMatchesThePinnedToolchain(unittest.TestCase):
         self.assertIsNotNone(expected, "unexpected pinned Bun %s" % oldest)
         self.assertEqual(self._lockfile_version(), expected)
 
+    def test_the_bunx_audit_is_not_vacuous(self):
+        # The audit trusts that `bun install` makes a bunx tool available. If
+        # _bunx_tools stopped finding anything the audit would pass on every job
+        # that uses bunx, so it gets its own guard.
+        self.assertEqual(_bunx_tools("bunx playwright test"),
+                         {"playwright"})
+        self.assertEqual(_bunx_tools("bun x playwright install"), set())
+        self.assertEqual(_bunx_tools("bun install --frozen-lockfile"), set())
+
     def test_the_browser_job_pins_bun_explicitly(self):
         # It has to install dependencies, so a lockfile it cannot read is fatal there.
         import pathlib
@@ -341,6 +387,82 @@ class TestLockfileMatchesThePinnedToolchain(unittest.TestCase):
         data = json.loads(pkg.read_text(encoding="utf-8"))
         self.assertIn("@playwright/test",
                       (data.get("devDependencies") or {}))
+
+
+class TestVerifyReleaseBrowserStep(unittest.TestCase):
+    """The browser step must be decided before it runs, not inferred afterwards.
+
+    The first version ran `bun x playwright test` and treated a "Cannot find
+    package" message as "not installed". `bun x` does not emit that: it resolves and
+    downloads the package. So the skip could never fire, and a verification run
+    silently mutated node_modules and rewrote the lockfile while claiming to only
+    check things.
+    """
+
+    def _verify(self):
+        import pathlib
+        import sys
+
+        root = pathlib.Path(__file__).resolve().parents[1]
+        sys.path.insert(0, str(root / "scripts"))
+        import verify_release
+
+        return verify_release
+
+    def test_detection_is_a_filesystem_check(self):
+        vr = self._verify()
+        self.assertTrue(callable(vr._playwright_installed))
+        # It reads node_modules rather than shelling out, so it cannot install.
+        import inspect
+
+        src = inspect.getsource(vr._playwright_installed)
+        self.assertNotIn("subprocess", src)
+        self.assertIn("node_modules", src)
+
+    def test_it_reports_the_current_machine_correctly(self):
+        vr = self._verify()
+        installed = vr._playwright_installed()
+        self.assertIsInstance(installed, bool)
+        self.assertEqual(installed, (vr.ROOT / "node_modules" / "@playwright" / "test").is_dir())
+
+    def test_the_browser_step_is_omitted_when_not_installed(self):
+        vr = self._verify()
+        import tempfile
+        from pathlib import Path
+
+        with tempfile.TemporaryDirectory() as tmp:
+            tmpdir = Path(tmp)
+            labels = [label for label, _ in
+                      vr._build_steps("bun", tmpdir, True, False)]
+            if vr._playwright_installed():
+                self.assertIn("Browser layout checks", labels)
+            else:
+                self.assertNotIn("Browser layout checks", labels)
+
+    def test_skip_browser_always_omits_it(self):
+        vr = self._verify()
+        import tempfile
+        from pathlib import Path
+
+        with tempfile.TemporaryDirectory() as tmp:
+            labels = [label for label, _ in
+                      vr._build_steps("bun", Path(tmp), True, True)]
+            self.assertNotIn("Browser layout checks", labels)
+
+    def test_it_uses_the_local_binary_not_a_fetch(self):
+        # `bun x` without a leading path can still resolve from the registry when the
+        # package is absent; naming the binary does not change that, so the guarantee
+        # comes from the up-front check instead. This asserts the step is only built
+        # when the dependency is present.
+        vr = self._verify()
+        import tempfile
+        from pathlib import Path
+
+        with tempfile.TemporaryDirectory() as tmp:
+            argv = dict(vr._build_steps("bun", Path(tmp), True, False))
+            if "Browser layout checks" in argv:
+                self.assertEqual(argv["Browser layout checks"],
+                                 ["bun", "x", "playwright", "test"])
 
 
 class TestVerifyReleaseCoversCI(unittest.TestCase):

@@ -106,6 +106,17 @@ def _determinism(env: dict[str, str]) -> tuple[bool, str]:
              str(tmpd / "gen-a" / "data" / "milestones.json")], env)
 
 
+def _playwright_installed() -> bool:
+    """Is @playwright/test actually on disk here?
+
+    Deliberately not `bun x playwright`, which auto-installs a missing package. That
+    turned a verification run into an implicit install that mutates node_modules and
+    rewrites the lockfile, and it meant the skip path below could never fire - the
+    earlier check looked for a "Cannot find package" message that `bun x` never emits.
+    """
+    return (ROOT / "node_modules" / "@playwright" / "test").is_dir()
+
+
 def _build_steps(bun: str, tmpdir: Path, skip_determinism: bool,
                  skip_browser: bool) -> list[tuple[str, list[str] | None]]:
     """(label, argv) pairs. argv of None means the in-process determinism check."""
@@ -118,7 +129,8 @@ def _build_steps(bun: str, tmpdir: Path, skip_determinism: bool,
     ]
     if not skip_determinism:
         steps.append(("Data regeneration is deterministic", None))
-    if not skip_browser:
+    if not skip_browser and _playwright_installed():
+        # `bun x`, not `bunx`: the local binary, so nothing is fetched.
         steps.append(("Browser layout checks", [bun, "x", "playwright", "test"]))
     return steps
 
@@ -134,6 +146,8 @@ def main() -> int:
                     help="omit the regenerate-and-compare gate (faster inner loop)")
     ap.add_argument("--skip-browser", action="store_true",
                     help="omit the Playwright layout checks")
+    ap.add_argument("--require-browser", action="store_true",
+                    help="fail instead of skipping when Playwright is not installed")
     ap.add_argument("--quiet", action="store_true",
                     help="print only the summary and any failures")
     args = ap.parse_args()
@@ -158,13 +172,6 @@ def main() -> int:
             step_skipped = None
             t0 = time.time()
             ok, detail = _determinism(env) if argv is None else _run(argv, env)
-            if (not ok and argv is not None and argv[1:3] == ["x", "playwright"]
-                    and "Cannot find package" in detail):
-                # Not a layout failure - this machine has no Playwright installed.
-                # Reported as skipped rather than passed, so a green run never claims
-                # a check it did not make.
-                detail = ""
-                step_skipped = label
             dt = time.time() - t0
             if step_skipped:
                 skipped.append(step_skipped)
@@ -188,6 +195,19 @@ def main() -> int:
             else:
                 failures.append((label, detail))
                 print("  FAIL  %-42s" % label)
+
+    if (not args.skip_browser and not _playwright_installed()):
+        reason = "Browser layout checks (Playwright not installed)"
+        if args.require_browser:
+            failures.append((reason,
+                             "run `bun install` to add @playwright/test, or drop "
+                             "--require-browser"))
+            print("  FAIL  %-42s" % reason)
+        else:
+            skipped.append(reason)
+            if not args.quiet:
+                print("  skip  %-42s          (run `bun install` to enable)"
+                      % reason)
 
     version = _bun_version(bun)
     total = time.time() - started
