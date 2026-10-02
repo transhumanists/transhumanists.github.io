@@ -1048,6 +1048,20 @@ def geocode_with_confidence(m: dict) -> tuple[float | None, float | None, str]:
             # Reached only when the institution table missed, so this really is a
             # place and not an organisation the institution table does not know.
             return place[0], place[1], "place"
+
+    # Last, and only for a title-level mention: a demonym ("Maltese", "Korean") names
+    # a country without naming a place in either table. Deliberately weaker than
+    # everything above - "Japanese research" describes a body of work far more often
+    # than a location - so it is tried after the content passes have declined, and a
+    # single adjective is not enough on its own without article_context.
+    title = str(m.get("title") or "").lower()
+    if title.strip():
+        import article_geocode
+        demonym = article_geocode.match_demonym(title)
+        if demonym:
+            lat, lon, name = demonym
+            return lat, lon, "article"
+
     return None, None, lc.UNLOCATED
 
 

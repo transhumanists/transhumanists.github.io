@@ -1,5 +1,5 @@
 {
-  "last_update": "2026-10-02T06:14:51+00:00",
+  "last_update": "2026-10-02T07:27:50+00:00",
   "version": "1.0.0",
   "events": [
     {
@@ -150,10 +150,10 @@
       "source": "International mathematics collaboration",
       "url": "https://www.quantamagazine.org/mathematicians-build-long-awaited-graph-sandwich-20260918/",
       "date": "2026-09-18",
-      "location_confidence": "source",
+      "location_confidence": "stated",
       "geolocation": {
-        "lat": 48.8566,
-        "lon": 2.3522
+        "lat": 56.1,
+        "lon": -106.3
       }
     },
     {
@@ -851,10 +851,10 @@
       "source": "LV-ROVER-MLT researchers",
       "url": "http://arxiv.org/abs/2607.00250v5",
       "date": "2026-01-01",
-      "location_confidence": "place",
+      "location_confidence": "stated",
       "geolocation": {
         "lat": 35.9,
-        "lon": 14.5
+        "lon": 14.4
       }
     },
     {

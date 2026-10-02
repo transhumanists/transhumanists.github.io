@@ -173,10 +173,12 @@
     "source": "International mathematics collaboration",
     "url": "https://www.quantamagazine.org/mathematicians-build-long-awaited-graph-sandwich-20260918/",
     "date": "2026-09-18",
+    "geolocation": {
+      "lat": 56.1,
+      "lon": -106.3
+    },
     "first_seen": "2026-09-26",
-    "last_seen": "2026-10-02",
-    "located": false,
-    "location_confidence": "unlocated"
+    "last_seen": "2026-10-02"
   },
   {
     "id": "ms-e5275443e851",
@@ -1037,10 +1039,12 @@
     "source": "LV-ROVER-MLT researchers",
     "url": "http://arxiv.org/abs/2607.00250v5",
     "date": "2026-01-01",
+    "geolocation": {
+      "lat": 35.9,
+      "lon": 14.4
+    },
     "first_seen": "2026-09-30",
-    "last_seen": "2026-10-02",
-    "located": false,
-    "location_confidence": "unlocated"
+    "last_seen": "2026-10-02"
   },
   {
     "id": "his-2023-12-04-ibm-condor",
