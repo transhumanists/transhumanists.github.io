@@ -48,7 +48,7 @@ class TestArchiveValidator(unittest.TestCase):
 
     def test_null_island_rejected(self):
         issues = cd.check_archive([_rec(geolocation={"lat": 0, "lon": 0})], "milestones_history.json")
-        self.assertTrue(any("(0,0)" in i for i in issues), issues)
+        self.assertTrue(any("no-location marker" in i for i in issues), issues)
 
     def test_absent_geolocation_accepted(self):
         r = _rec()

@@ -21,6 +21,9 @@ import urllib.parse
 import urllib.request
 import zlib
 from datetime import datetime, timezone
+
+sys.path.insert(0, str(__import__("pathlib").Path(__file__).resolve().parent))
+import location_contract as lc  # noqa: E402 - sibling import needs the path above
 from pathlib import Path
 
 WORLD_LAYERS_FILE = Path("data/world_layers.json")
@@ -469,7 +472,7 @@ def build_crisis_zones_from_sources(ocha_data: list, who_data: list, reliefweb_d
             lat, lon, region, keyword = _locate(geo_text)
             # Drop items that cannot be geolocated (they would plot at 0,0
             # "Null Island" - the Gulf of Guinea - and mislead the map).
-            if lat == 0.0 and lon == 0.0:
+            if lc.is_unlocated({"lat": lat, "lon": lon}):
                 continue
 
             # One readable, specific zone per affected place: generic datasets

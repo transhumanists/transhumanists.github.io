@@ -52,6 +52,16 @@ in the repository instead of only in the workflow YAML. `verify_release.py` trea
 that file as the local expectation and still compares it against the version CI
 installs, so the two drifting apart is reported rather than silently accepted.
 
+**Where a dot came from.** Every published event and archive record carries
+`location_confidence`, naming the evidence pass that placed it: `stated` (the
+upstream record had its own coordinate), `institution` (a lab named in the text),
+`place`, `subcategory`, `source` (the publisher's HQ — a guess), or `unlocated`. The
+current database is 92 `stated`, 5 `source`, 2 `place`, 6 `unlocated`, so the five
+publisher-placed dots are identifiable rather than being silently mixed in with the
+well-sourced ones. `scripts/location_contract.py` holds the single definition of what
+counts as "no location"; the pipeline, the validators and the coverage report all call
+it rather than repeating the rule.
+
 **Auditing the data.** `python scripts/check_data.py` validates every published
 data file, including the append-only archive. `python scripts/coverage_report.py`
 answers the two questions validation cannot: which milestones are unlocated or
@@ -74,6 +84,17 @@ $ python scripts/coverage_report.py
 Point it at a candidate data set with `WORLDMAP_DATA_DIR=/path/to/data`. The
 unlocated list is the geocoding backlog: each row is a record with evidence
 (title, summary, source, subcategory) that `geocode_milestone()` can work from.
+
+`python scripts/publish_invariants.py` asserts the properties that only make sense
+across the whole set of files: no origin sentinel anywhere in the payload tree, only
+known `location_confidence` values, no record claiming `located: true` without a
+usable coordinate, and every live milestone present in the archive so the year
+slider's history cannot silently lose records. It runs in CI, in `verify_release`,
+and in the cron before it is allowed to commit.
+
+`--snapshot` appends to `data/coverage_history.json`, but only when the findings
+actually change, so that file is a changelog of progress toward filling the year gaps
+rather than a timestamp every six hours.
 
 GitHub Actions runs six jobs on every push/PR to `main`: the JS suite and a static parse
 check, the Python suites, data validation, a determinism gate over two regenerations,

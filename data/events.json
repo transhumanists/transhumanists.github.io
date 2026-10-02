@@ -1,5 +1,5 @@
 {
-  "last_update": "2026-10-02T05:47:22+00:00",
+  "last_update": "2026-10-02T06:14:51+00:00",
   "version": "1.0.0",
   "events": [
     {
@@ -10,6 +10,7 @@
       "source": "Nature Biotechnology",
       "url": "https://www.nature.com/articles/s41587-026-03307-w",
       "date": "2026-10-01",
+      "location_confidence": "stated",
       "geolocation": {
         "lat": 32.0603,
         "lon": 118.7969
@@ -23,6 +24,7 @@
       "source": "Nature Biotechnology",
       "url": "https://www.nature.com/articles/s41587-026-03297-9",
       "date": "2026-09-28",
+      "location_confidence": "stated",
       "geolocation": {
         "lat": 32.0603,
         "lon": 118.7969
@@ -36,6 +38,7 @@
       "source": "Nature Biotechnology",
       "url": "https://www.nature.com/articles/s41587-026-03298-8",
       "date": "2026-09-28",
+      "location_confidence": "stated",
       "geolocation": {
         "lat": 32.0603,
         "lon": 118.7969
@@ -49,6 +52,7 @@
       "source": "Nature Biotechnology",
       "url": "https://www.nature.com/articles/s41587-026-03330-x",
       "date": "2026-09-28",
+      "location_confidence": "stated",
       "geolocation": {
         "lat": 32.0603,
         "lon": 118.7969
@@ -62,6 +66,7 @@
       "source": "Security researchers",
       "url": "https://thehackernews.com/2026/09/elementor-csrf-flaw-lets-attackers-take.html",
       "date": "2026-09-26",
+      "location_confidence": "stated",
       "geolocation": {
         "lat": 32.0853,
         "lon": 34.7818
@@ -75,6 +80,7 @@
       "source": "Quanta Magazine",
       "url": "https://www.quantamagazine.org/gravity-seems-holographic-what-does-that-mean-for-reality-20260925/",
       "date": "2026-09-25",
+      "location_confidence": "source",
       "geolocation": {
         "lat": 40.758,
         "lon": -73.9683
@@ -88,6 +94,7 @@
       "source": "arXiv preprint",
       "url": "https://arxiv.org/abs/2609.28876",
       "date": "2026-09-25",
+      "location_confidence": "source",
       "geolocation": {
         "lat": 42.444,
         "lon": -76.5019
@@ -101,6 +108,7 @@
       "source": "Nature Biotechnology",
       "url": "https://www.nature.com/articles/s41587-026-03328-5",
       "date": "2026-09-25",
+      "location_confidence": "stated",
       "geolocation": {
         "lat": 32.0603,
         "lon": 118.7969
@@ -114,6 +122,7 @@
       "source": "arXiv (Cornell University)",
       "url": "https://arxiv.org/abs/2609.25166",
       "date": "2026-09-23",
+      "location_confidence": "source",
       "geolocation": {
         "lat": 42.444,
         "lon": -76.5019
@@ -127,6 +136,7 @@
       "source": "Alkermes",
       "url": "https://www.fiercebiotech.com/biotech/pioneering-adhd-data-alkermes-eyes-orexin-agonist-potential-company-changer",
       "date": "2026-09-22",
+      "location_confidence": "stated",
       "geolocation": {
         "lat": 42.3765,
         "lon": -71.2356
@@ -140,6 +150,7 @@
       "source": "International mathematics collaboration",
       "url": "https://www.quantamagazine.org/mathematicians-build-long-awaited-graph-sandwich-20260918/",
       "date": "2026-09-18",
+      "location_confidence": "source",
       "geolocation": {
         "lat": 48.8566,
         "lon": 2.3522
@@ -153,6 +164,7 @@
       "source": "Unknown",
       "url": "https://www.nature.com/articles/s41587-026-03322-x",
       "date": "2026-09-15",
+      "location_confidence": "unlocated",
       "located": false
     },
     {
@@ -163,6 +175,7 @@
       "source": "Nature Biotechnology",
       "url": "https://www.nature.com/articles/s41587-026-03308-9",
       "date": "2026-09-14",
+      "location_confidence": "stated",
       "geolocation": {
         "lat": 32.0603,
         "lon": 118.7969
@@ -176,6 +189,7 @@
       "source": "FDA",
       "url": "https://www.nature.com/articles/s41587-026-03313-y",
       "date": "2026-09-10",
+      "location_confidence": "stated",
       "geolocation": {
         "lat": 39.0555,
         "lon": -77.038
@@ -189,6 +203,7 @@
       "source": "Nature Biotechnology",
       "url": "https://www.nature.com/articles/s41587-026-03312-z",
       "date": "2026-09-10",
+      "location_confidence": "stated",
       "geolocation": {
         "lat": 32.0603,
         "lon": 118.7969
@@ -202,6 +217,7 @@
       "source": "Broad Institute",
       "url": "https://www.broadinstitute.org",
       "date": "2026-08-25",
+      "location_confidence": "stated",
       "geolocation": {
         "lat": 42.3375,
         "lon": -71.1061
@@ -215,6 +231,7 @@
       "source": "NVD / CISA",
       "url": "https://nvd.nist.gov",
       "date": "2026-08-24",
+      "location_confidence": "stated",
       "geolocation": {
         "lat": 38.8951,
         "lon": -77.0364
@@ -228,6 +245,7 @@
       "source": "SpaceX",
       "url": "https://spacex.com",
       "date": "2026-08-23",
+      "location_confidence": "stated",
       "geolocation": {
         "lat": 28.5728,
         "lon": -80.649
@@ -241,6 +259,7 @@
       "source": "NIFS Japan",
       "url": "https://www.nifs.ac.jp",
       "date": "2026-08-22",
+      "location_confidence": "stated",
       "geolocation": {
         "lat": 35.6762,
         "lon": 139.6503
@@ -254,6 +273,7 @@
       "source": "IBM Condor 2",
       "url": "https://research.ibm.com",
       "date": "2026-08-22",
+      "location_confidence": "stated",
       "geolocation": {
         "lat": 41.0323,
         "lon": -73.5543
@@ -267,6 +287,7 @@
       "source": "NIF Livermore",
       "url": "https://lasers.llnl.gov",
       "date": "2026-08-20",
+      "location_confidence": "stated",
       "geolocation": {
         "lat": 37.6881,
         "lon": -121.7045
@@ -280,6 +301,7 @@
       "source": "Neuralink",
       "url": "https://neuralink.com",
       "date": "2026-08-20",
+      "location_confidence": "stated",
       "geolocation": {
         "lat": 37.4861,
         "lon": -122.1519
@@ -294,6 +316,7 @@
       "source": "IPP Greifswald",
       "url": "https://www.ipp.mpg.de",
       "date": "2026-08-19",
+      "location_confidence": "stated",
       "geolocation": {
         "lat": 54.0956,
         "lon": 13.4725
@@ -307,6 +330,7 @@
       "source": "OpenAI GPT-6",
       "url": "https://openai.com",
       "date": "2026-08-19",
+      "location_confidence": "stated",
       "geolocation": {
         "lat": 37.7749,
         "lon": -122.4194
@@ -320,6 +344,7 @@
       "source": "HZB / CSIR",
       "url": "https://www.hzdr.de",
       "date": "2026-08-18",
+      "location_confidence": "stated",
       "geolocation": {
         "lat": 51.2323,
         "lon": 13.683
@@ -333,6 +358,7 @@
       "source": "Google Quantum AI",
       "url": "https://quantumai.google",
       "date": "2026-08-18",
+      "location_confidence": "stated",
       "geolocation": {
         "lat": 37.4219,
         "lon": -122.084
@@ -346,6 +372,7 @@
       "source": "Thermo Fisher FEI",
       "url": "https://www.thermofisher.com",
       "date": "2026-08-18",
+      "location_confidence": "stated",
       "geolocation": {
         "lat": 44.4268,
         "lon": -123.0764
@@ -359,6 +386,7 @@
       "source": "NATO HQ",
       "url": "https://nato.int",
       "date": "2026-08-15",
+      "location_confidence": "stated",
       "geolocation": {
         "lat": 50.8609,
         "lon": 4.3676
@@ -372,6 +400,7 @@
       "source": "Google Transparency",
       "url": "https://transparencyreport.google.com",
       "date": "2026-08-15",
+      "location_confidence": "stated",
       "geolocation": {
         "lat": 37.4219,
         "lon": -122.084
@@ -385,6 +414,7 @@
       "source": "Anthropic Claude-4",
       "url": "https://anthropic.com",
       "date": "2026-08-15",
+      "location_confidence": "stated",
       "geolocation": {
         "lat": 37.7749,
         "lon": -122.4194
@@ -398,6 +428,7 @@
       "source": "NASA",
       "url": "https://nasa.gov",
       "date": "2026-08-10",
+      "location_confidence": "stated",
       "geolocation": {
         "lat": 28.5237,
         "lon": -80.681
@@ -411,6 +442,7 @@
       "source": "Google/Stanford",
       "url": "https://arxiv.org/abs/quantum",
       "date": "2026-08-10",
+      "location_confidence": "stated",
       "geolocation": {
         "lat": 37.8716,
         "lon": -122.2727
@@ -424,6 +456,7 @@
       "source": "NASA X-43C",
       "url": "https://www.nasa.gov",
       "date": "2026-08-05",
+      "location_confidence": "stated",
       "geolocation": {
         "lat": 34.0522,
         "lon": -118.2437
@@ -437,6 +470,7 @@
       "source": "Google Gemini-Ultra",
       "url": "https://deepmind.google",
       "date": "2026-08-01",
+      "location_confidence": "stated",
       "geolocation": {
         "lat": 37.4219,
         "lon": -122.084
@@ -450,6 +484,7 @@
       "source": "驯玉兰生物",
       "url": "https://www.cncell.com",
       "date": "2026-08-01",
+      "location_confidence": "stated",
       "geolocation": {
         "lat": 31.2304,
         "lon": 121.4737
@@ -463,6 +498,7 @@
       "source": "Quantinuum H3",
       "url": "https://www.quantinuum.com",
       "date": "2026-07-30",
+      "location_confidence": "stated",
       "geolocation": {
         "lat": 51.5074,
         "lon": -0.1278
@@ -476,6 +512,7 @@
       "source": "NVIDIA GB300",
       "url": "https://nvidia.com",
       "date": "2026-07-28",
+      "location_confidence": "stated",
       "geolocation": {
         "lat": 37.3688,
         "lon": -122.0363
@@ -489,6 +526,7 @@
       "source": "QuantumScape",
       "url": "https://www.quantumscape.com",
       "date": "2026-07-25",
+      "location_confidence": "stated",
       "geolocation": {
         "lat": 37.5485,
         "lon": -122.0591
@@ -502,6 +540,7 @@
       "source": "AutoGPT v4",
       "url": "https://github.com/Significant-Gravitas/AutoGPT",
       "date": "2026-07-20",
+      "location_confidence": "stated",
       "geolocation": {
         "lat": 37.7749,
         "lon": -122.4194
@@ -515,6 +554,7 @@
       "source": "Dexcom",
       "url": "https://www.dexcom.com",
       "date": "2026-07-20",
+      "location_confidence": "stated",
       "geolocation": {
         "lat": 32.8844,
         "lon": -117.234
@@ -528,6 +568,7 @@
       "source": "SpaceX",
       "url": "https://spacex.com",
       "date": "2026-07-15",
+      "location_confidence": "stated",
       "geolocation": {
         "lat": 28.5728,
         "lon": -80.649
@@ -541,6 +582,7 @@
       "source": "QuTech Delft",
       "url": "https://qutech.nl",
       "date": "2026-07-15",
+      "location_confidence": "stated",
       "geolocation": {
         "lat": 52.01,
         "lon": 4.3555
@@ -554,6 +596,7 @@
       "source": "Harvard Sinclair Lab",
       "url": "https://sinclair.hms.harvard.edu",
       "date": "2026-07-15",
+      "location_confidence": "stated",
       "geolocation": {
         "lat": 42.3375,
         "lon": -71.1061
@@ -567,6 +610,7 @@
       "source": "USAF / NORAD",
       "url": "https://www.af.mil",
       "date": "2026-07-01",
+      "location_confidence": "stated",
       "geolocation": {
         "lat": 38.8951,
         "lon": -77.0364
@@ -580,6 +624,7 @@
       "source": "MPI-CBG",
       "url": "https://www.mpi-cbg.de",
       "date": "2026-07-01",
+      "location_confidence": "stated",
       "geolocation": {
         "lat": 51.0504,
         "lon": 13.7373
@@ -593,6 +638,7 @@
       "source": "Unknown",
       "url": "http://arxiv.org/abs/2607.00266v1",
       "date": "2026-06-30",
+      "location_confidence": "unlocated",
       "located": false
     },
     {
@@ -603,6 +649,7 @@
       "source": "ByteDance",
       "url": "http://arxiv.org/abs/2607.00248v1",
       "date": "2026-06-30",
+      "location_confidence": "stated",
       "geolocation": {
         "lat": 39.9042,
         "lon": 116.4074
@@ -616,6 +663,7 @@
       "source": "Zwicky Transient Facility collaboration",
       "url": "http://arxiv.org/abs/2607.00228v1",
       "date": "2026-06-30",
+      "location_confidence": "stated",
       "geolocation": {
         "lat": 34.1377,
         "lon": -118.1253
@@ -629,6 +677,7 @@
       "source": "Unknown",
       "url": "http://arxiv.org/abs/2607.00269v3",
       "date": "2026-06-30",
+      "location_confidence": "unlocated",
       "located": false
     },
     {
@@ -639,6 +688,7 @@
       "source": "Open Khipu Repository",
       "url": "http://arxiv.org/abs/2607.00185v1",
       "date": "2026-06-30",
+      "location_confidence": "source",
       "geolocation": {
         "lat": -13.5,
         "lon": -71.9
@@ -656,6 +706,7 @@
       "source": "Academic researchers",
       "url": "http://arxiv.org/abs/2608.20391v1",
       "date": "2026-06-30",
+      "location_confidence": "place",
       "geolocation": {
         "lat": 39.8,
         "lon": -98.6
@@ -669,6 +720,7 @@
       "source": "Research Team",
       "url": "http://arxiv.org/abs/2608.20392v1",
       "date": "2026-06-30",
+      "location_confidence": "unlocated",
       "located": false
     },
     {
@@ -679,6 +731,7 @@
       "source": "Research Consortium",
       "url": "http://arxiv.org/abs/2607.00218v1",
       "date": "2026-06-30",
+      "location_confidence": "unlocated",
       "located": false
     },
     {
@@ -689,6 +742,7 @@
       "source": "ASPIRE research team",
       "url": "http://arxiv.org/abs/2607.00272v1",
       "date": "2026-06-30",
+      "location_confidence": "unlocated",
       "located": false
     },
     {
@@ -699,6 +753,7 @@
       "source": "Almaz-Antey",
       "url": "https://almaz-antey.ru",
       "date": "2026-06-15",
+      "location_confidence": "stated",
       "geolocation": {
         "lat": 55.7558,
         "lon": 37.6173
@@ -712,6 +767,7 @@
       "source": "Spark Therapeutics",
       "url": "https://sparktx.com",
       "date": "2026-06-15",
+      "location_confidence": "stated",
       "geolocation": {
         "lat": 39.9526,
         "lon": -75.1652
@@ -725,6 +781,7 @@
       "source": "NIST",
       "url": "https://csrc.nist.gov",
       "date": "2026-06-01",
+      "location_confidence": "stated",
       "geolocation": {
         "lat": 38.8951,
         "lon": -77.0364
@@ -738,6 +795,7 @@
       "source": "JCVI",
       "url": "https://www.jcvi.org",
       "date": "2026-06-01",
+      "location_confidence": "stated",
       "geolocation": {
         "lat": 32.7157,
         "lon": -117.1611
@@ -751,6 +809,7 @@
       "source": "ETH Zürich",
       "url": "https://biol.ethz.ch",
       "date": "2026-05-20",
+      "location_confidence": "stated",
       "geolocation": {
         "lat": 47.3769,
         "lon": 8.5417
@@ -764,6 +823,7 @@
       "source": "US Navy",
       "url": "https://www.navy.mil",
       "date": "2026-05-01",
+      "location_confidence": "stated",
       "geolocation": {
         "lat": 36.8508,
         "lon": -76.2995
@@ -777,6 +837,7 @@
       "source": "Rafael / IDF",
       "url": "https://www.rafael.co.il",
       "date": "2026-04-01",
+      "location_confidence": "stated",
       "geolocation": {
         "lat": 32.0853,
         "lon": 34.7818
@@ -790,6 +851,7 @@
       "source": "LV-ROVER-MLT researchers",
       "url": "http://arxiv.org/abs/2607.00250v5",
       "date": "2026-01-01",
+      "location_confidence": "place",
       "geolocation": {
         "lat": 35.9,
         "lon": 14.5
@@ -803,6 +865,7 @@
       "source": "IBM Quantum",
       "url": "https://en.wikipedia.org/wiki/IBM_Q_System_One",
       "date": "2023-12-04",
+      "location_confidence": "stated",
       "geolocation": {
         "lat": 41.2115,
         "lon": -73.8532
@@ -816,6 +879,7 @@
       "source": "Vesuvius Challenge",
       "url": "https://en.wikipedia.org/wiki/Herculaneum_papyri",
       "date": "2023-10-12",
+      "location_confidence": "stated",
       "geolocation": {
         "lat": 40.8518,
         "lon": 14.2681
@@ -829,6 +893,7 @@
       "source": "OpenAI",
       "url": "https://en.wikipedia.org/wiki/GPT-4",
       "date": "2023-03-14",
+      "location_confidence": "stated",
       "geolocation": {
         "lat": 37.7749,
         "lon": -122.4194
@@ -842,6 +907,7 @@
       "source": "LLNL NIF",
       "url": "https://en.wikipedia.org/wiki/National_Ignition_Facility",
       "date": "2022-12-05",
+      "location_confidence": "stated",
       "geolocation": {
         "lat": 37.6881,
         "lon": -121.7045
@@ -855,6 +921,7 @@
       "source": "OpenAI",
       "url": "https://en.wikipedia.org/wiki/ChatGPT",
       "date": "2022-11-30",
+      "location_confidence": "stated",
       "geolocation": {
         "lat": 37.7749,
         "lon": -122.4194
@@ -868,6 +935,7 @@
       "source": "NASA / ESA / CSA",
       "url": "https://en.wikipedia.org/wiki/James_Webb_Space_Telescope",
       "date": "2021-12-25",
+      "location_confidence": "stated",
       "geolocation": {
         "lat": 5.2372,
         "lon": -52.7608
@@ -881,6 +949,7 @@
       "source": "IBM Quantum",
       "url": "https://en.wikipedia.org/wiki/IBM_Q_System_One",
       "date": "2021-11-16",
+      "location_confidence": "stated",
       "geolocation": {
         "lat": 41.2115,
         "lon": -73.8532
@@ -894,6 +963,7 @@
       "source": "FireEye / Microsoft",
       "url": "https://en.wikipedia.org/wiki/SolarWinds_attack",
       "date": "2020-12-13",
+      "location_confidence": "stated",
       "geolocation": {
         "lat": 30.2672,
         "lon": -97.7431
@@ -907,6 +977,7 @@
       "source": "Pfizer / BioNTech / FDA",
       "url": "https://en.wikipedia.org/wiki/History_of_COVID-19_vaccine_development",
       "date": "2020-12-11",
+      "location_confidence": "stated",
       "geolocation": {
         "lat": 40.8075,
         "lon": -73.9626
@@ -920,6 +991,7 @@
       "source": "OpenAI",
       "url": "https://en.wikipedia.org/wiki/GPT-3",
       "date": "2020-06-11",
+      "location_confidence": "stated",
       "geolocation": {
         "lat": 37.7749,
         "lon": -122.4194
@@ -933,6 +1005,7 @@
       "source": "Google Quantum AI",
       "url": "https://en.wikipedia.org/wiki/Quantum_supremacy",
       "date": "2019-10-23",
+      "location_confidence": "stated",
       "geolocation": {
         "lat": 34.414,
         "lon": -119.695
@@ -946,6 +1019,7 @@
       "source": "Google Brain",
       "url": "https://en.wikipedia.org/wiki/Transformer_(deep_learning_architecture)",
       "date": "2017-06-12",
+      "location_confidence": "stated",
       "geolocation": {
         "lat": 43.6532,
         "lon": -79.3832
@@ -959,6 +1033,7 @@
       "source": "DeepMind",
       "url": "https://en.wikipedia.org/wiki/AlphaGo",
       "date": "2016-03-15",
+      "location_confidence": "stated",
       "geolocation": {
         "lat": 37.5665,
         "lon": 126.978
@@ -972,6 +1047,7 @@
       "source": "SpaceX",
       "url": "https://en.wikipedia.org/wiki/Falcon_9_full_thrust",
       "date": "2015-12-21",
+      "location_confidence": "stated",
       "geolocation": {
         "lat": 28.4882,
         "lon": -80.5774
@@ -985,6 +1061,7 @@
       "source": "Codenomicon / Google Security",
       "url": "https://en.wikipedia.org/wiki/Heartbleed",
       "date": "2014-04-07",
+      "location_confidence": "stated",
       "geolocation": {
         "lat": 47.3769,
         "lon": 8.5417
@@ -998,6 +1075,7 @@
       "source": "University of Toronto",
       "url": "https://en.wikipedia.org/wiki/AlexNet",
       "date": "2012-09-30",
+      "location_confidence": "stated",
       "geolocation": {
         "lat": 43.6532,
         "lon": -79.3832
@@ -1011,6 +1089,7 @@
       "source": "UC Berkeley / Umeå University",
       "url": "https://en.wikipedia.org/wiki/CRISPR",
       "date": "2012-06-28",
+      "location_confidence": "stated",
       "geolocation": {
         "lat": 37.8719,
         "lon": -122.2585
@@ -1024,6 +1103,7 @@
       "source": "SpaceX",
       "url": "https://en.wikipedia.org/wiki/Dragon_C2%2B",
       "date": "2012-05-25",
+      "location_confidence": "stated",
       "geolocation": {
         "lat": 33.9204,
         "lon": -118.3279
@@ -1037,6 +1117,7 @@
       "source": "Rafael / IDF",
       "url": "https://en.wikipedia.org/wiki/Iron_Dome",
       "date": "2011-04-05",
+      "location_confidence": "stated",
       "geolocation": {
         "lat": 32.0853,
         "lon": 34.7818
@@ -1050,6 +1131,7 @@
       "source": "Symantec / VirusBlokAda",
       "url": "https://en.wikipedia.org/wiki/Stuxnet",
       "date": "2010-06-17",
+      "location_confidence": "stated",
       "geolocation": {
         "lat": 33.5066,
         "lon": 51.9163
@@ -1063,6 +1145,7 @@
       "source": "Estonian Ministry of Defence",
       "url": "https://en.wikipedia.org/wiki/Cyberattacks_on_Estonia_(2007)",
       "date": "2007-04-27",
+      "location_confidence": "stated",
       "geolocation": {
         "lat": 59.437,
         "lon": 24.7536
@@ -1076,6 +1159,7 @@
       "source": "NIH / Wellcome Trust",
       "url": "https://en.wikipedia.org/wiki/Human_Genome_Project",
       "date": "2003-04-14",
+      "location_confidence": "stated",
       "geolocation": {
         "lat": 38.9847,
         "lon": -77.0947
@@ -1089,6 +1173,7 @@
       "source": "Institute for Advanced Study",
       "url": "https://en.wikipedia.org/wiki/AdS/CFT_correspondence",
       "date": "1997-12-01",
+      "location_confidence": "stated",
       "geolocation": {
         "lat": 40.3487,
         "lon": -74.6564
@@ -1102,6 +1187,7 @@
       "source": "IBM",
       "url": "https://en.wikipedia.org/wiki/Deep_Blue_(chess_computer)",
       "date": "1997-05-11",
+      "location_confidence": "stated",
       "geolocation": {
         "lat": 40.758,
         "lon": -73.9683
@@ -1115,6 +1201,7 @@
       "source": "Roslin Institute",
       "url": "https://en.wikipedia.org/wiki/Dolly_(sheep)",
       "date": "1996-07-05",
+      "location_confidence": "stated",
       "geolocation": {
         "lat": 55.9533,
         "lon": -3.1883
@@ -1128,6 +1215,7 @@
       "source": "AT&T Bell Labs",
       "url": "https://en.wikipedia.org/wiki/Shor%27s_algorithm",
       "date": "1994-10-01",
+      "location_confidence": "stated",
       "geolocation": {
         "lat": 40.69,
         "lon": -74.401
@@ -1141,6 +1229,7 @@
       "source": "US Army",
       "url": "https://en.wikipedia.org/wiki/MIM-104_Patriot",
       "date": "1991-01-18",
+      "location_confidence": "stated",
       "geolocation": {
         "lat": 24.7136,
         "lon": 46.6753
@@ -1154,6 +1243,7 @@
       "source": "MIT / Cornell",
       "url": "https://en.wikipedia.org/wiki/Morris_worm",
       "date": "1988-11-02",
+      "location_confidence": "stated",
       "geolocation": {
         "lat": 42.3601,
         "lon": -71.0942
@@ -1167,6 +1257,7 @@
       "source": "Cetus Corporation",
       "url": "https://en.wikipedia.org/wiki/Polymerase_chain_reaction",
       "date": "1983-04-01",
+      "location_confidence": "stated",
       "geolocation": {
         "lat": 37.8313,
         "lon": -122.2853
@@ -1180,6 +1271,7 @@
       "source": "White House",
       "url": "https://en.wikipedia.org/wiki/Strategic_Defense_Initiative",
       "date": "1983-03-23",
+      "location_confidence": "stated",
       "geolocation": {
         "lat": 38.9072,
         "lon": -77.0369
@@ -1193,6 +1285,7 @@
       "source": "Caltech / MIT",
       "url": "https://en.wikipedia.org/wiki/Quantum_computing",
       "date": "1981-05-06",
+      "location_confidence": "stated",
       "geolocation": {
         "lat": 34.1377,
         "lon": -118.1253
@@ -1206,6 +1299,7 @@
       "source": "NASA",
       "url": "https://en.wikipedia.org/wiki/STS-1",
       "date": "1981-04-12",
+      "location_confidence": "stated",
       "geolocation": {
         "lat": 28.5728,
         "lon": -80.649
@@ -1219,6 +1313,7 @@
       "source": "University of Illinois Urbana-Champaign",
       "url": "https://en.wikipedia.org/wiki/Four_color_theorem",
       "date": "1976-07-01",
+      "location_confidence": "stated",
       "geolocation": {
         "lat": 40.102,
         "lon": -88.2272
@@ -1232,6 +1327,7 @@
       "source": "Stanford University",
       "url": "https://en.wikipedia.org/wiki/Recombinant_DNA",
       "date": "1973-01-01",
+      "location_confidence": "stated",
       "geolocation": {
         "lat": 37.4275,
         "lon": -122.1697
@@ -1245,6 +1341,7 @@
       "source": "Intel",
       "url": "https://en.wikipedia.org/wiki/Intel_4004",
       "date": "1971-11-15",
+      "location_confidence": "stated",
       "geolocation": {
         "lat": 37.3541,
         "lon": -121.9552
@@ -1258,6 +1355,7 @@
       "source": "UCLA / SRI International",
       "url": "https://en.wikipedia.org/wiki/ARPANET",
       "date": "1969-10-29",
+      "location_confidence": "stated",
       "geolocation": {
         "lat": 34.0689,
         "lon": -118.4452
@@ -1271,6 +1369,7 @@
       "source": "NASA",
       "url": "https://en.wikipedia.org/wiki/Apollo_11",
       "date": "1969-07-20",
+      "location_confidence": "stated",
       "geolocation": {
         "lat": -0.674,
         "lon": 23.473
@@ -1284,6 +1383,7 @@
       "source": "Roscosmos",
       "url": "https://en.wikipedia.org/wiki/Vostok_1",
       "date": "1961-04-12",
+      "location_confidence": "stated",
       "geolocation": {
         "lat": 45.965,
         "lon": 63.305
@@ -1297,6 +1397,7 @@
       "source": "Roscosmos",
       "url": "https://en.wikipedia.org/wiki/Sputnik_1",
       "date": "1957-10-04",
+      "location_confidence": "stated",
       "geolocation": {
         "lat": 45.965,
         "lon": 63.305
@@ -1310,6 +1411,7 @@
       "source": "Bell Labs",
       "url": "https://en.wikipedia.org/wiki/Solar_cell",
       "date": "1954-04-25",
+      "location_confidence": "stated",
       "geolocation": {
         "lat": 40.69,
         "lon": -74.401
@@ -1323,6 +1425,7 @@
       "source": "Nature",
       "url": "https://en.wikipedia.org/wiki/Molecular_structure_of_Nucleic_Acids",
       "date": "1953-04-25",
+      "location_confidence": "stated",
       "geolocation": {
         "lat": 52.2053,
         "lon": 0.1218
@@ -1336,6 +1439,7 @@
       "source": "University of Pennsylvania",
       "url": "https://en.wikipedia.org/wiki/ENIAC",
       "date": "1945-11-15",
+      "location_confidence": "stated",
       "geolocation": {
         "lat": 39.9526,
         "lon": -75.1652
@@ -1349,6 +1453,7 @@
       "source": "Los Alamos National Laboratory",
       "url": "https://en.wikipedia.org/wiki/Trinity_(nuclear_test)",
       "date": "1945-07-16",
+      "location_confidence": "stated",
       "geolocation": {
         "lat": 33.6772,
         "lon": -106.4754

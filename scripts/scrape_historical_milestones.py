@@ -30,6 +30,7 @@ from datetime import date
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+import location_contract as lc
 
 import sync_milestones as sm
 
@@ -72,7 +73,7 @@ def validate_catalog_entry(entry: dict, index: int) -> list[str]:
                 lat, lon = float(geo["lat"]), float(geo["lon"])
                 if not (-90 <= lat <= 90) or not (-180 <= lon <= 180):
                     errors.append(f"Entry {index}: geolocation out of bounds")
-                elif lat == 0.0 and lon == 0.0:
+                elif lc.is_unlocated({"lat": lat, "lon": lon}):
                     errors.append(f"Entry {index}: geolocation is (0, 0) - will be skipped by build_events")
             except (ValueError, TypeError):
                 errors.append(f"Entry {index}: geolocation not numeric")

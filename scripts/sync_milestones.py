@@ -41,6 +41,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import geo_hints
+import location_contract as lc
 import milestone_identity
 
 # Institution coordinates for geocoding fallback (shared with worldmap.js)
@@ -576,25 +577,28 @@ def canonical_id(m: dict) -> str:
 
 
 def _archive_geolocation(geo):
-    """Upstream's "location unknown" sentinel is (0, 0), and this archive used to
-    store it verbatim - which is why 27 shipped records plotted a dot in the Gulf
-    of Guinea, once every six hours, straight from a green CI run.
+    """Upstream's "location unknown" sentinel is the origin; the archive stores an
+    unlocated record with no geolocation at all.
 
-    Two ways in, so both are handled: upstream may send (0, 0) explicitly, or omit
-    the key, in which case the old default supplied (0, 0) anyway. An unlocated
-    record now carries no geolocation at all, which is what the rest of the
-    pipeline already does and what the map renders correctly as "no dot".
+    The rule itself lives in location_contract.is_unlocated - the same predicate the
+    validators use - so the pipeline and the gate cannot disagree about which
+    coordinates mean "unknown".
     """
-    if not isinstance(geo, dict):
-        return None
-    lat, lon = geo.get("lat"), geo.get("lon")
-    if not isinstance(lat, (int, float)) or not isinstance(lon, (int, float)):
-        return None
-    if not (math.isfinite(lat) and math.isfinite(lon)):
-        return None
-    if lat == 0 and lon == 0:
-        return None
-    return geo
+    return None if lc.is_unlocated(geo) else geo
+
+
+def _scrub_inherited(rec: dict) -> dict:
+    """Apply the archive geolocation rule to a record read back off disk.
+
+    `archive_record` sanitises every record built from upstream, but records
+    inherited from the existing archive bypass it entirely - they are passed
+    through as-is. That is how a pre-fix sentinel record stays in the file forever:
+    it is never rebuilt, so nothing ever re-examines it. Mirrored here so the
+    archive heals on the next run instead of needing a one-off repair script.
+    """
+    if not isinstance(rec, dict):
+        return rec
+    return lc.strip_unlocated(rec)
 
 
 def archive_record(m: dict, seen_on: str) -> dict:
@@ -614,31 +618,16 @@ def archive_record(m: dict, seen_on: str) -> dict:
         "first_seen": seen_on,
         "last_seen": seen_on,
     }
-    if rec["geolocation"] is None:
+    if lc.is_unlocated(rec["geolocation"]):
         # Absent, not null: consumers distinguish "no location" from "bad location",
-        # and a null value has to be special-cased by every reader. The flag is kept
-        # so a consumer can tell "upstream said unlocated" from "never had the key".
+        # and a null value has to be special-cased by every reader.
         del rec["geolocation"]
+        # `located` stays: worldmap.js reads `located === false` to decide whether a
+        # record is a real dot or an explicitly-unlocated one. `location_confidence`
+        # is added alongside it because the boolean cannot say *why* - "upstream said
+        # unlocated" and "we tried four passes and found nothing" are different facts.
         rec["located"] = False
-    return rec
-
-
-def _scrub_inherited(rec: dict) -> dict:
-    """Apply the archive geolocation rule to a record read back off disk.
-
-    `archive_record` sanitises every record built from upstream, but records
-    inherited from the existing archive bypass it entirely - they are passed
-    through as-is. That is how a pre-fix (0,0) record stays in the file forever:
-    it is never rebuilt, so nothing ever re-examines it. Mirrored here so the
-    archive heals on the next run instead of needing a one-off repair script.
-    """
-    if not isinstance(rec, dict):
-        return rec
-    geo = rec.get("geolocation")
-    if geo is not None and _archive_geolocation(geo) is None:
-        out = {k: v for k, v in rec.items() if k != "geolocation"}
-        out["located"] = False
-        return out
+        rec["location_confidence"] = lc.UNLOCATED
     return rec
 
 
@@ -1022,12 +1011,44 @@ def _match_institution(text: str) -> tuple[str, dict] | None:
     for key, coords in INSTITUTION_COORDS.items():
         if len(key) <= 2:
             continue
-        if coords["lat"] == 0.0 and coords["lon"] == 0.0:
+        # Entries pinned to the origin are deliberate "never match" markers for
+        # generic phrases like "research team"; skip them via the shared predicate.
+        if lc.is_unlocated(coords):
             continue
         pattern = fr"(^|[^a-z0-9]){re.escape(key.lower())}([^a-z0-9]|$)"
         if re.search(pattern, text) and (best is None or len(key) > len(best[0])):
             best = (key, coords)
     return best
+
+
+def geocode_with_confidence(m: dict) -> tuple[float | None, float | None, str]:
+    """Locate a milestone and report which evidence pass placed it.
+
+    Same cascade as `geocode_milestone`, but returning the pass that won rather than
+    only a coordinate. The distinction matters to anyone reading the map: a Stanford
+    paper placed by a lab named in its own abstract is evidence, and the same paper
+    placed by its publisher's London office is a guess. Recording the level lets a
+    consumer weight, filter or explain the dots instead of treating every one as
+    equally authoritative - and it makes a rising "source"-level count a visible
+    signal that the geocoding tables need extending.
+    """
+    content = (str(m.get("title") or ""), str(m.get("summary") or ""))
+    weak = (str(m.get("subcategory") or ""),)
+
+    for fields, level in ((content, "institution"), (weak, "subcategory"),
+                          ((str(m.get("source") or ""),), "source")):
+        text = " ".join(fields).lower()
+        if not text.strip():
+            continue
+        hit = _match_institution(text)
+        if hit:
+            return hit[1]["lat"], hit[1]["lon"], level
+        place = geo_hints.place_coords(text)
+        if place:
+            # Reached only when the institution table missed, so this really is a
+            # place and not an organisation the institution table does not know.
+            return place[0], place[1], "place"
+    return None, None, lc.UNLOCATED
 
 
 def geocode_milestone(m: dict) -> tuple[float, float] | None:
@@ -1094,18 +1115,17 @@ def build_events(milestones: list) -> dict:
         geo = m.get("geolocation") or {}
         lat = geo.get("lat")
         lon = geo.get("lon")
-        located = (isinstance(lat, (int, float)) and isinstance(lon, (int, float))
-                   and not (lat == 0.0 and lon == 0.0)
-                   and -90 <= lat <= 90 and -180 <= lon <= 180)
+        located = lc.is_located(geo)
 
+        # Provenance of the dot, recorded either way. "stated" means the upstream
+        # record carried its own coordinate and the cascade was never needed.
+        confidence = "stated"
         if not located:
-            # (0,0) upstream, missing, or out of range all mean the same thing:
-            # try to do better, and if that fails, publish without a location.
-            geocoded = geocode_milestone(m)
-            if geocoded:
-                lat, lon = geocoded
-                located = True
-            else:
+            # Sentinel, missing, or out of range all mean the same thing: try to do
+            # better, and if that fails, publish without a location.
+            lat, lon, confidence = geocode_with_confidence(m)
+            located = lc.is_located({"lat": lat, "lon": lon})
+            if not located:
                 unlocated += 1
 
         ev = {
@@ -1117,6 +1137,7 @@ def build_events(milestones: list) -> dict:
             "url": m.get("url"),
             "date": m.get("date", ""),
         }
+        ev["location_confidence"] = confidence
         if located:
             ev["geolocation"] = {"lat": lat, "lon": lon}
         else:

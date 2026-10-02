@@ -29,6 +29,8 @@ from pathlib import Path
 # make the script directory explicit rather than relying on sys.path[0].
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
+import location_contract as lc
+
 import milestone_identity
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -80,6 +82,25 @@ def _is_number(v: object) -> bool:
     )
 
 
+def _why_unlocated(geo) -> str:
+    """Name the specific reason a coordinate is unusable.
+
+    "must be a finite lat/lon pair in range" and "this is the no-location marker" are
+    different bugs with different fixes, and a validator that says only one of them
+    sends people looking in the wrong place.
+    """
+    if not isinstance(geo, dict):
+        return "must be an object with lat and lon, or omitted entirely"
+    lat, lon = geo.get("lat"), geo.get("lon")
+    if not isinstance(lat, (int, float)) or not isinstance(lon, (int, float)) \
+            or isinstance(lat, bool) or isinstance(lon, bool):
+        return "lat and lon must both be numbers"
+    if not (_coord_ok(lat, lon)):
+        return "must be a finite lat/lon pair in range"
+    return (f"({lat}, {lon}) is the no-location marker; omit the key instead of "
+            "publishing null island")
+
+
 def _coord_ok(lat: object, lon: object) -> bool:
     return (
         _is_number(lat) and _LAT_MIN <= float(lat) <= _LAT_MAX
@@ -91,7 +112,7 @@ def _coord_located(lat: object, lon: object) -> bool:
     # Layers are never geocoded at load time, so "(0, 0)" — the "no location"
     # marker used by worldmap.js normalizeEvent — must not be accepted: it would
     # plot a glowing halo over Null Island (Gulf of Guinea) and mislead readers.
-    return _coord_ok(lat, lon) and not (float(lat) == 0.0 and float(lon) == 0.0)
+    return lc.is_located({"lat": lat, "lon": lon})
 
 
 # Layer lifecycle schema (drives the fluo/dim rendering + duration tooltips in
@@ -407,14 +428,8 @@ def check_events(events: object) -> list[str]:
         # rejected: it is the project's "no location" marker, and emitting it as a
         # coordinate puts a glowing dot in the Gulf of Guinea.
         geo = ev.get("geolocation")
-        if geo is not None:
-            if not isinstance(geo, dict) or not _coord_ok(geo.get("lat"), geo.get("lon")):
-                issues.append(
-                    f"events[{i}]: geolocation must be a finite lat/lon pair in range")
-            elif geo.get("lat") == 0.0 and geo.get("lon") == 0.0:
-                issues.append(
-                    f"events[{i}]: geolocation (0,0) is the no-location marker; omit "
-                    f"the key instead of publishing null island")
+        if geo is not None and lc.is_unlocated(geo):
+            issues.append(f"events[{i}]: geolocation: " + _why_unlocated(geo))
         # Absent geolocation means unlocated, which is valid: the milestone is
         # published without a dot. The optional `located: false` flag the pipeline
         # emits is informational, and is not required - legacy and hand-authored
@@ -575,13 +590,10 @@ def check_milestones(data: object) -> list[str]:
                 # as "no dot". (0, 0) is NOT the way to spell unlocated: it is the
                 # upstream sentinel, and storing it put a dot in the Gulf of Guinea.
                 # check_events has always enforced this; milestones did not.
-                if geo is not None:
-                    if not isinstance(geo, dict) or not _coord_ok(geo.get("lat"), geo.get("lon")):
-                        issues.append(f"categories[{cat_key}].milestones[{i}].geolocation: must be a finite lat/lon pair in range")
-                    elif geo.get("lat") == 0.0 and geo.get("lon") == 0.0:
-                        issues.append(
-                            f"categories[{cat_key}].milestones[{i}].geolocation (0,0) is the "
-                            "no-location marker; omit the key instead of publishing null island")
+                if geo is not None and lc.is_unlocated(geo):
+                    issues.append(
+                        f"categories[{cat_key}].milestones[{i}].geolocation: "
+                        + _why_unlocated(geo))
                 if not _valid_source_url(m.get("url")):
                     issues.append(
                         f"categories[{cat_key}].milestones[{i}].url: must be absent or an http(s) URL, got {m.get('url')!r}"
@@ -748,12 +760,8 @@ def check_archive(data, filename: str) -> list[str]:
             issues.append(f"{filename}[{i}].category: {rec.get('category')!r} is not a "
                           "canonical category")
         geo = rec.get("geolocation")
-        if geo is not None:
-            if not isinstance(geo, dict) or not _coord_ok(geo.get("lat"), geo.get("lon")):
-                issues.append(f"{filename}[{i}].geolocation: must be a finite lat/lon pair in range")
-            elif geo.get("lat") == 0.0 and geo.get("lon") == 0.0:
-                issues.append(f"{filename}[{i}].geolocation (0,0) is the no-location marker; "
-                              "omit the key instead of publishing null island")
+        if geo is not None and lc.is_unlocated(geo):
+            issues.append(f"{filename}[{i}].geolocation: " + _why_unlocated(geo))
     return issues
 
 

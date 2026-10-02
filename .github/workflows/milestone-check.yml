@@ -76,13 +76,21 @@ jobs:
         # The cron only ever reports what changed. This reports what is missing -
         # empty years on the slider, verticals with nothing in them, unlocated
         # records - so the backlog is visible in the run log without a local setup.
-        run: python scripts/coverage_report.py
+        # --snapshot also appends to data/coverage_history.json, but only when the
+        # findings actually changed, so the committed file is a changelog of progress
+        # toward filling the gaps rather than a timestamp every six hours.
+        run: python scripts/coverage_report.py --snapshot
 
       - name: Reject null-island geocoding
         # (0,0) is upstream's "unknown location" sentinel. Storing it plots a dot
         # in the Gulf of Guinea, and check_events has always rejected it while
         # check_milestones used to accept it - so it reached main from a green run.
         run: python scripts/coverage_report.py --fail-on-null-island --quiet
+
+      - name: Publish invariants
+        # Before the commit, alongside validate data files: a refresh that breaks a
+        # cross-file invariant must fail the job and never reach main.
+        run: python scripts/publish_invariants.py
 
       - name: Validate data files
         # Gate BEFORE the commit: a malformed sync must fail the job and never

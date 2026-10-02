@@ -31,6 +31,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+import location_contract as lc
 
 import geo_hints
 
@@ -268,7 +269,7 @@ def validate_entry(entry: object) -> list[str]:
         problems.append("lat out of range")
     if isinstance(lon, (int, float)) and not -180 <= lon <= 180:
         problems.append("lon out of range")
-    if lat == 0.0 and lon == 0.0:
+    if lc.is_unlocated({"lat": lat, "lon": lon}):
         problems.append("(0,0) is the no-location marker and must not be plotted")
     if entry.get("status") not in STATUS_VALUES:
         problems.append(f"status {entry.get('status')!r} not in {list(STATUS_VALUES)}")

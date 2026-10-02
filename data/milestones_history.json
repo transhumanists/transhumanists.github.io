@@ -112,8 +112,9 @@
     "url": "https://www.quantamagazine.org/gravity-seems-holographic-what-does-that-mean-for-reality-20260925/",
     "date": "2026-09-25",
     "first_seen": "2026-09-26",
-    "last_seen": "2026-10-01",
-    "located": false
+    "last_seen": "2026-10-02",
+    "located": false,
+    "location_confidence": "unlocated"
   },
   {
     "id": "ms-847b6f6830b8",
@@ -127,7 +128,8 @@
     "date": "2026-09-25",
     "first_seen": "2026-09-25",
     "last_seen": "2026-10-02",
-    "located": false
+    "located": false,
+    "location_confidence": "unlocated"
   },
   {
     "id": "ms-0a47a34ebd2d",
@@ -141,7 +143,8 @@
     "date": "2026-09-23",
     "first_seen": "2026-09-23",
     "last_seen": "2026-10-02",
-    "located": false
+    "located": false,
+    "location_confidence": "unlocated"
   },
   {
     "id": "ms-1d88f31518db",
@@ -171,8 +174,9 @@
     "url": "https://www.quantamagazine.org/mathematicians-build-long-awaited-graph-sandwich-20260918/",
     "date": "2026-09-18",
     "first_seen": "2026-09-26",
-    "last_seen": "2026-10-01",
-    "located": false
+    "last_seen": "2026-10-02",
+    "located": false,
+    "location_confidence": "unlocated"
   },
   {
     "id": "ms-e5275443e851",
@@ -186,7 +190,8 @@
     "date": "2026-09-15",
     "first_seen": "2026-09-22",
     "last_seen": "2026-10-02",
-    "located": false
+    "located": false,
+    "location_confidence": "unlocated"
   },
   {
     "id": "ms-e55c8cf4e432",
@@ -795,7 +800,8 @@
     "date": "2026-06-30",
     "first_seen": "2026-09-27",
     "last_seen": "2026-10-02",
-    "located": false
+    "located": false,
+    "location_confidence": "unlocated"
   },
   {
     "id": "ms-10f19d45d95b",
@@ -808,8 +814,9 @@
     "url": "http://arxiv.org/abs/2607.00185v1",
     "date": "2026-06-30",
     "first_seen": "2026-09-29",
-    "last_seen": "2026-10-01",
-    "located": false
+    "last_seen": "2026-10-02",
+    "located": false,
+    "location_confidence": "unlocated"
   },
   {
     "id": "ms-fb74b2202f85",
@@ -823,7 +830,8 @@
     "date": "2026-06-30",
     "first_seen": "2026-09-27",
     "last_seen": "2026-10-01",
-    "located": false
+    "located": false,
+    "location_confidence": "unlocated"
   },
   {
     "id": "ms-0ef07b4ce70b",
@@ -836,8 +844,9 @@
     "url": "http://arxiv.org/abs/2608.20391v1",
     "date": "2026-06-30",
     "first_seen": "2026-09-30",
-    "last_seen": "2026-10-01",
-    "located": false
+    "last_seen": "2026-10-02",
+    "located": false,
+    "location_confidence": "unlocated"
   },
   {
     "id": "ms-f41cd2fc2342",
@@ -851,7 +860,8 @@
     "date": "2026-06-30",
     "first_seen": "2026-09-27",
     "last_seen": "2026-10-02",
-    "located": false
+    "located": false,
+    "location_confidence": "unlocated"
   },
   {
     "id": "ms-09edac1db332",
@@ -865,7 +875,8 @@
     "date": "2026-06-30",
     "first_seen": "2026-09-29",
     "last_seen": "2026-10-02",
-    "located": false
+    "located": false,
+    "location_confidence": "unlocated"
   },
   {
     "id": "ms-d6824a356960",
@@ -879,7 +890,8 @@
     "date": "2026-06-30",
     "first_seen": "2026-09-27",
     "last_seen": "2026-10-02",
-    "located": false
+    "located": false,
+    "location_confidence": "unlocated"
   },
   {
     "id": "ms-110c8b5371e0",
@@ -893,7 +905,8 @@
     "date": "2026-06-30",
     "first_seen": "2026-09-30",
     "last_seen": "2026-10-02",
-    "located": false
+    "located": false,
+    "location_confidence": "unlocated"
   },
   {
     "id": "def-002",
@@ -1025,8 +1038,9 @@
     "url": "http://arxiv.org/abs/2607.00250v5",
     "date": "2026-01-01",
     "first_seen": "2026-09-30",
-    "last_seen": "2026-10-01",
-    "located": false
+    "last_seen": "2026-10-02",
+    "located": false,
+    "location_confidence": "unlocated"
   },
   {
     "id": "his-2023-12-04-ibm-condor",
@@ -1043,7 +1057,7 @@
       "lon": -73.8532
     },
     "first_seen": "2026-09-30",
-    "last_seen": "2026-10-01"
+    "last_seen": "2026-10-02"
   },
   {
     "id": "his-2023-10-12-vesuvius-challenge",
@@ -1060,7 +1074,7 @@
       "lon": 14.2681
     },
     "first_seen": "2026-09-30",
-    "last_seen": "2026-10-01"
+    "last_seen": "2026-10-02"
   },
   {
     "id": "his-2023-03-14-gpt4",
@@ -1077,7 +1091,7 @@
       "lon": -122.4194
     },
     "first_seen": "2026-09-30",
-    "last_seen": "2026-10-01"
+    "last_seen": "2026-10-02"
   },
   {
     "id": "his-2022-12-05-nif-ignition",
@@ -1094,7 +1108,7 @@
       "lon": -121.7045
     },
     "first_seen": "2026-09-29",
-    "last_seen": "2026-10-01"
+    "last_seen": "2026-10-02"
   },
   {
     "id": "his-2022-11-30-chatgpt",
@@ -1111,7 +1125,7 @@
       "lon": -122.4194
     },
     "first_seen": "2026-09-29",
-    "last_seen": "2026-10-01"
+    "last_seen": "2026-10-02"
   },
   {
     "id": "his-2021-12-25-jwst",
@@ -1128,7 +1142,7 @@
       "lon": -52.7608
     },
     "first_seen": "2026-09-29",
-    "last_seen": "2026-10-01"
+    "last_seen": "2026-10-02"
   },
   {
     "id": "his-2021-11-16-ibm-eagle",
@@ -1145,7 +1159,7 @@
       "lon": -73.8532
     },
     "first_seen": "2026-09-29",
-    "last_seen": "2026-10-01"
+    "last_seen": "2026-10-02"
   },
   {
     "id": "his-2020-12-13-solarwinds",
@@ -1162,7 +1176,7 @@
       "lon": -97.7431
     },
     "first_seen": "2026-09-29",
-    "last_seen": "2026-10-01"
+    "last_seen": "2026-10-02"
   },
   {
     "id": "his-2020-12-11-mrna-vaccine",
@@ -1179,7 +1193,7 @@
       "lon": -73.9626
     },
     "first_seen": "2026-09-29",
-    "last_seen": "2026-10-01"
+    "last_seen": "2026-10-02"
   },
   {
     "id": "his-2020-06-11-gpt3",
@@ -1196,7 +1210,7 @@
       "lon": -122.4194
     },
     "first_seen": "2026-09-29",
-    "last_seen": "2026-10-01"
+    "last_seen": "2026-10-02"
   },
   {
     "id": "his-2019-10-23-quantum-supremacy",
@@ -1213,7 +1227,7 @@
       "lon": -119.695
     },
     "first_seen": "2026-09-29",
-    "last_seen": "2026-10-01"
+    "last_seen": "2026-10-02"
   },
   {
     "id": "his-2017-06-12-transformer",
@@ -1230,7 +1244,7 @@
       "lon": -79.3832
     },
     "first_seen": "2026-09-29",
-    "last_seen": "2026-10-01"
+    "last_seen": "2026-10-02"
   },
   {
     "id": "his-2016-03-15-alphago",
@@ -1247,7 +1261,7 @@
       "lon": 126.978
     },
     "first_seen": "2026-09-29",
-    "last_seen": "2026-10-01"
+    "last_seen": "2026-10-02"
   },
   {
     "id": "his-2015-12-21-falcon9-landing",
@@ -1264,7 +1278,7 @@
       "lon": -80.5774
     },
     "first_seen": "2026-09-29",
-    "last_seen": "2026-10-01"
+    "last_seen": "2026-10-02"
   },
   {
     "id": "his-2014-04-07-heartbleed",
@@ -1281,7 +1295,7 @@
       "lon": 8.5417
     },
     "first_seen": "2026-09-29",
-    "last_seen": "2026-10-01"
+    "last_seen": "2026-10-02"
   },
   {
     "id": "his-2012-09-30-alexnet",
@@ -1298,7 +1312,7 @@
       "lon": -79.3832
     },
     "first_seen": "2026-09-29",
-    "last_seen": "2026-10-01"
+    "last_seen": "2026-10-02"
   },
   {
     "id": "his-2012-06-28-crispr",
@@ -1315,7 +1329,7 @@
       "lon": -122.2585
     },
     "first_seen": "2026-09-29",
-    "last_seen": "2026-10-01"
+    "last_seen": "2026-10-02"
   },
   {
     "id": "his-2012-05-25-dragon-iss",
@@ -1332,7 +1346,7 @@
       "lon": -118.3279
     },
     "first_seen": "2026-09-29",
-    "last_seen": "2026-10-01"
+    "last_seen": "2026-10-02"
   },
   {
     "id": "his-2011-04-05-iron-dome",
@@ -1349,7 +1363,7 @@
       "lon": 34.7818
     },
     "first_seen": "2026-09-29",
-    "last_seen": "2026-10-01"
+    "last_seen": "2026-10-02"
   },
   {
     "id": "his-2010-06-17-stuxnet",
@@ -1366,7 +1380,7 @@
       "lon": 51.9163
     },
     "first_seen": "2026-09-29",
-    "last_seen": "2026-10-01"
+    "last_seen": "2026-10-02"
   },
   {
     "id": "his-2007-04-27-estonia-cyber",
@@ -1383,7 +1397,7 @@
       "lon": 24.7536
     },
     "first_seen": "2026-09-29",
-    "last_seen": "2026-10-01"
+    "last_seen": "2026-10-02"
   },
   {
     "id": "his-2003-04-14-human-genome",
@@ -1400,7 +1414,7 @@
       "lon": -77.0947
     },
     "first_seen": "2026-09-29",
-    "last_seen": "2026-10-01"
+    "last_seen": "2026-10-02"
   },
   {
     "id": "his-1997-12-01-ads-cft",
@@ -1417,7 +1431,7 @@
       "lon": -74.6564
     },
     "first_seen": "2026-09-29",
-    "last_seen": "2026-10-01"
+    "last_seen": "2026-10-02"
   },
   {
     "id": "his-1997-05-11-deep-blue",
@@ -1434,7 +1448,7 @@
       "lon": -73.9683
     },
     "first_seen": "2026-09-28",
-    "last_seen": "2026-10-01"
+    "last_seen": "2026-10-02"
   },
   {
     "id": "his-1996-07-05-dolly",
@@ -1451,7 +1465,7 @@
       "lon": -3.1883
     },
     "first_seen": "2026-09-28",
-    "last_seen": "2026-10-01"
+    "last_seen": "2026-10-02"
   },
   {
     "id": "his-1994-10-01-shor-algorithm",
@@ -1468,7 +1482,7 @@
       "lon": -74.401
     },
     "first_seen": "2026-09-28",
-    "last_seen": "2026-10-01"
+    "last_seen": "2026-10-02"
   },
   {
     "id": "his-1991-01-18-patriot-scud",
@@ -1485,7 +1499,7 @@
       "lon": 46.6753
     },
     "first_seen": "2026-09-28",
-    "last_seen": "2026-10-01"
+    "last_seen": "2026-10-02"
   },
   {
     "id": "his-1988-11-02-morris-worm",
@@ -1502,7 +1516,7 @@
       "lon": -71.0942
     },
     "first_seen": "2026-09-28",
-    "last_seen": "2026-10-01"
+    "last_seen": "2026-10-02"
   },
   {
     "id": "his-1983-04-01-pcr",
@@ -1519,7 +1533,7 @@
       "lon": -122.2853
     },
     "first_seen": "2026-09-28",
-    "last_seen": "2026-10-01"
+    "last_seen": "2026-10-02"
   },
   {
     "id": "his-1983-03-23-sdi-announced",
@@ -1536,7 +1550,7 @@
       "lon": -77.0369
     },
     "first_seen": "2026-09-28",
-    "last_seen": "2026-10-01"
+    "last_seen": "2026-10-02"
   },
   {
     "id": "his-1981-05-06-feynman-quantum",
@@ -1553,7 +1567,7 @@
       "lon": -118.1253
     },
     "first_seen": "2026-09-28",
-    "last_seen": "2026-10-01"
+    "last_seen": "2026-10-02"
   },
   {
     "id": "his-1981-04-12-sts-1",
@@ -1570,7 +1584,7 @@
       "lon": -80.649
     },
     "first_seen": "2026-09-28",
-    "last_seen": "2026-10-01"
+    "last_seen": "2026-10-02"
   },
   {
     "id": "his-1976-07-01-four-color-theorem",
@@ -1587,7 +1601,7 @@
       "lon": -88.2272
     },
     "first_seen": "2026-09-28",
-    "last_seen": "2026-10-01"
+    "last_seen": "2026-10-02"
   },
   {
     "id": "his-1973-01-01-recombinant-dna",
@@ -1604,7 +1618,7 @@
       "lon": -122.1697
     },
     "first_seen": "2026-09-29",
-    "last_seen": "2026-10-01"
+    "last_seen": "2026-10-02"
   },
   {
     "id": "his-1971-11-15-intel-4004",
@@ -1621,7 +1635,7 @@
       "lon": -121.9552
     },
     "first_seen": "2026-09-29",
-    "last_seen": "2026-10-01"
+    "last_seen": "2026-10-02"
   },
   {
     "id": "his-1969-10-29-arpanet",
@@ -1638,7 +1652,7 @@
       "lon": -118.4452
     },
     "first_seen": "2026-09-29",
-    "last_seen": "2026-10-01"
+    "last_seen": "2026-10-02"
   },
   {
     "id": "his-1969-07-20-apollo-11",
@@ -1655,7 +1669,7 @@
       "lon": 23.473
     },
     "first_seen": "2026-09-29",
-    "last_seen": "2026-10-01"
+    "last_seen": "2026-10-02"
   },
   {
     "id": "his-1961-04-12-vostok-1",
@@ -1672,7 +1686,7 @@
       "lon": 63.305
     },
     "first_seen": "2026-09-29",
-    "last_seen": "2026-10-01"
+    "last_seen": "2026-10-02"
   },
   {
     "id": "his-1957-10-04-sputnik-1",
@@ -1689,7 +1703,7 @@
       "lon": 63.305
     },
     "first_seen": "2026-09-29",
-    "last_seen": "2026-10-01"
+    "last_seen": "2026-10-02"
   },
   {
     "id": "his-1954-04-25-silicon-solar-cell",
@@ -1706,7 +1720,7 @@
       "lon": -74.401
     },
     "first_seen": "2026-09-29",
-    "last_seen": "2026-10-01"
+    "last_seen": "2026-10-02"
   },
   {
     "id": "his-1953-04-25-dna-double-helix",
@@ -1723,7 +1737,7 @@
       "lon": 0.1218
     },
     "first_seen": "2026-09-29",
-    "last_seen": "2026-10-01"
+    "last_seen": "2026-10-02"
   },
   {
     "id": "his-1945-11-15-eniac",
@@ -1740,7 +1754,7 @@
       "lon": -75.1652
     },
     "first_seen": "2026-09-29",
-    "last_seen": "2026-10-01"
+    "last_seen": "2026-10-02"
   },
   {
     "id": "his-1945-07-16-trinity-test",
@@ -1757,6 +1771,6 @@
       "lon": -106.4754
     },
     "first_seen": "2026-09-29",
-    "last_seen": "2026-10-01"
+    "last_seen": "2026-10-02"
   }
 ]

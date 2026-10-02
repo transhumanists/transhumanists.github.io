@@ -220,6 +220,21 @@ jobs:
       # violation there reads as "bad data" - this job names the cause outright.
       - run: python scripts/coverage_report.py --fail-on-null-island --quiet
 
+  publish-invariants:
+    name: Publish invariants
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      # Cross-file properties that no single-file validator can express: no origin
+      # sentinel anywhere in the payload tree, known location_confidence only, and
+      # every live milestone reachable in the archive so the year slider's history
+      # cannot silently lose records. The merge_feed defect shipped through two green
+      # builds because each file validated on its own.
+      - run: python scripts/publish_invariants.py
+
   data-check:
     name: Validate map data files
     runs-on: ubuntu-latest

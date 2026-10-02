@@ -51,7 +51,7 @@ class TestNullIslandEnforcement(unittest.TestCase):
 
     def test_milestone_at_null_island_is_rejected(self):
         issues = cd.check_milestones(_payload([_milestone(geolocation={"lat": 0, "lon": 0})]))
-        self.assertTrue(any("(0,0)" in i for i in issues), issues)
+        self.assertTrue(any("no-location marker" in i for i in issues), issues)
 
     def test_milestone_with_absent_geolocation_is_accepted(self):
         m = _milestone()
@@ -79,8 +79,8 @@ class TestNullIslandEnforcement(unittest.TestCase):
             "title": "T", "category": "Computing & AGI", "date": "2024-05-01",
             "geolocation": geo}])
         ms_issues = cd.check_milestones(_payload([_milestone(geolocation=geo)]))
-        self.assertTrue(any("(0,0)" in i for i in ev_issues))
-        self.assertTrue(any("(0,0)" in i for i in ms_issues))
+        self.assertTrue(any("no-location marker" in i for i in ev_issues), ev_issues)
+        self.assertTrue(any("no-location marker" in i for i in ms_issues), ms_issues)
 
 
 class TestNoShippedRecordIsNullIsland(unittest.TestCase):
@@ -151,6 +151,7 @@ class TestArchiveDropsUpstreamSentinel(unittest.TestCase):
         rec = sm.archive_record(_milestone(geolocation={"lat": 0, "lon": 0}), "2026-01-01")
         self.assertNotIn("geolocation", rec)
         self.assertIs(rec["located"], False)
+        self.assertEqual(rec["location_confidence"], "unlocated")
 
     def test_archive_record_keeps_real_coordinates(self):
         import sync_milestones as sm

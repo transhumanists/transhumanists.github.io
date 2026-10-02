@@ -142,6 +142,10 @@ def _build_steps(bun: str, tmpdir: Path, skip_determinism: bool,
     steps.append(("No null-island geocoding",
                   [sys.executable, "scripts/coverage_report.py",
                    "--fail-on-null-island", "--quiet"]))
+    # Runs after Data validation and before determinism, because it asserts
+    # cross-file properties that per-file validation cannot see.
+    steps.append(("Publish invariants hold",
+                  [sys.executable, "scripts/publish_invariants.py"]))
     if not skip_determinism:
         steps.append(("Data regeneration is deterministic", None))
     if not skip_browser and _playwright_installed():
