@@ -193,10 +193,12 @@ def render(r: dict) -> str:
     if t["null_island"]:
         lines.append("  NULL ISLAND           %d   <-- bug: these plot in the Gulf of Guinea"
                      % t["null_island"])
-        for r in r.get("null_island_records", [])[:10]:
-            lines.append("      %s  %-26s %s" % (r.get("date") or "----------",
-                                                str(r.get("category"))[:26],
-                                                r.get("title")[:56]))
+        # Named `rec`, not `r`: `r` is the report dict this whole function renders
+        # from, and rebinding it mid-function silently retargets every later access.
+        for rec in r.get("null_island_records", [])[:10]:
+            lines.append("      %s  %-26s %s" % (rec.get("date") or "----------",
+                                                str(rec.get("category"))[:26],
+                                                rec.get("title")[:56]))
     if t["malformed"]:
         lines.append("  malformed             %d" % t["malformed"])
     lines.append("")

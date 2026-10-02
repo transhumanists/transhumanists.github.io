@@ -685,7 +685,13 @@ def merge_feed(current: list, history: list) -> list:
             cleaned = _scrub_inherited(rec)
             by_id[cleaned.get("id", canonical_id(cleaned))] = cleaned
     for m in current:
-        by_id[m.get("id", canonical_id(m))] = m
+        # `current` must be scrubbed too, and the ordering is what made this matter:
+        # current is applied second, so an upstream record overwrites the archive's
+        # already-cleaned copy of the same id. Scrubbing only history therefore left
+        # exactly the records most likely to carry the sentinel - the ones straight
+        # off upstream - leaking (0,0) into the published feed.
+        cleaned = _scrub_inherited(m)
+        by_id[cleaned.get("id", canonical_id(cleaned))] = cleaned
     feed = list(by_id.values())
     feed.sort(key=lambda r: (r.get("date") or "", r.get("category") or "", r.get("title") or ""), reverse=True)
     return feed
