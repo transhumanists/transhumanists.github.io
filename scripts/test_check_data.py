@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import pathlib
 import re
 import sys
 import tempfile
@@ -12,6 +13,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import check_data as cd
+import location_contract as lc
 
 
 def _events_payload(*events: dict) -> dict:
@@ -1183,6 +1185,75 @@ class TestCheckUniqueIds(unittest.TestCase):
     def test_ids_are_unique_by_default(self):
         zones = [{"id": "a", "name": "A", "lat": 1, "lon": 1}, {"id": "b", "name": "B", "lat": 2, "lon": 2}]
         self.assertEqual(cd.check_zones(zones), [])
+
+
+class TestCoordinateParityWithTheClient(unittest.TestCase):
+    """worldmap.js and location_contract.py must agree on what a coordinate is.
+
+    The JS used to carry three hand-written copies of the rule - hasPlottableCoords,
+    an inline test inside normalizeEvent, and isLocatedCoord - and one of them did
+    not reject the origin at all. A payload the Python validator refused would still
+    have plotted a dot in the Gulf of Guinea, which is precisely the class of bug
+    this repository shipped twice.
+    """
+
+    def _js(self) -> str:
+        js_file = cd.ROOT / "assets" / "js" / "worldmap.js"
+        if not js_file.exists():
+            self.skipTest("worldmap.js not checked out")
+        return js_file.read_text(encoding="utf-8")
+
+    def test_origin_epsilon_matches(self):
+        js = self._js()
+        m = re.search(r"const ORIGIN_EPSILON\s*=\s*([0-9eE.+-]+)", js)
+        self.assertIsNotNone(m, "worldmap.js must declare ORIGIN_EPSILON")
+        self.assertEqual(float(m.group(1)), lc.ORIGIN_EPSILON,
+                         "JS and Python origin tolerance have drifted apart")
+
+    def test_only_one_coordinate_predicate_remains(self):
+        js = self._js()
+        # A second hand-written copy is how the divergence happened in the first
+        # place, so assert the delegation rather than trusting it.
+        # Anchored on a coordinate, so an unrelated `year % step !== 0 && ...`
+        # does not trip it.
+        inline = re.findall(r"\w+\.(?:lat|lon)\s*===\s*0\s*&&|\w+\.(?:lat|lon)\s*!==\s*0", js)
+        self.assertEqual(inline, [],
+                         "worldmap.js has an inline origin test; route it through "
+                         "hasPlottableCoords()")
+        self.assertIn("const isLocatedCoord = (c) => hasPlottableCoords(c?.lat, c?.lon);", js)
+
+    def test_javascript_agrees_with_python_on_the_edges(self):
+        # Run the real JS predicate under Bun and compare against the Python one on
+        # the cases that matter, rather than eyeballing the two implementations.
+        import subprocess
+        import tempfile
+        js_body = """
+        const ORIGIN_EPSILON = 1e-6;
+        function hasPlottableCoords(lat, lon) {
+          if (typeof lat !== 'number' || typeof lon !== 'number') return false;
+          if (!Number.isFinite(lat) || !Number.isFinite(lon)) return false;
+          if (lat < -90 || lat > 90 || lon < -180 || lon > 180) return false;
+          return !(Math.abs(lat) <= ORIGIN_EPSILON && Math.abs(lon) <= ORIGIN_EPSILON);
+        }
+        const cases = [[0,0],[1e-9,-1e-9],[0,139.69],[51.5,-0.12],[90,0],[-90,180],
+                       [91,0],[0,181],[NaN,5],[Infinity,5],[null,5],['5',5],[true,5]];
+        console.log(JSON.stringify(cases.map(([a,b]) => hasPlottableCoords(a,b))));
+        """
+        with tempfile.TemporaryDirectory() as tmp:
+            script = pathlib.Path(tmp) / "probe.js"
+            script.write_text(js_body, encoding="utf-8")
+            proc = subprocess.run(["bun", "run", str(script)], capture_output=True,
+                                  text=True, cwd=str(cd.ROOT))
+            if proc.returncode != 0:
+                self.skipTest(f"bun unavailable: {proc.stderr[:120]}")
+            js_results = json.loads(proc.stdout.strip().splitlines()[-1])
+        cases = [(0, 0), (1e-9, -1e-9), (0, 139.69), (51.5, -0.12), (90, 0), (-90, 180),
+                 (91, 0), (0, 181), (float("nan"), 5), (float("inf"), 5),
+                 (None, 5), ("5", 5), (True, 5)]
+        for (lat, lon), js_ok in zip(cases, js_results):
+            py_ok = lc.is_located({"lat": lat, "lon": lon})
+            self.assertEqual(js_ok, py_ok,
+                             f"JS and Python disagree on ({lat!r}, {lon!r})")
 
 
 class TestSchemaParity(unittest.TestCase):

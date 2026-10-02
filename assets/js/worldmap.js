@@ -3587,7 +3587,9 @@ const fragment = document.createDocumentFragment();
     if (!Number.isFinite(lat) && Number.isFinite(e.lat)) lat = e.lat;
     if (!Number.isFinite(lon) && Number.isFinite(e.lon)) lon = e.lon;
     // Intelligent geocoding fallback if coordinates missing OR invalid (0,0 indicates missing)
-    const hasValidCoords = Number.isFinite(lat) && Number.isFinite(lon) && !(lat === 0 && lon === 0);
+    // Shares the one predicate, so "the pipeline said unlocated" and "the client
+    // thinks these coordinates are fine" can never disagree.
+    const hasValidCoords = hasPlottableCoords(lat, lon);
     // When the pipeline has already ruled on this record it says so explicitly
     // (`located: false`, emitted after running its full geocoding cascade).
     // Honouring that decision matters: the client-side table below is a third,
@@ -3627,9 +3629,24 @@ const fragment = document.createDocumentFragment();
   // The one place coordinate bounds are written down. Milestones and the layer
   // pin both refuse the same inputs for the same reason, and a second copy of the
   // +/-90 / +/-180 pair is a second thing to forget to update.
+  // How close to the origin counts as "not a real place". Must stay equal to
+  // ORIGIN_EPSILON in scripts/location_contract.py - test_check_data.py's schema
+  // parity suite fails the build if the two drift.
+  const ORIGIN_EPSILON = 1e-6;
+
+  // The single definition of a usable coordinate. Hand-mirrors
+  // location_contract.is_located(), and every layer of the app goes through it:
+  // milestones (isPlottable), layer entries (isLocatedCoord), and normalizeEvent's
+  // "does this record need geocoding" test all used to carry their own copy, and one
+  // of those copies did not reject the origin at all - so a payload the validator
+  // rejected would still have plotted a dot in the Gulf of Guinea.
   function hasPlottableCoords(lat, lon) {
-    return Number.isFinite(lat) && lat >= -90 && lat <= 90 &&
-      Number.isFinite(lon) && lon >= -180 && lon <= 180;
+    if (typeof lat !== 'number' || typeof lon !== 'number') return false;
+    if (!Number.isFinite(lat) || !Number.isFinite(lon)) return false;
+    if (lat < -90 || lat > 90 || lon < -180 || lon > 180) return false;
+    // Only the joint origin is ever the sentinel. (0, 140) Tokyo is a real place, so
+    // this must not sweep up equatorial or prime-meridian coordinates.
+    return !(Math.abs(lat) <= ORIGIN_EPSILON && Math.abs(lon) <= ORIGIN_EPSILON);
   }
 
   function isPlottable(ev) {
@@ -3765,7 +3782,7 @@ const fragment = document.createDocumentFragment();
     return typeof z.name === 'string' &&
       Number.isFinite(z.lat) && z.lat >= -90 && z.lat <= 90 &&
       Number.isFinite(z.lon) && z.lon >= -180 && z.lon <= 180 &&
-      !(z.lat === 0 && z.lon === 0); // (0,0) is the "no location" marker, not a real position
+  hasPlottableCoords(z.lat, z.lon);
   }
 
   // Human rights entries share the zone shape so the tooltip builder can render
@@ -3794,10 +3811,7 @@ const fragment = document.createDocumentFragment();
   // A fleet arrow needs both endpoints valid; a missing/malformed endpoint
   // drops the whole movement instead of drawing a degenerate arrow. (0,0) is
   // the "unlocated" marker (same convention as normalizeEvent) and is rejected.
-  const isLocatedCoord = (c) =>
-    Number.isFinite(c?.lat) && c?.lat >= -90 && c?.lat <= 90 &&
-    Number.isFinite(c?.lon) && c?.lon >= -180 && c?.lon <= 180 &&
-    !(c?.lat === 0 && c?.lon === 0);
+  const isLocatedCoord = (c) => hasPlottableCoords(c?.lat, c?.lon);
 
   function isFleetPlottable(f) {
     const isInfantry = f.kind === 'infantry' || f.kind === 'mobilization' || f.kind === 'deployment' || f.kind === 'rotation';

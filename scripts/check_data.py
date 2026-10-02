@@ -109,9 +109,10 @@ def _coord_ok(lat: object, lon: object) -> bool:
 
 
 def _coord_located(lat: object, lon: object) -> bool:
-    # Layers are never geocoded at load time, so "(0, 0)" — the "no location"
-    # marker used by worldmap.js normalizeEvent — must not be accepted: it would
-    # plot a glowing halo over Null Island (Gulf of Guinea) and mislead readers.
+    # Layers are never geocoded at load time, so the origin — the "no location"
+    # marker — must not be accepted: it would plot a glowing halo over Null Island
+    # (Gulf of Guinea) and mislead readers. worldmap.js applies the same rule
+    # through hasPlottableCoords(), and the parity suite keeps the two in step.
     return lc.is_located({"lat": lat, "lon": lon})
 
 

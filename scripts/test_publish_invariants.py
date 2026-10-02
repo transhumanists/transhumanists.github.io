@@ -161,13 +161,28 @@ class TestWalkerFindsNestedCoordinates(unittest.TestCase):
         })
         self.assertTrue(any("unusable coordinate" in i for i in issues), issues)
 
-    def test_deployment_legs_are_covered(self):
-        issues = pi._content_invariants("x.json", {
-            "deployments": [{"from": {"lat": 0, "lon": 0}, "to": {"lat": 1, "lon": 1}}],
-        })
-        # Legs are validated by their own validator; the walker must not invent a
-        # duplicate complaint for them, but must also not crash on the shape.
-        self.assertIsInstance(issues, list)
+    def test_deployment_legs_are_checked(self):
+        # Written as an assertion on `list` this test could never fail - it was a
+        # placeholder that read as coverage. The real question is whether a sentinel
+        # on a leg is caught, so ask that against a real data directory.
+        d = _copy_data()
+        path = d / "world_layers.json"
+        layers = json.loads(path.read_text(encoding="utf-8"))
+        layers["deployments"][0]["from"] = {"lat": 0, "lon": 0}
+        _write(path, layers)
+        issues = pi.check(d)
+        self.assertTrue(
+            any("deployments" in i and "from" in i for i in issues),
+            "a sentinel on a deployment leg should be reported")
+
+    def test_deployment_leg_out_of_range_is_checked(self):
+        d = _copy_data()
+        path = d / "world_layers.json"
+        layers = json.loads(path.read_text(encoding="utf-8"))
+        layers["deployments"][0]["to"] = {"lat": 95, "lon": 5}
+        _write(path, layers)
+        issues = pi.check(d)
+        self.assertTrue(any("deployments" in i for i in issues), issues[:2])
 
 
 if __name__ == "__main__":

@@ -23,7 +23,11 @@ const EVENT_PAYLOAD = {
     { id: 'def-old', title: 'Defense (old name)', category: 'Defense', value: '5', source: 'S5', url: 'https://example.com/5', date: '2026-08-05', geolocation: { lat: -1.2864, lon: 36.8172 } },
     { id: 'def-001', title: 'M&D', category: 'Military & Defense', value: '6', source: 'S6', url: 'https://example.com/6', date: '2026-08-06', geolocation: { lat: 50.8609, lon: 4.3676 } },
     { id: 'cyber-001', title: 'Cyber', category: 'Cybersecurity', value: '7', source: 'S7', url: 'https://example.com/7', date: '2026-08-07', geolocation: { lat: 51.5074, lon: -0.1278 } },
-    { id: 'unk-001', title: 'UnknownX', category: 'Totally Unknown', value: 'UnknownX', source: 'S8', url: '', date: '2026-08-08', geolocation: { lat: 0, lon: 0 } },
+    // Was geolocated at lat 0 / lon 0 purely because that projects to a stable
+    // screen position. (0,0) is the unlocated sentinel and the coordinate predicate
+    // now refuses to plot it - correctly - so this fixture sits at a real place in
+    // the South Atlantic, still isolated from every other fixture dot.
+    { id: 'unk-001', title: 'UnknownX', category: 'Totally Unknown', value: 'UnknownX', source: 'S8', url: '', date: '2026-08-08', geolocation: { lat: -25, lon: -15 } },
   ],
 };
 
@@ -334,6 +338,8 @@ function pt(lon, lat) {
 
 // The London cybersecurity fixture, in canvas space.
 const LONDON = () => pt(-0.1278, 51.5074);
+  // Screen point of the isolated unk-001 fixture.
+  const UNKNOWN_DOT = () => pt(-15, -25);
 // A point guaranteed to have no marker near it, in canvas space.
 const EMPTY_CANVAS = () => pt(135, -61);
 
@@ -483,9 +489,11 @@ test('tooltip canonicalizes legacy category names', () => {
 
   test('tooltip hides a value that merely repeats the title (metric-less)', () => {
     registeredEls['reset-view'].fire('click', {});
-    // 'UnknownX' at lat 0 / lon 0 → (400, 260), isolated dot. Its value equals its
-    // title (metric-less events publish the title), so no .tt-value row is rendered.
-    canvas.fire('mousemove', { clientX: pt(0, 0).x, clientY: pt(0, 0).y, movementX: 0, movementY: 0 });
+    // 'UnknownX' sits at a real coordinate, isolated from every other fixture dot.
+    // It used to sit at lat 0 / lon 0 for a stable screen position, which the
+    // coordinate predicate now correctly refuses to plot.
+    canvas.fire('mousemove', { clientX: UNKNOWN_DOT().x, clientY: UNKNOWN_DOT().y,
+                               movementX: 0, movementY: 0 });
     expect(tooltip.classList.contains('visible')).toBe(true);
     const wrapper = tooltip.children[0];
     expect(wrapper.children.find((c) => c.className === 'tt-title').textContent).toBe('UnknownX');
@@ -538,10 +546,14 @@ test('zoom controls, keyboard and double-click do not throw', () => {
     // to screen (400, 260), so the old tooltip position would be stale.
     canvas.fire('mousemove', { clientX: LONDON().x, clientY: LONDON().y, movementX: 0, movementY: 0 });
     expect(tooltip.classList.contains('visible')).toBe(true);
+    // Anchor the zoom at a point that is not itself a marker, so the dot under test
+    // moves and its old tooltip position goes stale. (Was lat 0 / lon 0, which the
+    // coordinate predicate no longer plots.)
     canvas.fire('dblclick', { clientX: pt(0, 0).x, clientY: pt(0, 0).y });
     expect(tooltip.classList.contains('visible')).toBe(false);
     // A fresh hover over the relocated dot must re-open the tooltip.
-    canvas.fire('mousemove', { clientX: pt(0, 0).x, clientY: pt(0, 0).y, movementX: 0, movementY: 0 });
+    canvas.fire('mousemove', { clientX: UNKNOWN_DOT().x, clientY: UNKNOWN_DOT().y,
+                               movementX: 0, movementY: 0 });
     expect(tooltip.classList.contains('visible')).toBe(true);
   });
 
@@ -890,7 +902,12 @@ test('zoom controls, keyboard and double-click do not throw', () => {
     expect(api.isPlottable(api.normalizeEvent({ geolocation: { lat: '1', lon: 2 }, title: 'T', category: 'X' }))).toBe(false); // string lat
     expect(api.isPlottable(api.normalizeEvent({ geolocation: { lat: 1 }, title: 'T', category: 'X' }))).toBe(false);           // missing lon
     expect(api.isPlottable(api.normalizeEvent({ title: 42, geolocation: { lat: 1, lon: 2 } }))).toBe(false);                  // non-string title falls through
-    expect(api.isPlottable(api.normalizeEvent({ geolocation: { lat: 0, lon: 0 }, title: '', category: 'X' }))).toBe(true);    // numeric 0 and '' are valid
+    // Was .toBe(true) with the note "numeric 0 and '' are valid" - the client
+    // accepted (0,0) and drew a dot in the Gulf of Guinea. Python rejected the same
+    // value, which is exactly the divergence the coordinate predicate now closes.
+    expect(api.isPlottable(api.normalizeEvent({ geolocation: { lat: 0, lon: 0 }, title: '', category: 'X' }))).toBe(false);   // origin is the unlocated sentinel
+    expect(api.isPlottable(api.normalizeEvent({ geolocation: { lat: 1e-9, lon: 1e-9 }, title: 'T', category: 'X' }))).toBe(false);  // near-origin too
+    expect(api.isPlottable(api.normalizeEvent({ geolocation: { lat: 0, lon: 139.69 }, title: 'T', category: 'X' }))).toBe(true);   // (0, Tokyo) is real
     // NaN/Infinity pass a typeof 'number' check but break geometry; reject them
     // and coordinates outside the valid ranges.
     expect(api.isPlottable(api.normalizeEvent({ geolocation: { lat: Number.NaN, lon: 0 }, title: 'T', category: 'X' }))).toBe(false);
