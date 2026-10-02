@@ -1,5 +1,5 @@
 {
-  "last_update": "2026-10-02T07:27:50+00:00",
+  "last_update": "2026-10-02T07:29:04+00:00",
   "version": "1.0.0",
   "schema": "https://transhumanists.github.io/schema/milestone-v1.json",
   "categories": {
@@ -697,9 +697,9 @@
           "source": "Quanta Magazine",
           "url": "https://www.quantamagazine.org/gravity-seems-holographic-what-does-that-mean-for-reality-20260925/",
           "date": "2026-09-25",
-          "category_key": "quantum",
           "located": false,
-          "location_confidence": "unlocated"
+          "location_confidence": "unlocated",
+          "category_key": "quantum"
         },
         {
           "id": "q-001",
@@ -964,12 +964,11 @@
           "source": "International mathematics collaboration",
           "url": "https://www.quantamagazine.org/mathematicians-build-long-awaited-graph-sandwich-20260918/",
           "date": "2026-09-18",
-          "category_key": "computing_agi",
-          "location_confidence": "place",
           "geolocation": {
             "lat": 56.1,
             "lon": -106.3
-          }
+          },
+          "category_key": "computing_agi"
         },
         {
           "id": "ai-001",
@@ -1124,13 +1123,13 @@
           "source": "Open Khipu Repository",
           "url": "http://arxiv.org/abs/2607.00185v1",
           "date": "2026-06-30",
+          "located": false,
+          "location_confidence": "unlocated",
           "sources": [
             "Open Khipu Repository",
             "Academic researchers (Open Khipu Repository)"
           ],
-          "category_key": "computing_agi",
-          "located": false,
-          "location_confidence": "unlocated"
+          "category_key": "computing_agi"
         },
         {
           "id": "ms-0ef07b4ce70b",
@@ -1142,9 +1141,9 @@
           "source": "Academic researchers",
           "url": "http://arxiv.org/abs/2608.20391v1",
           "date": "2026-06-30",
-          "category_key": "computing_agi",
           "located": false,
-          "location_confidence": "unlocated"
+          "location_confidence": "unlocated",
+          "category_key": "computing_agi"
         },
         {
           "id": "ms-09edac1db332",
@@ -1210,12 +1209,11 @@
           "source": "LV-ROVER-MLT researchers",
           "url": "http://arxiv.org/abs/2607.00250v5",
           "date": "2026-01-01",
-          "category_key": "computing_agi",
-          "location_confidence": "place",
           "geolocation": {
             "lat": 35.9,
             "lon": 14.4
-          }
+          },
+          "category_key": "computing_agi"
         },
         {
           "id": "his-2023-10-12-vesuvius-challenge",
