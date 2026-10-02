@@ -659,7 +659,7 @@ height: 0,
     'Renewable Energy': '#ffd740',
     'Mobility & Logistics': '#ff5c9a',
     'Cybersecurity': '#ff5252',
-    'Robotics': '#6c7a89',
+    'Robotics & Drones': '#6c7a89',
     'Spaceflight & Aeronautics': '#00d4ff',
     'Military & Defense': '#ff9100'
   };
@@ -696,7 +696,7 @@ height: 0,
     'Military & Defense': { statId: 'map-stat-fleets', label: 'fleet movements tracked' },
     'Renewable Energy': { statId: 'map-stat-active', label: 'breakthroughs this week' },
     'Mobility & Logistics': { statId: 'map-stat-active', label: 'breakthroughs this week' },
-    'Robotics': { statId: 'map-stat-active', label: 'breakthroughs this week' },
+    'Robotics & Drones': { statId: 'map-stat-active', label: 'breakthroughs this week' },
     'Spaceflight & Aeronautics': { statId: 'map-stat-fleets', label: 'fleet movements tracked' },
     'Quantum Physics': { statId: 'map-stat-active', label: 'breakthroughs this week' },
     'Computing & AGI': { statId: 'map-stat-active', label: 'breakthroughs this week' }
@@ -727,8 +727,16 @@ height: 0,
     'Logistics': 'Mobility & Logistics',
     'Transportation': 'Mobility & Logistics',
     'Transport': 'Mobility & Logistics',
-    'Robotics & Automation': 'Robotics',
-    'Automation': 'Robotics'
+    // Renamed to "Robotics & Drones" once drone flight-time, range and
+    // payload records began being tracked under it. Both directions are
+    // mapped, so a payload may carry either label and the old one keeps
+    // validating instead of falling out of the canonical set.
+    'Robotics': 'Robotics & Drones',
+    'Robotics & Automation': 'Robotics & Drones',
+    'Automation': 'Robotics & Drones',
+    'Drones': 'Robotics & Drones',
+    'Drone': 'Robotics & Drones',
+    'UAV': 'Robotics & Drones',
   };
 
   // Canonical category order used by the legend (color, label). This is the
@@ -742,7 +750,7 @@ height: 0,
     { key: 'Renewable Energy', label: 'Renewable Energy' },
     { key: 'Mobility & Logistics', label: 'Mobility & Logistics' },
     { key: 'Cybersecurity', label: 'Cybersecurity' },
-    { key: 'Robotics', label: 'Robotics' },
+    { key: 'Robotics & Drones', label: 'Robotics & Drones' },
     { key: 'Spaceflight & Aeronautics', label: 'Spaceflight & Aeronautics' },
     { key: 'Military & Defense', label: 'Military & Defense' }
   ];

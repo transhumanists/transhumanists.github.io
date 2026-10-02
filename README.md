@@ -83,7 +83,7 @@ Listed in legend order. `CATEGORY_LEGEND` in `assets/js/worldmap.js` is the auth
 ⚡ **Renewable Energy** — fusion, solar efficiency, battery density, wind, storage
 🚚 **Mobility & Logistics** — autonomy, freight, ports, rail, aviation, last-mile
 🛡️ **Cybersecurity** — exploits, mitigations, encryption, threat intel, zero-days
-🤖 **Robotics** — humanoids, manipulation, drones, industrial and surgical robotics
+🤖 **Robotics & Drones** — humanoids, manipulation, industrial and surgical robotics, and drone flight time, range, endurance and payload records
 🚀 **Spaceflight & Aeronautics** — launch, payload, deep space, hypersonic, reusability
 🌍 **Military & Defense** — range, radius, fleet movements, contracts, air defense, naval, cyber ops
 

@@ -9,7 +9,7 @@
     energy: { name: 'Renewable Energy', icon: '⚡', color: '#ffd740' },
     mobility: { name: 'Mobility & Logistics', icon: '🚚', color: '#ff5c9a' },
     cybersecurity: { name: 'Cybersecurity', icon: '🛡️', color: '#ff5252' },
-    robotics: { name: 'Robotics', icon: '🤖', color: '#6c7a89' },
+    robotics: { name: 'Robotics & Drones', icon: '🤖', color: '#6c7a89' },
     spaceflight: { name: 'Spaceflight & Aeronautics', icon: '🚀', color: '#00d4ff' },
     defense: { name: 'Military & Defense', icon: '🌍', color: '#ff9100' }
   };
@@ -838,7 +838,15 @@
     toggles.forEach(btn => {
       const catKey = btn.dataset.category;
       const catData = data.categories[catKey];
-      if (!catData) return;
+      // A category can exist on the map and still have no tracked milestones yet.
+      // Rendering its card anyway would leave the hardcoded placeholder count in the
+      // markup and an expand control that opens onto nothing - so the card is hidden
+      // instead, and comes back on its own the first time the scraper files a
+      // milestone under it. Covers both "no such category" and "category is empty".
+      if (!catData || !catData.milestones || !catData.milestones.length) {
+        btn.style.display = 'none';
+        return;
+      }
 
       const milestonesContainer = btn.querySelector('.category-milestones');
       const indicator = btn.querySelector('.category-expand-indicator .expand-arrow');

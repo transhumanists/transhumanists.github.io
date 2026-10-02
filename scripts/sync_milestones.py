@@ -201,7 +201,7 @@ SITE_KEY_TO_DISPLAY = {
     "energy": "Renewable Energy",
     "mobility": "Mobility & Logistics",
     "cybersecurity": "Cybersecurity",
-    "robotics": "Robotics",
+    "robotics": "Robotics & Drones",
     "spaceflight": "Spaceflight & Aeronautics",
     "defense": "Military & Defense",
 }
@@ -286,9 +286,12 @@ CATEGORY_ALIASES = {
     "Logistics": "Mobility & Logistics",
     "Transportation": "Mobility & Logistics",
     "Transport": "Mobility & Logistics",
-    "Robotics": "Robotics",
-    "Robotics & Automation": "Robotics",
-    "Automation": "Robotics",
+    "Robotics": "Robotics & Drones",
+    "Robotics & Automation": "Robotics & Drones",
+    "Drones": "Robotics & Drones",
+    "Drone": "Robotics & Drones",
+    "UAV": "Robotics & Drones",
+    "Automation": "Robotics & Drones",
 }
 
 def slugify(name: str) -> str:
@@ -334,7 +337,7 @@ DISPLAY_TO_DISPLAY.update({
     "Biohacking": "Biotechnology & Biohacking",
     "Logistics": "Mobility & Logistics",
     "Transportation": "Mobility & Logistics",
-    "Robotics": "Robotics",
+    "Robotics": "Robotics & Drones",
 })
 DISPLAY_TO_DISPLAY.update(CATEGORY_ALIASES)
 

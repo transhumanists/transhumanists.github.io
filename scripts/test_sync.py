@@ -65,7 +65,7 @@ class TestMergeHistory(unittest.TestCase):
         self.assertEqual(sm.display_category("Biohacking"), "Biotechnology & Biohacking")
         self.assertEqual(sm.display_category("Logistics"), "Mobility & Logistics")
         self.assertEqual(sm.display_category("Transportation"), "Mobility & Logistics")
-        self.assertEqual(sm.display_category("Robotics"), "Robotics")
+        self.assertEqual(sm.display_category("Robotics"), "Robotics & Drones")
 
     def test_dedupe_buckets_on_the_published_category_not_the_raw_one(self):
         # Regression: the unifier bucketed on the record's raw category while the

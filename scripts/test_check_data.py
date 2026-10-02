@@ -689,12 +689,12 @@ class TestSchemaMatchesEnforcement(unittest.TestCase):
         # The doc says optional, so enforcement must agree: an event with no
         # geolocation and no flag has to pass.
         payload = _events_payload({
-            "title": "X", "category": "Robotics", "date": "2026-03-15"})
+            "title": "X", "category": "Robotics & Drones", "date": "2026-03-15"})
         self.assertEqual(cd.check_events(payload["events"]), [])
 
     def test_documented_rejection_of_null_island_matches_enforcement(self):
         payload = _events_payload({
-            "title": "X", "category": "Robotics", "date": "2026-03-15",
+            "title": "X", "category": "Robotics & Drones", "date": "2026-03-15",
             "geolocation": {"lat": 0, "lon": 0}})
         issues = cd.check_events(payload["events"])
         self.assertTrue(any("no-location marker" in i for i in issues), issues)
@@ -1266,9 +1266,10 @@ class TestEventCategories(unittest.TestCase):
         self.assertNotIn("Other", cats)
         self.assertEqual(len(set(cats)), len(cats))
         # Nine: the original seven, with standalone Biotechnology replaced by
-        # Biotechnology & Biohacking, plus Mobility & Logistics and Robotics.
+        # Biotechnology & Biohacking, plus Mobility & Logistics and Robotics & Drones.
         self.assertEqual(len(cats), 9)
-        for expected in ("Biotechnology & Biohacking", "Mobility & Logistics", "Robotics"):
+        for expected in ("Biotechnology & Biohacking", "Mobility & Logistics",
+                        "Robotics & Drones"):
             self.assertIn(expected, cats)
 
     def test_schema_category_order_matches_declared_categories(self):

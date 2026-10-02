@@ -1695,7 +1695,7 @@ test('zoom controls, keyboard and double-click do not throw', () => {
     expect(dots[0].style.background).toBe('#00e676');
     expect(dots[1].style.background).toBe('#00a651');
     // A single-colour category still gets exactly one dot.
-    const single = legendRows().find((r) => r.getAttribute('data-category') === 'Robotics');
+    const single = legendRows().find((r) => r.getAttribute('data-category') === 'Robotics & Drones');
     expect(single.children.filter((c) => (c.className || '').split(' ').includes('map-legend-dot')).length).toBe(1);
   });
 
@@ -1706,14 +1706,14 @@ test('zoom controls, keyboard and double-click do not throw', () => {
     }
     expect(api.CATEGORY_ALIASES['Transportation']).toBe('Mobility & Logistics');
     expect(api.CATEGORY_ALIASES['Logistics']).toBe('Mobility & Logistics');
-    expect(api.CATEGORY_ALIASES['Automation']).toBe('Robotics');
+    expect(api.CATEGORY_ALIASES['Automation']).toBe('Robotics & Drones');
   });
 
-  test('Robotics and Mobility sit in the requested legend positions', () => {
+  test('Robotics & Drones and Mobility sit in the requested legend positions', () => {
     const order = windowObj.__WORLDMAP_TEST__.CATEGORY_LEGEND.map((c) => c.key);
-    // Robotics above Spaceflight & Aeronautics and under Cybersecurity.
-    expect(order.indexOf('Robotics')).toBe(order.indexOf('Cybersecurity') + 1);
-    expect(order.indexOf('Robotics')).toBe(order.indexOf('Spaceflight & Aeronautics') - 1);
+    // Robotics & Drones above Spaceflight & Aeronautics and under Cybersecurity.
+    expect(order.indexOf('Robotics & Drones')).toBe(order.indexOf('Cybersecurity') + 1);
+    expect(order.indexOf('Robotics & Drones')).toBe(order.indexOf('Spaceflight & Aeronautics') - 1);
     // Mobility & Logistics under Renewable Energy and above Cybersecurity.
     expect(order.indexOf('Mobility & Logistics')).toBe(order.indexOf('Renewable Energy') + 1);
     expect(order.indexOf('Mobility & Logistics')).toBe(order.indexOf('Cybersecurity') - 1);
@@ -2393,6 +2393,57 @@ test('zoom controls, keyboard and double-click do not throw', () => {
       expect(found).not.toBe(null);
       expect(found[1]).toMatch(/background:\s*var\(--bg-card,\s*#[0-9a-f]{3,6}\)/);
       expect(found[1]).toContain('isolation: isolate');
+    });
+  });
+
+  describe('the Robotics rename keeps old payloads working', () => {
+    const api = () => windowObj.__WORLDMAP_TEST__;
+
+    test('the canonical label is Robotics & Drones everywhere it is displayed', () => {
+      expect(api().CATEGORY_LEGEND.some((r) => r.key === 'Robotics & Drones')).toBe(true);
+      expect(api().CATEGORY_LEGEND.some((r) => r.key === 'Robotics')).toBe(false);
+    });
+
+    test('every historical spelling folds into the renamed category', () => {
+      // The scraper, the seed data and the old map payloads all carry the previous
+      // label. All of them have to land in the one canonical bucket.
+      for (const legacy of ['Robotics', 'Robotics & Automation', 'Automation',
+                            'Drones', 'Drone', 'UAV']) {
+        expect(api().CATEGORY_ALIASES[legacy]).toBe('Robotics & Drones');
+      }
+    });
+
+    test('the schema agrees with the legend', () => {
+      // Two independent lists naming the same thing is how they drift.
+      const schema = JSON.parse(fs.readFileSync(
+        path.join(process.cwd(), 'schema/worldmap-data.schema.json'), 'utf8'));
+      const cats = schema.controls.events.categories;
+      expect(cats).toContain('Robotics & Drones');
+      expect(cats).not.toContain('Robotics');
+      expect(cats.length).toBe(api().CATEGORY_LEGEND.length);
+    });
+
+    test('every legend vertical has a milestone card on the page', () => {
+      // The page listed 7 cards against a 9-vertical map for a while, which is what
+      // made the section header say 7. Asserted per category so the next vertical
+      // added without a card fails here instead of shipping quietly.
+      const doc = fs.readFileSync(path.join(process.cwd(), 'index.md'), 'utf8');
+      const cards = new Set([...doc.matchAll(/data-category="([^"]+)"/g)]
+        .map((m) => m[1]));
+      const slugs = {
+        'Biotechnology & Biohacking': 'biotechnology',
+        'Computing & AGI': 'computing_agi',
+        'Quantum Physics': 'quantum',
+        'Renewable Energy': 'energy',
+        'Mobility & Logistics': 'mobility',
+        'Cybersecurity': 'cybersecurity',
+        'Robotics & Drones': 'robotics',
+        'Spaceflight & Aeronautics': 'spaceflight',
+        'Military & Defense': 'defense',
+      };
+      for (const row of api().CATEGORY_LEGEND) {
+        expect(cards.has(slugs[row.key])).toBe(true);
+      }
     });
   });
 

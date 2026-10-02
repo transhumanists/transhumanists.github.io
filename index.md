@@ -207,6 +207,22 @@ description: "Tracking milestones across biotech, AGI, quantum, energy, cyber, s
         <div class="category-milestones" style="display: none; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border); animation: slideDown 0.3s ease;"></div>
       </button>
 
+      <button class="milestone-card category-toggle" data-category="mobility" aria-expanded="false" style="text-decoration: none; color: inherit; width: 100%; text-align: left; background: none; border: 1px solid var(--border); cursor: pointer;">
+        <div class="milestone-card-header">
+          <div class="milestone-card-icon" aria-hidden="true">🚚</div>
+          <span class="milestone-card-category">Mobility</span>
+        </div>
+        <h3>Mobility & Logistics</h3>
+        <p style="font-size: 0.85rem; color: var(--fg-muted);">Autonomy, freight corridors, EV charging throughput, air taxi and port and rail volumes</p>
+        <div class="category-expand-indicator" style="margin-top: 12px; font-size: 0.7rem; color: var(--fg-subtle); display: flex; align-items: center; gap: 6px;">
+          <span>0 milestones</span>
+          <svg class="expand-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="transition: transform 0.2s ease; margin-left: auto;">
+            <path d="M6 9l6 6 6-6"/>
+          </svg>
+        </div>
+        <div class="category-milestones" style="display: none; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border); animation: slideDown 0.3s ease;"></div>
+      </button>
+
       <button class="milestone-card category-toggle" data-category="cybersecurity" aria-expanded="false" style="text-decoration: none; color: inherit; width: 100%; text-align: left; background: none; border: 1px solid var(--border); cursor: pointer;">
         <div class="milestone-card-header">
           <div class="milestone-card-icon" aria-hidden="true">🛡️</div>
@@ -216,6 +232,22 @@ description: "Tracking milestones across biotech, AGI, quantum, energy, cyber, s
         <p style="font-size: 0.85rem; color: var(--fg-muted);">CVSS records, mitigations, exploit chains, encryption standards</p>
         <div class="category-expand-indicator" style="margin-top: 12px; font-size: 0.7rem; color: var(--fg-subtle); display: flex; align-items: center; gap: 6px;">
           <span>3 milestones</span>
+          <svg class="expand-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="transition: transform 0.2s ease; margin-left: auto;">
+            <path d="M6 9l6 6 6-6"/>
+          </svg>
+        </div>
+        <div class="category-milestones" style="display: none; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border); animation: slideDown 0.3s ease;"></div>
+      </button>
+
+      <button class="milestone-card category-toggle" data-category="robotics" aria-expanded="false" style="text-decoration: none; color: inherit; width: 100%; text-align: left; background: none; border: 1px solid var(--border); cursor: pointer;">
+        <div class="milestone-card-header">
+          <div class="milestone-card-icon" aria-hidden="true">🤖</div>
+          <span class="milestone-card-category">Robotics</span>
+        </div>
+        <h3>Robotics & Drones</h3>
+        <p style="font-size: 0.85rem; color: var(--fg-muted);">Humanoids, manipulation, industrial and surgical robotics, and drone flight time, range, endurance and payload records</p>
+        <div class="category-expand-indicator" style="margin-top: 12px; font-size: 0.7rem; color: var(--fg-subtle); display: flex; align-items: center; gap: 6px;">
+          <span>0 milestones</span>
           <svg class="expand-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="transition: transform 0.2s ease; margin-left: auto;">
             <path d="M6 9l6 6 6-6"/>
           </svg>
