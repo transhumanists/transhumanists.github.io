@@ -340,17 +340,22 @@ body {
   position: absolute;
   left: 12px;
   bottom: 12px;
-  max-width: calc(100% - 24px);
+  /* Two caps, not one. calc() keeps the frame inside the map on narrow viewports;
+     the 240px ceiling is what stops a wide map from pushing the frame right until
+     it covers South America, which on an equirectangular projection starts around
+     a third of the way across (lon -60). 240px + 12px offset stays well short of
+     that at any desktop width. */
+  max-width: min(calc(100% - 24px), 240px);
   background: rgba(6,11,20,0.72);
   backdrop-filter: blur(8px);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  padding: 5px 7px;
-  font-size: 0.54rem;
-  line-height: 1.18;
+  padding: 7px 9px;
+  font-size: 0.62rem;
+  line-height: 1.22;
   font-family: var(--font-mono);
   z-index: 5;
-  min-width: 108px;
+  min-width: 132px;
   user-select: none;
  }
  .map-legend-controls {
@@ -1277,15 +1282,77 @@ body {
   font-size: 0.85rem;
   color: var(--fg-muted);
 }
-.metric-timeline-controls select {
-  padding: 6px 12px;
+/* SELECT CONTROL
+   The closed control was never the problem - it inherits --bg-card/--fg and looks
+   fine. The open dropdown list was: option elements are drawn by the user agent,
+   not by this stylesheet, so they came out transparent with inherited text and
+   were effectively unreadable.
+
+   Fixes, in order of how much they matter:
+   - `color-scheme` tells the UA which built-in palette to use for the popup, so
+     scrollbars and highlights follow the theme instead of the OS setting.
+   - `option` gets an explicit opaque background and foreground, which is what
+     actually makes the list readable.
+   - `appearance: none` plus a drawn chevron stops the platform arrow from being
+     the only thing that differs between themes.
+   - `forced-color-adjust` keeps Windows High Contrast from washing it out again. */
+.select-field,
+.metric-timeline-controls select,
+.catalog-controls select {
+  appearance: none;
+  -webkit-appearance: none;
+  color-scheme: dark light;
+  padding: 6px 30px 6px 12px;
   border-radius: var(--radius-sm);
   border: 1px solid var(--border);
-  background: var(--bg-card);
+  background-color: var(--bg-card);
   color: var(--fg);
   font-family: var(--font-ui);
   font-size: 0.85rem;
+  line-height: 1.35;
+  cursor: pointer;
+  /* Drawn arrow. Inline SVG data URI so it needs no asset and inherits nothing. */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%238ea3c0' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 11px center;
+  background-size: 10px 6px;
 }
+.select-field:hover,
+.metric-timeline-controls select:hover,
+.catalog-controls select:hover { border-color: var(--accent); }
+.select-field:focus-visible,
+.metric-timeline-controls select:focus-visible,
+.catalog-controls select:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+.select-field option,
+.metric-timeline-controls select option,
+.catalog-controls select option {
+  background-color: var(--bg-card);
+  color: var(--fg);
+  font-family: var(--font-ui);
+}
+/* Windows High Contrast ignores background-color unless it is told not to. */
+.select-field,
+.metric-timeline-controls select,
+.catalog-controls select { forced-color-adjust: none; }
+
+/* Year steppers flanking the year select. Same plate, border and radius as the
+   select they sit next to, so the three read as one control instead of three. */
+.stepper-btn {
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background-color: var(--bg-card);
+  color: var(--fg);
+  font-family: var(--font-ui);
+  font-size: 0.85rem;
+  line-height: 1.35;
+  cursor: pointer;
+}
+.stepper-btn:hover { border-color: var(--accent); }
+.stepper-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 .metric-staleness {
   font-size: 0.75rem;
   color: #ffb74d;
@@ -1624,6 +1691,84 @@ body {
   .map-legend-title { font-size: 0.42rem; margin-bottom: 2px; }
   .map-legend-row { gap: 4px; padding: 1px 2px; }
   .map-legend-controls { gap: 2px; margin-top: 3px; padding-top: 3px; }
+}
+
+/* MOBILE MAP AND CONTROL SURFACES
+   Three separate complaints shared one root cause: everything was sized for a
+   desktop viewport and then merely squeezed. A world map squeezed into a phone
+   viewport is not a smaller world map, it is a distorted one - the fix below gives
+   the canvas the shape the projection actually wants and lets the controls wrap
+   instead of colliding. */
+
+@media (max-width: 768px) {
+  /* Aspect ratio rather than a fixed pixel height. project() fits the world at
+     360:142 (about 2.54:1) and centres it, so a container of the same shape means
+     zero letterbox margin and no distortion at any phone width. min-height stops
+     it collapsing to an unusable sliver on very narrow devices. */
+  #world-map {
+    height: auto;
+    aspect-ratio: 360 / 142;
+    min-height: 220px;
+  }
+  #world-map-canvas { touch-action: none; }
+
+  /* The legend is 13 rows tall and was overflowing the map it sits on. Cap it to
+     the map's height and let it scroll; the fold toggle in its header still
+     collapses the category list, and now the whole frame can be scrolled rather
+     than clipped off the bottom of the screen. */
+  .map-legend {
+    max-height: calc(100% - 16px);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    /* Clear the timeline, which is docked along the bottom edge on mobile. */
+    bottom: 52px;
+  }
+  .map-legend-head { position: sticky; top: -7px; background: rgba(6,11,20,0.94);
+                     padding-top: 7px; z-index: 1; }
+
+  /* Touch targets: rows were 5px dots with 1px padding inside a scrolling frame,
+     which is well under any reasonable minimum. */
+  .map-legend-row { min-height: 30px; }
+  .map-legend-bulk { width: 2.4em; height: 2.4em; }
+
+  /* Timeline sits under the map on a phone instead of floating over it, so it
+     cannot cover the lower third of the world. */
+  .map-timeline { bottom: 8px; left: 8px; right: 8px; }
+
+  /* Filter rows wrap rather than running off the right edge. */
+  .catalog-controls,
+  .metric-timeline-controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+  }
+  .catalog-controls label,
+  .metric-timeline-controls label { margin-left: 0 !important; }
+  .select-field { flex: 1 1 130px; min-width: 0; }
+  #catalog-count { margin-left: 0 !important; }
+
+  /* Highlights: one card per screen, comfortable gutters, no horizontal overflow. */
+  .highlights-carousel { overflow-x: auto; -webkit-overflow-scrolling: touch;
+                         scroll-snap-type: x mandatory; }
+  .highlights-carousel-track > * { scroll-snap-align: center; }
+  .milestone-card { min-height: 0; }
+  .catalog-grid { grid-template-columns: 1fr; margin-top: 16px !important; }
+}
+
+@media (max-width: 480px) {
+  #world-map { min-height: 180px; }
+  .map-legend { font-size: 0.5rem; min-width: 104px; bottom: 48px; }
+  .map-legend-row { min-height: 28px; }
+  .map-tooltip { max-width: min(88vw, 300px); font-size: 0.72rem; }
+}
+
+/* Landscape phones: very little height, so the map follows the viewport height and
+   the legend is capped harder rather than being allowed to eat the map. */
+@media (max-width: 900px) and (orientation: landscape) and (max-height: 500px) {
+  #world-map { height: 58vh; min-height: 190px; aspect-ratio: auto; }
+  .map-legend { max-height: calc(100% - 46px); font-size: 0.48rem; min-width: 96px; }
+  .map-legend-row { min-height: 26px; }
 }
 
 /* SCROLLBAR */

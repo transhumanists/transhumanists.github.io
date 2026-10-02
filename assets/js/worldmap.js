@@ -864,9 +864,31 @@ function canonicalCategory(cat) {
   // Longitude always spans the full 360deg across the canvas; latitude spans the
   // asymmetric MAP_LAT_NORTH..MAP_LAT_SOUTH window, so the canvas top/bottom edges
   // are the cropped polar edges.
+  // The world is 360 degrees of longitude by MAP_LAT_SPAN of latitude, so it has a
+  // fixed aspect ratio. Stretching it to fill the canvas instead - which is what
+  // this used to do - squashed longitude and inflated latitude whenever the two
+  // disagreed. On a phone that turned the map into an unreadable smear and the
+  // coastlines stopped lining up with the graticule you were reading them against.
+  //
+  // The map is therefore fitted inside the canvas at its natural ratio and centred,
+  // leaving a margin rather than distorting. CSS keeps the container close to 2:1
+  // so that margin is only a few pixels on desktop and zero on mobile; this is the
+  // guarantee that it can never become a distortion if the box is some other shape.
+  const MAP_ASPECT = 360 / MAP_LAT_SPAN;
+
+  function mapBox() {
+    const cw = state.width;
+    const ch = state.height;
+    let h = ch;
+    let w = h * MAP_ASPECT;
+    if (w > cw) { w = cw; h = w / MAP_ASPECT; }
+    return { x: (cw - w) / 2, y: (ch - h) / 2, w, h };
+  }
+
   function project(lon, lat) {
-    const x = (lon + 180) / 360 * state.width;
-    const y = (MAP_LAT_NORTH - lat) / MAP_LAT_SPAN * state.height;
+    const b = mapBox();
+    const x = b.x + (lon + 180) / 360 * b.w;
+    const y = b.y + (MAP_LAT_NORTH - lat) / MAP_LAT_SPAN * b.h;
     return { x: x * state.transform.scale + state.transform.tx, y: y * state.transform.scale + state.transform.ty };
   }
 
@@ -874,7 +896,7 @@ function canonicalCategory(cat) {
   // crisis zones) are declared in degrees and drawn as circles, so they follow
   // this — the same scale project() uses for latitude.
   function latDegToPx() {
-    return state.height / MAP_LAT_SPAN;
+    return mapBox().h / MAP_LAT_SPAN;
   }
 
   // ---- Sample data (LOCAL DEV ONLY) ----
@@ -3871,6 +3893,12 @@ function initTimelineSlider() {
   areAllCategoriesHidden,
   toggleAllCategories,
   renderLegend,
+  mapBox,
+  project,
+  // Resize synchronously and redraw. Tests need a canvas change to take effect
+  // before the next assertion; the production path uses the debounced
+  // scheduleResize() instead.
+  resizeNow() { applyResize(); draw(); },
   humanRightStackFor,
   visibleHumanRightClusters,
   isNearAnchor,

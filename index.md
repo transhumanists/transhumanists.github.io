@@ -111,7 +111,7 @@ description: "Tracking milestones across biotech, AGI, quantum, energy, cyber, s
 
     <div class="catalog-controls">
       <label for="catalog-category-filter" style="font-size: 0.85rem; color: var(--fg-muted);">Filter:</label>
-      <select id="catalog-category-filter" style="padding: 6px 12px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--bg-card); color: var(--fg); font-family: var(--font-ui); font-size: 0.85rem;">
+      <select id="catalog-category-filter" class="select-field">
         <option value="all">All Categories</option>
         <option value="biotechnology">Biotechnology</option>
         <option value="computing_agi">Computing & AGI</option>
@@ -123,9 +123,9 @@ description: "Tracking milestones across biotech, AGI, quantum, energy, cyber, s
       </select>
       <label for="catalog-year-filter" style="font-size: 0.85rem; color: var(--fg-muted); margin-left: 16px;">Year:</label>
       <div style="display: inline-flex; align-items: center; gap: 6px; margin-left: 8px;">
-        <button id="catalog-year-prev" aria-label="Previous year" style="padding: 6px 10px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--bg-card); color: var(--fg); font-family: var(--font-ui); font-size: 0.85rem; cursor: pointer;">‹</button>
-        <select id="catalog-year-filter" style="padding: 6px 12px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--bg-card); color: var(--fg); font-family: var(--font-ui); font-size: 0.85rem; min-width: 80px;"></select>
-        <button id="catalog-year-next" aria-label="Next year" style="padding: 6px 10px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--bg-card); color: var(--fg); font-family: var(--font-ui); font-size: 0.85rem; cursor: pointer;">›</button>
+        <button id="catalog-year-prev" aria-label="Previous year" class="stepper-btn">‹</button>
+        <select id="catalog-year-filter" class="select-field" style="min-width: 80px;"></select>
+        <button id="catalog-year-next" aria-label="Next year" class="stepper-btn">›</button>
       </div>
       <span id="catalog-count" style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--fg-subtle); margin-left: 16px;"></span>
     </div>
@@ -271,7 +271,7 @@ description: "Tracking milestones across biotech, AGI, quantum, energy, cyber, s
     <div class="activity-chart">
       <div class="activity-controls">
         <label for="activity-year-filter" style="font-size: 0.85rem; color: var(--fg-muted);">Year:</label>
-        <select id="activity-year-filter" aria-label="Select year for activity timeline" style="padding: 6px 12px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--bg-card); color: var(--fg); font-family: var(--font-ui); font-size: 0.85rem;">
+        <select id="activity-year-filter" aria-label="Select year for activity timeline" class="select-field">
           <option value="all">All years</option>
         </select>
       </div>
@@ -284,11 +284,11 @@ description: "Tracking milestones across biotech, AGI, quantum, energy, cyber, s
     <div class="metric-timeline">
       <div class="metric-timeline-controls">
         <label for="metric-select">Metric timeline:</label>
-        <select id="metric-select" aria-label="Pick a metric to see its full timeline">
+        <select id="metric-select" class="select-field" aria-label="Pick a metric to see its full timeline">
           <option value="">— choose a metric —</option>
         </select>
         <label for="metric-year-filter" style="font-size: 0.85rem; color: var(--fg-muted); margin-left: 16px;">Year:</label>
-        <select id="metric-year-filter" aria-label="Select year for metric timeline" style="padding: 6px 12px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--bg-card); color: var(--fg); font-family: var(--font-ui); font-size: 0.85rem;">
+        <select id="metric-year-filter" aria-label="Select year for metric timeline" class="select-field">
           <option value="all">All years</option>
         </select>
         <span class="metric-staleness" id="metric-staleness" hidden></span>

@@ -1556,22 +1556,33 @@ test('zoom controls, keyboard and double-click do not throw', () => {
   test('the default view shows the polar caps but keeps the terminator out of them', () => {
     const api = windowObj.__WORLDMAP_TEST__;
     registeredEls['reset-view'].fire('click', {});
-    // Longitude still spans the full 360deg across the canvas width.
-    expect(api.project(-180, 0).x).toBe(0);
-    expect(api.project(180, 0).x).toBe(800);
+    // The world is fitted inside the canvas at its natural ratio and centred, so the
+    // map edges are the edges of that fitted box rather than of the canvas. On this
+    // 800x520 canvas the box is 800 wide and ~316 tall, letterboxed vertically.
+    const box = api.mapBox();
+    expect(box.w).toBe(800);
+    expect(box.h).toBeCloseTo(800 / (360 / api.MAP_LAT_SPAN), 6);
+    expect(box.x).toBeCloseTo(0, 6);
+    // Centred: equal margin above and below.
+    expect(box.y).toBeCloseTo((520 - box.h) / 2, 6);
+
+    // Longitude still spans the full 360deg across the fitted width.
+    expect(api.project(-180, 0).x).toBeCloseTo(box.x, 6);
+    expect(api.project(180, 0).x).toBeCloseTo(box.x + box.w, 6);
     // Latitude spans an asymmetric window: trimmed below to cut the empty Southern
     // Ocean band, extended above so the Arctic is not crowded against the edge.
     // The equator therefore sits BELOW centre, which is the whole point.
     expect(api.MAP_LAT_NORTH).toBe(76);
     expect(api.MAP_LAT_SOUTH).toBe(-66);
     expect(api.MAP_LAT_SPAN).toBe(142);
-    expect(api.project(0, api.MAP_LAT_NORTH).y).toBe(0);
-    expect(api.project(0, api.MAP_LAT_SOUTH).y).toBe(520);
-    expect(api.project(0, 0).y).toBeGreaterThan(260);
-    // The caps are on-canvas (that is the point: the map is recentred, not cropped
-    // tight to the tropics) but the true poles are not.
-    expect(api.project(0, 90).y).toBeLessThan(0);
-    expect(api.project(0, -90).y).toBeGreaterThan(520);
+    expect(api.project(0, api.MAP_LAT_NORTH).y).toBeCloseTo(box.y, 6);
+    expect(api.project(0, api.MAP_LAT_SOUTH).y).toBeCloseTo(box.y + box.h, 6);
+    expect(api.project(0, 0).y).toBeGreaterThan(box.y + box.h / 2);
+    // The window is recentred on the cap band, not cropped tight to the tropics: the
+    // true poles fall outside the map box on both sides. (They can still land
+    // inside the canvas, because the box is letterboxed inside it.)
+    expect(api.project(0, 90).y).toBeLessThan(box.y);
+    expect(api.project(0, -90).y).toBeGreaterThan(box.y + box.h);
     // The terminator must be sampled WIDER than the visible frame. The night band
     // is a closed polygon, so wherever it stopped it drew a straight horizontal
     // seam across the whole canvas - which is the grey band that appeared over the
@@ -1602,7 +1613,7 @@ test('zoom controls, keyboard and double-click do not throw', () => {
     expect(api.getView()).not.toEqual({ scale: 1, tx: 0, ty: 0 });
     registeredEls['reset-view'].fire('click', {});
     expect(api.getView()).toEqual({ scale: 1, tx: 0, ty: 0 });
-    expect(api.project(0, api.MAP_LAT_NORTH).y).toBe(0);
+    expect(api.project(0, api.MAP_LAT_NORTH).y).toBeCloseTo(api.mapBox().y, 6);
   });
 
   test('co-located grouping tolerates ~3 m coordinate noise but splits ~300 km', () => {
@@ -2261,6 +2272,177 @@ test('zoom controls, keyboard and double-click do not throw', () => {
       render();
       // 9 categories + 4 operational layers, unchanged by the new control.
       expect(legendRows().length).toBe(13);
+    });
+  });
+
+  // --- Select dropdown readability --------------------------------------------
+  // Regression: the closed selects looked fine, but the open dropdown list was
+  // drawn by the user agent rather than the stylesheet, so its options came out
+  // transparent with inherited text and were unreadable.
+  describe('select dropdowns are readable', () => {
+    const readAsset = (rel) =>
+      fs.readFileSync(path.join(process.cwd(), rel), 'utf8');
+    const css = () => readAsset('assets/css/main.css');
+    const page = () => readAsset('index.md');
+
+    test('no select is styled inline any more', () => {
+      // The old markup carried a background/colour declaration per select, which is
+      // exactly what left the popup unstyled.
+      expect(page()).not.toContain('padding: 6px 12px; border-radius');
+    });
+
+    test('every select on the page carries the shared class', () => {
+      const ids = ['catalog-category-filter', 'catalog-year-filter',
+                   'metric-select', 'metric-year-filter',
+                   'activity-year-filter'];
+      for (const id of ids) {
+        const line = page().split('\n')
+          .find((l) => l.includes('id="' + id + '"'));
+        expect(line).toBeDefined();
+        expect(line).toContain('class="select-field"');
+      }
+    });
+
+    test('options get an explicit opaque background and foreground', () => {
+      // This is the part that actually fixes the popup: option elements are UA-drawn.
+      const rule = css().split('option {')[1] || '';
+      expect(rule).toContain('--bg-card');
+      expect(rule).toContain('var(--fg)');
+    });
+
+    test('color-scheme is declared so the UA popup follows the theme', () => {
+      expect(css()).toContain('color-scheme: dark light');
+    });
+
+    test('the native arrow is replaced so every theme looks the same', () => {
+      expect(css()).toMatch(/appearance:\s*none/);
+      expect(css()).toContain('background-image: url("data:image/svg+xml');
+    });
+
+    test('options are not left to the OS light palette', () => {
+      // A regression guard worth stating: if someone removes the option rule the
+      // list silently goes transparent again and no functional test notices.
+      const c = css();
+      expect(c).toMatch(
+        /\.select-field option,[\s\S]{0,200}background-color:\s*var\(--bg-card\)/);
+    });
+  });
+
+  // --- Mobile / small-viewport map ---------------------------------------------
+  // "Impossible to see the whole map" was a distortion bug, not a size bug:
+  // project() stretched the world to fill the canvas regardless of its shape, so a
+  // phone-shaped canvas squashed longitude and inflated latitude until the
+  // coastlines stopped lining up with the graticule.
+  describe('mobile map projection', () => {
+    const api = () => windowObj.__WORLDMAP_TEST__;
+    const css = () => fs.readFileSync(path.join(process.cwd(), 'assets/css/main.css'), 'utf8');
+
+    const setSize = (w, h) => {
+      const canvas = registeredEls['world-map-canvas'];
+      canvas.clientWidth = w;
+      canvas.clientHeight = h;
+      canvas.getBoundingClientRect = () => ({ left: 0, top: 0, width: w, height: h });
+      api().resizeNow();
+    };
+
+    test('the world keeps its aspect ratio on a phone-shaped canvas', () => {
+      setSize(390, 844);
+      const b = api().mapBox();
+      // 390 wide forces the width constraint; height follows from the ratio.
+      expect(b.w).toBeCloseTo(390, 6);
+      expect(b.h).toBeCloseTo(390 / (360 / api().MAP_LAT_SPAN), 6);
+      // Centred in the tall canvas rather than pinned to the top.
+      expect(b.x).toBeCloseTo(0, 6);
+      expect(b.y).toBeCloseTo((844 - b.h) / 2, 6);
+    });
+
+    test('degrees-per-pixel stay square, so circles are not ovals', () => {
+      // The real symptom: a layer radius in degrees became an ellipse.
+      setSize(390, 844);
+      const b = api().mapBox();
+      const pxPerDegLat = b.h / api().MAP_LAT_SPAN;
+      const pxPerDegLon = b.w / 360;
+      expect(pxPerDegLat).toBeCloseTo(pxPerDegLon, 6);
+    });
+
+    test('the whole longitude range is inside the canvas', () => {
+      setSize(390, 844);
+      const b = api().mapBox();
+      expect(api().project(-180, 0).x).toBeGreaterThanOrEqual(0);
+      expect(api().project(180, 0).x).toBeLessThanOrEqual(390);
+      expect(api().project(-180, 0).x).toBeLessThan(api().project(180, 0).x);
+    });
+
+    test('a wide desktop canvas is letterboxed rather than stretched', () => {
+      setSize(1200, 580);
+      const b = api().mapBox();
+      // 1200/580 is narrower than the world's 2.54:1, so width is the binding
+      // constraint and the margin appears above and below rather than at the sides.
+      expect(b.w).toBeCloseTo(1200, 6);
+      expect(b.h).toBeCloseTo(1200 / (360 / api().MAP_LAT_SPAN), 6);
+      expect(b.h).toBeLessThan(580);
+      expect(b.x).toBeCloseTo(0, 6);
+      // Symmetric margin, and the plate still fills the canvas horizontally.
+      expect(b.y).toBeCloseTo((580 - b.h) / 2, 6);
+    });
+
+    test('the background still paints the whole canvas, so the margin is not a bar', () => {
+      // The letterbox margin must read as map surround rather than as black bars,
+      // because draw() fills the full canvas before anything is projected.
+      const src = fs.readFileSync(
+        path.join(process.cwd(), 'assets/js/worldmap.js'), 'utf8');
+      const body = src.slice(src.indexOf('function draw('),
+                             src.indexOf('function draw(') + 600);
+      expect(body).toMatch(/fillRect\(0, 0, w, h\)/);
+    });
+
+    test('the map never exceeds the canvas in either orientation', () => {
+      for (const [w, h] of [[320, 568], [390, 844], [844, 390], [1200, 580]]) {
+        setSize(w, h);
+        const b = api().mapBox();
+        expect(b.w).toBeLessThanOrEqual(w + 1e-6);
+        expect(b.h).toBeLessThanOrEqual(h + 1e-6);
+      }
+    });
+
+    test('CSS gives the canvas the shape the projection wants', () => {
+      const c = css();
+      expect(c).toContain('aspect-ratio: 360 / 142');
+      expect(c).toMatch(/#world-map\s*\{[^}]*aspect-ratio/);
+    });
+
+    test('the legend is capped to the map instead of overflowing it', () => {
+      const c = css();
+      expect(c).toMatch(/\.map-legend\s*\{[^}]*max-height/);
+      expect(c).toMatch(/\.map-legend\s*\{[^}]*overflow-y:\s*auto/);
+    });
+
+    test('legend rows meet a touch-sized minimum', () => {
+      const c = css();
+      expect(c).toMatch(/\.map-legend-row\s*\{[^}]*min-height:\s*\d+px/);
+    });
+
+    test('filter rows wrap on a phone instead of running off-screen', () => {
+      const c = css();
+      expect(c).toMatch(/\.catalog-controls,[\s\S]{0,120}flex-wrap:\s*wrap/);
+      expect(c).toMatch(/\.select-field\s*\{[^}]*flex:\s*1 1/);
+    });
+
+    test('the map still draws markers at a phone size without throwing', () => {
+      // Own event, and visible categories: an earlier suite hides all nine, and
+      // with nothing to draw this test would pass without exercising any marker.
+      api().getState().hiddenCategories.clear();
+      api().setFilterRecent(false);
+      api().setEvents([{ id: 'm-1', title: 'Phone milestone', category: 'Quantum Physics',
+                         value: '1', source: 'S', url: 'https://example.com/m',
+                         date: '2026-08-04',
+                         geolocation: { lat: 35.7, lon: 139.7 } }]);
+      setSize(360, 640);
+      ctx.resetCounters();
+      // resizeNow() resizes and redraws, which is the phone path end to end.
+      expect(() => api().resizeNow()).not.toThrow();
+      expect(ctx.counters.arcs).toBeGreaterThan(0);
+      expect(api().mapBox().w).toBeCloseTo(360, 6);
     });
   });
 
