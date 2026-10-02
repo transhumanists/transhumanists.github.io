@@ -1670,7 +1670,6 @@ body {
   .map-hint-dot { width: 6px; height: 6px; }
   .map-hint-title { font-size: 0.7rem; }
   .map-timeline { bottom: 8px; left: 8px; right: 8px; height: 40px; padding: 6px 8px; }
-  .map-timeline-years { top: -16px; font-size: 0.5rem; }
   .map-legend { left: 8px; bottom: 8px; max-width: calc(100% - 16px); padding: 4px 6px; font-size: 0.5rem; min-width: 100px; }
   .map-legend-title { font-size: 0.6rem; margin-bottom: 3px; }
   .map-legend-row { gap: 5px; padding: 2px 3px; margin: 0 -3px; }
@@ -1690,8 +1689,6 @@ body {
      The 60px lift this used to carry is superseded by the docked rule further
      down. It was labelled "Above carousel", but the highlights carousel is
      outside #world-map entirely, so it could not have been the reason. */
-  .map-timeline-years { top: -16px; font-size: 0.5rem; }
-  .map-timeline-years { top: -14px; font-size: 0.5rem; }
 }
 
 /* Mobile landscape */
@@ -1773,8 +1770,12 @@ body {
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
   }
-  .map-legend-head { position: sticky; top: -7px; background: rgba(6,11,20,0.94);
-                     padding-top: 7px; z-index: 1; }
+/* Opaque, not 0.94. The header pins while the rows scroll underneath, and at 0.94 the
+   remaining 6% was enough to ghost the rows through it - the caption ended up sitting
+   on a smear of the labels it was meant to head. A solid plate costs nothing here:
+   the legend itself is 0.72 and the header sits on top of it. */
+ .map-legend-head { position: sticky; top: -7px; background: #060b14;
+                    padding-top: 7px; z-index: 1; }
 
   /* Touch targets: rows were 5px dots with 1px padding inside a scrolling frame,
      which is well under any reasonable minimum. */
@@ -1786,7 +1787,6 @@ body {
      what changes is that it no longer rides 60px up. The legend is raised to
      bottom: 52px above it, so the two stack instead of overlapping - which is the
      whole reason for the offset on both rules. */
-  .map-timeline { bottom: 8px; left: 8px; right: 8px; }
 
   /* Filter rows wrap rather than running off the right edge. */
   .catalog-controls,

@@ -3175,8 +3175,17 @@ const fragment = document.createDocumentFragment();
       // stays on the word itself, where role="button" and tabindex live, because a
       // <button> inside a role="button" is invalid ARIA.
       const toggleFolded = () => {
+        // renderLegend() rebuilds the whole frame, which destroys the element that
+        // had focus. Without this a keyboard user toggles once and is dumped back on
+        // <body>, so the second Enter goes nowhere and the control looks broken.
+        const hadFocus = document.activeElement === title ||
+                         document.activeElement === head;
         state.foldedCategories = !state.foldedCategories;
         renderLegend();
+        if (hadFocus) {
+          const next = document.querySelector('.map-legend-title');
+          if (next && typeof next.focus === 'function') next.focus();
+        }
       };
       head.addEventListener('click', toggleFolded);
       title.addEventListener('keydown', e => {

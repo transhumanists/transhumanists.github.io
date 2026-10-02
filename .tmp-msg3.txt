@@ -1,0 +1,31 @@
+fix: keyboard focus survives the fold, and the pinned header stops ghosting
+
+Review of the legend and timeline work. Four issues, three of them mine.
+
+The fold dropped keyboard focus. renderLegend() rebuilds the whole frame, so the
+element that had focus was destroyed and focus landed on <body>: a keyboard user
+pressed Enter once and every press after it went nowhere, which reads as a broken
+control rather than as a missing focus ring. The toggle now restores focus to the new
+caption, and two tests toggle it twice with Enter and once with Space to prove it.
+
+The pinned legend header was translucent. At rgba(6,11,20,0.94) the remaining 6%
+was enough to bleed the rows through while scrolling, leaving CATEGORIES sitting on a
+smear of the labels it was meant to head. Caught by screenshotting the scrolled state
+rather than the initial one, which is the only state that shows it. Now solid, and the
+test asserts the resolved alpha is 1 instead of trusting a screenshot.
+
+The e2e setup failed silently. The legend is built from the layer and event fetches, so
+a 404 on data/*.json left it empty and every test in the file sat out the default 30s
+wait naming none of the cause - thirty times over. It now waits ten seconds, names the
+failing requests and the page errors, and fails once with a diagnostic.
+
+Dead CSS from the timeline restore. .map-timeline-years is display:none and never
+overridden, so three responsive rules were styling nothing; two were duplicates of
+each other. My docked .map-timeline rule had also become a strict subset of the 768px
+one. All four removed, leaving one definition per behaviour.
+
+Deliberately unchanged: the legend is 292px wide because the longest label needs it,
+which means it covers 82% of a 358px-wide phone map. Narrowing it would force the
+ellipsis fallback and break the one-line requirement, so the frame scrolls instead.
+
+35 browser checks, 180 unit tests, 19 workflow tests green on Bun 1.2.14 and 1.4.0.

@@ -15,13 +15,33 @@ const MAP_RATIO = 360 / 142; // worldmap.js: 360 deg of longitude over a 142 deg
 
 test.beforeEach(async ({ page }) => {
   const errors = [];
+  const failedRequests = [];
   page.on('pageerror', (e) => errors.push(e.message));
   page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
-  await page.goto('/e2e/fixture.html');
-  await page.waitForFunction(() => {
-    const el = document.getElementById('map-legend');
-    return !!el && el.querySelectorAll('.map-legend-row').length > 0;
+  page.on('response', (r) => {
+    if (r.status() >= 400) failedRequests.push(`${r.status()} ${r.url()}`);
   });
+
+  await page.goto('/e2e/fixture.html');
+
+  // Fail fast, and say what went wrong. The legend is built from the layer and
+  // event fetches, so a 404 on data/*.json leaves it empty - and the default wait is
+  // 30s of silence repeated for every test in the file, naming none of the cause.
+  try {
+    await page.waitForFunction(() => {
+      const el = document.getElementById('map-legend');
+      return !!el && el.querySelectorAll('.map-legend-row').length > 0;
+    }, null, { timeout: 10_000 });
+  } catch (err) {
+    const detail = failedRequests.length
+      ? `; requests failed: ${failedRequests.join(', ')}`
+      : '';
+    const seen = errors.length ? `; page errors: ${errors.join(' | ')}` : '';
+    throw new Error(
+      'the map legend never rendered - the fixture did not load its data' +
+      detail + seen, { cause: err });
+  }
+
   page.__errors = errors;
 });
 
@@ -90,6 +110,34 @@ test('the legend sits inside the map and does not overflow it', async ({ page })
   expect(legend.x + legend.width).toBeLessThanOrEqual(map.x + map.width + 1);
   expect(legend.y + legend.height).toBeLessThanOrEqual(map.y + map.height + 1);
 });
+
+test('the pinned legend header is opaque, so rows do not ghost through it',
+  async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'phone',
+              'the header only pins while the frame scrolls');
+    // At 0.94 the remaining 6% was enough to bleed the rows through, leaving the
+    // caption sitting on a smear of the labels it was meant to head. Measured rather
+    // than eyeballed: the resolved background has to be fully opaque.
+    const alpha = await page.evaluate(() => {
+      const cs = getComputedStyle(document.querySelector('.map-legend-head'));
+      const m = (cs.backgroundColor || '').match(/rgba?\(([^)]+)\)/);
+      if (!m) return null;
+      const parts = m[1].split(',').map((v) => parseFloat(v));
+      return parts.length === 4 ? parts[3] : 1;
+    });
+    expect(alpha).not.toBe(null);
+    expect(alpha, 'pinned header background alpha').toBe(1);
+
+    // And it actually pins, rather than scrolling away with the rows.
+    const legend = page.locator('#map-legend');
+    await legend.evaluate((el) => { el.scrollTop = 90; });
+    await page.waitForTimeout(200);
+    const headTop = await page.locator('.map-legend-head').evaluate(
+      (el) => el.getBoundingClientRect().top);
+    const frameTop = await legend.evaluate(
+      (el) => el.getBoundingClientRect().top);
+    expect(Math.abs(headTop - frameTop)).toBeLessThan(12);
+  });
 
 test('the legend reaches every row without being clipped away', async ({ page }) => {
   // 9 categories + 4 operational layers.
@@ -212,6 +260,39 @@ test('CATEGORIES is bigger than the eye and folds from the whole header row',
     await clickEye();
     await expect(title).toHaveAttribute('aria-pressed', 'true');
     await expect(eye).toHaveAttribute('aria-pressed', 'true');
+  });
+
+test('the fold keeps keyboard focus so it can be toggled twice', async ({ page }) => {
+  // renderLegend() rebuilds the whole frame, so without an explicit restore the
+  // focused element is destroyed and focus lands on <body>. A keyboard user then
+  // presses Enter a second time and nothing happens, which reads as a broken
+  // control rather than as a lost focus ring.
+  const title = page.locator('.map-legend-title');
+  await title.focus();
+  await expect(title).toBeFocused();
+
+  await page.keyboard.press('Enter');
+  await expect(title).toHaveAttribute('aria-pressed', 'true');
+  await expect(title).toBeFocused();
+
+  // Second press really does toggle again, which is the whole point.
+  await page.keyboard.press('Enter');
+  await expect(title).toHaveAttribute('aria-pressed', 'false');
+  await expect(title).toBeFocused();
+
+  // Space works the same way.
+  await page.keyboard.press(' ');
+  await expect(title).toHaveAttribute('aria-pressed', 'true');
+  await expect(title).toBeFocused();
+});
+
+test('the fold target is reachable by keyboard without the mouse',
+  async ({ page }) => {
+    const title = page.locator('.map-legend-title');
+    await expect(title).toHaveAttribute('role', 'button');
+    await expect(title).toHaveAttribute('tabindex', '0');
+    await expect(title).toHaveAttribute('aria-label',
+      'Toggle categories visibility');
   });
 
 test('every legend label sits on one line', async ({ page }) => {
