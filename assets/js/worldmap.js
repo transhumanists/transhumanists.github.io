@@ -2064,10 +2064,7 @@ function mapScreenRect() {
     // else - the one path that invents the coordinate is the path that must not
     // have it. A layer entry missing a coordinate is also unpinnable, so refusing
     // matches what the hit test would already have done.
-    if (!Number.isFinite(entry.lat) || !Number.isFinite(entry.lon) ||
-        entry.lat < -90 || entry.lat > 90 || entry.lon < -180 || entry.lon > 180) {
-      return;
-    }
+    if (!hasPlottableCoords(entry.lat, entry.lon)) return;
     const p = project(entry.lon, entry.lat);
     if (!p) return;
     if (type === 'zone') showZoneTooltip(entry, p.x, p.y);
@@ -3627,11 +3624,18 @@ const fragment = document.createDocumentFragment();
   // renderable and must be dropped before drawing or stat/legend counting.
   // NaN/Infinity slips past typeof checks (1e400 parses to Infinity), so gate
   // on Number.isFinite and reject out-of-range coordinates too.
+  // The one place coordinate bounds are written down. Milestones and the layer
+  // pin both refuse the same inputs for the same reason, and a second copy of the
+  // +/-90 / +/-180 pair is a second thing to forget to update.
+  function hasPlottableCoords(lat, lon) {
+    return Number.isFinite(lat) && lat >= -90 && lat <= 90 &&
+      Number.isFinite(lon) && lon >= -180 && lon <= 180;
+  }
+
   function isPlottable(ev) {
     return typeof ev.title === 'string' &&
       typeof ev.category === 'string' &&
-      Number.isFinite(ev.lat) && ev.lat >= -90 && ev.lat <= 90 &&
-      Number.isFinite(ev.lon) && ev.lon >= -180 && ev.lon <= 180;
+      hasPlottableCoords(ev.lat, ev.lon);
   }
 
   // True only for a developer machine. Used to decide whether the fabricated

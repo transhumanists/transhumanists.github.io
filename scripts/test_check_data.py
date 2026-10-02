@@ -1230,6 +1230,30 @@ class TestSchemaParity(unittest.TestCase):
         self.assertIn("=== 'active' || s === 'ongoing'", js)
 
 
+def js_category_aliases(source: str) -> dict:
+    """Extract CATEGORY_ALIASES from worldmap.js.
+
+    Comments are stripped before the braces are counted, not after. Counting first
+    means a brace inside a comment moves the terminator, so the block silently ends
+    early and the caller sees a shorter table - which is the exact failure this
+    function exists to prevent, since a missing alias is what let the two tables
+    drift in the first place.
+    """
+    stripped = re.sub(r"//[^\n]*", "", source)
+    start = stripped.index("const CATEGORY_ALIASES")
+    brace = stripped.index("{", start)
+    depth, i = 0, brace
+    while True:
+        if stripped[i] == "{":
+            depth += 1
+        elif stripped[i] == "}":
+            depth -= 1
+            if depth == 0:
+                break
+        i += 1
+    return dict(re.findall(r"'([^']+)'\s*:\s*'([^']+)'", stripped[brace:i + 1]))
+
+
 class TestEventCategories(unittest.TestCase):
     """An event must name one of the canonical categories.
 
@@ -1414,6 +1438,33 @@ class TestEventCategories(unittest.TestCase):
             with self.subTest(alias=alias):
                 self.assertIn(canonical, cd._CATEGORIES)
 
+    def test_js_alias_parser_survives_braces_in_comments(self):
+        """The drift guard is only as good as its parser. A comment containing an
+        unbalanced brace used to truncate the table, and a truncated table means a
+        missing alias compares equal on both sides - a silent pass, which is the
+        failure this whole check exists to catch."""
+        # A lone } inside a comment is the case that matters: counting braces
+        # before stripping comments terminates the block *at the comment*, so every
+        # real entry after it disappears. A fixture whose braces happen to balance
+        # passes under either order and guards nothing.
+        hostile = (
+            "const CATEGORY_ALIASES = {\n"
+            "    // } the migration replaced this table wholesale\n"
+            "    // 'Ghost': 'Not A Category',\n"
+            "    'Quantum': 'Quantum Physics',\n"
+            "    'Energy': 'Renewable Energy',\n"
+            "};\n"
+        )
+        self.assertEqual(
+            js_category_aliases(hostile),
+            {"Quantum": "Quantum Physics", "Energy": "Renewable Energy"})
+        # And the real table must survive the same treatment.
+        real = js_category_aliases(
+            (cd.ROOT / "assets" / "js" / "worldmap.js").read_text(encoding="utf-8"))
+        self.assertGreater(len(real), 10)
+        for value in real.values():
+            self.assertNotIn("{", value)
+
     def test_js_and_python_alias_tables_agree(self):
         """The browser folds legacy category labels at runtime; the validator does
         the same job at build time. If the tables drift, a record the site renders
@@ -1427,21 +1478,7 @@ class TestEventCategories(unittest.TestCase):
         import sync_milestones as sync
 
         src = (cd.ROOT / "assets" / "js" / "worldmap.js").read_text(encoding="utf-8")
-        start = src.index("const CATEGORY_ALIASES")
-        brace = src.index("{", start)
-        depth, i = 0, brace
-        while True:
-            if src[i] == "{":
-                depth += 1
-            elif src[i] == "}":
-                depth -= 1
-                if depth == 0:
-                    break
-            i += 1
-        block = src[brace:i + 1]
-        # Commented-out entries are not aliases; strip them before matching.
-        block = re.sub(r"//[^\n]*", "", block)
-        js_aliases = dict(re.findall(r"'([^']+)'\s*:\s*'([^']+)'", block))
+        js_aliases = js_category_aliases(src)
         self.assertGreater(len(js_aliases), 10, "alias table parse looks wrong")
 
         py_aliases = dict(sync.CATEGORY_ALIASES)
