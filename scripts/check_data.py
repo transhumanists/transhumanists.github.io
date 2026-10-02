@@ -43,6 +43,16 @@ REQUIRED_FILES = ("events.json", "world_layers.json", "milestones.json")
 # same field and geolocation enforcement rather than being exempt by omission.
 ARCHIVE_FILES = ("milestones_history.json",)
 
+# Read by the browser but shaped differently again: a bucketed time series plus a
+# spikes list. dashboard.js calls `d.date.startsWith(year)` on every entry, so one
+# malformed date there throws inside the activity chart with no validator to notice.
+ACTIVITY_FILES = ("activity.json",)
+
+# The hand-curated historical catalog. scrape_historical_milestones.py has always
+# had a validator for it, but it was only ever pointed at synthetic fixtures - the
+# shipped 43-entry catalog itself was read by CI exactly once it failed mid-ingest.
+CATALOG_FILES = ("historical_milestones.json",)
+
 # Single source of truth for the data contract (schema/worldmap-data.schema.json).
 # The defaults below keep this module runnable if the schema is ever removed,
 # but the parity tests in test_check_data.py fail loudly in CI on any drift.
@@ -766,6 +776,95 @@ def check_archive(data, filename: str) -> list[str]:
     return issues
 
 
+def check_activity(data, filename: str) -> list[str]:
+    """Validate the activity time series the dashboard's chart is built from.
+
+    dashboard.js does `series.map(d => d.count)` and, for the year filter,
+    `series.filter(d => d.date.startsWith(year))`. Both assume well-formed entries,
+    so a missing `date` is a TypeError inside the chart rather than a bad-looking
+    bar. The cross-checks at the end are the ones that catch real drift: `total` that
+    no longer matches the sum means the header count and the bars disagree, and that
+    is invisible without arithmetic.
+    """
+    if not isinstance(data, dict):
+        return [f"{filename}: must be an object"]
+    issues: list[str] = []
+    if data.get("bucket") not in ("day", "week", "month", "year"):
+        issues.append(f"{filename}.bucket: must be day|week|month|year, got "
+                      f"{data.get('bucket')!r}")
+    days = data.get("days")
+    if not isinstance(days, list) or not days:
+        issues.append(f"{filename}.days: must be a non-empty list")
+        return issues
+
+    seen: set[str] = set()
+    previous = None
+    for i, entry in enumerate(days):
+        if not isinstance(entry, dict):
+            issues.append(f"{filename}.days[{i}]: must be an object")
+            continue
+        d = entry.get("date")
+        if not isinstance(d, str) or not _valid_event_date(d):
+            issues.append(f"{filename}.days[{i}].date: must be a YYYY-MM-DD string")
+            continue
+        count = entry.get("count")
+        if isinstance(count, bool) or not isinstance(count, int) or count < 0:
+            issues.append(f"{filename}.days[{i}].count: must be a non-negative integer")
+        if d in seen:
+            issues.append(f"{filename}.days[{i}].date: duplicate {d!r}")
+        seen.add(d)
+        # dashboard.js labels the last bar as the most recent, so ordering is load
+        # bearing rather than cosmetic.
+        if previous is not None and d <= previous:
+            issues.append(f"{filename}.days[{i}].date: out of order ({d!r} after {previous!r})")
+        previous = d
+
+    for i, spike in enumerate(data.get("spikes") or []):
+        if not isinstance(spike, dict):
+            issues.append(f"{filename}.spikes[{i}]: must be an object")
+            continue
+        if not _valid_event_date(spike.get("date")):
+            issues.append(f"{filename}.spikes[{i}].date: must be a YYYY-MM-DD string")
+        if not isinstance(spike.get("count"), (int, float)) or isinstance(spike.get("count"), bool):
+            issues.append(f"{filename}.spikes[{i}].count: must be a number")
+        if not isinstance(spike.get("reason"), str) or not spike["reason"].strip():
+            issues.append(f"{filename}.spikes[{i}].reason: must be a non-empty string")
+
+    total = data.get("total")
+    if isinstance(total, int) and not isinstance(total, bool):
+        summed = sum(e["count"] for e in days
+                     if isinstance(e, dict) and isinstance(e.get("count"), int)
+                     and not isinstance(e.get("count"), bool))
+        if total != summed:
+            issues.append(f"{filename}.total: {total} does not match the sum of "
+                          f"days ({summed}); the header count and the bars disagree")
+    if seen:
+        for field, expected in (("first", min(seen)), ("last", max(seen))):
+            if data.get(field) != expected:
+                issues.append(f"{filename}.{field}: {data.get(field)!r} does not match "
+                              f"the series bounds ({expected!r})")
+    return issues
+
+
+def check_catalog(data, filename: str) -> list[str]:
+    """Validate the curated historical catalog the backfill ingests from.
+
+    Delegates to the ingest script's own entry validator rather than restating it,
+    so the two cannot disagree about what a catalog entry looks like.
+    """
+    import scrape_historical_milestones as sh
+    milestones = data.get("milestones") if isinstance(data, dict) else None
+    if not isinstance(milestones, list) or not milestones:
+        return [f"{filename}.milestones: must be a non-empty list"]
+    issues: list[str] = []
+    for i, entry in enumerate(milestones):
+        for problem in sh.validate_catalog_entry(entry, i):
+            issues.append(f"{filename}: {problem}")
+    if not isinstance(data.get("version"), str):
+        issues.append(f"{filename}.version: must be a string")
+    return issues
+
+
 def check_file(path: Path) -> list[str]:
     try:
         data = json.loads(path.read_text(encoding="utf-8"))
@@ -773,6 +872,10 @@ def check_file(path: Path) -> list[str]:
         return [f"unreadable/unparseable JSON: {exc}"]
     if path.name in ARCHIVE_FILES:
         return check_archive(data, path.name)
+    if path.name in ACTIVITY_FILES:
+        return check_activity(data, path.name)
+    if path.name in CATALOG_FILES:
+        return check_catalog(data, path.name)
     return check_data(data, path.name)
 
 
@@ -783,6 +886,8 @@ def main(argv: list[str]) -> int:
         if root.is_dir():
             targets.extend(root / f for f in REQUIRED_FILES)
             targets.extend(root / f for f in ARCHIVE_FILES)
+            targets.extend(root / f for f in ACTIVITY_FILES)
+            targets.extend(root / f for f in CATALOG_FILES)
         else:
             targets.append(root)
 

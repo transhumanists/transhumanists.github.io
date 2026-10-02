@@ -98,8 +98,15 @@ def check(data_dir: Path) -> list[str]:
         # Per-file validation checks shape. These check content.
         issues.extend(_content_invariants(name, payload))
 
-    # ---- 2. the archive is validated too ---------------------------------
-    for name in cd.ARCHIVE_FILES:
+    # ---- 2. the other browser-fetched files are validated too ------------
+    # ARCHIVE_FILES and ACTIVITY_FILES are published artefacts, so they get the same
+    # content invariants as the main files. CATALOG_FILES is deliberately excluded
+    # from those: data/historical_milestones.json is pipeline *input*, and it carries
+    # legacy category labels ("Biotechnology") on purpose - the ingest folds them
+    # through CATEGORY_ALIASES. Holding an input file to the output contract rejects
+    # exactly the legacy data the alias table exists to accept. It still gets its own
+    # validator, just not this one.
+    for name in cd.ARCHIVE_FILES + cd.ACTIVITY_FILES:
         path = data_dir / name
         if not path.exists():
             issues.append(f"{name}: missing")
@@ -112,6 +119,19 @@ def check(data_dir: Path) -> list[str]:
         for problem in cd.check_file(path):
             issues.append(f"{name}: {problem}")
         issues.extend(_content_invariants(name, payload))
+
+    for name in cd.CATALOG_FILES:
+        path = data_dir / name
+        if not path.exists():
+            issues.append(f"{name}: missing")
+            continue
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+        except Exception as exc:  # noqa: BLE001
+            issues.append(f"{name}: unreadable ({exc})")
+            continue
+        for problem in cd.check_file(path):
+            issues.append(f"{name}: {problem}")
 
     # ---- 3. cross-file invariants ----------------------------------------
     issues.extend(_cross_file(data_dir))

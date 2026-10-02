@@ -1661,6 +1661,32 @@ class TestCheckFile(unittest.TestCase):
                 }]),
                 encoding="utf-8",
             )
+            # activity.json and historical_milestones.json are validated too, so
+            # main() expects them alongside the rest.
+            (d / "activity.json").write_text(json.dumps({
+                "last_update": "2026-09-25T00:00:00Z",
+                "bucket": "month",
+                "first": "2026-01-01",
+                "last": "2026-03-01",
+                "total": 2,
+                "days": [{"date": "2026-01-01", "count": 1},
+                         {"date": "2026-03-01", "count": 1}],
+                "spikes": [],
+            }), encoding="utf-8")
+            (d / "historical_milestones.json").write_text(json.dumps({
+                "description": "curated",
+                "version": "1.0.0",
+                "milestones": [{
+                    "id": "his-e2e-1",
+                    "category": "Cybersecurity",
+                    "subcategory": "general",
+                    "title": "Archived historic milestone",
+                    "date": "2026-01-05",
+                    "source": "Example",
+                    "url": "https://example.org/a",
+                    "geolocation": {"lat": 51.5, "lon": -0.12},
+                }],
+            }), encoding="utf-8")
             self.assertEqual(cd.main([str(d)]), 0)
 
     def test_missing_file_is_an_error(self):
