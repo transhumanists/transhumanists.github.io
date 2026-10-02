@@ -48,10 +48,20 @@ WIKIPEDIA_REF = "https://en.wikipedia.org/wiki/List_of_ongoing_armed_conflicts"
 
 WORLD_LAYERS_FILE = Path("data/world_layers.json")
 
+# Repo root, derived from this file rather than the working directory.
+ROOT = Path(__file__).resolve().parents[1]
+
 
 def _load_zone_tier_radius() -> dict:
-    """Tier -> radius from the data contract, with a safe default if absent."""
-    schema_path = Path("schema/worldmap-data.schema.json")
+    """Tier -> radius from the data contract, with a safe default if absent.
+
+    Resolved from ROOT, not from the working directory. A relative path silently
+    fell back to the literal table whenever this ran from anywhere but the repo root,
+    which is the exact drift the refactor set out to remove: the drawn radius and the
+    validated radius would quietly disagree, and nothing would say so. check_data.py
+    already resolves the same file from ROOT for the same reason.
+    """
+    schema_path = ROOT / "schema" / "worldmap-data.schema.json"
     try:
         schema = json.loads(schema_path.read_text(encoding="utf-8"))
         table = schema["controls"]["layer_lifecycle"]["zone_tier_radius"]

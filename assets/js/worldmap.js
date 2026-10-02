@@ -351,6 +351,10 @@ const HUMAN_RIGHTS_PULSE_MS = 2400;
   // during page load. The entry-count trim below is the real size control.
   const GEOCODE_CACHE_MAX_BYTES = 512 * 1024;
 
+  // Upper bound on the persisted hidden-category list. Nine canonical names is a few
+  // hundred bytes; anything past this is a hand-edited or hostile value.
+  const HIDDEN_CATEGORIES_MAX_BYTES = 4 * 1024;
+
   // Single source of truth for the source-link URL scheme gate.
   // Every renderer (worldmap, dashboard, widgets) must test the raw string
   // against this before assigning to href. A mismatched gate would either
@@ -747,19 +751,38 @@ height: 0,
   // CATEGORY_LEGEND at that point would throw a TDZ ReferenceError that the
   // surrounding try/catch would swallow - silently discarding every saved
   // preference, not just this one.
-  try {
-    const rawHidden = localStorage.getItem(STORAGE_KEY_HIDDEN_CATEGORIES);
-    if (rawHidden !== null) {
-      const parsedHidden = JSON.parse(rawHidden);
-      if (Array.isArray(parsedHidden)) {
-        // Filter to canonical names: localStorage is user-writable, and an
-        // unfiltered value could push arbitrary strings into the legend.
-        state.hiddenCategories = new Set(parsedHidden.filter(
-          (name) => typeof name === 'string' &&
-            CATEGORY_LEGEND.some((l) => l.key === name)
-        ));
-      }
+  // Extracted so the load path's trust boundary is directly testable rather than
+  // only reachable by mutating localStorage and reloading the module.
+  //
+  // Returns the canonical names to hide, or null when the stored value is absent or
+  // unusable - in which case the caller's existing set is left alone.
+  function parseHiddenCategories(raw) {
+    // Length-checked before parsing, for the same reason parseGeocodeCache does it:
+    // never hand an arbitrarily large user-writable string to JSON.parse. A real
+    // payload is nine category names.
+    if (typeof raw !== 'string' || raw.length === 0 ||
+        raw.length > HIDDEN_CATEGORIES_MAX_BYTES) {
+      return null;
     }
+    let parsed;
+    try {
+      parsed = JSON.parse(raw);
+    } catch (_) {
+      return null;
+    }
+    if (!Array.isArray(parsed)) return null;
+    // Filter to canonical names: localStorage is user-writable, and an unfiltered
+    // value could push arbitrary strings into the legend.
+    return parsed.filter(
+      (name) => typeof name === 'string' &&
+        CATEGORY_LEGEND.some((l) => l.key === name)
+    );
+  }
+
+  try {
+    const restored = parseHiddenCategories(
+      localStorage.getItem(STORAGE_KEY_HIDDEN_CATEGORIES));
+    if (restored) state.hiddenCategories = new Set(restored);
   } catch (_) {}
 
 function canonicalCategory(cat) {
@@ -1166,6 +1189,13 @@ function mapScreenRect() {
   let resizeTimeout = null;
   function applyResize() {
     const rect = canvas.getBoundingClientRect();
+    // Refuse to resize into a zero-area canvas. That happens whenever the widget is
+    // hidden or not laid out yet - a display:none ancestor, a collapsed panel, or the
+    // first paint before the aspect-ratio box has a width. Adopting 0x0 clobbers the
+    // backing store and collapses every projection onto the origin, painting a frame
+    // full of dots stacked in one corner. Keeping the last good size means the next
+    // resize event (which follows layout) simply draws correctly.
+    if (!(rect.width > 0) || !(rect.height > 0)) return false;
     state.width = rect.width;
     state.height = rect.height;
     // Refresh DPR on every resize: the device scale can change (window moved to
@@ -1174,6 +1204,7 @@ function mapScreenRect() {
     canvas.width = state.width * state.dpr;
     canvas.height = state.height * state.dpr;
     ctx.setTransform(state.dpr, 0, 0, state.dpr, 0, 0);
+    return true;
   }
 
   function resize() {
@@ -3937,6 +3968,8 @@ function initTimelineSlider() {
     const existingTestHook = window.__WORLDMAP_TEST__;
     window.__WORLDMAP_TEST__ = {
       canonicalCategory,
+  parseHiddenCategories,
+  HIDDEN_CATEGORIES_MAX_BYTES,
       CATEGORY_COLORS,
       CATEGORY_STAT_MAP,
       CATEGORY_LEGEND,

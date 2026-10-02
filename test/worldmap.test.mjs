@@ -2371,6 +2371,107 @@ test('zoom controls, keyboard and double-click do not throw', () => {
     windowObj.__WORLDMAP_TEST__.resizeNow();
   }
 
+  // --- Degenerate canvas and untrusted persistence ------------------------------
+  describe('robustness: degenerate canvas and untrusted storage', () => {
+    const api = () => windowObj.__WORLDMAP_TEST__;
+
+    const size = (w, h) => {
+      const canvas = registeredEls['world-map-canvas'];
+      canvas.clientWidth = w;
+      canvas.clientHeight = h;
+      canvas.getBoundingClientRect = () => ({ left: 0, top: 0, width: w, height: h });
+    };
+    // Labels each sub-case so a failure names the value that broke it.
+    const withCase = (label, fn) => {
+      try {
+        fn();
+      } catch (err) {
+        throw new Error('failed for ' + JSON.stringify(label) + ': ' + err.message);
+      }
+    };
+
+    afterEach(() => {
+      size(CANVAS_W, CANVAS_H);
+      api().resizeNow();
+    });
+
+    test('a zero-area canvas keeps the last good size', () => {
+      size(800, 520);
+      api().resizeNow();
+      // Hidden or not laid out yet: adopting 0x0 would collapse every projection
+      // onto the origin and paint a frame full of dots stacked in one corner.
+      size(0, 0);
+      api().resizeNow();
+      expect(api().getState().width).toBe(800);
+      expect(api().getState().height).toBe(520);
+      expect(api().mapBox().w).toBeGreaterThan(0);
+    });
+
+    test('a zero-area canvas does not throw', () => {
+      size(0, 0);
+      expect(() => api().resizeNow()).not.toThrow();
+    });
+
+    test('a zero-width canvas is refused too, not just zero-height', () => {
+      size(800, 520);
+      api().resizeNow();
+      size(0, 400);
+      api().resizeNow();
+      expect(api().getState().width).toBe(800);
+    });
+
+    test('the map recovers once a real size arrives', () => {
+      size(0, 0);
+      api().resizeNow();
+      size(390, 844);
+      api().resizeNow();
+      expect(api().getState().width).toBe(390);
+      expect(api().mapBox().w).toBeCloseTo(390, 6);
+    });
+
+    test('an oversized hidden-category value is refused before it is parsed', () => {
+      const api2 = api();
+      const huge = JSON.stringify(Array(200000).fill('X').join(''));
+      expect(huge.length).toBeGreaterThan(api2.HIDDEN_CATEGORIES_MAX_BYTES);
+      expect(api2.parseHiddenCategories(huge)).toBe(null);
+    });
+
+    test('a normal hidden-category list is honoured', () => {
+      const api2 = api();
+      expect(api2.parseHiddenCategories(JSON.stringify(['Quantum Physics'])))
+        .toEqual(['Quantum Physics']);
+    });
+
+    test('unknown names are dropped rather than pushed into the legend', () => {
+      const api2 = api();
+      expect(api2.parseHiddenCategories(
+        JSON.stringify(['Quantum Physics', 'Not A Category', 42, null])))
+        .toEqual(['Quantum Physics']);
+    });
+
+    test('malformed and wrong-shaped values are refused, not thrown on', () => {
+      const api2 = api();
+      for (const raw of ['{not json', '{"a":1}', '"a string"', '42', 'null', '']) {
+        withCase(raw, () => expect(api2.parseHiddenCategories(raw)).toBe(null));
+      }
+    });
+
+    test('a missing value is null, so the caller keeps what it had', () => {
+      const api2 = api();
+      expect(api2.parseHiddenCategories(null)).toBe(null);
+      expect(api2.parseHiddenCategories(undefined)).toBe(null);
+      expect(api2.parseHiddenCategories(42)).toBe(null);
+    });
+
+    test('a real payload is comfortably inside the cap', () => {
+      // If a legitimate list ever approached the cap the guard would start eating
+      // real preferences, which is the failure mode this is supposed to prevent.
+      const api2 = api();
+      const all = JSON.stringify(api2.CATEGORY_LEGEND.map((l) => l.key));
+      expect(all.length).toBeLessThan(api2.HIDDEN_CATEGORIES_MAX_BYTES / 4);
+    });
+  });
+
   // --- Geography is clipped to the map plate -----------------------------------
   // Having fitted the world inside the canvas, the vertical graticule lines run pole
   // to pole and the terminator tints the full canvas, so both carry on into the

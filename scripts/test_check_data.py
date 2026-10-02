@@ -987,6 +987,45 @@ class TestMergedSourcesField(unittest.TestCase):
         self.assertEqual(cd.check_milestones(data), [])
 
 
+class TestZoneTierRadiusIsCwdIndependent(unittest.TestCase):
+    """Both readers must resolve the schema from the repo root, not the cwd.
+
+    sync_layers' loader originally used a relative path. Run from anywhere but the
+    repo root it fell back to its literal table, so the radius a zone was drawn at
+    and the radius it was validated against could quietly disagree - which is the
+    whole drift the single-source refactor set out to remove. pytest always runs from
+    the repo root, so nothing caught it.
+    """
+
+    def test_both_modules_read_the_schema_from_any_directory(self):
+        import os
+        import tempfile
+
+        before = os.getcwd()
+        with tempfile.TemporaryDirectory() as elsewhere:
+            os.chdir(elsewhere)
+            try:
+                import importlib
+
+                sync_layers = importlib.import_module("sync_layers")
+                check_data = importlib.import_module("check_data")
+                declared = cd._LIFECYCLE_CTRL.get("zone_tier_radius")
+                self.assertEqual(sync_layers.TIER_RADIUS,
+                                 {str(k): float(v) for k, v in declared.items()})
+                self.assertEqual(check_data._ZONE_TIER_RADIUS, dict(declared))
+            finally:
+                os.chdir(before)
+
+    def test_the_loader_resolves_the_schema_against_the_repo_root(self):
+        import sync_layers
+
+        # The file it opens has to exist as an absolute path regardless of cwd.
+        expected = (cd.ROOT / "schema" / "worldmap-data.schema.json").resolve()
+        self.assertTrue(expected.is_file())
+        # And the module's own ROOT must point at the same place.
+        self.assertEqual(Path(sync_layers.ROOT).resolve(), cd.ROOT.resolve())
+
+
 class TestZoneTierRadiusSingleSource(unittest.TestCase):
     """The tier/radius table must be declared once, in the schema.
 
