@@ -565,8 +565,17 @@ def check_milestones(data: object) -> list[str]:
                 if not _valid_event_date(m.get("date")):
                     issues.append(f"categories[{cat_key}].milestones[{i}].date: must be a parseable date string")
                 geo = m.get("geolocation")
-                if not isinstance(geo, dict) or not _coord_ok(geo.get("lat"), geo.get("lon")):
-                    issues.append(f"categories[{cat_key}].milestones[{i}].geolocation: must be a finite lat/lon pair in range")
+                # Absent means unlocated, which is valid and which the map renders
+                # as "no dot". (0, 0) is NOT the way to spell unlocated: it is the
+                # upstream sentinel, and storing it put a dot in the Gulf of Guinea.
+                # check_events has always enforced this; milestones did not.
+                if geo is not None:
+                    if not isinstance(geo, dict) or not _coord_ok(geo.get("lat"), geo.get("lon")):
+                        issues.append(f"categories[{cat_key}].milestones[{i}].geolocation: must be a finite lat/lon pair in range")
+                    elif geo.get("lat") == 0.0 and geo.get("lon") == 0.0:
+                        issues.append(
+                            f"categories[{cat_key}].milestones[{i}].geolocation (0,0) is the "
+                            "no-location marker; omit the key instead of publishing null island")
                 if not _valid_source_url(m.get("url")):
                     issues.append(
                         f"categories[{cat_key}].milestones[{i}].url: must be absent or an http(s) URL, got {m.get('url')!r}"

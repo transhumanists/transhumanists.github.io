@@ -111,12 +111,9 @@
     "source": "Quanta Magazine",
     "url": "https://www.quantamagazine.org/gravity-seems-holographic-what-does-that-mean-for-reality-20260925/",
     "date": "2026-09-25",
-    "geolocation": {
-      "lat": 0.0,
-      "lon": 0.0
-    },
     "first_seen": "2026-09-26",
-    "last_seen": "2026-10-01"
+    "last_seen": "2026-10-01",
+    "located": false
   },
   {
     "id": "ms-847b6f6830b8",
@@ -128,12 +125,9 @@
     "source": "arXiv preprint",
     "url": "https://arxiv.org/abs/2609.28876",
     "date": "2026-09-25",
-    "geolocation": {
-      "lat": 0.0,
-      "lon": 0.0
-    },
     "first_seen": "2026-09-25",
-    "last_seen": "2026-10-01"
+    "last_seen": "2026-10-01",
+    "located": false
   },
   {
     "id": "ms-0a47a34ebd2d",
@@ -145,12 +139,9 @@
     "source": "arXiv (Cornell University)",
     "url": "https://arxiv.org/abs/2609.25166",
     "date": "2026-09-23",
-    "geolocation": {
-      "lat": 0.0,
-      "lon": 0.0
-    },
     "first_seen": "2026-09-23",
-    "last_seen": "2026-10-01"
+    "last_seen": "2026-10-01",
+    "located": false
   },
   {
     "id": "ms-1d88f31518db",
@@ -179,12 +170,9 @@
     "source": "International mathematics collaboration",
     "url": "https://www.quantamagazine.org/mathematicians-build-long-awaited-graph-sandwich-20260918/",
     "date": "2026-09-18",
-    "geolocation": {
-      "lat": 0.0,
-      "lon": 0.0
-    },
     "first_seen": "2026-09-26",
-    "last_seen": "2026-10-01"
+    "last_seen": "2026-10-01",
+    "located": false
   },
   {
     "id": "ms-e5275443e851",
@@ -196,12 +184,9 @@
     "source": "Unknown",
     "url": "https://www.nature.com/articles/s41587-026-03322-x",
     "date": "2026-09-15",
-    "geolocation": {
-      "lat": 0.0,
-      "lon": 0.0
-    },
     "first_seen": "2026-09-22",
-    "last_seen": "2026-10-01"
+    "last_seen": "2026-10-01",
+    "located": false
   },
   {
     "id": "ms-e55c8cf4e432",
@@ -808,12 +793,9 @@
     "source": "Unknown",
     "url": "http://arxiv.org/abs/2607.00269v3",
     "date": "2026-06-30",
-    "geolocation": {
-      "lat": 0.0,
-      "lon": 0.0
-    },
     "first_seen": "2026-09-27",
-    "last_seen": "2026-10-01"
+    "last_seen": "2026-10-01",
+    "located": false
   },
   {
     "id": "ms-10f19d45d95b",
@@ -825,12 +807,9 @@
     "source": "Open Khipu Repository",
     "url": "http://arxiv.org/abs/2607.00185v1",
     "date": "2026-06-30",
-    "geolocation": {
-      "lat": 0.0,
-      "lon": 0.0
-    },
     "first_seen": "2026-09-29",
-    "last_seen": "2026-10-01"
+    "last_seen": "2026-10-01",
+    "located": false
   },
   {
     "id": "ms-fb74b2202f85",
@@ -842,12 +821,9 @@
     "source": "Academic researchers (Open Khipu Repository)",
     "url": "http://arxiv.org/abs/2607.00185v1",
     "date": "2026-06-30",
-    "geolocation": {
-      "lat": 0.0,
-      "lon": 0.0
-    },
     "first_seen": "2026-09-27",
-    "last_seen": "2026-10-01"
+    "last_seen": "2026-10-01",
+    "located": false
   },
   {
     "id": "ms-0ef07b4ce70b",
@@ -859,12 +835,9 @@
     "source": "Academic researchers",
     "url": "http://arxiv.org/abs/2608.20391v1",
     "date": "2026-06-30",
-    "geolocation": {
-      "lat": 0.0,
-      "lon": 0.0
-    },
     "first_seen": "2026-09-30",
-    "last_seen": "2026-10-01"
+    "last_seen": "2026-10-01",
+    "located": false
   },
   {
     "id": "ms-f41cd2fc2342",
@@ -876,12 +849,9 @@
     "source": "Unknown",
     "url": "http://arxiv.org/abs/2607.00266v1",
     "date": "2026-06-30",
-    "geolocation": {
-      "lat": 0.0,
-      "lon": 0.0
-    },
     "first_seen": "2026-09-27",
-    "last_seen": "2026-10-01"
+    "last_seen": "2026-10-01",
+    "located": false
   },
   {
     "id": "ms-09edac1db332",
@@ -893,12 +863,9 @@
     "source": "Research Team",
     "url": "http://arxiv.org/abs/2608.20392v1",
     "date": "2026-06-30",
-    "geolocation": {
-      "lat": 0.0,
-      "lon": 0.0
-    },
     "first_seen": "2026-09-29",
-    "last_seen": "2026-10-01"
+    "last_seen": "2026-10-01",
+    "located": false
   },
   {
     "id": "ms-d6824a356960",
@@ -910,12 +877,9 @@
     "source": "Research Consortium",
     "url": "http://arxiv.org/abs/2607.00218v1",
     "date": "2026-06-30",
-    "geolocation": {
-      "lat": 0.0,
-      "lon": 0.0
-    },
     "first_seen": "2026-09-27",
-    "last_seen": "2026-10-01"
+    "last_seen": "2026-10-01",
+    "located": false
   },
   {
     "id": "ms-110c8b5371e0",
@@ -927,12 +891,9 @@
     "source": "ASPIRE research team",
     "url": "http://arxiv.org/abs/2607.00272v1",
     "date": "2026-06-30",
-    "geolocation": {
-      "lat": 0.0,
-      "lon": 0.0
-    },
     "first_seen": "2026-09-30",
-    "last_seen": "2026-10-01"
+    "last_seen": "2026-10-01",
+    "located": false
   },
   {
     "id": "def-002",
@@ -1063,12 +1024,9 @@
     "source": "LV-ROVER-MLT researchers",
     "url": "http://arxiv.org/abs/2607.00250v5",
     "date": "2026-01-01",
-    "geolocation": {
-      "lat": 0.0,
-      "lon": 0.0
-    },
     "first_seen": "2026-09-30",
-    "last_seen": "2026-10-01"
+    "last_seen": "2026-10-01",
+    "located": false
   },
   {
     "id": "his-2023-12-04-ibm-condor",

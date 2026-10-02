@@ -207,6 +207,19 @@ jobs:
           retention-days: 7
           if-no-files-found: ignore
 
+  geocoding:
+    name: Reject null-island geocoding
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      # A coordinate of exactly (0,0) is upstream's "unlocated" sentinel, not a real
+      # position in the Gulf of Guinea. check_data.py enforces the same rule, but a
+      # violation there reads as "bad data" - this job names the cause outright.
+      - run: python scripts/coverage_report.py --fail-on-null-island --json
+
   data-check:
     name: Validate map data files
     runs-on: ubuntu-latest

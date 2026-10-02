@@ -155,11 +155,8 @@
           "is_record": false,
           "is_breakthrough": true,
           "is_new": false,
-          "geolocation": {
-            "lat": 0.0,
-            "lon": 0.0
-          },
-          "category_key": "biotechnology"
+          "category_key": "biotechnology",
+          "located": false
         },
         {
           "id": "ms-e55c8cf4e432",
@@ -699,11 +696,8 @@
           "source": "Quanta Magazine",
           "url": "https://www.quantamagazine.org/gravity-seems-holographic-what-does-that-mean-for-reality-20260925/",
           "date": "2026-09-25",
-          "geolocation": {
-            "lat": 0.0,
-            "lon": 0.0
-          },
-          "category_key": "quantum"
+          "category_key": "quantum",
+          "located": false
         },
         {
           "id": "q-001",
@@ -804,11 +798,8 @@
           "is_record": true,
           "is_breakthrough": true,
           "is_new": false,
-          "geolocation": {
-            "lat": 0.0,
-            "lon": 0.0
-          },
-          "category_key": "quantum"
+          "category_key": "quantum",
+          "located": false
         },
         {
           "id": "his-2023-12-04-ibm-condor",
@@ -938,11 +929,8 @@
           "is_record": false,
           "is_breakthrough": false,
           "is_new": false,
-          "geolocation": {
-            "lat": 0.0,
-            "lon": 0.0
-          },
-          "category_key": "computing_agi"
+          "category_key": "computing_agi",
+          "located": false
         },
         {
           "id": "ms-0a47a34ebd2d",
@@ -958,11 +946,8 @@
           "is_record": false,
           "is_breakthrough": true,
           "is_new": false,
-          "geolocation": {
-            "lat": 0.0,
-            "lon": 0.0
-          },
-          "category_key": "computing_agi"
+          "category_key": "computing_agi",
+          "located": false
         },
         {
           "id": "ms-2457b1872a8c",
@@ -974,11 +959,8 @@
           "source": "International mathematics collaboration",
           "url": "https://www.quantamagazine.org/mathematicians-build-long-awaited-graph-sandwich-20260918/",
           "date": "2026-09-18",
-          "geolocation": {
-            "lat": 0.0,
-            "lon": 0.0
-          },
-          "category_key": "computing_agi"
+          "category_key": "computing_agi",
+          "located": false
         },
         {
           "id": "ai-001",
@@ -1119,11 +1101,8 @@
           "is_record": false,
           "is_breakthrough": true,
           "is_new": false,
-          "geolocation": {
-            "lat": 0.0,
-            "lon": 0.0
-          },
-          "category_key": "computing_agi"
+          "category_key": "computing_agi",
+          "located": false
         },
         {
           "id": "ms-10f19d45d95b",
@@ -1135,15 +1114,12 @@
           "source": "Open Khipu Repository",
           "url": "http://arxiv.org/abs/2607.00185v1",
           "date": "2026-06-30",
-          "geolocation": {
-            "lat": 0.0,
-            "lon": 0.0
-          },
           "sources": [
             "Open Khipu Repository",
             "Academic researchers (Open Khipu Repository)"
           ],
-          "category_key": "computing_agi"
+          "category_key": "computing_agi",
+          "located": false
         },
         {
           "id": "ms-0ef07b4ce70b",
@@ -1155,11 +1131,8 @@
           "source": "Academic researchers",
           "url": "http://arxiv.org/abs/2608.20391v1",
           "date": "2026-06-30",
-          "geolocation": {
-            "lat": 0.0,
-            "lon": 0.0
-          },
-          "category_key": "computing_agi"
+          "category_key": "computing_agi",
+          "located": false
         },
         {
           "id": "ms-09edac1db332",
@@ -1175,11 +1148,8 @@
           "is_record": true,
           "is_breakthrough": true,
           "is_new": false,
-          "geolocation": {
-            "lat": 0.0,
-            "lon": 0.0
-          },
-          "category_key": "computing_agi"
+          "category_key": "computing_agi",
+          "located": false
         },
         {
           "id": "ms-d6824a356960",
@@ -1195,11 +1165,8 @@
           "is_record": true,
           "is_breakthrough": true,
           "is_new": false,
-          "geolocation": {
-            "lat": 0.0,
-            "lon": 0.0
-          },
-          "category_key": "computing_agi"
+          "category_key": "computing_agi",
+          "located": false
         },
         {
           "id": "ms-110c8b5371e0",
@@ -1215,11 +1182,8 @@
           "is_record": true,
           "is_breakthrough": true,
           "is_new": false,
-          "geolocation": {
-            "lat": 0.0,
-            "lon": 0.0
-          },
-          "category_key": "computing_agi"
+          "category_key": "computing_agi",
+          "located": false
         },
         {
           "id": "ms-6a684b1bc5a3",
@@ -1231,11 +1195,8 @@
           "source": "LV-ROVER-MLT researchers",
           "url": "http://arxiv.org/abs/2607.00250v5",
           "date": "2026-01-01",
-          "geolocation": {
-            "lat": 0.0,
-            "lon": 0.0
-          },
-          "category_key": "computing_agi"
+          "category_key": "computing_agi",
+          "located": false
         },
         {
           "id": "his-2023-10-12-vesuvius-challenge",

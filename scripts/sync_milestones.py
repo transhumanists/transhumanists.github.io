@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import math
 import json
 import os
 import re
@@ -534,19 +535,26 @@ def validate(data) -> tuple[bool, str]:
         for m in cat_data["milestones"]:
             if not isinstance(m, dict):
                 return False, f"Category {cat_key} has a non-object milestone"
-            required = ["id", "title", "value", "unit", "source", "date", "url", "geolocation"]
+            # geolocation is deliberately NOT required. Upstream uses (0,0) as its
+            # "unlocated" sentinel, and the pipeline's own rule is that an unlocated
+            # milestone is valid - it publishes without a dot. Requiring the key here
+            # meant the moment archive_record learned to omit it, the very same file
+            # failed validation on the next run.
+            required = ["id", "title", "value", "unit", "source", "date", "url"]
             for field in required:
                 if field not in m:
                     return False, f"Milestone {m.get('id', 'unknown')} missing {field}"
-            geo = m.get("geolocation", {})
-            if not isinstance(geo, dict) or "lat" not in geo or "lon" not in geo:
-                return False, f"Milestone {m.get('id', 'unknown')} missing valid geolocation"
-            try:
-                lat, lon = float(geo["lat"]), float(geo["lon"])
-                if not (-90 <= lat <= 90) or not (-180 <= lon <= 180):
-                    return False, f"Milestone {m.get('id', 'unknown')} geolocation out of bounds"
-            except (ValueError, TypeError):
-                return False, f"Milestone {m.get('id', 'unknown')} geolocation not numeric"
+            # Present-but-wrong is still an error; absent is not.
+            if "geolocation" in m:
+                geo = m["geolocation"]
+                if not isinstance(geo, dict) or "lat" not in geo or "lon" not in geo:
+                    return False, f"Milestone {m.get('id', 'unknown')} has malformed geolocation"
+                try:
+                    lat, lon = float(geo["lat"]), float(geo["lon"])
+                    if not (-90 <= lat <= 90) or not (-180 <= lon <= 180):
+                        return False, f"Milestone {m.get('id', 'unknown')} geolocation out of bounds"
+                except (ValueError, TypeError):
+                    return False, f"Milestone {m.get('id', 'unknown')} geolocation not numeric"
             if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", str(m.get("date", ""))):
                 return False, f"Milestone {m.get('id', 'unknown')} has malformed date {m.get('date')!r}"
             try:
@@ -567,10 +575,32 @@ def canonical_id(m: dict) -> str:
     return "ms-" + hashlib.sha1(blob.encode("utf-8")).hexdigest()[:12]
 
 
+def _archive_geolocation(geo):
+    """Upstream's "location unknown" sentinel is (0, 0), and this archive used to
+    store it verbatim - which is why 27 shipped records plotted a dot in the Gulf
+    of Guinea, once every six hours, straight from a green CI run.
+
+    Two ways in, so both are handled: upstream may send (0, 0) explicitly, or omit
+    the key, in which case the old default supplied (0, 0) anyway. An unlocated
+    record now carries no geolocation at all, which is what the rest of the
+    pipeline already does and what the map renders correctly as "no dot".
+    """
+    if not isinstance(geo, dict):
+        return None
+    lat, lon = geo.get("lat"), geo.get("lon")
+    if not isinstance(lat, (int, float)) or not isinstance(lon, (int, float)):
+        return None
+    if not (math.isfinite(lat) and math.isfinite(lon)):
+        return None
+    if lat == 0 and lon == 0:
+        return None
+    return geo
+
+
 def archive_record(m: dict, seen_on: str) -> dict:
     """Normalise an upstream milestone into an archive/history record."""
     src = m.get("source") or "Unknown"
-    return {
+    rec = {
         "id": canonical_id(m),
         "category": display_category(m.get("category")),
         "subcategory": (m.get("subcategory") or "general").strip(),
@@ -580,10 +610,17 @@ def archive_record(m: dict, seen_on: str) -> dict:
         "source": src,
         "url": m.get("url"),
         "date": m.get("date"),
-        "geolocation": m.get("geolocation", {"lat": 0.0, "lon": 0.0}),
+        "geolocation": _archive_geolocation(m.get("geolocation")),
         "first_seen": seen_on,
         "last_seen": seen_on,
     }
+    if rec["geolocation"] is None:
+        # Absent, not null: consumers distinguish "no location" from "bad location",
+        # and a null value has to be special-cased by every reader. The flag is kept
+        # so a consumer can tell "upstream said unlocated" from "never had the key".
+        del rec["geolocation"]
+        rec["located"] = False
+    return rec
 
 
 def merge_history(existing: list, current: list, seen_on: str) -> list:

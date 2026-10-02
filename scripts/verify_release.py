@@ -135,6 +135,13 @@ def _build_steps(bun: str, tmpdir: Path, skip_determinism: bool,
         ("JS static parse", [bun, "build", "assets/js/worldmap.js",
                              "--no-bundle", "--outdir", str(tmpdir / "parse-check")]),
     ]
+    # Fails only on null-island, which is a correctness bug. Low year coverage and
+    # unlocated records are reported but never fail the build: they are a
+    # data-filling backlog, not a regression, and gating on them would block every
+    # unrelated fix until the archive were complete.
+    steps.append(("No null-island geocoding",
+                  [sys.executable, "scripts/coverage_report.py",
+                   "--fail-on-null-island", "--json"]))
     if not skip_determinism:
         steps.append(("Data regeneration is deterministic", None))
     if not skip_browser and _playwright_installed():

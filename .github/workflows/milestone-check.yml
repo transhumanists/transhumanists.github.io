@@ -72,6 +72,18 @@ jobs:
             python scripts/sync_layers.py --write
           fi
 
+      - name: Report milestone coverage
+        # The cron only ever reports what changed. This reports what is missing -
+        # empty years on the slider, verticals with nothing in them, unlocated
+        # records - so the backlog is visible in the run log without a local setup.
+        run: python scripts/coverage_report.py
+
+      - name: Reject null-island geocoding
+        # (0,0) is upstream's "unknown location" sentinel. Storing it plots a dot
+        # in the Gulf of Guinea, and check_events has always rejected it while
+        # check_milestones used to accept it - so it reached main from a green run.
+        run: python scripts/coverage_report.py --fail-on-null-island --json
+
       - name: Validate data files
         # Gate BEFORE the commit: a malformed sync must fail the job and never
         # reach main (the CI job only reports afterwards).
