@@ -286,6 +286,20 @@ CATEGORY_ALIASES = {
     "Logistics": "Mobility & Logistics",
     "Transportation": "Mobility & Logistics",
     "Transport": "Mobility & Logistics",
+    # Identity and short-form entries the browser table also carries. The two
+    # tables have to agree: a payload labelled "Quantum" is folded to the
+    # canonical name by assets/js/worldmap.js at runtime, so check_data.py
+    # rejecting it would make a record the site happily renders fail its own
+    # validation. test_check_data.py::test_js_and_python_alias_tables_agree
+    # now fails if either side gains an alias the other does not.
+    "Quantum": "Quantum Physics",
+    "Quantum Physics": "Quantum Physics",
+    "Energy": "Renewable Energy",
+    "Renewable Energy": "Renewable Energy",
+    "Defense": "Military & Defense",
+    "Military & Defense": "Military & Defense",
+    "Spaceflight": "Spaceflight & Aeronautics",
+    "Spaceflight & Aeronautics": "Spaceflight & Aeronautics",
     "Robotics": "Robotics & Drones",
     "Robotics & Automation": "Robotics & Drones",
     "Drones": "Robotics & Drones",

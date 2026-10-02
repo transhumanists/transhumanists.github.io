@@ -47,6 +47,10 @@ determinism gate, and is what a local `pre-push` hook calls. It compares your Bu
 against the version CI pins and says so, because a green run on the wrong Bun is the
 failure mode it exists to catch. `--skip-determinism` is the fast inner loop and
 `--also-bun /path/to/other-bun` cross-checks the JS suite against a second toolchain.
+The pinned version itself lives in `.bun-version`, so the toolchain is declared once
+in the repository instead of only in the workflow YAML. `verify_release.py` treats
+that file as the local expectation and still compares it against the version CI
+installs, so the two drifting apart is reported rather than silently accepted.
 
 GitHub Actions runs six jobs on every push/PR to `main`: the JS suite and a static parse
 check, the Python suites, data validation, a determinism gate over two regenerations,

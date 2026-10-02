@@ -2447,6 +2447,28 @@ test('zoom controls, keyboard and double-click do not throw', () => {
     });
   });
 
+  describe('the alias table can only fold into real categories', () => {
+    const api = () => windowObj.__WORLDMAP_TEST__;
+    const legendKeys = () => api().CATEGORY_LEGEND.map((r) => r.key);
+
+    test('no alias points at a category that does not exist', () => {
+      // An alias to a non-existent target is silently swallowed: the record lands
+      // in no bucket and simply stops rendering, with no error anywhere.
+      const keys = new Set(legendKeys());
+      for (const [alias, target] of Object.entries(api().CATEGORY_ALIASES)) {
+        expect([alias, keys.has(target)]).toEqual([alias, true]);
+      }
+    });
+
+    test('every legend category resolves to itself', () => {
+      // Folding is how legacy labels are accepted, but a canonical label must not be
+      // rewritten into something else.
+      for (const key of legendKeys()) {
+        expect([key, api().CATEGORY_ALIASES[key] || key]).toEqual([key, key]);
+      }
+    });
+  });
+
   // Canvas size is module state that outlives a single test, and which suite runs
   // first is a Bun-version detail - 1.2.14 (the version CI pins) orders these
   // differently from 1.4.0. A suite that resizes the map therefore has to restore

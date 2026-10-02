@@ -2059,8 +2059,16 @@ function mapScreenRect() {
   // Draw the layer's popup docked at the marker rather than under the cursor.
   function pinTooltipToLayer(entry, type) {
     if (!tooltip || !entry) return;
-    const p = project(entry.lon !== undefined ? entry.lon : 0,
-                       entry.lat !== undefined ? entry.lat : 0);
+    // Validate rather than default. Coercing a missing coordinate to 0 would pin the
+    // popup over null island, which check_data.py rejects as bad data everywhere
+    // else - the one path that invents the coordinate is the path that must not
+    // have it. A layer entry missing a coordinate is also unpinnable, so refusing
+    // matches what the hit test would already have done.
+    if (!Number.isFinite(entry.lat) || !Number.isFinite(entry.lon) ||
+        entry.lat < -90 || entry.lat > 90 || entry.lon < -180 || entry.lon > 180) {
+      return;
+    }
+    const p = project(entry.lon, entry.lat);
     if (!p) return;
     if (type === 'zone') showZoneTooltip(entry, p.x, p.y);
     else if (type === 'deployment') showDeploymentTooltip(entry, p.x, p.y);

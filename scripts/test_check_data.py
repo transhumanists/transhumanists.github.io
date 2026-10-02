@@ -1414,6 +1414,50 @@ class TestEventCategories(unittest.TestCase):
             with self.subTest(alias=alias):
                 self.assertIn(canonical, cd._CATEGORIES)
 
+    def test_js_and_python_alias_tables_agree(self):
+        """The browser folds legacy category labels at runtime; the validator does
+        the same job at build time. If the tables drift, a record the site renders
+        happily can fail its own validation, which is how a rename silently drops
+        historical data.
+
+        Parsed out of the JS source rather than hand-copied, because a hand-copied
+        list would drift the moment someone edited one side.
+        """
+        import re
+        import sync_milestones as sync
+
+        src = (cd.ROOT / "assets" / "js" / "worldmap.js").read_text(encoding="utf-8")
+        start = src.index("const CATEGORY_ALIASES")
+        brace = src.index("{", start)
+        depth, i = 0, brace
+        while True:
+            if src[i] == "{":
+                depth += 1
+            elif src[i] == "}":
+                depth -= 1
+                if depth == 0:
+                    break
+            i += 1
+        block = src[brace:i + 1]
+        # Commented-out entries are not aliases; strip them before matching.
+        block = re.sub(r"//[^\n]*", "", block)
+        js_aliases = dict(re.findall(r"'([^']+)'\s*:\s*'([^']+)'", block))
+        self.assertGreater(len(js_aliases), 10, "alias table parse looks wrong")
+
+        py_aliases = dict(sync.CATEGORY_ALIASES)
+        self.assertEqual(sorted(set(py_aliases) - set(js_aliases)), [],
+                         "Python accepts labels the browser does not")
+        self.assertEqual(sorted(set(js_aliases) - set(py_aliases)), [],
+                         "browser accepts labels the validator rejects")
+        for alias in sorted(set(js_aliases) & set(py_aliases)):
+            with self.subTest(alias=alias):
+                self.assertEqual(js_aliases[alias], py_aliases[alias])
+
+        # And every target in either table has to be a real canonical category.
+        for alias, canonical in list(js_aliases.items()) + list(py_aliases.items()):
+            with self.subTest(target=canonical):
+                self.assertIn(canonical, cd._CATEGORIES)
+
     def test_published_events_use_canonical_categories(self):
         events_file = cd.DATA_DIR / "events.json"
         if not events_file.exists():
