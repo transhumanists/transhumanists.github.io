@@ -23,6 +23,7 @@ from __future__ import annotations
 import argparse
 import collections
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -31,13 +32,17 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import check_data as cd
 
 ROOT = Path(__file__).resolve().parent.parent
-DEFAULT_SOURCES = ("data/milestones.json", "data/milestones_history.json",
-                   "data/historical_milestones.json")
+
+# Where the data files live, overridable so a caller can point the audit at a
+# staging directory. Without this the script can only ever describe this checkout,
+# which makes it impossible to test the failure path - the one that matters - and
+# impossible to audit a candidate data set before committing it.
+DATA_DIR = Path(os.environ.get("WORLDMAP_DATA_DIR") or (ROOT / "data"))
 
 
 def load(rel: str) -> list[dict]:
     """Every milestone in one data file, whatever shape that file uses."""
-    path = ROOT / rel
+    path = DATA_DIR / rel
     if not path.exists():
         return []
     payload = json.loads(path.read_text(encoding="utf-8"))
@@ -89,14 +94,31 @@ def build(min_year: int, max_year: int, sources: tuple[str, ...]) -> dict:
             records.append(m)
 
     # Files overlap by design (milestones.json is the live set, the history file is
-    # the append-only archive), so dedupe on the pair the pipeline itself uses.
+    # the append-only archive), so the same record is counted twice without a dedupe.
+    #
+    # The key is (title, date, url). Title+date alone is not safe: two distinct
+    # milestones genuinely can share a title on the same day - a consortium paper
+    # announced by several labs, or a metric republished under the same headline -
+    # and collapsing those would understate the database and hide a year as sparse.
+    # Including the url makes a collision mean "the same record", which is the only
+    # thing that should be deduplicated. Records with no url fall back to title+date,
+    # since a url-less pair has nothing else to distinguish it.
     seen: dict[tuple, dict] = {}
     duplicates = 0
+    ambiguous = 0
     for m in records:
-        key = (str(m.get("title") or "").strip().lower(), str(m.get("date") or "")[:10])
+        url = str(m.get("url") or "").strip().lower()
+        key = (str(m.get("title") or "").strip().lower(),
+               str(m.get("date") or "")[:10], url)
         if key in seen:
             duplicates += 1
             continue
+        # Same title and day, different source: kept as two records, but counted so
+        # the report can say the dedupe was ambiguous here rather than silently
+        # resolving it one way.
+        if url and any(
+                k[0] == key[0] and k[1] == key[1] and k[2] != url for k in seen):
+            ambiguous += 1
         seen[key] = m
     unique = list(seen.values())
 
@@ -131,6 +153,7 @@ def build(min_year: int, max_year: int, sources: tuple[str, ...]) -> dict:
             "records_read": len(records),
             "unique": len(unique),
             "duplicate_across_files": duplicates,
+            "same_title_and_day_different_source": ambiguous,
             "located": geo["located"],
             "unlocated": geo["unlocated"],
             "null_island": geo["null_island"],
@@ -146,6 +169,11 @@ def build(min_year: int, max_year: int, sources: tuple[str, ...]) -> dict:
         },
         "by_category": _by_category(unique),
         "unlocated": unlocated,
+        "null_island_records": [
+            {"title": (m.get("title") or "")[:90], "date": str(m.get("date") or "")[:10],
+             "category": m.get("category"), "source": m.get("source"),
+             "file": m.get("_file")}
+            for m in unique if geocode_state(m) == "null_island"],
     }
 
 
@@ -156,12 +184,19 @@ def render(r: dict) -> str:
     lines.append("=" * 60)
     lines.append("  unique milestones      %d  (from %d records, %d duplicated across files)"
                  % (t["unique"], t["records_read"], t["duplicate_across_files"]))
+    if t.get("same_title_and_day_different_source"):
+        lines.append("  same title+day, differing source: %d  (kept as separate records)"
+                     % t["same_title_and_day_different_source"])
     lines.append("  geocoded              %d" % t["located"])
     lines.append("  unlocated             %d   (no dot on the map - correct, not a bug)"
                  % t["unlocated"])
     if t["null_island"]:
         lines.append("  NULL ISLAND           %d   <-- bug: these plot in the Gulf of Guinea"
                      % t["null_island"])
+        for r in r.get("null_island_records", [])[:10]:
+            lines.append("      %s  %-26s %s" % (r.get("date") or "----------",
+                                                str(r.get("category"))[:26],
+                                                r.get("title")[:56]))
     if t["malformed"]:
         lines.append("  malformed             %d" % t["malformed"])
     lines.append("")
@@ -208,6 +243,10 @@ def render(r: dict) -> str:
     return "\n".join(lines)
 
 
+DEFAULT_FILES = ("milestones.json", "milestones_history.json",
+                 "historical_milestones.json")
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -216,11 +255,26 @@ def main() -> int:
     ap.add_argument("--max-year", type=int, default=2026)
     ap.add_argument("--fail-on-null-island", action="store_true",
                     help="exit 1 if any record is geocoded to (0,0)")
+    ap.add_argument("--quiet", action="store_true",
+                    help="print nothing; only meaningful with --fail-on-null-island, "
+                         "where the exit code is the whole result. Keeps the gate "
+                         "step out of the log without hiding a failure.")
     args = ap.parse_args()
 
-    r = build(args.min_year, args.max_year, DEFAULT_SOURCES)
-    print(json.dumps(r, indent=2) if args.json else render(r))
+    r = build(args.min_year, args.max_year, DEFAULT_FILES)
+    if not args.quiet:
+        print(json.dumps(r, indent=2) if args.json else render(r))
     if args.fail_on_null_island and r["totals"]["null_island"]:
+        if args.quiet:
+            # Never fail silently: a gate step that prints nothing and exits 1 looks
+            # identical to one that crashed, and the first thing anyone does is read
+            # the log.
+            offenders = [u for u in r.get("null_island_records", [])
+                         if isinstance(u, dict)]
+            print("::error::%d milestone(s) geocoded to (0,0), the no-location marker"
+                  % r["totals"]["null_island"], file=sys.stderr)
+            for u in offenders[:10]:
+                print("  %s  %s" % (u.get("date") or "----------", u.get("title")), file=sys.stderr)
         return 1
     return 0
 

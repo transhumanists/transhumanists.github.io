@@ -218,7 +218,7 @@ jobs:
       # A coordinate of exactly (0,0) is upstream's "unlocated" sentinel, not a real
       # position in the Gulf of Guinea. check_data.py enforces the same rule, but a
       # violation there reads as "bad data" - this job names the cause outright.
-      - run: python scripts/coverage_report.py --fail-on-null-island --json
+      - run: python scripts/coverage_report.py --fail-on-null-island --quiet
 
   data-check:
     name: Validate map data files

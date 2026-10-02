@@ -141,7 +141,7 @@ def _build_steps(bun: str, tmpdir: Path, skip_determinism: bool,
     # unrelated fix until the archive were complete.
     steps.append(("No null-island geocoding",
                   [sys.executable, "scripts/coverage_report.py",
-                   "--fail-on-null-island", "--json"]))
+                   "--fail-on-null-island", "--quiet"]))
     if not skip_determinism:
         steps.append(("Data regeneration is deterministic", None))
     if not skip_browser and _playwright_installed():

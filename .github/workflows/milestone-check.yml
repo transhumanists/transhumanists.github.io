@@ -82,7 +82,7 @@ jobs:
         # (0,0) is upstream's "unknown location" sentinel. Storing it plots a dot
         # in the Gulf of Guinea, and check_events has always rejected it while
         # check_milestones used to accept it - so it reached main from a green run.
-        run: python scripts/coverage_report.py --fail-on-null-island --json
+        run: python scripts/coverage_report.py --fail-on-null-island --quiet
 
       - name: Validate data files
         # Gate BEFORE the commit: a malformed sync must fail the job and never

@@ -52,6 +52,29 @@ in the repository instead of only in the workflow YAML. `verify_release.py` trea
 that file as the local expectation and still compares it against the version CI
 installs, so the two drifting apart is reported rather than silently accepted.
 
+**Auditing the data.** `python scripts/check_data.py` validates every published
+data file, including the append-only archive. `python scripts/coverage_report.py`
+answers the two questions validation cannot: which milestones are unlocated or
+wrongly geocoded, and which years are empty on the slider. Read-only; `--json` for
+CI. It fails the build only on null-island - a coordinate of exactly (0, 0), which
+is upstream's "location unknown" sentinel and plots a dot in the Gulf of Guinea.
+Low coverage and unlocated records are reported but never fail anything, because
+they are a filling backlog rather than a regression:
+
+```
+$ python scripts/coverage_report.py
+  unique milestones      106  (from 254 records, 148 duplicated across files)
+  geocoded              92
+  unlocated             14   (no dot on the map - correct, not a bug)
+
+  years 1945-2026  populated 31 / 82   empty 51
+  empty years: 1946-1952, 1955-1956, ... 2024-2025
+```
+
+Point it at a candidate data set with `WORLDMAP_DATA_DIR=/path/to/data`. The
+unlocated list is the geocoding backlog: each row is a record with evidence
+(title, summary, source, subcategory) that `geocode_milestone()` can work from.
+
 GitHub Actions runs six jobs on every push/PR to `main`: the JS suite and a static parse
 check, the Python suites, data validation, a determinism gate over two regenerations,
 a Jekyll build for Pages, and real-browser layout checks.
