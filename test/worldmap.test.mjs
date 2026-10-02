@@ -2776,6 +2776,44 @@ test('zoom controls, keyboard and double-click do not throw', () => {
       expect(c).toMatch(/#world-map\s*\{[^}]*aspect-ratio/);
     });
 
+    test('no rule pins a height that would re-letterbox the frame', () => {
+      // Regression: four legacy media blocks still pinned 360px / 300px / 40vh /
+      // 45vh. They were all shadowed by a later `height: auto`, but only by source
+      // order, so any reshuffle of the file would have silently reopened the band.
+      const c = css();
+      const offenders = [...c.matchAll(/#world-map\s*\{[^}]*\}/g)]
+        .map((m) => m[0])
+        // `height: auto` defers to the ratio and `min-height: 0` is an explicit
+        // reset; only a real length would fight the aspect-ratio.
+        .map((b) => b.replace(/(?:min-)?height:\s*(?:auto|0)\s*;?/g, ''))
+        .filter((block) => /(?:min-)?height:\s*[\d.]/.test(block));
+      expect(offenders).toEqual([]);
+    });
+
+    test('a frame at the map ratio has no dead band at all', () => {
+      // The reported symptom: a 1200x580 frame against a 2.54:1 map could only reach
+      // 81.6% of its height, leaving a 53px band above and below, which read as the
+      // map having been zoomed out. With the frame at the map's own ratio the plate
+      // has to fill it exactly.
+      const w = 1200;
+      const h = w / (360 / api().MAP_LAT_SPAN);
+      setSize(w, h);
+      const b = api().mapBox();
+      expect(b.y).toBeCloseTo(0, 6);
+      expect(b.x).toBeCloseTo(0, 6);
+      expect(b.h).toBeCloseTo(h, 6);
+      expect(b.w).toBeCloseTo(w, 6);
+    });
+
+    test('the horizontal scale is unchanged by the framing fix', () => {
+      // The regression was vertical only: 360 degrees of longitude has always
+      // spanned the full width, so nothing on the map should have shrunk sideways.
+      setSize(1200, 1200 / (360 / api().MAP_LAT_SPAN));
+      const west = api().project(-180, 0);
+      const east = api().project(180, 0);
+      expect(east.x - west.x).toBeCloseTo(1200, 6);
+    });
+
     test('the legend is capped to the map instead of overflowing it', () => {
       const c = css();
       expect(c).toMatch(/\.map-legend\s*\{[^}]*max-height/);
