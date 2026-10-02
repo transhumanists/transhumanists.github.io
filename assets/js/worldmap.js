@@ -618,6 +618,7 @@ height: 0,
       dataLoadError: null,
       hiddenCategories: new Set(),
   selectedHumanRight: null,
+  _box: null, _boxW: -1, _boxH: -1,
       foldedCategories: false,  // whether the entire categories section is folded
       zones: [],
       fleets: [],
@@ -877,12 +878,27 @@ function canonicalCategory(cat) {
   const MAP_ASPECT = 360 / MAP_LAT_SPAN;
 
   function mapBox() {
+    // Memoised on the canvas dimensions. project() calls this once per graticule
+    // line, per continent vertex, per marker and per hit test - several thousand
+    // calls per frame - and recomputing the fit each time was slow enough to push
+    // the initial data load past the settling window the tests allow, which showed
+    // up as an empty map rather than as a slow one.
+    //
+    // Keyed on width/height rather than invalidated from applyResize(), so a call
+    // made before the first resize (or after a transform-only change) is still
+    // correct instead of returning a stale box.
+    if (state._box && state._boxW === state.width && state._boxH === state.height) {
+      return state._box;
+    }
     const cw = state.width;
     const ch = state.height;
     let h = ch;
     let w = h * MAP_ASPECT;
     if (w > cw) { w = cw; h = w / MAP_ASPECT; }
-    return { x: (cw - w) / 2, y: (ch - h) / 2, w, h };
+    state._box = { x: (cw - w) / 2, y: (ch - h) / 2, w, h };
+    state._boxW = cw;
+    state._boxH = ch;
+    return state._box;
   }
 
   function project(lon, lat) {
@@ -3336,6 +3352,15 @@ const fragment = document.createDocumentFragment();
   function normalizeEvent(e) {
     let lat = e.geolocation?.lat;
     let lon = e.geolocation?.lon;
+    // Accept the already-flattened form as well, so normalising is idempotent.
+    //
+    // This was a silent data-loss bug: normalise() rewrites geolocation into flat
+    // lat/lon and drops the geolocation object, so normalising its own output a
+    // second time found no coordinates at all, failed isPlottable() and discarded
+    // every record. setEvents() is exposed, so handing it the current state back is
+    // a legitimate thing to do, and it silently emptied the map.
+    if (!Number.isFinite(lat) && Number.isFinite(e.lat)) lat = e.lat;
+    if (!Number.isFinite(lon) && Number.isFinite(e.lon)) lon = e.lon;
     // Intelligent geocoding fallback if coordinates missing OR invalid (0,0 indicates missing)
     const hasValidCoords = Number.isFinite(lat) && Number.isFinite(lon) && !(lat === 0 && lon === 0);
     // When the pipeline has already ruled on this record it says so explicitly

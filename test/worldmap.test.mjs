@@ -5,7 +5,7 @@
  * the category-name canonicalization fix (Quantum Physics / Renewable Energy /
  * Military & Defense) that stats, colors and the legend all depend on.
  */
-import { describe, expect, test, beforeAll, beforeEach } from 'bun:test';
+import { describe, expect, test, beforeAll, beforeEach, afterEach } from 'bun:test';
 import { readFileSync as fsReadFileSync } from 'fs';
 import { join as pathJoin } from 'path';
 
@@ -288,8 +288,23 @@ beforeAll(async () => {
   });
 
   await import('../assets/js/worldmap.js');
-  // Let the async load() settle (it awaits fetch then calls draw).
-  await new Promise((r) => setTimeout(r, 20));
+  // Wait for the async load() to actually finish, rather than sleeping a fixed
+  // 20ms and hoping.
+  //
+  // load() is fired at import time and awaits fetch before it draws, so the tests
+  // below were reading stat tiles and a legend built from an empty event list if the
+  // scheduler had not run it yet. A fixed sleep made correctness depend on machine
+  // load and on the Bun version: 1.2.14 (what CI pins) had not settled after 20ms
+  // and thirteen unrelated tests failed with counts of zero, while 1.4.0 passed.
+  // Polling for the observable state removes the race instead of widening the guess.
+  const api0 = windowObj.__WORLDMAP_TEST__;
+  const deadline = Date.now() + 5000;
+  while (api0.getEvents().length === 0 && Date.now() < deadline) {
+    await new Promise((r) => setTimeout(r, 5));
+  }
+  if (api0.getEvents().length === 0) {
+    throw new Error('worldmap load() never populated events within 5s');
+  }
 });
 
 // Canvas-space point for a lon/lat, derived from the module's own projection.
@@ -2328,6 +2343,104 @@ test('zoom controls, keyboard and double-click do not throw', () => {
     });
   });
 
+  // Canvas size is module state that outlives a single test, and which suite runs
+  // first is a Bun-version detail - 1.2.14 (the version CI pins) orders these
+  // differently from 1.4.0. A suite that resizes the map therefore has to restore
+  // it, rather than rely on happening to run last. Without this the projection
+  // suite left a 360x640 canvas behind and every later assertion about the default
+  // view, the stat tiles and the legend failed in CI only.
+  const CANVAS_W = 800;
+  const CANVAS_H = 520;
+
+  function setCanvasSize(w, h) {
+    const canvas = registeredEls['world-map-canvas'];
+    canvas.clientWidth = w;
+    canvas.clientHeight = h;
+    canvas.getBoundingClientRect = () => ({ left: 0, top: 0, width: w, height: h });
+    windowObj.__WORLDMAP_TEST__.resizeNow();
+  }
+
+  // --- normalizeEvent idempotency ---------------------------------------------
+  // Regression: normalise() rewrites geolocation into flat lat/lon and drops the
+  // geolocation object, so feeding its own output back through setEvents() found no
+  // coordinates, failed isPlottable() and silently discarded every record. setEvents
+  // is exposed, so handing it the current state back is legitimate.
+  //
+  // This only ever showed up in CI: Bun 1.2.14 (the pinned version) schedules the
+  // nested describes ahead of the top-level ones, so a restore ran before the tests
+  // that assert on event counts and thirteen of them read an empty map.
+  describe('normalizeEvent is idempotent', () => {
+    const api = () => windowObj.__WORLDMAP_TEST__;
+
+    const RAW = {
+      id: 'idem-1', title: 'Idempotency probe', category: 'Quantum Physics',
+      value: '3', source: 'S', url: 'https://example.com/i', date: '2026-08-04',
+      geolocation: { lat: 35.7, lon: 139.7 },
+    };
+
+    test('re-normalising a normalised event keeps it', () => {
+      withFreshHover((api) => {
+        api.setEvents([RAW]);
+        const first = api.getEvents();
+        expect(first.length).toBe(1);
+        // Feed the module's own output straight back in.
+        api.setEvents(first);
+        expect(api.getEvents().length).toBe(1);
+        expect(api.getEvents()[0].lat).toBeCloseTo(35.7, 6);
+        expect(api.getEvents()[0].lon).toBeCloseTo(139.7, 6);
+      });
+    });
+
+    test('round-tripping three times is still stable', () => {
+      withFreshHover((api) => {
+        api.setEvents([RAW]);
+        for (let i = 0; i < 3; i++) api.setEvents(api.getEvents());
+        expect(api.getEvents().length).toBe(1);
+        expect(api.getEvents()[0].id).toBe('idem-1');
+      });
+    });
+
+    test('the stack key survives a round trip', () => {
+      withFreshHover((api) => {
+        api.setEvents([RAW]);
+        api.setEvents(api.getEvents());
+        expect(api.getEvents()[0]._stackKey).toBeTruthy();
+      });
+    });
+
+    test('a record the pipeline could not place is dropped, not guessed', () => {
+      // The real shape for an unplaced record: no geolocation at all, plus
+      // `located: false` so the client-side fallback does not second-guess the
+      // pipeline's decision. isPlottable is deliberately structural only - numeric
+      // 0 is a valid coordinate by contract, and null-island policy lives in
+      // check_data.py, which rejects it at the data boundary.
+      withFreshHover((api) => {
+        api.setEvents([{ id: 'bad', title: 'Unplaced report', category: 'Quantum Physics',
+                         value: '1', source: 'S', url: '', date: '2026-08-04',
+                         located: false }]);
+        expect(api.getEvents().length).toBe(0);
+      });
+    });
+
+    test('the flat form does not resurrect an out-of-range coordinate', () => {
+      // Accepting e.lat/e.lon must not become a way past the range check.
+      withFreshHover((api) => {
+        api.setEvents([{ id: 'oob', title: 'Out of range', category: 'Quantum Physics',
+                         value: '1', source: 'S', url: '', date: '2026-08-04',
+                         geolocation: { lat: 120, lon: 0 } }]);
+        expect(api.getEvents().length).toBe(0);
+      });
+    });
+
+    test('restore-then-assert leaves the event list intact for later tests', () => {
+      withFreshHover((api) => {
+        const before = api.getEvents().length;
+        api.setLayers([], [], [], []);
+        expect(api.getEvents().length).toBe(before);
+      });
+    });
+  });
+
   // --- Mobile / small-viewport map ---------------------------------------------
   // "Impossible to see the whole map" was a distortion bug, not a size bug:
   // project() stretched the world to fill the canvas regardless of its shape, so a
@@ -2335,15 +2448,16 @@ test('zoom controls, keyboard and double-click do not throw', () => {
   // coastlines stopped lining up with the graticule.
   describe('mobile map projection', () => {
     const api = () => windowObj.__WORLDMAP_TEST__;
+    // The last case seeds its own event to prove markers draw; withFreshHover puts
+    // the original events back, so the stat-tile assertions elsewhere still hold.
+    afterEach(() => {
+      api().getState().hiddenCategories.clear();
+    });
     const css = () => fs.readFileSync(path.join(process.cwd(), 'assets/css/main.css'), 'utf8');
 
-    const setSize = (w, h) => {
-      const canvas = registeredEls['world-map-canvas'];
-      canvas.clientWidth = w;
-      canvas.clientHeight = h;
-      canvas.getBoundingClientRect = () => ({ left: 0, top: 0, width: w, height: h });
-      api().resizeNow();
-    };
+    // Every case restores the canvas, so the suite is order-independent.
+    const setSize = (w, h) => setCanvasSize(w, h);
+    afterEach(() => setCanvasSize(CANVAS_W, CANVAS_H));
 
     test('the world keeps its aspect ratio on a phone-shaped canvas', () => {
       setSize(390, 844);
@@ -2431,18 +2545,25 @@ test('zoom controls, keyboard and double-click do not throw', () => {
     test('the map still draws markers at a phone size without throwing', () => {
       // Own event, and visible categories: an earlier suite hides all nine, and
       // with nothing to draw this test would pass without exercising any marker.
-      api().getState().hiddenCategories.clear();
-      api().setFilterRecent(false);
-      api().setEvents([{ id: 'm-1', title: 'Phone milestone', category: 'Quantum Physics',
+      //
+      // Wrapped in withFreshHover because setEvents replaces the shared event list.
+      // Leaving a single event behind made the stat tiles, the legend counts and
+      // every tooltip assertion downstream read the wrong data - which only showed
+      // up in CI, because Bun 1.2.14 runs this suite before those tests.
+      withFreshHover((api) => {
+        api.getState().hiddenCategories.clear();
+        api.setFilterRecent(false);
+        api.setEvents([{ id: 'm-1', title: 'Phone milestone', category: 'Quantum Physics',
                          value: '1', source: 'S', url: 'https://example.com/m',
                          date: '2026-08-04',
                          geolocation: { lat: 35.7, lon: 139.7 } }]);
-      setSize(360, 640);
-      ctx.resetCounters();
-      // resizeNow() resizes and redraws, which is the phone path end to end.
-      expect(() => api().resizeNow()).not.toThrow();
-      expect(ctx.counters.arcs).toBeGreaterThan(0);
-      expect(api().mapBox().w).toBeCloseTo(360, 6);
+        setSize(360, 640);
+        ctx.resetCounters();
+        // resizeNow() resizes and redraws, which is the phone path end to end.
+        expect(() => api.resizeNow()).not.toThrow();
+        expect(ctx.counters.arcs).toBeGreaterThan(0);
+        expect(api.mapBox().w).toBeCloseTo(360, 6);
+      });
     });
   });
 
