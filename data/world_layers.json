@@ -1,6 +1,6 @@
 {
   "version": "1.2.0",
-  "last_update": "2026-10-03T05:22:48+00:00",
+  "last_update": "2026-10-03T08:57:13+00:00",
   "conflict_zones": [
     {
       "id": "zone-ukraine",
@@ -651,7 +651,7 @@
       "status": "concluded",
       "note": "Millions displaced, famine risk",
       "source": "UN OCHA",
-      "url": "https://www.unocha.org/news/todays-top-news-ethiopia-yemen-occupied-palestinian-territory-haiti-ukraine-central-emergency",
+      "url": "https://www.unocha.org/news/todays-top-news-central-emergency-response-fund-yemen-ethiopia-democratic-republic-congo",
       "start_date": "2020-01-01",
       "end_date": "2022-11-02"
     },
