@@ -1,0 +1,47 @@
+name: Research request
+description: Propose new content, a topic, or a research area to cover
+labels: ["research", "needs-triage"]
+assignees: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Have a topic you'd like us to research and document? Fill in the sections
+        below and we'll consider it for inclusion.
+
+  - type: dropdown
+    id: category
+    attributes:
+      label: Topic category
+      options:
+        - Longevity / anti-aging
+        - Cognitive enhancement
+        - Neural interfaces
+        - Biohacking
+        - AI-human integration
+        - Ethics / philosophy
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Describe the topic
+      description: "What should we research? Why is it relevant?"
+      render: markdown
+    validations:
+      required: true
+
+  - type: textarea
+    id: sources
+    attributes:
+      label: Existing sources (optional)
+      description: "Links to papers, articles, or other resources to start from."
+      render: markdown
+
+  - type: input
+    id: contact
+    attributes:
+      label: Your GitHub username (optional)
+      placeholder: "username"
