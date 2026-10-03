@@ -1,6 +1,6 @@
 {
   "version": "1.2.0",
-  "last_update": "2026-10-03T08:57:13+00:00",
+  "last_update": "2026-10-03T11:43:50+00:00",
   "conflict_zones": [
     {
       "id": "zone-ukraine",
@@ -1153,6 +1153,18 @@
     }
   ],
   "human_rights_violations": [
+    {
+      "id": "hr-7de308ec09",
+      "name": "Greece: Rights Defenders on Trial",
+      "region": "Southern Europe",
+      "lat": 39.1,
+      "lon": 21.8,
+      "status": "active",
+      "start_date": "2026-10-03",
+      "note": "Left: Panayote Dimitras. Right: Tommy Olsen. © 2019 EIN Secretariat – Agnes Ciccarone © 2015 Adam Rosser (Athens, October 3, 2026) – The ongoing prosecution of two prominent human rights defenders in Greece is a politically-motivated attempt to silence their efforts to expose abu",
+      "source": "Human Rights Watch",
+      "url": "https://www.hrw.org/news/2026/10/03/greece-rights-defenders-on-trial"
+    },
     {
       "id": "hr-7a5faf6589",
       "name": "US: Rights Concerns for Maritime Operations Near Ecuador",
