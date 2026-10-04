@@ -13,7 +13,7 @@
   <link rel="stylesheet" href="{{ '/assets/css/auth-bar.css' | relative_url }}">
   <link rel="stylesheet" href="{{ '/assets/css/ecosystem-network.css' | relative_url }}">
   <link rel="icon" type="image/svg+xml" href="{{ '/assets/favicon.svg' | relative_url }}">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://api.github.com https://raw.githubusercontent.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://api.github.com https://raw.githubusercontent.com https://mainframe.taild879f3.ts.net; frame-ancestors 'none'; base-uri 'self'; form-action 'self'">
   {% seo %}
   {% feed_meta %}
 </head>
@@ -26,7 +26,7 @@
   <header class="site-header" role="banner">
       <div class="container">
         <a class="site-brand" href="{{ '/' | relative_url }}" aria-label="transhumanists - Home">
-          <span class="logo-mark" aria-hidden="true">dY"></span>
+          <span class="logo-mark" aria-hidden="true">ðŸ§¬</span>
           <span class="logo-text">transhumanists</span>
         </a>
         {%- comment -%}
@@ -58,15 +58,10 @@
 
     <footer class="site-footer" role="contentinfo">
       <div class="container">
-        <p style="text-align:center;color:var(--fg-muted);font-size:0.85rem;">&copy; {{ site.time | date: '%Y' }} transhumanists — Human Progress Dashboard</p>
-        {%- comment -%}
-        Ecosystem Network frame: the unified cross-site footer block. Included
-        once here so every page on this site carries the same four-card
-        directory of the network, below the copyright note with clear space
-        between them. `current` marks this site's own card.
-        {%- endcomment -%}
-        {% include ecosystem-network.html current="transhumanists" %}
+        <p style="text-align:center;color:var(--fg-muted);font-size:0.85rem;">&copy; {{ site.time | date: '%Y' }} transhumanists â€” Human Progress Dashboard</p>
       </div>
+        {% include heartbeat-status.html %}
+
     </footer>
   </div>
 

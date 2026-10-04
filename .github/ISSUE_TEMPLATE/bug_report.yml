@@ -1,0 +1,45 @@
+name: Bug report
+description: Report a broken link, formatting issue, or incorrect information
+labels: ["bug", "needs-triage"]
+assignees: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Found something wrong? Please let us know so we can fix it.
+
+  - type: dropdown
+    id: type
+    attributes:
+      label: Issue type
+      options:
+        - Broken link
+        - Incorrect information
+        - Formatting / display issue
+        - Missing content
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: location
+    attributes:
+      label: Where is the issue?
+      description: "Page URL or file path, and the specific section."
+      placeholder: "https://transhumanists.github.io/ — Longevity section"
+      render: shell
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Describe the issue
+    validations:
+      required: true
+
+  - type: textarea
+    id: fix
+    attributes:
+      label: Suggested fix (optional)
+      description: "If you know what the correct information should be."
