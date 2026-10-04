@@ -359,10 +359,22 @@ test('CATEGORIES is bigger than the eye and folds from the whole header row',
     const clickInFrontOfWord = async () => {
       const h = await box(head);
       const t = await box(title);
-      const x = t.x + t.width + 4;
-      expect(x, 'there is whitespace between the word and the eye')
-        .toBeLessThan(h.x + h.width);
-      await page.mouse.click(x, t.y + t.height / 2);
+      const e = await box(eye);
+      // The gap between the word and the eye, not a fixed offset from the word.
+      //
+      // This used to click title.x + title.width + 4 and assert only that the point
+      // was still inside the header. That is not the same thing: it is inside the
+      // header, but so is the eye. Shortening the deployments label narrowed the
+      // frame, the gap closed, and the click landed on the eye - whose handler calls
+      // stopPropagation - so the title never toggled and the assertion read as a
+      // product bug. Deriving the point from the eye's actual left edge keeps the
+      // test about the thing it means: there is whitespace there, and clicking
+      // whitespace toggles.
+      const gapLeft = t.x + t.width;
+      const gapRight = e.x;
+      expect(gapRight - gapLeft, 'there is whitespace between the word and the eye')
+        .toBeGreaterThan(2);
+      await page.mouse.click((gapLeft + gapRight) / 2, t.y + t.height / 2);
     };
     const clickWord = async () => {
       const t = await box(title);
@@ -476,7 +488,13 @@ test('every legend label sits on one line', async ({ page }) => {
       expect(l.truncated, l.text + ' was ellipsised').toBe(false);
     }
     // The longest label really is in there, so this is not passing on short rows.
-    expect(labels.some((l) => l.text.includes('Fleet Movements'))).toBe(true);
+    // Read the expected text out of the module rather than hardcoding it: the
+    // deployments row was renamed from "Ground Deployments & Fleet Movements" to
+    // "Ground & Fleet Deployments", and a literal here had been asserting a string
+    // the site stopped shipping. LAYER_LABELS is the one place the label lives.
+    const deployments = await page.evaluate(
+      () => window.__WORLDMAP_TEST__.LAYER_LABELS.deployments);
+    expect(labels.some((l) => l.text.includes(deployments))).toBe(true);
   });
 
 test('the widened frame still clears South America', async ({ page }, testInfo) => {
