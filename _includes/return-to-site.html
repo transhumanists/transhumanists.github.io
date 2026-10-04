@@ -1,0 +1,18 @@
+{%- comment -%}
+Return-to-site bar mount.
+
+Empty on the page; `assets/js/return-bar.js` fills it only when the visitor
+actually arrived from another site in the network. The site list lives here as
+JSON rather than in the script so adding a site to the network is a one-line
+change in every layout that includes this, and so the script itself has nothing
+site-specific in it.
+{%- endcomment -%}
+<div id="return-bar"
+     data-site="{{ include.current | default: 'transhumanists' }}"
+     data-site-name="{{ include.current_name | default: 'transhumanists' }}"
+     data-sites='[
+       {"host":"transhumanists.github.io","name":"transhumanists","url":"https://transhumanists.github.io/"},
+       {"host":"neohiro.github.io","name":"neohiro","url":"https://neohiro.github.io/"},
+       {"host":"frenzypenguin-media.github.io","name":"FrenzyPenguin Media","url":"https://frenzypenguin-media.github.io/"},
+       {"host":"openstageisland.github.io","name":"Open Stage Island","url":"https://neohiro.github.io/openstageisland.github.io/"}
+     ]'></div>
