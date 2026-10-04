@@ -1,4 +1,4 @@
-{# auth-bar.html — the persistent lower bar ("dock").
+{% comment %} auth-bar.html — the persistent lower bar ("dock").
 
    CONTRACT (keep in sync across neohiro / frenzypenguin-media / openstageisland /
    transhumanists):
@@ -15,7 +15,7 @@
       behind stays scrollable and interactive.
 
    The remaining panels are kept because auth-bar.js wires them by id and the
-   top-bar Login button calls AuthBar.selectTab('login'). #}
+   top-bar Login button calls AuthBar.selectTab('login'). {% endcomment %}
 <div class="ai-dock" id="ai-dock" role="navigation" aria-label="Assistant and account">
   <div class="ai-dock__rail">
 
@@ -61,8 +61,8 @@
 
   <div class="ai-dock__panels">
 
-    {# Placeholder panel — the real conversation UI is the screenwide sheet that
-       network-ux.js mounts (#ai-conv). Kept so aria-controls resolves. #}
+    {% comment %} Placeholder panel — the real conversation UI is the screenwide sheet that
+       network-ux.js mounts (#ai-conv). Kept so aria-controls resolves. {% endcomment %}
     <div class="ai-dock__panel ai-dock__panel--ai"
          id="ai-dock__panel--ai"
          role="tabpanel"

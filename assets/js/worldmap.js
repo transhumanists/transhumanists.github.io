@@ -4744,7 +4744,9 @@ function initTimelineSlider() {
     updateStatsDisplay();
     renderLegend();
     resize();
-    window.addEventListener('resize', scheduleResize);
+    const resizeObserver = new ResizeObserver(scheduleResize);
+  resizeObserver.observe(canvas.parentElement);
+  window._mapResizeObserver = resizeObserver;
     document.addEventListener('visibilitychange', onVisibilityChange);
     animationFrameId = requestAnimationFrame(loop);
     startTerminatorInterval();
@@ -4799,7 +4801,7 @@ function initTimelineSlider() {
     if (eventsAbortController) eventsAbortController.abort();
     if (layersAbortController) layersAbortController.abort();
     if (resizeTimeout) clearTimeout(resizeTimeout);
-    window.removeEventListener('resize', scheduleResize);
+    if (window._mapResizeObserver) window._mapResizeObserver.disconnect();
     document.removeEventListener('visibilitychange', onVisibilityChange);
     canvas.removeEventListener('mousemove', handleMouseMove);
     canvas.removeEventListener('mousedown', handleMouseDown);
