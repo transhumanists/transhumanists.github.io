@@ -26,7 +26,7 @@
   <header class="site-header" role="banner">
       <div class="container">
         <a class="site-brand" href="{{ '/' | relative_url }}" aria-label="transhumanists - Home">
-          <span class="logo-mark" aria-hidden="true">ðŸ§¬</span>
+          <span class="logo-mark" aria-hidden="true">&#129516;</span>
           <span class="logo-text">transhumanists</span>
         </a>
         {%- comment -%}
@@ -58,7 +58,16 @@
 
     <footer class="site-footer" role="contentinfo">
       <div class="container">
-        <p style="text-align:center;color:var(--fg-muted);font-size:0.85rem;">&copy; {{ site.time | date: '%Y' }} transhumanists â€” Human Progress Dashboard</p>
+        <p style="text-align:center;color:var(--fg-muted);font-size:0.85rem;">&copy; {{ site.time | date: '%Y' }} transhumanists &mdash; Human Progress Dashboard</p>
+        {%- comment -%}
+        Ecosystem Network frame: the unified cross-site footer block, included
+        once here so every page carries the same four-card directory of the
+        network. Sits last, below the copyright note, with clear space between
+        them. ecosystem-network.css reserves room underneath for the AI/contact
+        dock, which is fixed to the viewport. `current` marks this site's own
+        card.
+        {%- endcomment -%}
+        {% include ecosystem-network.html current="transhumanists" %}
       </div>
         {% include heartbeat-status.html %}
 
