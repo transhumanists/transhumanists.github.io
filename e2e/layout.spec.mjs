@@ -45,6 +45,27 @@ test.beforeEach(async ({ page }) => {
   page.__errors = errors;
 });
 
+// The legend is rebuilt as each payload lands: the events arrive, then the layer
+// payloads, and the alliance seal sublayer only appears once one actually carries
+// seals. A test that reads the row list straight after the first render therefore
+// sees a different set of rows depending on which fetch won the race - which is
+// flaky rather than wrong. Poll until two consecutive reads agree, so every
+// assertion about the row set is about a legend that has stopped moving.
+async function waitForLegendToSettle(page) {
+  await page.waitForFunction(() => {
+    const el = document.getElementById('map-legend');
+    if (!el) return false;
+    const key = Array.from(el.querySelectorAll('.map-legend-row'))
+      .map((r) => (r.getAttribute('data-layer') || r.getAttribute('data-category') || '?'))
+      .join('|');
+    const stable = window.__legendKey === key;
+    window.__legendKey = key;
+    return stable && el.querySelectorAll('.map-legend-row').length > 0;
+  }, null, { timeout: 15_000, polling: 150 });
+  // One more beat, so a rebuild queued by the last read has actually painted.
+  await page.waitForTimeout(250);
+}
+
 test.afterEach(async ({ page }, testInfo) => {
   // Artifacts for a human, not an assertion.
   await testInfo.attach('map', {
@@ -140,8 +161,26 @@ test('the pinned legend header is opaque, so rows do not ghost through it',
   });
 
 test('the legend reaches every row without being clipped away', async ({ page }) => {
-  // 9 categories + 4 operational layers.
-  await expect(page.locator('#map-legend .map-legend-row')).toHaveCount(13);
+  // Wait for the legend to stop changing before counting. The fixture loads the
+  // real data/world_layers.json, so the alliance seal sublayer arrives with the
+  // layer payload and takes the legend from 13 rows to 14. Asserting 13 straight
+  // after the first render passed only when the events fetch happened to win that
+  // race - the count was never actually 13 for a settled legend, so this was a
+  // flake dressed as an assertion.
+  await waitForLegendToSettle(page);
+  const shape = await page.evaluate(() => {
+    const rows = Array.from(document.querySelectorAll('#map-legend .map-legend-row'));
+    return {
+      total: rows.length,
+      categories: rows.filter((r) => r.hasAttribute('data-category')).length,
+      layers: rows.filter((r) => r.hasAttribute('data-layer')).length,
+    };
+  });
+  // 9 milestone categories + 4 operational layers + the nested seal sublayer.
+  expect(shape.categories).toBe(9);
+  expect(shape.layers).toBe(5);
+  expect(shape.total).toBe(shape.categories + shape.layers);
+
   const clipped = await page.evaluate(() => {
     const el = document.getElementById('map-legend');
     // Scrollable is fine; scrolled-out-of-reach is not.
@@ -151,6 +190,119 @@ test('the legend reaches every row without being clipped away', async ({ page })
   });
   expect(clipped).toBe(false);
 });
+
+test('the dimmed datalayer titles carry the silver sweep, and nothing else does',
+  async ({ page }) => {
+    // The legend is rebuilt as each payload arrives, so its row count is not stable
+    // the moment rows first appear: the alliance seal sublayer only renders once a
+    // payload actually carries seals. Wait for it to settle rather than asserting a
+    // count that depends on which payload won the race.
+    await waitForLegendToSettle(page);
+
+    // Resolved computed style, not a scan of the stylesheet: what matters is
+    // whether a browser actually applies the paint to these labels, which is a
+    // different question from whether the rule is present.
+    const rows = await page.evaluate(() =>
+      Array.from(document.querySelectorAll('#map-legend .map-legend-row')).map((row) => {
+        const el = row.querySelector('.map-legend-label');
+        const cs = getComputedStyle(el);
+        const r = el.getBoundingClientRect();
+        return {
+          layer: row.getAttribute('data-layer'),
+          category: row.getAttribute('data-category'),
+          pressed: row.getAttribute('aria-pressed'),
+          delay: getComputedStyle(row).getPropertyValue('--shimmer-delay').trim(),
+          name: cs.animationName,
+          duration: cs.animationDuration,
+          clip: cs.backgroundClip || cs.webkitBackgroundClip,
+          hasImage: cs.backgroundImage !== 'none',
+          text: el.textContent.trim(),
+          w: Math.round(r.width),
+          h: Math.round(r.height),
+        };
+      }));
+
+    const layers = rows.filter((r) => r.layer);
+    const categories = rows.filter((r) => r.category);
+    // At least the four that always ship, and at least one category to prove the
+    // scoping. The exact number depends on the payload, so it is not pinned here.
+    expect(layers.length).toBeGreaterThanOrEqual(4);
+    expect(categories.length).toBeGreaterThan(0);
+
+    for (const row of layers) {
+      // Every operational layer ships off, so every one of them is dimmed and
+      // every one of them sweeps.
+      expect(row.pressed, `${row.layer} is dimmed by default`).toBe('false');
+      expect(row.name, `${row.layer} animation`).toBe('legend-silver-sweep');
+      expect(row.duration, `${row.layer} period`).toBe('7.5s');
+      expect(row.hasImage, `${row.layer} has a gradient`).toBe(true);
+      expect(row.clip, `${row.layer} clips paint to the glyphs`).toBe('text');
+      expect(row.delay, `${row.layer} phase offset`).toMatch(/^\d+\.\d{2}s$/);
+      // background-clip: text can leave a label invisible; assert it is not.
+      expect(row.text.length, `${row.layer} label text`).toBeGreaterThan(0);
+      expect(row.w, `${row.layer} label width`).toBeGreaterThan(0);
+      expect(row.h, `${row.layer} label height`).toBeGreaterThan(0);
+    }
+
+    // The milestone categories are on by default and must be left completely
+    // alone: no sweep, and no offset for one to apply to.
+    for (const row of categories) {
+      expect(row.name, `${row.category} is not animated`).not.toBe('legend-silver-sweep');
+      expect(row.delay, `${row.category} has no phase offset`).toBe('');
+    }
+
+    // The offsets are genuinely out of step with each other, which is the whole
+    // point of deriving one per layer rather than sharing a single delay.
+    expect(new Set(layers.map((r) => r.delay)).size).toBe(layers.length);
+  });
+
+test('hover lifts a dimmed datalayer row to a legible opacity', async ({ page }) => {
+  await waitForLegendToSettle(page);
+  // The resting state clamps the row to 0.4, which is the right hint and the
+  // wrong thing to read the title of the row you are about to click.
+  const row = page.locator('#map-legend .map-legend-row[data-layer="zones"]');
+  const resting = await row.evaluate((el) => parseFloat(getComputedStyle(el).opacity));
+  expect(resting).toBeLessThan(0.6);
+  await row.hover();
+  await page.waitForTimeout(250);
+  const hovered = await row.evaluate((el) => parseFloat(getComputedStyle(el).opacity));
+  expect(hovered).toBeGreaterThan(resting);
+  expect(hovered).toBeGreaterThan(0.6);
+});
+
+test('reduced motion parks the silver glint instead of sweeping it',
+  async ({ page }) => {
+    // The sweep is the only motion these rows add, so this is the whole
+    // reduced-motion contract for them. Parked at 50% the glint still sits across
+    // the word, so the row reads as live and nothing on the page moves.
+    await waitForLegendToSettle(page);
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    const state = await page.evaluate(() => {
+      const row = document.querySelector('#map-legend .map-legend-row[data-layer]');
+      const cs = getComputedStyle(row.querySelector('.map-legend-label'));
+      return {
+        name: cs.animationName,
+        positionX: cs.backgroundPositionX,
+        hasImage: cs.backgroundImage !== 'none',
+      };
+    });
+    expect(state.hasImage, 'the silver is still there, just still').toBe(true);
+    expect(state.name, 'nothing is animating').not.toBe('legend-silver-sweep');
+    expect(state.positionX).toBe('50%');
+  });
+
+test('forced colours drop the sweep rather than half-repainting the text',
+  async ({ page }) => {
+    await waitForLegendToSettle(page);
+    await page.emulateMedia({ forcedColors: 'active' });
+    const state = await page.evaluate(() => {
+      const row = document.querySelector('#map-legend .map-legend-row[data-layer]');
+      const cs = getComputedStyle(row.querySelector('.map-legend-label'));
+      return { name: cs.animationName, hasImage: cs.backgroundImage !== 'none' };
+    });
+    expect(state.hasImage).toBe(false);
+    expect(state.name).not.toBe('legend-silver-sweep');
+  });
 
 test('the eye wears the CATEGORIES colours and sits just smaller than the word',
   async ({ page }) => {
@@ -334,6 +486,7 @@ test('the widened frame still clears South America', async ({ page }, testInfo) 
   });
 
 test('the eye opens and closes the whole category set, and nothing else', async ({ page }) => {
+  await waitForLegendToSettle(page);
   const eye = page.locator('#map-legend-bulk-visibility');
   await expect(eye).toHaveAttribute('aria-pressed', 'false');
 
@@ -348,9 +501,11 @@ test('the eye opens and closes the whole category set, and nothing else', async 
     expect(pressed).toBe('false');
   }
 
-  // Operational layers are untouched.
+  // Operational layers are untouched: the four datalayers plus the nested seal
+  // sublayer. Counted after the legend settles, because the sublayer only exists
+  // once a payload actually carries seals.
   const layers = page.locator('#map-legend .map-legend-row[data-layer]');
-  await expect(layers).toHaveCount(4);
+  await expect(layers).toHaveCount(5);
 
   await eye.click();
   await expect(eye).toHaveAttribute('aria-pressed', 'false');

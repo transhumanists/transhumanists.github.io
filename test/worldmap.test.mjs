@@ -424,6 +424,7 @@ describe('worldmap', () => {
   });
 
   test('renders legend rows for all 9 categories plus layers', () => {
+    const api = windowObj.__WORLDMAP_TEST__;
     const legend = registeredEls['map-legend'];
     expect(legend).toBeDefined();
     expect(legend.getAttribute('role')).toBe('list');
@@ -462,6 +463,7 @@ describe('worldmap', () => {
   });
 
   test('conflict and fleet layer rows toggle their stats and redraw', () => {
+    const api = windowObj.__WORLDMAP_TEST__;
     const rowByLayer = (key) => legendRows().find((r) => (r.attrs['data-layer'] || '') === key);
     const zonesRow = rowByLayer('zones');
     // Military layers are off by default (filterMilitary=false), so aria-pressed is false
@@ -489,7 +491,6 @@ describe('worldmap', () => {
     expect(rowByLayer('deployments').getAttribute('aria-pressed')).toBe('false');
     expect(Number(registeredEls['map-stat-fleets'].textContent)).toBe(13); // stats show the whole datalayer, filter-independent
     // Restore both for later tests via test hook (button click not reliable in mock)
-    const api = windowObj.__WORLDMAP_TEST__;
     api.setFilterMilitary(true);        // enables both
     expect(Number(registeredEls['map-stat-conflicts'].textContent)).toBe(3);
     expect(Number(registeredEls['map-stat-fleets'].textContent)).toBe(13);
@@ -940,7 +941,7 @@ test('zoom controls, keyboard and double-click do not throw', () => {
     });
     expect(ev._stackKey).toBeUndefined();
     expect(Object.keys(ev).sort()).toEqual([
-      'category', 'date', 'id', 'lat', 'lon', 'source', 'title', 'url', 'value',
+      'category', 'date', 'id', 'lat', 'lon', 'source', 'subcategory', 'title', 'url', 'value',
     ]);
   });
 
@@ -951,12 +952,12 @@ test('zoom controls, keyboard and double-click do not throw', () => {
       geolocation: { lat: 1, lon: 2 },
     });
     expect(full).toEqual({
-      id: '1,2,T', lat: 1, lon: 2, title: 'T', category: 'X', value: 'v', source: 'S', url: 'https://a.b', date: '2026-01-01',
+      id: '1,2,T', lat: 1, lon: 2, title: 'T', category: 'X', subcategory: '', value: 'v', source: 'S', url: 'https://a.b', date: '2026-01-01',
     });
     // Missing geolocation and optional fields get safe defaults.
     const bare = api.normalizeEvent({ geolocation: {} });
     expect(bare).toEqual({
-      id: 'undefined,undefined,Untitled', lat: undefined, lon: undefined, title: 'Untitled', category: 'Unknown', value: '', source: 'Unknown', url: '', date: '',
+      id: 'undefined,undefined,Untitled', lat: undefined, lon: undefined, title: 'Untitled', category: 'Unknown', subcategory: '', value: '', source: 'Unknown', url: '', date: '',
     });
     expect(api.isPlottable(full)).toBe(true);
     expect(api.isPlottable(bare)).toBe(false);                       // no coordinates
@@ -1459,19 +1460,43 @@ test('zoom controls, keyboard and double-click do not throw', () => {
     expect(() => canvas.fire('mousemove', { clientX: mid.x, clientY: mid.y, movementX: 0, movementY: 0 })).not.toThrow();
     expect(tooltip.classList.contains('visible')).toBe(true);
     const wrapper = tooltip.children[0];
-    const text = wrapper.children.map((c) => c.textContent).join(' | ');
+    // Read the whole card, not just its direct children: appendTooltipHeader puts
+    // the category label inside a .tt-head row so the actor badge can sit hard
+    // right on the same baseline, and a direct-children read sees an empty head.
+    const deepText = (node) => {
+      let out = node.textContent || '';
+      for (const c of node.children || []) {
+        const inner = deepText(c);
+        out += inner ? ' ' + inner : '';
+      }
+      return out;
+    };
+    const text = wrapper.children.map((c) => deepText(c)).join(' | ');
     expect(text).toContain('Ground Deployment');
     expect(text).toContain('Brigade move');
-    expect(text).toContain('Nation: Testland');
-    expect(text).toContain('Troops: 5,000');
-    expect(text).toContain('Heading: east');
+    // Fact rows are a key span beside a value span now, so the separator between
+    // them is CSS rather than a character in the text. Read them as the pairs they
+    // are instead of matching on a colon that is no longer in the markup - that
+    // way a change to the gap between the two spans cannot fail this test.
+    const facts = new Map(wrapper.children
+      .filter((c) => (c.className || '').indexOf('tt-fact') === 0)
+      .map((c) => [
+        c.children[0].textContent,
+        c.children[1].textContent,
+      ]));
+    expect(facts.get('Nation')).toBe('Testland');
+    expect(facts.get('Troops')).toBe('5,000');
+    expect(facts.get('Heading')).toBe('east');
     // Route is reported from the derived endpoints even though the payload has
     // no from/to at all.
-    expect(text).toMatch(/From: 40\.0/);
-    expect(text).toMatch(/To: 40\.0/);
+    expect(facts.get('From')).toMatch(/^40\.0/);
+    expect(facts.get('To')).toMatch(/^40\.0/);
     // The source link is preserved end to end and rendered as a real anchor. It
-    // lives inside the meta row, not directly under the wrapper.
-    const metaRow = wrapper.children[2];
+    // lives inside the meta row, which is found by class rather than by index: the
+    // header and title rows above it have been restructured more than once, and an
+    // index into that list is not a statement about where the link is.
+    const metaRow = wrapper.children.find((c) => (c.className || '').indexOf('tt-meta') === 0);
+    expect(metaRow).toBeDefined();
     const anchor = metaRow.children.find((c) => c.tagName === 'A');
     expect(anchor).toBeDefined();
     expect(anchor.textContent).toBe('MoD');
@@ -2026,8 +2051,9 @@ test('zoom controls, keyboard and double-click do not throw', () => {
   });
 
   test('Deployments legend row explains both components', () => {
+    const api = windowObj.__WORLDMAP_TEST__;
     registeredEls['reset-view'].fire('click', {});
-      expect(legendValue(api.LAYER_LABELS.deployments)).toBeDefined();
+    expect(legendValue(api.LAYER_LABELS.deployments)).toBeDefined();
       // The row draws two dots and the label names two components, so the label's
       // word order has to match the dot order or the legend misreports which
       // colour is which.
@@ -2041,6 +2067,141 @@ test('zoom controls, keyboard and double-click do not throw', () => {
       expect(words.filter((w) => order.includes(w))).toEqual(order);
       // And the two colours differ, so the dots are meaningful.
       expect(dots[0].style.background).not.toBe(dots[1].style.background);
+  });
+
+  // ---- Silver shimmer on the dimmed tactical layer titles ------------------
+  // The operational rows ship switched off, so every one of them is dimmed on a
+  // first visit, and the shimmer is the only thing on the frame that says a live
+  // feed is sleeping behind them. That makes it load-bearing rather than
+  // decorative, and makes its scoping worth asserting rather than eyeballing:
+  //
+  //   * every layer row carries a phase offset, and no two share one, so the rows
+  //     drift out of phase instead of pulsing as a single block;
+  //   * milestone category rows carry none, so switching a category off can never
+  //     start a sweep on a row that is not a datalayer;
+  //   * the offset is stable across rebuilds, because renderLegend() re-creates
+  //     these rows on every toggle, filter change and timeline move;
+  //   * it stays inside one sweep period, so an offset can never outlast the loop
+  //     it delays and leave a row permanently mid-sweep.
+  describe('the silver sweep on dimmed datalayer titles', () => {
+    const api = () => windowObj.__WORLDMAP_TEST__;
+    const layerRows = () => legendRows().filter((r) => r.attrs['data-layer']);
+    const categoryRows = () => legendRows().filter((r) => r.attrs['data-category']);
+    const delayOf = (row) => row.style.getPropertyValue('--shimmer-delay');
+    // The CSS --shimmer-period default, which is also what silverSweepDelay folds
+    // its hash into. Kept here so a change to one is a visible change to the other
+    // rather than a silent mismatch between two numbers that must agree.
+    const PERIOD_SECONDS = 7.5;
+
+    beforeEach(() => {
+      globalThis.localStorage.clear();
+      const s = api().getState();
+      s.hiddenCategories.clear();
+      // Layer visibility is module state that outlives a single test, so each case
+      // starts from the shipped default - every operational layer off - instead of
+      // inheriting whatever the previous test left switched on. Without this the
+      // "dimmed" half of the contract is not actually being exercised.
+      s.filterMilitary = false;
+      s.filterCrisis = false;
+      s.showZones = false;
+      s.showFleets = false;
+      s.showCrises = false;
+      s.showHumanRights = false;
+      s.showAllianceDots = false;
+      api().renderLegend();
+    });
+
+    test('every tactical layer row is handed a phase offset', () => {
+      const rows = layerRows();
+      // Four, not five: the alliance seal row is a nested sublayer and only renders
+      // when the payload actually carries seals, which this fixture's does not.
+      // So this asserts the four that a checkout without seals would show.
+      expect(rows.length).toBe(4);
+      for (const row of rows) {
+        const key = row.getAttribute('data-layer');
+        expect(row.getAttribute('aria-pressed'), `${key} is dimmed by default`).toBe('false');
+        expect(delayOf(row), `${key} phase offset`).toMatch(/^\d+\.\d{2}s$/);
+      }
+    });
+
+    test('no two layers land on the same phase', () => {
+      const delays = layerRows().map(delayOf);
+      expect(new Set(delays).size).toBe(delays.length);
+    });
+
+    test('milestone category rows are left out of it', () => {
+      // data-category, not data-layer: the stylesheet keys the sweep off
+      // [data-layer] for exactly this reason, and a category row that picked up a
+      // delay would be one selector change away from shimmering too.
+      expect(categoryRows().length).toBe(9);
+      for (const row of categoryRows()) {
+        expect(delayOf(row), `${row.getAttribute('data-category')}`).toBe('');
+      }
+    });
+
+    test('the offset is the one the layer key asks for', () => {
+      for (const row of layerRows()) {
+        const key = row.getAttribute('data-layer');
+        expect(delayOf(row)).toBe(api().silverSweepDelay(key));
+      }
+    });
+
+    test('a rebuild does not shift anybody, because the key does not change', () => {
+      const before = layerRows().map(delayOf);
+      api().renderLegend();
+      api().renderLegend();
+      expect(layerRows().map(delayOf)).toEqual(before);
+    });
+
+    test('every offset falls inside one sweep period', () => {
+      for (const key of ['zones', 'deployments', 'alliance_dots', 'crises', 'human_rights']) {
+        const seconds = parseFloat(api().silverSweepDelay(key));
+        expect(seconds).toBeGreaterThanOrEqual(0);
+        // Strictly less than the period: a delay equal to the period is the same as
+        // no delay, and anything longer never returns to the start of the loop.
+        expect(seconds, key).toBeLessThan(PERIOD_SECONDS);
+      }
+    });
+
+    test('the delay is deterministic for a given key', () => {
+      expect(api().silverSweepDelay('zones')).toBe(api().silverSweepDelay('zones'));
+      // And a different layer is a different phase, which is the whole point.
+      expect(api().silverSweepDelay('zones')).not.toBe(api().silverSweepDelay('crises'));
+    });
+
+    test('the stylesheet scopes the sweep to dimmed layer rows, and nothing else', () => {
+      // Asserted against the real stylesheet because the scoping is a single
+      // selector, and a selector is exactly the kind of thing that gets broadened
+      // by a later edit with nothing left to fail. Both halves matter: the layer
+      // rows must be swept when off, and must not be swept when on.
+const css = fs.readFileSync(path.join(process.cwd(), 'assets/css/main.css'), 'utf8');
+      const SWEEP = '.map-legend-row[data-layer][aria-pressed="false"] .map-legend-label';
+      expect(css).toContain(SWEEP);
+      // Comments are stripped from the whole file before the block is cut out, not
+      // after: the block's opening comment begins before its first rule, so slicing
+      // first would leave it unterminated and the prose would survive into what is
+      // treated here as selectors. The block is then bounded by its first sweep
+      // rule and the next rule after it, which is the count styling.
+      const stripped = css.replace(/\/\*[\s\S]*?\*\//g, '');
+      const start = stripped.indexOf(SWEEP);
+      expect(start).toBeGreaterThan(-1);
+      const end = stripped.indexOf('.map-legend-count', start);
+      const block = stripped.slice(start, end);
+      // The category group must not appear in any selector here: those rows are a
+      // different group in the markup and must never pick up the sweep.
+      expect(block).not.toContain('data-category');
+      // Nor may a rule sweep a row that is switched on, which is what the
+      // aria-pressed="false" qualifier is for. The hover rule is the one deliberate
+      // exception - it lifts the row under the pointer, and has to work whether or
+      // not that row is currently the dimmed one.
+      const rules = block.match(/\.map-legend-row[^{]*\{/g) || [];
+      expect(rules.length).toBeGreaterThan(1);
+      const sweeping = rules.filter((r) => !r.includes(':hover'));
+      expect(sweeping.length).toBeGreaterThan(0);
+      for (const rule of sweeping) {
+        expect(rule).toContain('[aria-pressed="false"]');
+      }
+    });
   });
 
   // ---- Hover arbitration ----------------------------------------------------
