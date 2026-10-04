@@ -114,12 +114,19 @@
 
     if (header) {
       var home = {{ '/' | relative_url | jsonify }};
+      var label = {{ site.title | default: 'Home' | jsonify }};
       var mini = document.createElement('a');
       mini.className = 'header-mini';
       mini.href = home;
-      mini.setAttribute('aria-label', {{ site.title | default: 'Home' | jsonify }} + ' — home');
-      mini.innerHTML = '<span class="logo-mark" aria-hidden="true">\u{1F47D}</span><span>' +
-                       {{ site.title | default: 'Home' | jsonify }} + '</span>';
+      mini.setAttribute('aria-label', label + ' — home');
+      // textContent, not innerHTML: site.title is interpolated into JS here and
+      // must never be parsed as markup.
+      var mark = document.createElement('span');
+      mark.className = 'logo-mark';
+      mark.setAttribute('aria-hidden', 'true');
+      mark.textContent = '\u{1F47D}';
+      mini.appendChild(mark);
+      mini.appendChild(document.createTextNode(label));
       document.body.appendChild(mini);
 
       var ticking = false;
@@ -133,10 +140,15 @@
         }
         ticking = false;
       }
+      // requestAnimationFrame is the throttle; fall back to a timeout so the
+      // header still behaves on engines without it rather than throwing.
+      var schedule = window.requestAnimationFrame
+        ? function (fn) { window.requestAnimationFrame(fn); }
+        : function (fn) { window.setTimeout(fn, 16); };
       window.addEventListener('scroll', function () {
         if (ticking) return;
         ticking = true;
-        window.requestAnimationFrame(onScroll);
+        schedule(onScroll);
       }, { passive: true });
     }
 

@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>transhumanists - live worldmap</title>
+  <meta name="description" content="Live world map of human progress: breakthroughs, conflicts and deployments pinned by geolocation.">
+  <meta name="robots" content="noindex, follow">
+  <link rel="canonical" href="https://transhumanists.github.io/">
+  <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/assets/css/main.css">
+  <style>
+    /* Isolation overrides. main.css sizes #world-map by the map plate's own 360/142
+       ratio (main.css:363), which is right for a section on the dashboard page and
+       wrong here: inside an embed the frame already has the shape we want, so the
+       map fills the viewport and main.css' letterbox padding is dropped. */
+    html, body { height: 100%; }
+    body { margin: 0; overflow: hidden; background: var(--bg, #060b14); }
+    #world-map { width: 100%; height: 100vh; height: 100dvh; max-width: 100%; aspect-ratio: auto; border-radius: 0; }
+  </style>
+</head>
+<body>
+    <div id="world-map">
+      <canvas id="world-map-canvas"></canvas>
+      <noscript>
+        <p style="margin:0;padding:24px;font-family:system-ui,sans-serif;color:#cfe0ff;background:#060b14">
+          The worldmap needs JavaScript. The same data is readable at
+          <a style="color:#7fd4ff" href="/">the dashboard</a>.
+        </p>
+      </noscript>
+      <div class="map-overlay" aria-live="polite">
+        <div class="map-hint-row">
+          <button id="filter-recent" class="map-hint" aria-pressed="false">
+            <span class="map-hint-dot" style="background: var(--green);"></span>
+            <span class="map-hint-title">
+              <span id="map-stat-active">—</span>
+              <span>breakthrough(s) this week</span>
+            </span>
+          </button>
+        </div>
+        <div class="map-hint-row">
+          <button id="filter-military" class="map-hint" aria-pressed="false">
+            <span class="map-hint-dot" style="background: var(--red);"></span>
+            <span class="map-hint-title">
+              <span id="map-stat-conflicts">—</span>
+              <span>active conflict zones,</span>
+              <span id="map-stat-fleets">—</span>
+              <span>deployments</span>
+            </span>
+          </button>
+        </div>
+        <div class="map-hint-row">
+          <button id="filter-crisis" class="map-hint" aria-pressed="false">
+            <span class="map-hint-dot" style="background: var(--purple);"></span>
+            <span class="map-hint-title">
+              <span id="map-stat-crises">—</span>
+              <span>humanitarian crises</span>
+            </span>
+          </button>
+        </div>
+      </div>
+      <div class="map-timeline" id="map-timeline" role="slider" aria-label="Timeline" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100" tabindex="0">
+        <div class="map-timeline-track" id="map-timeline-track">
+          <div class="map-timeline-years" id="map-timeline-years"></div>
+          <div class="map-timeline-handle" id="map-timeline-handle" role="slider" aria-label="Year" tabindex="0"></div>
+        </div>
+        <div class="map-timeline-year-label" id="map-timeline-year-label"></div>
+      </div>
+      <div class="map-tooltip" id="map-tooltip" role="tooltip"></div>
+    </div>
+
+  <!--
+    Embed target for the Weebly page and any other third-party frame.
+
+    The markup above is a copy of the WORLD MAP block in index.md, and worldmap.js
+    reaches for its element ids without checking (map-legend, map-timeline-handle,
+    terminator-toggle and friends are built by the script, but #world-map,
+    #world-map-canvas, #map-tooltip and the filter buttons are not). If the
+    dashboard block changes, copy the change here too - a rename on one page only
+    renders a blank plate on the other.
+
+    zoom-in, zoom-out and reset-view are read at worldmap.js:4095-4097 and exist
+    on neither page; the reads land on null and the script carries on. Do not add
+    them here to "fix" the isolated page - that would be a behaviour change to the
+    dashboard's map, not a port.
+
+    Only main.css and worldmap.js are loaded on purpose: the site layout would drag
+    in nav, footer, the ecosystem directory and the auth dock, and none of it
+    belongs inside a frame. worldmap.js fetches /data/events.json and
+    /data/world_layers.json relative to this origin, which is why this page has to
+    stay on the site rather than being served from somewhere else.
+
+    There is deliberately no CSP meta tag here. The one in _layouts/default.html
+    sets frame-ancestors 'none', which browsers ignore when it arrives in a meta
+    element - and would block this page from being framed if it ever arrived as a
+    real header. GitHub Pages sends no X-Frame-Options and no CSP header (verified
+    against /live.html), so framing works without one.
+  -->
+  <script src="/assets/js/worldmap.js"></script>
+</body>
+</html>
