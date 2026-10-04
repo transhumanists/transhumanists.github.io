@@ -1270,7 +1270,14 @@ test('zoom controls, keyboard and double-click do not throw', () => {
         { id: 'c1', name: 'Concluded zone', lat: 41, lon: 26, status: 'concluded', start_date: '2022-01-01', end_date: '2024-01-01' },
       ],
       [{ id: 'f-old', label: 'Old op', from: { lat: 50, lon: 10 }, to: { lat: 55, lon: 15 }, status: 'concluded', end_date: '2023-06-01' }],
-      [{ id: 'cr1', name: 'Active crisis', lat: 10, lon: 20, status: 'active' }]
+      [{ id: 'cr1', name: 'Active crisis', lat: 10, lon: 20, status: 'active' }],
+      [],
+      // Explicitly empty seals. `computeStats` counts the deployments datalayer
+      // as arrows PLUS seals, and setLayers now leaves the ambient seals alone
+      // when the argument is omitted - which is right for a test that only cares
+      // about zones, but would make this exact count depend on whatever the real
+      // feed happened to carry.
+      []
     );
     const stats = api.computeStats();
     expect(stats.conflicts).toBe(2);
@@ -2440,8 +2447,10 @@ test('zoom controls, keyboard and double-click do not throw', () => {
 
     test('the eye is excluded from the category count', () => {
       render();
-      // 9 categories + 4 operational layers, unchanged by the new control.
-      expect(legendRows().length).toBe(13);
+      // 14 rows: 9 categories, 4 operational layers, and the nested alliance/seal
+      // sublayer. The eye is chrome inside the header, not a row, so adding it
+      // must not have changed this number.
+      expect(legendRows().length).toBe(14);
     });
   });
 

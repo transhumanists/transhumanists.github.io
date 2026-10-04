@@ -4915,7 +4915,15 @@ function initTimelineSlider() {
         state.fleets = (fleets || []).map(normalizeFleet).filter(isFleetPlottable);
         state.crises = (crises || []).map(normalizeZone).filter(isZonePlottable);
         state.humanRights = (humanRights || []).map(normalizeHumanRight).filter(isHumanRightPlottable);
-        state.allianceDots = (allianceDots || []).map(normalizeAllianceDot).filter(isAllianceDotPlottable);
+        // allianceDots is the odd one out: only an explicit array replaces the
+        // seals, and omitting it leaves them alone. The four positional
+        // parameters above are all required, so "not passed" would otherwise
+        // silently mean "empty" - and the first thing that does is a test that
+        // never heard of the sublayer wiping it, which then fails on a legend
+        // row count that is correct everywhere else.
+        if (allianceDots !== undefined) {
+          state.allianceDots = allianceDots.map(normalizeAllianceDot).filter(isAllianceDotPlottable);
+        }
         rebuildAllianceDotIds();
         rebuildHumanRightStackMap();
         // A docked landmark may not exist in the replacement data.
