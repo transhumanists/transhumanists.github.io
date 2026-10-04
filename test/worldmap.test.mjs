@@ -2315,6 +2315,27 @@ test('zoom controls, keyboard and double-click do not throw', () => {
       expect(eye().type).toBe('button');
     });
 
+    test('the categories list boots expanded, and the fold control starts unpressed', () => {
+      // The browser suite measures the fold control's geometry and now
+      // normalises the fold state before it does, because that flag is
+      // module-global and a stale value made it order-dependent. The value the
+      // page actually boots with therefore has to be asserted here, where it is
+      // deterministic and cheap.
+      render();
+      expect(api().getState().foldedCategories).toBe(false);
+      const title = byClass(head(), 'map-legend-title');
+      expect(title.getAttribute('aria-pressed')).toBe('false');
+      // And the list is really open, not merely flagged open: the wrapper is
+      // only collapsed to zero height when folded. The wrapper is a sibling of
+      // the header under #map-legend, and `byClass` only looks at direct
+      // children - so ask for it there. Looking under the header instead finds
+      // nothing and `expect(null).not.toBe('0px')` passes without asserting
+      // anything at all, which is the failure mode this line exists to avoid.
+      const wrapper = byClass(registeredEls['map-legend'], 'map-legend-categories');
+      expect(wrapper, 'the categories wrapper exists').toBeTruthy();
+      expect(wrapper.style.maxHeight).not.toBe('0px');
+    });
+
     test('it is a drawn eye that takes the caption colour, not an icon glyph', () => {
       render();
       const svg = eyeSvg();

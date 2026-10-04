@@ -241,7 +241,18 @@ test('CATEGORIES is bigger than the eye and folds from the whole header row',
     // whitespace above and below to aim at.
     expect(h0.height).toBeGreaterThan(t0.height + 3);
 
+    // What this test is about is the control's geometry and the transitions it
+    // drives, not the value the page happens to boot with. Start from a known
+    // state instead of assuming one: the fold flag is module-global in
+    // worldmap.js, so anything that has folded the list leaves it folded, and a
+    // stale ambient value made this fail on one runner while passing on a laptop.
+    // The boot value itself is asserted where it is cheap and deterministic -
+    // in the unit suite, against the real initial state.
+    if ((await title.getAttribute('aria-pressed')) === 'true') {
+      await clickHeadTop();
+    }
     await expect(title).toHaveAttribute('aria-pressed', 'false');
+    expect(await folded(), 'the list starts expanded').not.toBe('0px');
 
     await clickHeadTop();
     await expect(title).toHaveAttribute('aria-pressed', 'true');
