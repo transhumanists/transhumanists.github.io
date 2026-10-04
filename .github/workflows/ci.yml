@@ -7,6 +7,7 @@ on:
       - 'assets/js/**'
       - 'assets/css/**'
       - 'index.md'
+      - 'map.html'
       - '_config.yml'
       - 'test/**'
       - 'scripts/**'
@@ -18,6 +19,7 @@ on:
       - 'assets/js/**'
       - 'assets/css/**'
       - 'index.md'
+      - 'map.html'
       - '_config.yml'
       - 'test/**'
       - 'scripts/**'
@@ -281,3 +283,27 @@ jobs:
           grep -q 'id="filter-recent"'    _site/index.html
           grep -q 'id="filter-military"'  _site/index.html
           grep -q 'id="filter-crisis"'    _site/index.html
+
+      # map.html is the embed target: third-party pages frame it so the map
+      # renders without the site chrome. It carries no front matter, so Jekyll
+      # copies it verbatim and the published file is the committed file - which
+      # means the unit suite can diff it against index.md, but only this job can
+      # prove it survived the build and is actually being served. A page that
+      # 404s is invisible to every other check in this workflow.
+      - name: Check isolated worldmap page
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f _site/map.html
+          grep -q 'id="world-map-canvas"' _site/map.html
+          grep -q 'id="map-timeline"'     _site/map.html
+          grep -q 'id="map-tooltip"'      _site/map.html
+          grep -q 'id="filter-recent"'    _site/map.html
+          grep -q 'assets/js/worldmap.js' _site/map.html
+          grep -q 'assets/css/main.css'   _site/map.html
+          # The isolation guarantee itself. auth-bar is the layout's assistant
+          # dock and network-ux is the cross-site footer frame; either one here
+          # means the frame grows site chrome the embed is meant to exclude.
+          ! grep -q 'auth-bar'    _site/map.html
+          ! grep -q 'network-ux'  _site/map.html
+          ! grep -q '_includes/'  _site/map.html
