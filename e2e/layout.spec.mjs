@@ -43,7 +43,42 @@ test.beforeEach(async ({ page }) => {
   }
 
   page.__errors = errors;
+
+  // Then wait for the legend to stop changing, before the test starts.
+  //
+  // Waiting for the first row is not enough. load() fetches events and layers
+  // concurrently, so rows appear from the events payload and the legend is
+  // re-rendered again when the layers land - which adds the alliance seal sublayer
+  // and moves the header. A test that clicks in the header measures coordinates,
+  // clicks, and then has the frame rebuilt underneath it: the click lands where the
+  // element used to be, which on a phone is now the eye, whose handler stops
+  // propagation, and the assertion reports a click target that works fine by hand.
+  // That is not hypothetical - it is how the fold-target test failed only on the
+  // phone project, only on CI, with the layer fetch visible in the log seconds
+  // earlier.
+  await waitForLegendToSettle(page);
 });
+
+// The legend is rebuilt as each payload lands: the events arrive, then the layer
+// payloads, and the alliance seal sublayer only appears once one actually carries
+// seals. A test that reads the row list straight after the first render therefore
+// sees a different set of rows depending on which fetch won the race - which is
+// flaky rather than wrong. Poll until two consecutive reads agree, so every
+// assertion about the row set is about a legend that has stopped moving.
+async function waitForLegendToSettle(page) {
+  await page.waitForFunction(() => {
+    const el = document.getElementById('map-legend');
+    if (!el) return false;
+    const key = Array.from(el.querySelectorAll('.map-legend-row'))
+      .map((r) => (r.getAttribute('data-layer') || r.getAttribute('data-category') || '?'))
+      .join('|');
+    const stable = window.__legendKey === key;
+    window.__legendKey = key;
+    return stable && el.querySelectorAll('.map-legend-row').length > 0;
+  }, null, { timeout: 15_000, polling: 150 });
+  // One more beat, so a rebuild queued by the last read has actually painted.
+  await page.waitForTimeout(250);
+}
 
 test.afterEach(async ({ page }, testInfo) => {
   // Artifacts for a human, not an assertion.
@@ -140,8 +175,22 @@ test('the pinned legend header is opaque, so rows do not ghost through it',
   });
 
 test('the legend reaches every row without being clipped away', async ({ page }) => {
-  // 9 categories + 4 operational layers.
-  await expect(page.locator('#map-legend .map-legend-row')).toHaveCount(13);
+  // The beforeEach has already waited for the legend to settle, so the counts below
+  // describe a finished frame: 13 rows is not a thing this legend ever is, because
+  // the alliance seal sublayer arrives with the layer payload and takes it to 14.
+  const shape = await page.evaluate(() => {
+    const rows = Array.from(document.querySelectorAll('#map-legend .map-legend-row'));
+    return {
+      total: rows.length,
+      categories: rows.filter((r) => r.hasAttribute('data-category')).length,
+      layers: rows.filter((r) => r.hasAttribute('data-layer')).length,
+    };
+  });
+  // 9 milestone categories + 4 operational layers + the nested seal sublayer.
+  expect(shape.categories).toBe(9);
+  expect(shape.layers).toBe(5);
+  expect(shape.total).toBe(shape.categories + shape.layers);
+
   const clipped = await page.evaluate(() => {
     const el = document.getElementById('map-legend');
     // Scrollable is fine; scrolled-out-of-reach is not.
@@ -151,6 +200,115 @@ test('the legend reaches every row without being clipped away', async ({ page })
   });
   expect(clipped).toBe(false);
 });
+
+test('the dimmed datalayer titles carry the silver sweep, and nothing else does',
+  async ({ page }) => {
+    // The legend is rebuilt as each payload arrives, so its row count is not stable
+    // the moment rows first appear: the alliance seal sublayer only renders once a
+    // payload actually carries seals. Wait for it to settle rather than asserting a
+    // count that depends on which payload won the race.
+
+    // Resolved computed style, not a scan of the stylesheet: what matters is
+    // whether a browser actually applies the paint to these labels, which is a
+    // different question from whether the rule is present.
+    const rows = await page.evaluate(() =>
+      Array.from(document.querySelectorAll('#map-legend .map-legend-row')).map((row) => {
+        const el = row.querySelector('.map-legend-label');
+        const cs = getComputedStyle(el);
+        const r = el.getBoundingClientRect();
+        return {
+          layer: row.getAttribute('data-layer'),
+          category: row.getAttribute('data-category'),
+          pressed: row.getAttribute('aria-pressed'),
+          delay: getComputedStyle(row).getPropertyValue('--shimmer-delay').trim(),
+          name: cs.animationName,
+          duration: cs.animationDuration,
+          clip: cs.backgroundClip || cs.webkitBackgroundClip,
+          hasImage: cs.backgroundImage !== 'none',
+          text: el.textContent.trim(),
+          w: Math.round(r.width),
+          h: Math.round(r.height),
+        };
+      }));
+
+    const layers = rows.filter((r) => r.layer);
+    const categories = rows.filter((r) => r.category);
+    // At least the four that always ship, and at least one category to prove the
+    // scoping. The exact number depends on the payload, so it is not pinned here.
+    expect(layers.length).toBeGreaterThanOrEqual(4);
+    expect(categories.length).toBeGreaterThan(0);
+
+    for (const row of layers) {
+      // Every operational layer ships off, so every one of them is dimmed and
+      // every one of them sweeps.
+      expect(row.pressed, `${row.layer} is dimmed by default`).toBe('false');
+      expect(row.name, `${row.layer} animation`).toBe('legend-silver-sweep');
+      expect(row.duration, `${row.layer} period`).toBe('7.5s');
+      expect(row.hasImage, `${row.layer} has a gradient`).toBe(true);
+      expect(row.clip, `${row.layer} clips paint to the glyphs`).toBe('text');
+      expect(row.delay, `${row.layer} phase offset`).toMatch(/^\d+\.\d{2}s$/);
+      // background-clip: text can leave a label invisible; assert it is not.
+      expect(row.text.length, `${row.layer} label text`).toBeGreaterThan(0);
+      expect(row.w, `${row.layer} label width`).toBeGreaterThan(0);
+      expect(row.h, `${row.layer} label height`).toBeGreaterThan(0);
+    }
+
+    // The milestone categories are on by default and must be left completely
+    // alone: no sweep, and no offset for one to apply to.
+    for (const row of categories) {
+      expect(row.name, `${row.category} is not animated`).not.toBe('legend-silver-sweep');
+      expect(row.delay, `${row.category} has no phase offset`).toBe('');
+    }
+
+    // The offsets are genuinely out of step with each other, which is the whole
+    // point of deriving one per layer rather than sharing a single delay.
+    expect(new Set(layers.map((r) => r.delay)).size).toBe(layers.length);
+  });
+
+test('hover lifts a dimmed datalayer row to a legible opacity', async ({ page }) => {
+  // The resting state clamps the row to 0.4, which is the right hint and the
+  // wrong thing to read the title of the row you are about to click.
+  const row = page.locator('#map-legend .map-legend-row[data-layer="zones"]');
+  const resting = await row.evaluate((el) => parseFloat(getComputedStyle(el).opacity));
+  expect(resting).toBeLessThan(0.6);
+  await row.hover();
+  await page.waitForTimeout(250);
+  const hovered = await row.evaluate((el) => parseFloat(getComputedStyle(el).opacity));
+  expect(hovered).toBeGreaterThan(resting);
+  expect(hovered).toBeGreaterThan(0.6);
+});
+
+test('reduced motion parks the silver glint instead of sweeping it',
+  async ({ page }) => {
+    // The sweep is the only motion these rows add, so this is the whole
+    // reduced-motion contract for them. Parked at 50% the glint still sits across
+    // the word, so the row reads as live and nothing on the page moves.
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    const state = await page.evaluate(() => {
+      const row = document.querySelector('#map-legend .map-legend-row[data-layer]');
+      const cs = getComputedStyle(row.querySelector('.map-legend-label'));
+      return {
+        name: cs.animationName,
+        positionX: cs.backgroundPositionX,
+        hasImage: cs.backgroundImage !== 'none',
+      };
+    });
+    expect(state.hasImage, 'the silver is still there, just still').toBe(true);
+    expect(state.name, 'nothing is animating').not.toBe('legend-silver-sweep');
+    expect(state.positionX).toBe('50%');
+  });
+
+test('forced colours drop the sweep rather than half-repainting the text',
+  async ({ page }) => {
+    await page.emulateMedia({ forcedColors: 'active' });
+    const state = await page.evaluate(() => {
+      const row = document.querySelector('#map-legend .map-legend-row[data-layer]');
+      const cs = getComputedStyle(row.querySelector('.map-legend-label'));
+      return { name: cs.animationName, hasImage: cs.backgroundImage !== 'none' };
+    });
+    expect(state.hasImage).toBe(false);
+    expect(state.name).not.toBe('legend-silver-sweep');
+  });
 
 test('the eye wears the CATEGORIES colours and sits just smaller than the word',
   async ({ page }) => {
@@ -196,30 +354,103 @@ test('CATEGORIES is bigger than the eye and folds from the whole header row',
     // coordinate silently lands on the frame background and does nothing.
     const box = async (loc) => loc.boundingBox();
 
-    const clickHeadTop = async () => {
-      const b = await box(head);
-      await page.mouse.click(b.x + 6, b.y + 1);
-    };
-    const clickHeadBottom = async () => {
-      const b = await box(head);
-      await page.mouse.click(b.x + 6, b.y + b.height - 1);
-    };
-    const clickInFrontOfWord = async () => {
-      const h = await box(head);
-      const t = await box(title);
-      const x = t.x + t.width + 4;
-      expect(x, 'there is whitespace between the word and the eye')
-        .toBeLessThan(h.x + h.width);
-      await page.mouse.click(x, t.y + t.height / 2);
-    };
-    const clickWord = async () => {
-      const t = await box(title);
-      await page.mouse.click(t.x + 4, t.y + t.height / 2);
-    };
-    const clickEye = async () => {
-      const e = await box(eye);
-      await page.mouse.click(e.x + e.width / 2, e.y + e.height / 2);
-    };
+// Wait until the header's own box stops moving.
+//
+// Toggling calls renderLegend(), which rebuilds the whole frame, so the header a
+// click was measured on is replaced by a new one at a new position. Measuring
+// immediately after a click therefore reads the box of an element that is about to
+// be thrown away - and, because the click still lands on *a* header, nothing
+// complains until the aria assertion two lines later. Polling the box until two
+// consecutive reads agree is what makes the next measurement describe the frame
+// that exists now.
+async function settleHeader() {
+  await page.waitForFunction(() => {
+    const h = document.querySelector('.map-legend-head');
+    if (!h) return false;
+    const r = h.getBoundingClientRect();
+    const key = `${Math.round(r.x)},${Math.round(r.y)},${Math.round(r.width)},${Math.round(r.height)}`;
+    const stable = window.__headerBox === key;
+    window.__headerBox = key;
+    return stable;
+  }, null, { timeout: 5000, polling: 50 });
+}
+
+// Click a point on `target`, defined as an offset within its box.
+//
+// Everything here is measured inside a scrollable legend whose header is sticky on
+// the narrow frame, so a box can be correct in layout and still not be where the
+// pointer goes: a scroll offset moves the painted position without moving the box's
+// layout coordinates, and a rebuild replaces the box outright. Three things follow,
+// and all three were needed to stop this test reporting a click target that works
+// fine by hand:
+//
+//   1. wait for the header box to settle, so it is not measured across a rebuild;
+//   2. pin the scroll *before* measuring, not after - pinning after leaves the
+//      measurement describing the pre-reset position, the same stale coordinate
+//      under a different name;
+//   3. prove the point with document.elementFromPoint before clicking, so a click
+//      that would land on nothing fails naming the element it actually hit rather
+//      than as a puzzling aria mismatch further down.
+//
+// The check is containment, not identity: the eye's centre is its inner <svg>, and
+// a title's box may be covered by its own text run. "This point hits the target, or
+// something inside it" is the contract that matters for a click; "the point's
+// className equals the target's" would fail on a perfectly good click.
+const clickOn = async (selector, pointIn) => {
+  const target = page.locator(selector);
+  await settleHeader();
+  await page.evaluate(() => {
+    const legend = document.getElementById('map-legend');
+    if (legend) legend.scrollTop = 0;
+  });
+  const b = await box(target);
+  const [x, y] = pointIn(b);
+  const hit = await page.evaluate(([px, py, sel]) => {
+    const el = document.elementFromPoint(px, py);
+    const t = document.querySelector(sel);
+    return el ? (t && (t === el || t.contains(el)) ? 'ok' : `${el.tagName}.${el.className}`) : null;
+  }, [x, y, selector]);
+  expect(hit, `the click point must land on ${selector}`).toBe('ok');
+  await page.mouse.click(x, y);
+};
+
+const clickHeadTop = () => clickOn('.map-legend-head', (b) => [b.x + 6, b.y + 1]);
+const clickHeadBottom = () => clickOn('.map-legend-head', (b) => [b.x + 6, b.y + b.height - 1]);
+const clickWord = () => clickOn('.map-legend-title', (b) => [b.x + 4, b.y + b.height / 2]);
+const clickEye = () => clickOn('#map-legend-bulk-visibility', (b) => [b.x + b.width / 2, b.y + b.height / 2]);
+
+// Rendered width of the caption itself, via a Range over its text node, so the
+// assertion below compares the button's box against its own label rather than
+// against a font-size constant.
+const measuredTextWidth = () => title.evaluate((el) => {
+  const range = document.createRange();
+  range.selectNodeContents(el);
+  return range.getBoundingClientRect().width;
+});
+
+// Inside the title's own box, just past the word.
+//
+// The title is the button, and it is flex: 1 - it stretches to fill the header, so
+// its box runs right up to the eye. That makes it a click target strictly wider
+// than the word, which is the property this test exists to check, so the click goes
+// near its right edge rather than on the letters.
+//
+// This used to click title.x + title.width + 4 and assert only that the point was
+// still inside the header - but the eye is inside the header too, and once the
+// deployments label was shortened the frame narrowed and the click landed on the
+// eye, whose handler calls stopPropagation. A point derived from two sibling boxes
+// is only as stable as the relationship between them; a point derived from the
+// target's own box cannot land on a sibling.
+const clickInFrontOfWord = async () => {
+  await page.evaluate(() => {
+    const legend = document.getElementById('map-legend');
+    if (legend) legend.scrollTop = 0;
+  });
+  const t = await box(title);
+  expect(t.width - 3, 'the click target extends past the word')
+    .toBeGreaterThan(await measuredTextWidth());
+  await clickOn('.map-legend-title', (b) => [b.x + b.width - 3, b.y + b.height / 2]);
+};
 
     // Collapse state is read from the inline max-height, which is assigned at once,
     // rather than from the wrapper's box, which is mid-transition for 150ms after a
@@ -311,13 +542,21 @@ test('every legend label sits on one line', async ({ page }) => {
       }),
     );
     const labels = rows.filter(Boolean);
-    expect(labels.length).toBe(13);
+    // One label per row, whatever the settled legend turned out to hold.
+    expect(labels.length).toBe(await page.locator('#map-legend .map-legend-row').count());
+    expect(labels.length).toBeGreaterThanOrEqual(13);
     for (const l of labels) {
       expect(l.lines, l.text + ' wrapped onto ' + l.lines + ' lines').toBe(1);
       expect(l.truncated, l.text + ' was ellipsised').toBe(false);
     }
     // The longest label really is in there, so this is not passing on short rows.
-    expect(labels.some((l) => l.text.includes('Fleet Movements'))).toBe(true);
+    // Read the expected text out of the module rather than hardcoding it: the
+    // deployments row was renamed from "Ground Deployments & Fleet Movements" to
+    // "Ground & Fleet Deployments", and a literal here had been asserting a string
+    // the site stopped shipping. LAYER_LABELS is the one place the label lives.
+    const deployments = await page.evaluate(
+      () => window.__WORLDMAP_TEST__.LAYER_LABELS.deployments);
+    expect(labels.some((l) => l.text.includes(deployments))).toBe(true);
   });
 
 test('the widened frame still clears South America', async ({ page }, testInfo) => {
@@ -348,9 +587,11 @@ test('the eye opens and closes the whole category set, and nothing else', async 
     expect(pressed).toBe('false');
   }
 
-  // Operational layers are untouched.
+  // Operational layers are untouched: the four datalayers plus the nested seal
+  // sublayer. Counted after the legend settles, because the sublayer only exists
+  // once a payload actually carries seals.
   const layers = page.locator('#map-legend .map-legend-row[data-layer]');
-  await expect(layers).toHaveCount(4);
+  await expect(layers).toHaveCount(5);
 
   await eye.click();
   await expect(eye).toHaveAttribute('aria-pressed', 'false');
