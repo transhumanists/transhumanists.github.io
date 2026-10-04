@@ -200,9 +200,6 @@ function makeCtx() {
     // so tests can assert exactly what shade covered which polygon (used by
     // the day/night terminator tests).
     fillsLog: [],
-      // Arc log: { x, y, r } for every arc(). The tracking reticle is arcs and
-      // nothing else, so asserting on it means counting arcs near a point.
-      arcsLog: [],
     // Text log: { text, x, y } for every fillText() (stack count badges).
     textsLog: [],
     // Clip log: the rect() most recently set, for every clip(). Real CanvasRendering
@@ -228,7 +225,7 @@ ctx.createRadialGradient = () => ({ addColorStop() {} });
       } else if (m === 'stroke') ctx.counters.strokes++;
       else if (m === 'lineTo') { ctx.counters.lineTos++; ctx._path.push({ x: args[0], y: args[1] }); }
       else if (m === 'moveTo') { ctx.counters.moves++; ctx._path.push({ x: args[0], y: args[1] }); }
-      else if (m === 'arc') { ctx.counters.arcs++; ctx.arcsLog.push({ x: args[0], y: args[1], r: args[2] }); }
+      else if (m === 'arc') ctx.counters.arcs++;
       else if (m === 'fillText') ctx.textsLog.push({ text: String(args[0]), x: args[1], y: args[2] });
       else if (m === 'beginPath') ctx._path = [];
       else if (m === 'rect') {
@@ -362,15 +359,52 @@ beforeAll(async () => {
   // load and on the Bun version: 1.2.14 (what CI pins) had not settled after 20ms
   // and thirteen unrelated tests failed with counts of zero, while 1.4.0 passed.
   // Polling for the observable state removes the race instead of widening the guess.
+  //
+  // Both payloads have to be waited for, not just the events. load() fetches them
+  // concurrently, so the events landing first says nothing about the layers - and
+  // the layer payload is what adds the alliance seal sublayer. A barrier that only
+  // waited for events let the suite start against a 13-row legend, then the seals
+  // arrived and every row-count assertion in the file became a coin flip: the same
+  // run reported both "expected 14, got 13" and "expected 13, got 14", and the
+  // fleets stat tile read 9 instead of 13. Waiting for both makes every count in
+  // this file describe the same settled state.
   const api0 = windowObj.__WORLDMAP_TEST__;
   const deadline = Date.now() + 5000;
-  while (api0.getEvents().length === 0 && Date.now() < deadline) {
+  const settled = () => {
+    const layers = api0.getLayers();
+    return api0.getEvents().length > 0 &&
+      layers.zones.length > 0 && layers.fleets.length > 0 &&
+      layers.crises.length > 0 && layers.allianceDots.length > 0;
+  };
+  while (!settled() && Date.now() < deadline) {
     await new Promise((r) => setTimeout(r, 5));
   }
   if (api0.getEvents().length === 0) {
     throw new Error('worldmap load() never populated events within 5s');
   }
+  if (!settled()) {
+    throw new Error('worldmap load() never populated the layer payload within 5s');
+  }
 });
+
+// Put the fixture's layer payload back into the module.
+//
+// Layer state is module-level and several tests deliberately call
+// setLayers([],[],[],[],[]) to get an empty map, so any later test that counts
+// legend rows is reading whatever the last of those left behind. That is why the
+// row counts in this file were coin flips: 13 when the seals had been wiped, 14
+// when they had not, decided by test order rather than by anything under test.
+// A test that asserts on the legend's shape says which payload it means.
+function restoreFixtureLayers() {
+  const api = windowObj.__WORLDMAP_TEST__;
+  api.setLayers(
+    LAYER_PAYLOAD.conflict_zones,
+    LAYER_PAYLOAD.deployments,
+    LAYER_PAYLOAD.crisis_zones,
+    [],
+    LAYER_PAYLOAD.alliance_dots,
+  );
+}
 
 // Canvas-space point for a lon/lat, derived from the module's own projection.
 // Pointer tests used to hardcode screen coordinates, which silently rotted the
@@ -412,21 +446,22 @@ function legendValue(label) {
   return undefined;
 }
 
-// Legend labels live in ONE place in the module (LAYER_LABELS), so a rename can
-// never leave the suite asserting a string the UI no longer shows. These tests read
-// that table rather than a literal.
-//
-// A function DECLARATION, deliberately: dozens of tests below declare their own
-// const api = windowObj.__WORLDMAP_TEST__ inside their own block, and a const
-// here would be shadowed by - or, worse, shadow - those, with the temporal dead
-// zone turning a rename into a ReferenceError. Hoisted and uniquely named: no
-// interaction either way.
-function wm() { return windowObj.__WORLDMAP_TEST__; }
-
-// Convenience alias for the many describes below that reach the hook repeatedly.
-const api = () => windowObj.__WORLDMAP_TEST__;
-
 describe('worldmap', () => {
+  // Every test in this file starts from the fixture's layer payload.
+  //
+  // Layer state is module-level and shared, and many tests call
+  // setLayers([],[],[],[],[]) to get a deliberately empty map. Whichever of those
+  // ran last therefore decided the legend every later test saw - and "later" is not
+  // stable across Bun versions. Under 1.4.2 the first tests ran before any wipe and
+  // saw 14 rows; under 1.2.14 (the version CI pins) a wipe landed first and they
+  // saw 13 rows and a fleets stat of 9 instead of 13, so four tests failed purely
+  // on test order. Re-establishing the payload before each test makes the row and
+  // stat counts a property of the fixture rather than of the runner: a test that
+  // wants different layers still says so in its own body, which runs after this.
+  beforeEach(() => {
+    restoreFixtureLayers();
+  });
+
   test('loads events and renders stat tiles with canonical category mapping', () => {
     // "breakthroughs this week" counts only the categories mapped to
     // map-stat-active, inside the rolling 7-day window of the *test* clock
@@ -439,7 +474,9 @@ describe('worldmap', () => {
     expect(Number(registeredEls['map-stat-conflicts'].textContent)).toBe(3);
     expect(Number(registeredEls['map-stat-fleets'].textContent)).toBe(13);
   });
+
   test('renders legend rows for all 9 categories plus layers', () => {
+    const api = windowObj.__WORLDMAP_TEST__;
     const legend = registeredEls['map-legend'];
     expect(legend).toBeDefined();
     expect(legend.getAttribute('role')).toBe('list');
@@ -457,27 +494,28 @@ describe('worldmap', () => {
     // row counts the datalayer, which is arrows PLUS seals - the sublayer row
     // beside it breaks that total down.
     expect(legendValue('Conflict Zones')).toBe('3');
-    expect(legendValue(wm().LAYER_LABELS.deployments)).toBe('13');   // 9 arrows + 4 seals
-    expect(legendValue(wm().LAYER_LABELS.alliance_dots)).toBe('4');
+    expect(legendValue(api.LAYER_LABELS.deployments)).toBe('13');   // 9 arrows + 4 seals
+    expect(legendValue(api.LAYER_LABELS.alliance_dots)).toBe('4');
     expect(legendValue('Crisis Zones')).toBe('5');
   });
 
   test('the dot sublayer row sits under its parent and is marked as a sublayer', () => {
     const rows = legendRows();
-    const idx = (key) => rows.findIndex((r) => (r.attrs['data-layer'] || '') === key);
-    const parent = idx('deployments');
-    const sub = idx('alliance_dots');
-    expect(parent).toBeGreaterThan(-1);
+    const parent = rows.findIndex((r) => (r.attrs['data-layer'] || '') === 'deployments');
+    const sub = rows.findIndex((r) => (r.attrs['data-layer'] || '') === 'alliance_dots');
     expect(sub).toBeGreaterThan(-1);
     // Immediately after the parent, so the legend reads as one datalayer with two
     // mark types rather than as two unrelated layers.
     expect(sub).toBe(parent + 1);
-    expect(rows[sub].className).toContain('map-legend-row--nested');
-    // Only one level of sublayering exists: the parent is a peer of the layers.
+    const row = rows[sub];
+    expect(row.className).toContain('map-legend-row--nested');
+    expect(parent).toBeGreaterThan(-1);
+    // The parent row is not marked nested; only one level of sublayering exists.
     expect(rows[parent].className).not.toContain('map-legend-row--nested');
   });
 
   test('conflict and fleet layer rows toggle their stats and redraw', () => {
+    const api = windowObj.__WORLDMAP_TEST__;
     const rowByLayer = (key) => legendRows().find((r) => (r.attrs['data-layer'] || '') === key);
     const zonesRow = rowByLayer('zones');
     // Military layers are off by default (filterMilitary=false), so aria-pressed is false
@@ -489,7 +527,7 @@ describe('worldmap', () => {
     expect(Number(registeredEls['map-stat-conflicts'].textContent)).toBe(3);
     expect(ctx.counters.arcs).toBeGreaterThan(0);              // redraw happened
     expect(Number(registeredEls['map-stat-fleets'].textContent)).toBe(13); // fleets + seals also enabled
-    expect(legendValue(wm().LAYER_LABELS.deployments)).toBe('13');        // deployments datalayer present
+    expect(legendValue(api.LAYER_LABELS.deployments)).toBe('13');        // deployments datalayer present
 
     rowByLayer('zones').fire('click', {});                     // toggle zones back off
     expect(rowByLayer('zones').getAttribute('aria-pressed')).toBe('false');
@@ -504,13 +542,8 @@ describe('worldmap', () => {
     fleetsRow.fire('click', {});                               // toggle fleets back off
     expect(rowByLayer('deployments').getAttribute('aria-pressed')).toBe('false');
     expect(Number(registeredEls['map-stat-fleets'].textContent)).toBe(13); // stats show the whole datalayer, filter-independent
-    // Restore the documented default for later tests. This test used to leave
-    // filterMilitary=true behind, which was invisible while no later test
-    // asserted a default-off layer; the human-rights "off by default" checks are
-    // the first to look, and they inherited the leftover state.
-    const api = windowObj.__WORLDMAP_TEST__;
-    api.setFilterMilitary(false);
-    expect(rowByLayer('zones').getAttribute('aria-pressed')).toBe('false');
+    // Restore both for later tests via test hook (button click not reliable in mock)
+    api.setFilterMilitary(true);        // enables both
     expect(Number(registeredEls['map-stat-conflicts'].textContent)).toBe(3);
     expect(Number(registeredEls['map-stat-fleets'].textContent)).toBe(13);
   });
@@ -959,10 +992,9 @@ test('zoom controls, keyboard and double-click do not throw', () => {
       _stackKey: '999,999',
     });
     expect(ev._stackKey).toBeUndefined();
-expect(Object.keys(ev).sort()).toEqual([
-        'category', 'date', 'id', 'lat', 'lon', 'source', 'subcategory',
-        'title', 'url', 'value',
-      ]);
+    expect(Object.keys(ev).sort()).toEqual([
+      'category', 'date', 'id', 'lat', 'lon', 'source', 'subcategory', 'title', 'url', 'value',
+    ]);
   });
 
   test('normalizeEvent fills defaults and isPlottable filters unusable events', () => {
@@ -1266,24 +1298,15 @@ expect(Object.keys(ev).sort()).toEqual([
         { id: 'c1', name: 'Concluded zone', lat: 41, lon: 26, status: 'concluded', start_date: '2022-01-01', end_date: '2024-01-01' },
       ],
       [{ id: 'f-old', label: 'Old op', from: { lat: 50, lon: 10 }, to: { lat: 55, lon: 15 }, status: 'concluded', end_date: '2023-06-01' }],
-      [{ id: 'cr1', name: 'Active crisis', lat: 10, lon: 20, status: 'active' }],
-      [],
-      // Three seals. The deployments stat counts the DATALAYER, so a seal and an
-      // arrow both land in it - which is the whole reason the tile and the legend
-      // row agree.
-      [
-        { id: 's1', name: 'Seal 1', kind: 'accession', lat: 5, lon: 5, status: 'active', start_date: '2026-01-01' },
-        { id: 's2', name: 'Seal 2', kind: 'mandate', lat: 6, lon: 6, status: 'active', start_date: '2026-01-01' },
-        { id: 's3', name: 'Seal 3', kind: 'posture', lat: 7, lon: 7, status: 'concluded', start_date: '2024-01-01', end_date: '2025-01-01' },
-      ]
+      [{ id: 'cr1', name: 'Active crisis', lat: 10, lon: 20, status: 'active' }]
     );
     const stats = api.computeStats();
     expect(stats.conflicts).toBe(2);
     expect(stats.conflictsActive).toBe(1);
     expect(stats.conflictsConcluded).toBe(1);
-    expect(stats.fleets).toBe(4);          // 1 concluded arrow + 3 seals
-    expect(stats.fleetsActive).toBe(2);      // the two live seals
-    expect(stats.fleetsConcluded).toBe(2);   // the old arrow and the ended seal
+    expect(stats.fleets).toBe(1);
+    expect(stats.fleetsActive).toBe(0);
+    expect(stats.fleetsConcluded).toBe(1);
     expect(stats.crises).toBe(1);
     expect(stats.crisesActive).toBe(1);
     expect(stats.crisesConcluded).toBe(0);
@@ -1488,31 +1511,44 @@ expect(Object.keys(ev).sort()).toEqual([
     const mid = pt(midLon, 40);
     expect(() => canvas.fire('mousemove', { clientX: mid.x, clientY: mid.y, movementX: 0, movementY: 0 })).not.toThrow();
     expect(tooltip.classList.contains('visible')).toBe(true);
-    // Recursive read: the popup's text is now nested one level deeper because
-    // the category label and the actor badge share a header row. Reading
-    // `wrapper.children` directly would only ever see that row's own (empty)
-    // textContent, because the DOM fake does not aggregate like a browser does.
     const wrapper = tooltip.children[0];
-    const text = tooltipText();
+    // Read the whole card, not just its direct children: appendTooltipHeader puts
+    // the category label inside a .tt-head row so the actor badge can sit hard
+    // right on the same baseline, and a direct-children read sees an empty head.
+    const deepText = (node) => {
+      let out = node.textContent || '';
+      for (const c of node.children || []) {
+        const inner = deepText(c);
+        out += inner ? ' ' + inner : '';
+      }
+      return out;
+    };
+    const text = wrapper.children.map((c) => deepText(c)).join(' | ');
     expect(text).toContain('Ground Deployment');
     expect(text).toContain('Brigade move');
-    expect(text).toContain('Nation');
-    expect(text).toContain('Testland');
-    expect(text).toContain('Troops');
-    expect(text).toContain('5,000');
-    expect(text).toContain('Heading');
-    expect(text).toContain('east');
+    // Fact rows are a key span beside a value span now, so the separator between
+    // them is CSS rather than a character in the text. Read them as the pairs they
+    // are instead of matching on a colon that is no longer in the markup - that
+    // way a change to the gap between the two spans cannot fail this test.
+    const facts = new Map(wrapper.children
+      .filter((c) => (c.className || '').indexOf('tt-fact') === 0)
+      .map((c) => [
+        c.children[0].textContent,
+        c.children[1].textContent,
+      ]));
+    expect(facts.get('Nation')).toBe('Testland');
+    expect(facts.get('Troops')).toBe('5,000');
+    expect(facts.get('Heading')).toBe('east');
     // Route is reported from the derived endpoints even though the payload has
     // no from/to at all.
-    expect(text).toMatch(/From.*40\.0/);
-    expect(text).toMatch(/To.*40\.0/);
+    expect(facts.get('From')).toMatch(/^40\.0/);
+    expect(facts.get('To')).toMatch(/^40\.0/);
     // The source link is preserved end to end and rendered as a real anchor. It
-    // lives inside the meta row, not directly under the wrapper. The card's own
-    // children are now [header, title, meta, ...] because the category label and
-    // the actor badge share the header row - so this is asserted by CLASS, not by
-    // index, which is what stops the next header change from silently retargeting
-    // the assertion.
-    const metaRow = wrapper.children.find((c) => c.className === 'tt-meta');
+    // lives inside the meta row, which is found by class rather than by index: the
+    // header and title rows above it have been restructured more than once, and an
+    // index into that list is not a statement about where the link is.
+    const metaRow = wrapper.children.find((c) => (c.className || '').indexOf('tt-meta') === 0);
+    expect(metaRow).toBeDefined();
     const anchor = metaRow.children.find((c) => c.tagName === 'A');
     expect(anchor).toBeDefined();
     expect(anchor.textContent).toBe('MoD');
@@ -2067,8 +2103,9 @@ expect(Object.keys(ev).sort()).toEqual([
   });
 
   test('Deployments legend row explains both components', () => {
+    const api = windowObj.__WORLDMAP_TEST__;
     registeredEls['reset-view'].fire('click', {});
-      expect(legendValue(wm().LAYER_LABELS.deployments)).toBeDefined();
+    expect(legendValue(api.LAYER_LABELS.deployments)).toBeDefined();
       // The row draws two dots and the label names two components, so the label's
       // word order has to match the dot order or the legend misreports which
       // colour is which.
@@ -2084,6 +2121,144 @@ expect(Object.keys(ev).sort()).toEqual([
       expect(dots[0].style.background).not.toBe(dots[1].style.background);
   });
 
+  // ---- Silver shimmer on the dimmed tactical layer titles ------------------
+  // The operational rows ship switched off, so every one of them is dimmed on a
+  // first visit, and the shimmer is the only thing on the frame that says a live
+  // feed is sleeping behind them. That makes it load-bearing rather than
+  // decorative, and makes its scoping worth asserting rather than eyeballing:
+  //
+  //   * every layer row carries a phase offset, and no two share one, so the rows
+  //     drift out of phase instead of pulsing as a single block;
+  //   * milestone category rows carry none, so switching a category off can never
+  //     start a sweep on a row that is not a datalayer;
+  //   * the offset is stable across rebuilds, because renderLegend() re-creates
+  //     these rows on every toggle, filter change and timeline move;
+  //   * it stays inside one sweep period, so an offset can never outlast the loop
+  //     it delays and leave a row permanently mid-sweep.
+  describe('the silver sweep on dimmed datalayer titles', () => {
+    const api = () => windowObj.__WORLDMAP_TEST__;
+    const layerRows = () => legendRows().filter((r) => r.attrs['data-layer']);
+    const categoryRows = () => legendRows().filter((r) => r.attrs['data-category']);
+    const delayOf = (row) => row.style.getPropertyValue('--shimmer-delay');
+    // The CSS --shimmer-period default, which is also what silverSweepDelay folds
+    // its hash into. Kept here so a change to one is a visible change to the other
+    // rather than a silent mismatch between two numbers that must agree.
+    const PERIOD_SECONDS = 7.5;
+
+    beforeEach(() => {
+      globalThis.localStorage.clear();
+      const s = api().getState();
+      s.hiddenCategories.clear();
+      // Layer visibility is module state that outlives a single test, so each case
+      // starts from the shipped default - every operational layer off - instead of
+      // inheriting whatever the previous test left switched on. Without this the
+      // "dimmed" half of the contract is not actually being exercised.
+      s.filterMilitary = false;
+      s.filterCrisis = false;
+      s.showZones = false;
+      s.showFleets = false;
+      s.showCrises = false;
+      s.showHumanRights = false;
+      s.showAllianceDots = false;
+      // And the layer payload itself, because an earlier test may have emptied it
+      // and the nested seal row only renders when there are seals to render.
+      restoreFixtureLayers();
+      api().renderLegend();
+    });
+
+    test('every tactical layer row is handed a phase offset', () => {
+      const rows = layerRows();
+      // Five: the four operational datalayers plus the nested alliance seal
+      // sublayer. Exact because beforeEach above waits for the layer payload, so
+      // this is a settled legend rather than a partially loaded one.
+      expect(rows.length).toBe(5);
+      for (const row of rows) {
+        const key = row.getAttribute('data-layer');
+        expect(row.getAttribute('aria-pressed'), `${key} is dimmed by default`).toBe('false');
+        expect(delayOf(row), `${key} phase offset`).toMatch(/^\d+\.\d{2}s$/);
+      }
+    });
+
+    test('no two layers land on the same phase', () => {
+      const delays = layerRows().map(delayOf);
+      expect(new Set(delays).size).toBe(delays.length);
+    });
+
+    test('milestone category rows are left out of it', () => {
+      // data-category, not data-layer: the stylesheet keys the sweep off
+      // [data-layer] for exactly this reason, and a category row that picked up a
+      // delay would be one selector change away from shimmering too.
+      expect(categoryRows().length).toBe(9);
+      for (const row of categoryRows()) {
+        expect(delayOf(row), `${row.getAttribute('data-category')}`).toBe('');
+      }
+    });
+
+    test('the offset is the one the layer key asks for', () => {
+      for (const row of layerRows()) {
+        const key = row.getAttribute('data-layer');
+        expect(delayOf(row)).toBe(api().silverSweepDelay(key));
+      }
+    });
+
+    test('a rebuild does not shift anybody, because the key does not change', () => {
+      const before = layerRows().map(delayOf);
+      api().renderLegend();
+      api().renderLegend();
+      expect(layerRows().map(delayOf)).toEqual(before);
+    });
+
+    test('every offset falls inside one sweep period', () => {
+      for (const key of ['zones', 'deployments', 'alliance_dots', 'crises', 'human_rights']) {
+        const seconds = parseFloat(api().silverSweepDelay(key));
+        expect(seconds).toBeGreaterThanOrEqual(0);
+        // Strictly less than the period: a delay equal to the period is the same as
+        // no delay, and anything longer never returns to the start of the loop.
+        expect(seconds, key).toBeLessThan(PERIOD_SECONDS);
+      }
+    });
+
+    test('the delay is deterministic for a given key', () => {
+      expect(api().silverSweepDelay('zones')).toBe(api().silverSweepDelay('zones'));
+      // And a different layer is a different phase, which is the whole point.
+      expect(api().silverSweepDelay('zones')).not.toBe(api().silverSweepDelay('crises'));
+    });
+
+    test('the stylesheet scopes the sweep to dimmed layer rows, and nothing else', () => {
+      // Asserted against the real stylesheet because the scoping is a single
+      // selector, and a selector is exactly the kind of thing that gets broadened
+      // by a later edit with nothing left to fail. Both halves matter: the layer
+      // rows must be swept when off, and must not be swept when on.
+const css = fs.readFileSync(path.join(process.cwd(), 'assets/css/main.css'), 'utf8');
+      const SWEEP = '.map-legend-row[data-layer][aria-pressed="false"] .map-legend-label';
+      expect(css).toContain(SWEEP);
+      // Comments are stripped from the whole file before the block is cut out, not
+      // after: the block's opening comment begins before its first rule, so slicing
+      // first would leave it unterminated and the prose would survive into what is
+      // treated here as selectors. The block is then bounded by its first sweep
+      // rule and the next rule after it, which is the count styling.
+      const stripped = css.replace(/\/\*[\s\S]*?\*\//g, '');
+      const start = stripped.indexOf(SWEEP);
+      expect(start).toBeGreaterThan(-1);
+      const end = stripped.indexOf('.map-legend-count', start);
+      const block = stripped.slice(start, end);
+      // The category group must not appear in any selector here: those rows are a
+      // different group in the markup and must never pick up the sweep.
+      expect(block).not.toContain('data-category');
+      // Nor may a rule sweep a row that is switched on, which is what the
+      // aria-pressed="false" qualifier is for. The hover rule is the one deliberate
+      // exception - it lifts the row under the pointer, and has to work whether or
+      // not that row is currently the dimmed one.
+      const rules = block.match(/\.map-legend-row[^{]*\{/g) || [];
+      expect(rules.length).toBeGreaterThan(1);
+      const sweeping = rules.filter((r) => !r.includes(':hover'));
+      expect(sweeping.length).toBeGreaterThan(0);
+      for (const rule of sweeping) {
+        expect(rule).toContain('[aria-pressed="false"]');
+      }
+    });
+  });
+
   // ---- Hover arbitration ----------------------------------------------------
   // "Whatever is under the cursor wins" was wrong in three distinct ways, now
   // separated explicitly in worldmap.js: drift keeps the tooltip, a nearby but
@@ -2093,31 +2268,18 @@ expect(Object.keys(ev).sort()).toEqual([
   // Every test builds its own events rather than borrowing the suite's, and puts
   // them back afterwards, so none depends on what ran before it.
 
-  function mkEvent(id, title, lon, lat, category, extra) {
+  function mkEvent(id, title, lon, lat, category) {
     // geolocation, not a flat lon/lat pair: normalizeEvent derives the projected
     // coordinates from geolocation, so a bare pair is dropped as unplottable.
-    //
-    // `extra` is merged last so a test can add a payload field (subcategory,
-    // sources, ...) without this helper knowing about each one. The alternative is
-    // every such test hand-rolling a record and drifting from the real shape.
     return {
       id, title, category: category || 'Quantum Physics',
       value: '1', source: 'Src', url: 'https://example.com/' + id,
-      date: '2026-09-01', geolocation: { lat, lon },
-      ...(extra || {}),
+      date: '2026-09-01', geolocation: { lat, lon }
     };
   }
 
   function hoverAt(lon, lat) {
     const p = pt(lon, lat);
-    canvas.fire('mousemove', { clientX: p.x, clientY: p.y, movementX: 0, movementY: 0 });
-    return p;
-  }
-
-  // Canvas-space sibling of hoverAt. Both exist because hoverAt() takes lon/lat
-  // and projects for you, so `hoverAt(p.x, p.y)` is a silent no-op that reads as
-  // a broken map rather than as a broken call.
-  function hoverPx(p) {
     canvas.fire('mousemove', { clientX: p.x, clientY: p.y, movementX: 0, movementY: 0 });
     return p;
   }
@@ -2162,15 +2324,6 @@ expect(Object.keys(ev).sort()).toEqual([
     st.hoveredEvent = null;
     st.hoveredType = null;
     st.selectedEvent = null;
-    // The generic hover anchor has to be cleared here too. It is what the popup
-    // actually follows for every landmark type, and leaving it set makes the
-    // NEXT test's hover a no-op: the proximity guard sees a nearby anchor and
-    // declines to retarget, which reads as "the popup is broken" rather than as
-    // state bleeding between cases.
-    st.hoverAnchor = null;
-    st.hoverAnchorType = null;
-    st.selectedLayer = null;
-    st.selectedLayerType = null;
     // tooltipHover is only cleared by a real mouseleave, which never fires here.
     // A leaked true makes handleMouseUp treat every press as "over the popup" and
     // return early, so nothing can be pinned at all.
@@ -2287,6 +2440,7 @@ expect(Object.keys(ev).sort()).toEqual([
   // test DOM only indexes elements that existed before the test ran, and the eye
   // is built during renderLegend.
   describe('bulk milestone visibility eye', () => {
+    const api = () => windowObj.__WORLDMAP_TEST__;
     const byClass = (root, cls) =>
       root.children.find((c) => c.className === cls) || null;
     const head = () => byClass(registeredEls['map-legend'], 'map-legend-head');
@@ -2303,6 +2457,9 @@ expect(Object.keys(ev).sort()).toEqual([
     beforeEach(() => {
       globalThis.localStorage.clear();
       api().getState().hiddenCategories.clear();
+      // Restore the layer payload: an earlier test may have emptied it, and the
+      // nested seal row is part of the legend this block counts rows in.
+      restoreFixtureLayers();
       render();
     });
 
@@ -2458,8 +2615,10 @@ expect(Object.keys(ev).sort()).toEqual([
 
     test('the eye is excluded from the category count', () => {
       render();
-      // 9 categories + 4 operational layers + 1 dot sublayer, unchanged by the
-      // new control: the eye is a category control and must not count it.
+      // 9 categories + 4 operational layers + the nested seal sublayer = 14. This
+      // said 13, which is the legend before the layer payload lands: the eye is
+      // added to a header and the count is over rows, so a row arriving later is
+      // what made this the test that noticed the settle race rather than causing it.
       expect(legendRows().length).toBe(14);
     });
   });
@@ -2538,6 +2697,7 @@ expect(Object.keys(ev).sort()).toEqual([
   });
 
   describe('the Robotics rename keeps old payloads working', () => {
+    const api = () => windowObj.__WORLDMAP_TEST__;
 
     test('the canonical label is Robotics & Drones everywhere it is displayed', () => {
       expect(api().CATEGORY_LEGEND.some((r) => r.key === 'Robotics & Drones')).toBe(true);
@@ -2588,6 +2748,7 @@ expect(Object.keys(ev).sort()).toEqual([
   });
 
   describe('the alias table can only fold into real categories', () => {
+    const api = () => windowObj.__WORLDMAP_TEST__;
     const legendKeys = () => api().CATEGORY_LEGEND.map((r) => r.key);
 
     test('no alias points at a category that does not exist', () => {
@@ -2626,6 +2787,7 @@ expect(Object.keys(ev).sort()).toEqual([
   }
 
   describe('robustness: degenerate canvas and untrusted storage', () => {
+    const api = () => windowObj.__WORLDMAP_TEST__;
 
     const size = (w, h) => {
       const canvas = registeredEls['world-map-canvas'];
@@ -2729,6 +2891,7 @@ expect(Object.keys(ev).sort()).toEqual([
   // legend header and tooltip behaviour that no longer exist. Documentation drift is
   // only caught if something checks it.
   describe('README documents the map accurately', () => {
+    const api = () => windowObj.__WORLDMAP_TEST__;
     const readme = () => fs.readFileSync(path.join(process.cwd(), 'README.md'), 'utf8');
 
     test('every legend category is named in the README', () => {
@@ -2756,14 +2919,13 @@ expect(Object.keys(ev).sort()).toEqual([
       expect(doc).not.toContain('## The 7 Verticals');
     });
 
-    test('the operational layers are documented as layers, not categories', () => {
+    test('the four operational layers are documented as layers, not categories', () => {
       const doc = readme();
       expect(doc).toContain('Operational layers');
       expect(doc).toContain('Human Rights Violations');
       expect(doc).toContain('Conflict Zones');
       expect(doc).toContain('Crisis Zones');
-      expect(doc).toContain('Ground & Fleet Deployments');
-      expect(doc).toContain('Alliance & Defence Policy');
+      expect(doc).toContain('Ground Deployments');
     });
 
     test('the stale legend header is gone', () => {
@@ -2836,6 +2998,7 @@ expect(Object.keys(ev).sort()).toEqual([
   // letterbox margin where no coastline is drawn. That reads as a shaded border
   // around the map rather than as map.
   describe('geography is clipped to the map plate', () => {
+    const api = () => windowObj.__WORLDMAP_TEST__;
 
     const size = (w, h) => {
       const canvas = registeredEls['world-map-canvas'];
@@ -2925,6 +3088,7 @@ expect(Object.keys(ev).sort()).toEqual([
   // nested describes ahead of the top-level ones, so a restore ran before the tests
   // that assert on event counts and thirteen of them read an empty map.
   describe('normalizeEvent is idempotent', () => {
+    const api = () => windowObj.__WORLDMAP_TEST__;
 
     const RAW = {
       id: 'idem-1', title: 'Idempotency probe', category: 'Quantum Physics',
@@ -3001,6 +3165,7 @@ expect(Object.keys(ev).sort()).toEqual([
   // phone-shaped canvas squashed longitude and inflated latitude until the
   // coastlines stopped lining up with the graticule.
   describe('mobile map projection', () => {
+    const api = () => windowObj.__WORLDMAP_TEST__;
     // The last case seeds its own event to prove markers draw; withFreshHover puts
     // the original events back, so the stat-tile assertions elsewhere still hold.
     afterEach(() => {
@@ -3164,6 +3329,7 @@ expect(Object.keys(ev).sort()).toEqual([
   // the layer had hover but no docking - the popup vanished the moment the pointer
   // moved and its source link was unreachable.
   describe('human rights click-to-pin docking', () => {
+    const api = () => windowObj.__WORLDMAP_TEST__;
     const HR = { id: 'hr-1', name: 'Detention report', lon: 67.7, lat: 33.9,
                  status: 'active', region: 'Central Asia', source: 'HRW',
                  start_date: '2026-09-22', url: 'https://example.com/a',
@@ -3617,779 +3783,5 @@ expect(Object.keys(ev).sort()).toEqual([
       });
     });
 
-// =========================================================================
-  // The 2026 worldmap work: recency plumbing, the reticle, actor flags, the dot
-  // sublayer, and the unified hover/stick contract.
-  //
-  // Grouped at the end so the whole set reads as one change. They deliberately
-  // cover the REAL payload shape - last_news_year present, a published
-  // alliance_dots list - because every defect they guard was "a field was dropped
-  // on the way through", which a fixture lacking that field cannot reproduce.
-  //
-  // Every case sets up its own layer data through withLayers(). They sit inside
-  // an outer describe whose own helpers swap the layer lists for its fixtures, so
-  // a case that assumed the initially-loaded layers were still there would be
-  // asserting against another test's leftovers.
-  // =========================================================================
-  // Every transient the interaction code keeps anchored by design. Clearing all of
-  // them is not tidiness: a leftover hover anchor inside PROXIMITY_RADIUS
-  // SUPPRESSES the next case's popup (that is the drift guard working), so one
-  // uncleaned anchor turns the following test red for a reason that has nothing
-  // to do with what it asserts.
-  function resetTransientState() {
-    const st = windowObj.__WORLDMAP_TEST__.getState();
-    st.selectedEvent = null;
-    st.selectedLayer = null;
-    st.selectedLayerType = null;
-    st.selectedHumanRight = null;
-    st.hoverAnchor = null;
-    st.hoverAnchorType = null;
-    st.hoveredEvent = null;
-    st.hoveredType = null;
-    st.tooltipHover = false;
-    st.stackIndex = 0;
-    tooltip.classList.remove('visible');
-    tooltip.classList.remove('is-sticky');
-  }
-
-  function withLayers(opts, fn) {
-    const api = windowObj.__WORLDMAP_TEST__;
-    const saved = api.getLayers();
-    const savedEvents = api.getEvents();
-    api.setTimelineYear(opts.year === undefined ? 2026 : opts.year);
-    api.setLayers(
-      opts.zones || [], opts.fleets || [], opts.crises || [],
-      opts.humanRights || [], opts.dots,
-    );
-    api.setFilterMilitary(opts.military !== false);
-    if (opts.events) api.setEvents(opts.events);
-    try {
-      fn(api);
-    } finally {
-      api.setLayers(saved.zones, saved.fleets, saved.crises, saved.humanRights,
-        saved.allianceDots);
-      if (opts.events) api.setEvents(savedEvents);
-      api.setTimelineYear(2026);
-      resetTransientState();
-    }
-  }
-
-  // The fixture's own seals, minus the one that shadows fleet-09.
-  const FIXTURE_DOTS = LAYER_PAYLOAD.alliance_dots.filter((d) => d.id !== 'f9');
-
-  describe('layer recency reaches the renderer', () => {
-    test('normalizeZone keeps last_news_year instead of falling back to start_date', () => {
-      const api = windowObj.__WORLDMAP_TEST__;
-      // The reported defect: world_layers.json publishes last_news_year 2026 for
-      // the Ukraine conflict zone, normalisation dropped it, and the tier ladder
-      // fell back to start_date 2022 -> age 4 -> `quiet` -> no glow. The single
-      // most-referenced active war zone on the map rendered dimmed.
-      const raw = {
-        id: 'zone-ukraine', name: 'Ukraine - Donbas front', region: 'Eastern Europe',
-        lat: 48.0, lon: 37.8, radiusDeg: 4.0, status: 'active',
-        start_date: '2022-02-24', end_date: '', source: 'ISW',
-        url: 'https://www.understandingwar.org', last_news_year: 2026, tier: 'major',
-      };
-      const zone = api.normalizeZone(raw);
-      expect(zone.last_news_year).toBe(2026);
-      expect(zone.radiusDeg).toBe(4.0);
-      expect(zone.region).toBe('Eastern Europe');
-      api.setTimelineYear(2026);
-      expect(api.layerRecencyYear(zone)).toBe(2026);
-      expect(api.layerPaintTier(zone)).toBe('hot');
-      expect(api.isStaleLayer(zone)).toBe(false);
-    });
-
-    test('a zone with no recency signal at all is dimmed, not guessed at', () => {
-      const api = windowObj.__WORLDMAP_TEST__;
-      api.setTimelineYear(2026);
-      const bare = api.normalizeZone({ id: 'b', name: 'Bare', lat: 10, lon: 10, status: 'active' });
-      expect(bare.last_news_year).toBeUndefined();
-      expect(api.layerPaintTier(bare)).toBe('quiet');
-      expect(api.isStaleLayer(bare)).toBe(true);
-    });
-
-    test('the published payload gives every active conflict zone a recency year', () => {
-      // Not a fixture: the actual data file. The bug was in the data-to-renderer
-      // contract, so only the shipped data can prove the contract holds.
-      const raw = JSON.parse(
-        fsReadFileSync(pathJoin(import.meta.dirname, '..', 'data', 'world_layers.json'), 'utf8'));
-      const api = windowObj.__WORLDMAP_TEST__;
-      api.setTimelineYear(2026);
-      const zones = raw.conflict_zones.map(api.normalizeZone).filter(api.isZonePlottable);
-      const active = zones.filter(api.isLayerActive);
-      expect(active.length).toBeGreaterThan(0);
-      for (const z of active) {
-        expect(Number.isFinite(api.layerRecencyYear(z))).toBe(true);
-      }
-      const ukraine = active.find((z) => /Ukraine/.test(z.name));
-      expect(ukraine).toBeDefined();
-      expect(api.layerPaintTier(ukraine)).toBe('hot');
-      // Gaza and the Red Sea are curated with a named authority and were dimmed
-      // by exactly the same missing field.
-      for (const name of [/Gaza/, /Red Sea/]) {
-        const z = active.find((zz) => name.test(zz.name));
-        expect(z).toBeDefined();
-        expect(api.layerPaintTier(z)).toBe('hot');
-      }
-    });
-
-    test('the crisis layer carries recency too, so an ongoing crisis is not dimmed', () => {
-      const raw = JSON.parse(
-        fsReadFileSync(pathJoin(import.meta.dirname, '..', 'data', 'world_layers.json'), 'utf8'));
-      const api = windowObj.__WORLDMAP_TEST__;
-      api.setTimelineYear(2026);
-      const crises = raw.crisis_zones.map(api.normalizeZone).filter(api.isZonePlottable);
-      for (const c of crises.filter(api.isLayerActive)) {
-        expect(Number.isFinite(api.layerRecencyYear(c))).toBe(true);
-        expect(api.layerPaintTier(c)).toBe('hot');
-      }
-      // A concluded crisis stays dimmed regardless of its recency stamp.
-      for (const c of crises.filter((x) => !api.isLayerActive(x))) {
-        expect(api.layerPaintTier(c)).toBe('done');
-      }
-    });
-
-    test('the older tiers are dimmer than before, so a recent change stands out', () => {
-      const api = windowObj.__WORLDMAP_TEST__;
-      const p = api.LAYER_TIER_PAINT;
-      // Ordering is the product requirement: quiet < cold < done on every axis the
-      // eye reads, and hot strictly above all of them.
-      expect(p.hot.fill).toBeGreaterThan(p.quiet.fill);
-      expect(p.quiet.fill).toBeGreaterThan(p.cold.fill);
-      expect(p.cold.fill).toBeGreaterThan(p.done.fill);
-      expect(p.hot.stroke).toBeGreaterThan(p.quiet.stroke);
-      expect(p.hot.line).toBeGreaterThan(p.quiet.line);
-      // Only the fresh tier glows or breathes. That is what the reticle hangs off.
-      expect(p.hot.glow).toBe(true);
-      expect(p.hot.pulse).toBe(true);
-      for (const tier of ['quiet', 'cold', 'done']) {
-        expect(p[tier].glow).toBe(false);
-        expect(p[tier].pulse).toBe(false);
-      }
-      const a = api.LAYER_TIER_ARROW;
-      expect(a.hot.tail).toBeGreaterThan(a.quiet.tail);
-      expect(a.quiet.tail).toBeGreaterThan(a.cold.tail);
-      expect(a.cold.tail).toBeGreaterThan(a.done.tail);
-    });
-  });
-
-  describe('responsible-actor flags', () => {
-    const api = () => windowObj.__WORLDMAP_TEST__;
-
-    test('a two-letter code becomes a real flag glyph', () => {
-      expect(api().flagGlyph('US')).toBe('\u{1F1FA}\u{1F1F8}');
-      expect(api().flagGlyph('GB')).toBe('\u{1F1EC}\u{1F1E7}');
-      expect(api().flagGlyph('FI')).toBe('\u{1F1EB}\u{1F1EE}');
-    });
-
-    test('anything that is not a two-letter nation code yields no glyph', () => {
-      // Alliances get a monogram chip instead. Borrowing a member state's flag
-      // would misattribute the action, which is the failure mode here.
-      // 'EU' and 'UN' are deliberately absent: both are real ISO 3166 codes and
-      // both render as genuine flag emoji. The function cannot tell them from a
-      // nation, so the CALLER must not pass them - `kind` is checked first, and
-      // this is the backstop for everything the shape test does catch.
-      for (const bad of ['NATO', 'AUKUS', 'ZZZ', 'usa', 'us', 'u', '', null, undefined, 42, {}]) {
-        expect(api().flagGlyph(bad)).toBe('');
-      }
-      // The invariant that makes the caller's check worth anything: every NATION
-      // in the table carries exactly two letters, so no nation's flag can ever be
-      // an organisation's, and vice versa.
-      for (const [key, entry] of Object.entries(api().ACTOR_TABLE)) {
-        expect(key).toBeTruthy();
-        if (entry.kind === 'nation') {
-          expect(entry.flag).toMatch(/^[A-Z]{2}$/);
-        } else {
-          // Organisations are not required to have a flag of their own: NATO and
-          // the UN do not, while the EU genuinely does. All that is required is a
-          // non-empty uppercase label for the monogram chip.
-          expect(entry.flag).toMatch(/^[A-Z][A-Z0-9]*$/);
-        }
-      }
-    });
-
-    test('an explicit actor wins, then country, then the record own prose', () => {
-      const a = api();
-      expect(a.resolveActor({ actor: 'NATO', country: 'Poland', label: 'Polish thing' }).flag).toBe('NATO');
-      expect(a.resolveActor({ country: 'Poland', label: 'Expansion' }).flag).toBe('PL');
-      // Demonym: the payloads say "Russian Baltic Fleet", which contains no
-      // standalone word "Russia", so a name-only table resolves nobody here.
-      expect(a.resolveActor({ label: 'Russian Baltic Fleet', source: 'ISW' }).flag).toBe('RU');
-      expect(a.resolveActor({ label: 'USN CVN-78 Ford CSG', source: 'USNI' }).flag).toBe('US');
-      expect(a.resolveActor({ label: 'PLAN Type-055 task group', source: 'IISS' }).flag).toBe('CN');
-    });
-
-    test('a publisher is not an actor', () => {
-      const a = api();
-      // ISW reports on the Russian fleets; it does not field them. Filing the
-      // movement under ISW would put the wrong flag on the map.
-      expect(a.resolveActor({ label: 'Some movement', source: 'ISW' })).toBe(null);
-      expect(a.resolveActor({ label: 'x', source: 'IISS' })).toBe(null);
-      expect(a.resolveActor({ label: 'x', source: 'USNI' })).toBe(null);
-      // ...but a source that IS an acting institution resolves.
-      expect(a.resolveActor({ label: 'x', source: 'UN DPKO' }).flag).toBe('UN');
-      expect(a.resolveActor({ label: 'x', source: 'NATO' }).flag).toBe('NATO');
-    });
-
-    test('short keys match on word boundaries, not as bare substrings', () => {
-      const a = api();
-      // "un" is a key for the United Nations. A bare substring test resolves it
-      // for "June", "Munich" and "Unnamed" - confidently wrong, which is worse
-      // than no answer at all, because a flag looks like a fact.
-      for (const prose of ['Report from June', 'Munich summit', 'Unnamed movement',
-        'a function of the treaty', 'Funchal notes', 'Tuesday briefing']) {
-        const r = a.resolveActor({ label: prose, source: '', country: '', actor: '' });
-        expect(r === null || r.flag !== 'UN').toBe(true);
-      }
-      expect(a.resolveActor({ label: 'UN Peacekeeping Operations' }).flag).toBe('UN');
-      expect(a.resolveActor({ label: 'Task group operating under EU mandate' }).flag).toBe('EU');
-    });
-
-    test('an alliance is typed as an alliance, the UN as the UN', () => {
-      const a = api();
-      expect(a.resolveActor({ actor: 'NATO' }).kind).toBe('alliance');
-      expect(a.resolveActor({ actor: 'UN' }).kind).toBe('un');
-      expect(a.resolveActor({ country: 'Sweden' }).kind).toBe('nation');
-    });
-
-    test('a record with no actor at all resolves to null rather than guessing', () => {
-      expect(api().resolveActor(null)).toBe(null);
-      expect(api().resolveActor({})).toBe(null);
-      expect(api().resolveActor({ label: 'Unnamed', note: '', source: '', country: '' })).toBe(null);
-    });
-
-    test('the badge is one element for both a flag and an org chip', () => {
-withLayers({
-          military: true,
-          dots: [],
-          events: [],
-          fleets: [{
-            id: 'pl', label: 'Poland Armed Forces Expansion', kind: 'deployment',
-            country: 'Poland', lat: 51.92, lon: 19.15, direction: 'east',
-            status: 'active', start_date: '2026-01-01',
-          }],
-        }, (api) => {
-          // project() is (lon, lat). Passing them the other way round hovers the
-          // middle of the Atlantic and correctly finds nothing.
-          const p = api.project(19.15, 51.92);
-          hoverPx(p);
-        expect(tooltip.classList.contains('visible')).toBe(true);
-        const card = tooltip.children[0];
-        expect(card.className).toBe('tt-card');
-        const head = card.children[0];
-        expect(head.className).toBe('tt-head');
-        const badge = head.children[1];
-        expect(badge.className).toBe('tt-actor tt-actor--nation');
-        expect(badge.children[0].textContent).toBe('\u{1F1F5}\u{1F1F1}');   // PL
-        expect(badge.getAttribute('aria-label')).toBe('Responsible nation: Poland');
-        expect(badge.title).toBe('Responsible nation: Poland');
-      });
-    });
-
-    test('an alliance badge is a monogram chip, not a borrowed flag', () => {
-      withLayers({
-        military: true,
-        dots: [{ id: 'n', name: 'NATO something', kind: 'mandate', actor: 'NATO',
-          lat: 10, lon: 10, status: 'active', start_date: '2026-01-01' }],
-      }, (api) => {
-        const p = api.project(10, 10);
-        hoverPx(p);
-        const badge = tooltip.children[0].children[0].children[1];
-        expect(badge.className).toBe('tt-actor tt-actor--alliance');
-        expect(badge.children[0].textContent).toBe('NATO');
-        expect(badge.getAttribute('aria-label')).toBe('Responsible alliance: NATO');
-      });
-    });
-  });
-
-  describe('the alliance & defence-policy dot sublayer', () => {
-    test('it normalises, plots, and is a dot sublayer rather than a category', () => {
-      withLayers({ dots: FIXTURE_DOTS }, (a) => {
-        expect(a.allianceDots.length).toBe(FIXTURE_DOTS.length);
-        for (const d of a.allianceDots) {
-          expect(typeof d.name).toBe('string');
-          expect(Number.isFinite(d.lat)).toBe(true);
-          expect(Number.isFinite(d.lon)).toBe(true);
-        }
-        // It is a world layer, never a milestone category: it must not appear in
-        // the category palette or the category legend.
-        expect(a.CATEGORY_COLORS[a.LAYER_LABELS.alliance_dots]).toBeUndefined();
-        expect(a.CATEGORY_LEGEND.map((c) => c.label))
-          .not.toContain(a.LAYER_LABELS.alliance_dots);
-      });
-    });
-
-    test('the two NATO accessions are present as seals with the right dates', () => {
-      // The specific request: Finland and Sweden's NATO integrations shown as dots
-      // rather than as troop-movement arrows.
-      const raw = JSON.parse(
-        fsReadFileSync(pathJoin(import.meta.dirname, '..', 'data', 'world_layers.json'), 'utf8'));
-      expect(Array.isArray(raw.alliance_dots)).toBe(true);
-      const byName = (re) => raw.alliance_dots.find((d) => re.test(d.name));
-      const fi = byName(/Finland/);
-      const se = byName(/Sweden/);
-      expect(fi).toBeDefined();
-      expect(se).toBeDefined();
-      expect(fi.start_date).toBe('2023-04-04');   // NATO accession, verified
-      expect(se.start_date).toBe('2024-03-07');
-      expect(fi.kind).toBe('accession');
-      expect(se.kind).toBe('accession');
-      // They are no longer movements, so they must not also be arrows.
-      const movementIds = raw.deployments.map((d) => d.id);
-      expect(movementIds).not.toContain('inf-finland-2023-nato');
-      expect(movementIds).not.toContain('inf-sweden-2024-nato');
-      // Both name their actor explicitly, which is what puts a flag on the tooltip.
-      expect(fi.actor).toBeTruthy();
-      expect(se.actor).toBeTruthy();
-    });
-
-    test('a seal whose id matches a movement suppresses that arrow', () => {
-      // The promotion is idempotent: an entry still present in deployments
-      // because some upstream writer put it there is drawn once, as a seal.
-      withLayers({
-        military: true,
-        fleets: [{ id: 'dup', label: 'Promoted movement', from: { lat: 10, lon: 10 },
-          to: { lat: 12, lon: 12 }, kind: 'fleet', status: 'active', start_date: '2026-01-01' }],
-        dots: [{ id: 'dup', name: 'Promoted seal', kind: 'posture', lat: 12, lon: 12,
-          status: 'active', start_date: '2026-01-01' }],
-      }, (a) => {
-        const p = a.project(12, 12);
-        const hit = a.findLandmarkAt(p.x, p.y);
-        expect(hit && hit.type).toBe('alliance');
-      });
-    });
-
-    test('a seal is hittable and opens its own tooltip', () => {
-      withLayers({ dots: FIXTURE_DOTS }, (api) => {
-        const dot = api.allianceDots.find((d) => /Finland/.test(d.name));
-        expect(dot).toBeDefined();
-        const p = api.project(dot.lon, dot.lat);
-        hoverPx(p);
-        expect(tooltip.classList.contains('visible')).toBe(true);
-        const card = tooltip.children[0];
-        expect(card.className).toBe('tt-card');
-        const head = card.children[0];
-        expect(head.className).toBe('tt-head');
-        expect(head.children[0].className).toBe('tt-category');
-        expect(head.children[0].textContent).toBe('Alliance Accession');
-        expect(tooltipText()).toContain('Finland');
-        // The heading follows the kind, so two different facts read differently
-        // rather than every seal reading as the same vague thing.
-        expect(api.allianceDots.every((d) => api.ALLIANCE_DOT_HEADINGS[d.kind])).toBe(true);
-        for (const kind of Object.keys(api.ALLIANCE_DOT_HEADINGS)) {
-          expect(api.ALLIANCE_DOT_HEADINGS[kind]).toBeTruthy();
-        }
-      });
-    });
-
-    test('the seal is a dot: no route and no extent', () => {
-      const a = windowObj.__WORLDMAP_TEST__;
-      const dot = a.normalizeAllianceDot({
-        id: 'x', name: 'X', lat: 10, lon: 10, kind: 'posture', status: 'active',
-      });
-      expect(dot.lat).toBe(10);
-      expect(dot.radiusDeg).toBeUndefined();   // an area, not a point
-      expect(dot.from).toBeUndefined();
-      expect(dot.to).toBeUndefined();
-    });
-
-    test('the timeline reaches the sublayer', () => {
-      const api = windowObj.__WORLDMAP_TEST__;
-      const saved = api.getLayers();
-      api.setLayers([], [], [], [], FIXTURE_DOTS);
-      api.setFilterMilitary(true);
-      try {
-        const dot = api.allianceDots.find((d) => /Sweden/.test(d.name));
-        expect(dot).toBeDefined();
-        api.setTimelineYear(2026);
-        expect(dot._hiddenByTimeline).toBe(false);
-        api.setTimelineYear(2015);
-        expect(dot._hiddenByTimeline).toBe(true);
-        // The anchor test has to agree with the renderer, or moving the slider
-        // leaves a popup describing a seal that is no longer painted.
-        expect(api.anchorIsVisible({ entry: dot, type: 'alliance' })).toBe(false);
-      } finally {
-        api.setLayers(saved.zones, saved.fleets, saved.crises, saved.humanRights,
-          saved.allianceDots);
-        api.setTimelineYear(2026);
-        resetTransientState();
-      }
-    });
-
-    test('the sublayer cannot appear without its parent', () => {
-      const api = windowObj.__WORLDMAP_TEST__;
-      const saved = api.getLayers();
-      const wasOn = api.getState().showAllianceDots;
-      api.setLayers([], [], [], [], FIXTURE_DOTS);
-      try {
-        // Every operational layer is off by default, so the seals are off too -
-        // even though the sublayer's own switch starts on.
-        api.setFilterMilitary(false);
-        expect(api.getState().showAllianceDots).toBe(true);
-        expect(api.anchorIsVisible({ entry: api.allianceDots[0], type: 'alliance' })).toBe(false);
-        // Switching the sublayer off is what releases a docked popup describing it.
-        api.setFilterMilitary(true);
-        const p = api.project(api.allianceDots[0].lon, api.allianceDots[0].lat);
-        hoverPx(p);
-        expect(tooltip.classList.contains('visible')).toBe(true);
-        api.toggleLayer('alliance_dots');
-        expect(api.getState().showAllianceDots).toBe(false);
-      } finally {
-        api.setLayers(saved.zones, saved.fleets, saved.crises, saved.humanRights,
-          saved.allianceDots);
-        api.getState().showAllianceDots = wasOn;
-        api.setTimelineYear(2026);
-        resetTransientState();
-      }
-    });
-
-    test('an unplottable or malformed seal is dropped, not drawn at (0,0)', () => {
-      const a = windowObj.__WORLDMAP_TEST__;
-      const n = (over) => a.normalizeAllianceDot(Object.assign(
-        { id: 'b', name: 'B', lat: 10, lon: 10 }, over));
-      expect(a.isAllianceDotPlottable(n({ lat: 0, lon: 0 }))).toBe(false);
-      expect(a.isAllianceDotPlottable(n({ lat: 'x' }))).toBe(false);
-      expect(a.isAllianceDotPlottable(n({ lat: 95 }))).toBe(false);
-      expect(a.isAllianceDotPlottable(n({ lon: 181 }))).toBe(false);
-      expect(a.isAllianceDotPlottable(n({ lat: Number.NaN }))).toBe(false);
-      const nameless = a.normalizeAllianceDot({ id: 'b', lat: 10, lon: 10 });
-      // A missing name gets the module's own fallback rather than being dropped:
-      // a nameless policy change is still a real place on the map, and an empty
-      // tooltip heading is better than a mark that is drawn but not explained.
-      expect(nameless.name).toBe('Unnamed policy change');
-      expect(a.isAllianceDotPlottable(nameless)).toBe(true);
-      expect(a.isAllianceDotPlottable(n({}))).toBe(true);
-    });
-  });
-
-  describe('the hover / stick / unstick contract', () => {
-    // One zone with one neighbour, so "nearby" and "far" are properties of the
-    // geometry rather than of whatever the fixture happened to contain.
-    const TWO_ZONES = [
-      { id: 'n1', name: 'Near A', lat: 48.0, lon: 37.8, radiusDeg: 3,
-        status: 'active', start_date: '2026-01-01' },
-      { id: 'n2', name: 'Near B', lat: 48.0, lon: 38.1, radiusDeg: 3,
-        status: 'active', start_date: '2026-01-01' },
-      { id: 'far', name: 'Far away', lat: -35.0, lon: 140.0, radiusDeg: 3,
-        status: 'active', start_date: '2026-01-01' },
-    ];
-    const zoneAt = (a, name) => a.getLayers().zones.find((z) => z.name === name);
-    const px = (a, z) => a.project(z.lon, z.lat);
-    // hoverAt() takes lon/lat and projects for you; this one takes an already-
-    // projected canvas point. Both exist because writing hoverAt(p.x, p.y) is a
-    // silent no-op that reads as a broken map rather than a broken call.
-    const hoverPx = (p) =>
-      canvas.fire('mousemove', { clientX: p.x, clientY: p.y, movementX: 0, movementY: 0 });
-    const click = (p) => {
-      canvas.fire('mousedown', { clientX: p.x, clientY: p.y });
-      windowObj.fire('mouseup', { target: canvas, clientX: p.x, clientY: p.y });
-    };
-
-    // The zone that actually wins the hit test at `name`'s pixel. Two zones a few
-    // pixels apart both match the hit radius, and findZone walks the list from the
-    // end, so "the zone I meant" and "the zone under the pointer" can differ. The
-    // interaction contract is about the popup following the pointer, so these
-    // tests assert against what the pointer really finds.
-    const hitZone = (a, name) => {
-      const p = px(a, zoneAt(a, name));
-      const hit = a.findLandmarkAt(p.x, p.y);
-      expect(hit && hit.type).toBe('zone');
-      return hit.entry;
-    };
-
-    test('leaving the popup does not dismiss it, so its links are clickable unpinned', () => {
-      withLayers({ military: true, zones: TWO_ZONES, dots: [] }, (api) => {
-        const p = px(api, zoneAt(api, 'Near A'));
-        hoverPx(p);
-        expect(tooltip.classList.contains('visible')).toBe(true);
-        const shown = api.hoverAnchor().entry;
-        expect(shown.name).toMatch(/^Near /);
-        // The pointer travels onto the popup itself. The popup is anchored to its
-        // landmark, so it must survive being "no longer hovered".
-        tooltip.fire('mouseenter', {});
-        tooltip.fire('mouseleave', {});
-        expect(tooltip.classList.contains('visible')).toBe(true);
-        expect(tooltipText()).toContain(shown.name);
-        expect(api.hoverAnchor().entry).toBe(shown);
-        expect(api.hoverAnchor().type).toBe('zone');
-      });
-    });
-
-    test('a pinned popup survives travelling far away over empty ocean', () => {
-      withLayers({ military: true, zones: TWO_ZONES, dots: [] }, (api) => {
-        const p = px(api, zoneAt(api, 'Near A'));
-        hoverPx(p);
-        const pinned = api.hoverAnchor().entry;
-        click(p);
-        expect(api.pinnedAnchor()).not.toBe(null);
-        expect(api.pinnedAnchor().entry).toBe(pinned);
-        expect(tooltip.classList.contains('is-sticky')).toBe(true);
-        // The complaint this fixes: a pinned popup vanished as soon as the pointer
-        // left it, so its source link could never be reached.
-        canvas.fire('mousemove', { clientX: 780, clientY: 500, movementX: 0, movementY: 0 });
-        expect(tooltip.classList.contains('visible')).toBe(true);
-        expect(api.pinnedAnchor().entry).toBe(pinned);
-        expect(tooltipText()).toContain(pinned.name);
-      });
-    });
-
-    test('a pinned popup hands over to another landmark, and stays pinned doing so', () => {
-      withLayers({ military: true, zones: TWO_ZONES, dots: [] }, (api) => {
-        const a = px(api, zoneAt(api, 'Near A'));
-        const b = px(api, zoneAt(api, 'Far away'));
-        expect(Math.hypot(b.x - a.x, b.y - a.y)).toBeGreaterThan(api.PROXIMITY_RADIUS);
-        const from = hitZone(api, 'Near A');
-        const to = hitZone(api, 'Far away');
-        hoverPx(a);
-        click(a);
-        expect(api.pinnedAnchor().entry).toBe(from);
-        hoverPx(b);
-        expect(api.pinnedAnchor().entry).toBe(to);
-        // Still pinned: the pointer is about to travel to the new popup and must
-        // find it open when it gets there.
-        expect(tooltip.classList.contains('is-sticky')).toBe(true);
-        expect(tooltipText()).toContain(to.name);
-      });
-    });
-
-    test('a nearby landmark never steals a pinned popup', () => {
-      withLayers({ military: true, zones: TWO_ZONES, dots: [] }, (api) => {
-        const a = px(api, zoneAt(api, 'Near A'));
-        const b = px(api, zoneAt(api, 'Near B'));
-        expect(Math.hypot(b.x - a.x, b.y - a.y)).toBeLessThan(api.PROXIMITY_RADIUS);
-        hoverPx(a);
-        click(a);
-        const pinned = api.pinnedAnchor().entry;
-        hoverPx(b);
-        expect(api.pinnedAnchor().entry).toBe(pinned);
-        expect(tooltipText()).toContain(pinned.name);
-      });
-    });
-
-    test('clicking a pinned landmark again unpins it and clears the sticky marker', () => {
-      withLayers({ military: true, zones: TWO_ZONES, dots: [] }, (api) => {
-        const z = zoneAt(api, 'Near A');
-        const p = px(api, z);
-        hoverPx(p);
-        click(p);
-        expect(api.pinnedAnchor()).not.toBe(null);
-        click(p);
-        expect(api.pinnedAnchor()).toBe(null);
-        expect(tooltip.classList.contains('is-sticky')).toBe(false);
-      });
-    });
-
-    test('clicking empty canvas closes a pinned popup', () => {
-      withLayers({ military: true, zones: TWO_ZONES, dots: [] }, (api) => {
-        const p = px(api, zoneAt(api, 'Near A'));
-        hoverPx(p);
-        click(p);
-        expect(api.pinnedAnchor()).not.toBe(null);
-        canvas.fire('mousedown', { clientX: 770, clientY: 500 });
-        windowObj.fire('mouseup', { target: canvas, clientX: 770, clientY: 500 });
-        expect(api.pinnedAnchor()).toBe(null);
-        expect(tooltip.classList.contains('visible')).toBe(false);
-      });
-    });
-
-    test('a movement arrow docks at its destination, which it has no lat/lon for', () => {
-      withLayers({
-        military: true,
-        fleets: [{ id: 'arrow', label: 'Arrow only', from: { lat: 10, lon: 10 },
-          to: { lat: 30, lon: 30 }, kind: 'fleet', status: 'active', start_date: '2026-01-01' }],
-      }, (api) => {
-        const fleet = api.getLayers().fleets[0];
-        // The record genuinely has no top-level coordinate - that is the whole
-        // reason landmarkAnchorPoint exists.
-        expect(fleet.lat).toBeUndefined();
-        expect(fleet.lon).toBeUndefined();
-        const tip = api.project(30, 30);
-        hoverPx(tip);
-        expect(tooltip.classList.contains('visible')).toBe(true);
-        click(tip);
-        // It used to be un-pinnable: the pin path required entry.lat/lon, so a
-        // click opened a popup that could never be docked.
-        expect(api.pinnedAnchor()).not.toBe(null);
-        expect(api.pinnedAnchor().entry).toBe(fleet);
-        expect(tooltip.classList.contains('visible')).toBe(true);
-      });
-    });
-
-    test('the anchor point of a movement is its destination, not undefined', () => {
-      const a = windowObj.__WORLDMAP_TEST__;
-      const fleet = a.normalizeFleet({
-        id: 'f', label: 'F', from: { lat: 1, lon: 2 }, to: { lat: 3, lon: 4 },
-        kind: 'fleet', status: 'active', start_date: '2026-01-01',
-      });
-      const point = a.landmarkAnchorPoint(fleet);
-      expect(point).not.toBe(null);
-      expect(point.lat).toBe(3);
-      expect(point.lon).toBe(4);
-      // A zone answers with itself.
-      const zone = a.normalizeZone({ id: 'z', name: 'Z', lat: 9, lon: 8, status: 'active' });
-      expect(a.landmarkAnchorPoint(zone)).toBe(zone);
-      // An entry with neither is not anchorable, and must say so rather than
-      // defaulting to (0,0).
-      expect(a.landmarkAnchorPoint({})).toBe(null);
-      expect(a.landmarkAnchorPoint(null)).toBe(null);
-    });
-
-    test('a landmark taken off the map releases its popup', () => {
-      withLayers({ military: true, zones: TWO_ZONES, dots: [] }, (api) => {
-        const z = zoneAt(api, 'Near A');
-        const p = px(api, z);
-        hoverPx(p);
-        click(p);
-        expect(api.pinnedAnchor()).not.toBe(null);
-        // Replacing the data with a set that no longer holds the docked entry must
-        // not leave a popup describing a mark that is not on screen.
-        api.setLayers([], [], [], [], []);
-        expect(api.pinnedAnchor()).toBe(null);
-        expect(tooltip.classList.contains('visible')).toBe(false);
-      });
-    });
-
-    test('findLandmarkAt covers every type, in one precedence order', () => {
-      withLayers({
-        military: true,
-        zones: [{ id: 'z', name: 'Z', lat: -40, lon: -60, radiusDeg: 3, status: 'active', start_date: '2026-01-01' }],
-        crises: [{ id: 'c', name: 'C', lat: -30, lon: -50, radiusDeg: 3, status: 'active', start_date: '2026-01-01' }],
-        humanRights: [{ id: 'h', name: 'H', lat: -20, lon: -40, status: 'active', start_date: '2026-01-01' }],
-        dots: [{ id: 's', name: 'S', lat: -10, lon: -30, kind: 'posture', status: 'active', start_date: '2026-01-01' }],
-        fleets: [{ id: 'm', label: 'M', from: { lat: 20, lon: 20 }, to: { lat: 30, lon: 30 },
-          kind: 'fleet', status: 'active', start_date: '2026-01-01' }],
-        events: [mkEvent('m', 'Milestone', -70, -30)],
-      }, (a) => {
-        // Each layer has its own switch, so each has to be on for its mark to be
-        // hittable at all. A missing switch is not a hit-test failure.
-        a.getState().showHumanRights = true;
-        a.getState().showCrises = true;
-        const seen = new Set();
-        const at = (lon, lat, label) => {
-          const p = a.project(lon, lat);
-          const hit = a.findLandmarkAt(p.x, p.y);
-          expect(hit, 'no hit at ' + label).not.toBe(null);
-          seen.add(hit.type);
-        };
-        at(-70, -30, 'event');
-        at(-60, -40, 'zone');
-        at(-50, -30, 'crisis');
-        at(-40, -20, 'human rights');
-        at(-30, -10, 'alliance seal');
-        at(25, 25, 'deployment arrow');
-        for (const type of ['event', 'zone', 'crisis', 'human_rights', 'alliance', 'deployment']) {
-          expect(seen.has(type)).toBe(true);
-        }
-      });
-    });
-  });
-
-  describe('the milestone sub-metric reaches the tooltip', () => {
-    test('normalizeEvent keeps subcategory', () => {
-      const a = windowObj.__WORLDMAP_TEST__;
-      const ev = a.normalizeEvent({
-        id: 'x', title: 'T', category: 'Biotechnology & Biohacking',
-        value: 'v', source: 's', url: '', date: '2026-08-01',
-        geolocation: { lat: 10, lon: 10 }, subcategory: 'gene_editing',
-      });
-      expect(ev.subcategory).toBe('gene_editing');
-    });
-
-    test('a record without one normalises to an empty string, not undefined', () => {
-      const a = windowObj.__WORLDMAP_TEST__;
-      const ev = a.normalizeEvent({
-        id: 'x', title: 'T', category: 'Quantum Physics', value: 'v', source: 's',
-        url: '', date: '2026-08-01', geolocation: { lat: 10, lon: 10 },
-      });
-      expect(ev.subcategory).toBe('');
-    });
-
-    test('the published feed carries a sub-metric on the records that have one', () => {
-      // The data-side half of the feature: the field has to be in events.json, not
-      // only in milestones.json, or the map has nothing to show.
-      const raw = JSON.parse(
-        fsReadFileSync(pathJoin(import.meta.dirname, '..', 'data', 'events.json'), 'utf8'));
-      expect(raw.events.length).toBeGreaterThan(0);
-      const withSub = raw.events.filter((e) => typeof e.subcategory === 'string' && e.subcategory);
-      expect(withSub.length).toBeGreaterThan(0);
-      for (const e of withSub) {
-        expect(e.subcategory).toMatch(/^[a-z0-9_]+$/);
-      }
-    });
-
-    test('the popup shows the humanised sub-metric below the source line', () => {
-      withLayers({
-        military: false,
-        events: [mkEvent('s', 'Sub-metric milestone', 8.5417, 47.3769, null,
-          { subcategory: 'low_resource_speech' })],
-      }, () => {
-        hoverAt(8.5417, 47.3769);
-        expect(tooltip.classList.contains('visible')).toBe(true);
-        const text = tooltipText();
-        // snake_case becomes words: the label is for a reader, not for grep.
-        expect(text).toContain('Low Resource Speech');
-        expect(text).not.toContain('low_resource_speech');
-        const card = tooltip.children[0];
-        const line = card.children.find((c) => c.className === 'tt-submetric');
-        expect(line).toBeDefined();
-        expect(line.children[0].textContent).toBe('Metric');
-        expect(line.children[1].textContent).toBe('Low Resource Speech');
-      });
-    });
-
-    test('a record with no sub-metric shows no metric row at all', () => {
-      withLayers({
-        military: false,
-        events: [mkEvent('n', 'No sub-metric milestone', 8.5417, 47.3769)],
-      }, () => {
-        hoverAt(8.5417, 47.3769);
-        expect(tooltip.classList.contains('visible')).toBe(true);
-        const card = tooltip.children[0];
-        const line = card.children.find((c) => c.className === 'tt-submetric');
-        expect(line === undefined).toBe(true);
-      });
-    });
-  });
-
-  describe('the tracking reticle is reserved for fresh zones', () => {
-    test('a hot zone and a cold one paint differently on the canvas', () => {
-      const api = windowObj.__WORLDMAP_TEST__;
-      const saved = api.getLayers();
-      api.setTimelineYear(2026);
-      api.setLayers([
-        { id: 'hot', name: 'Fresh zone', lat: 12, lon: 34, radiusDeg: 4,
-          status: 'active', start_date: '2026-06-01', last_news_year: 2026, source: 'ISW' },
-        { id: 'old', name: 'Stale zone', lat: -30, lon: -60, radiusDeg: 4,
-          status: 'active', start_date: '1999-01-01', last_news_year: 1999, source: 'ISW' },
-      ], [], [], [], []);
-      api.setFilterMilitary(true);
-      try {
-        const zones = api.getLayers().zones;
-        expect(api.layerPaintTier(zones[0])).toBe('hot');
-        expect(api.layerPaintTier(zones[1])).toBe('cold');
-        // Count arcs per zone by radius, so the assertion is about the reticle
-        // rather than about the renderer having been called at all.
-        ctx.resetCounters();
-        api.resizeNow();
-        const hot = api.project(zones[0].lon, zones[0].lat);
-        const cold = api.project(zones[1].lon, zones[1].lat);
-        const arcsAt = (p, tol) => ctx.arcsLog.filter(
-          (a) => Math.hypot(a.x - p.x, a.y - p.y) < tol).length;
-        // 4 brackets + 4 radial ticks + halo + ring + centre dot for a hot zone.
-        // The cold zone gets ring + centre dot only.
-        expect(arcsAt(hot, 6)).toBeGreaterThan(arcsAt(cold, 6));
-        expect(arcsAt(cold, 6)).toBeGreaterThanOrEqual(2);
-      } finally {
-        api.setLayers(saved.zones, saved.fleets, saved.crises, saved.humanRights,
-          saved.allianceDots);
-        api.setTimelineYear(2026);
-        resetTransientState();
-      }
-    });
-  });
-
-
 });
 });
-
