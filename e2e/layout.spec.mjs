@@ -362,26 +362,36 @@ test('CATEGORIES is bigger than the eye and folds from the whole header row',
       const b = await box(head);
       await page.mouse.click(b.x + 6, b.y + b.height - 1);
     };
-    const clickInFrontOfWord = async () => {
-      const h = await box(head);
+const clickInFrontOfWord = async () => {
       const t = await box(title);
-      const e = await box(eye);
-      // The gap between the word and the eye, not a fixed offset from the word.
+      // Inside the title's own box, just past the word.
+      //
+      // The title is the button, and it is flex: 1 - it stretches to fill the header,
+      // so its box runs right up to the eye. That makes it a click target strictly
+      // wider than the word, which is the property this test exists to check, and
+      // clicking near its right edge is the point of it.
       //
       // This used to click title.x + title.width + 4 and assert only that the point
-      // was still inside the header. That is not the same thing: it is inside the
-      // header, but so is the eye. Shortening the deployments label narrowed the
-      // frame, the gap closed, and the click landed on the eye - whose handler calls
-      // stopPropagation - so the title never toggled and the assertion read as a
-      // product bug. Deriving the point from the eye's actual left edge keeps the
-      // test about the thing it means: there is whitespace there, and clicking
-      // whitespace toggles.
-      const gapLeft = t.x + t.width;
-      const gapRight = e.x;
-      expect(gapRight - gapLeft, 'there is whitespace between the word and the eye')
-        .toBeGreaterThan(2);
-      await page.mouse.click((gapLeft + gapRight) / 2, t.y + t.height / 2);
+      // was still inside the header - but the eye is inside the header too, and once
+      // the deployments label was shortened the frame narrowed and the click landed
+      // on the eye, whose handler calls stopPropagation. The second version took the
+      // midpoint between the word and the eye, which sits inside the title's padding:
+      // correct in principle, but it depended on the sticky header being where it was
+      // when measured, and on a scrolled phone frame it was not, so the second click
+      // in the sequence hit nothing. A point derived from the target's own box cannot
+      // land on a sibling.
+      expect(t.width - 3, 'the click target extends past the word')
+        .toBeGreaterThan(await measuredTextWidth());
+      await page.mouse.click(t.x + t.width - 3, t.y + t.height / 2);
     };
+    // Rendered width of the caption itself, via a Range over its text node, so the
+    // assertion above compares the button's box against its own label rather than
+    // against a font-size constant.
+    const measuredTextWidth = () => title.evaluate((el) => {
+      const range = document.createRange();
+      range.selectNodeContents(el);
+      return range.getBoundingClientRect().width;
+    });
     const clickWord = async () => {
       const t = await box(title);
       await page.mouse.click(t.x + 4, t.y + t.height / 2);
