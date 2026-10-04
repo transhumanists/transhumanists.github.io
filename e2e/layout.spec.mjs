@@ -354,52 +354,103 @@ test('CATEGORIES is bigger than the eye and folds from the whole header row',
     // coordinate silently lands on the frame background and does nothing.
     const box = async (loc) => loc.boundingBox();
 
-    const clickHeadTop = async () => {
-      const b = await box(head);
-      await page.mouse.click(b.x + 6, b.y + 1);
-    };
-    const clickHeadBottom = async () => {
-      const b = await box(head);
-      await page.mouse.click(b.x + 6, b.y + b.height - 1);
-    };
+// Wait until the header's own box stops moving.
+//
+// Toggling calls renderLegend(), which rebuilds the whole frame, so the header a
+// click was measured on is replaced by a new one at a new position. Measuring
+// immediately after a click therefore reads the box of an element that is about to
+// be thrown away - and, because the click still lands on *a* header, nothing
+// complains until the aria assertion two lines later. Polling the box until two
+// consecutive reads agree is what makes the next measurement describe the frame
+// that exists now.
+async function settleHeader() {
+  await page.waitForFunction(() => {
+    const h = document.querySelector('.map-legend-head');
+    if (!h) return false;
+    const r = h.getBoundingClientRect();
+    const key = `${Math.round(r.x)},${Math.round(r.y)},${Math.round(r.width)},${Math.round(r.height)}`;
+    const stable = window.__headerBox === key;
+    window.__headerBox = key;
+    return stable;
+  }, null, { timeout: 5000, polling: 50 });
+}
+
+// Click a point on `target`, defined as an offset within its box.
+//
+// Everything here is measured inside a scrollable legend whose header is sticky on
+// the narrow frame, so a box can be correct in layout and still not be where the
+// pointer goes: a scroll offset moves the painted position without moving the box's
+// layout coordinates, and a rebuild replaces the box outright. Three things follow,
+// and all three were needed to stop this test reporting a click target that works
+// fine by hand:
+//
+//   1. wait for the header box to settle, so it is not measured across a rebuild;
+//   2. pin the scroll *before* measuring, not after - pinning after leaves the
+//      measurement describing the pre-reset position, the same stale coordinate
+//      under a different name;
+//   3. prove the point with document.elementFromPoint before clicking, so a click
+//      that would land on nothing fails naming the element it actually hit rather
+//      than as a puzzling aria mismatch further down.
+//
+// The check is containment, not identity: the eye's centre is its inner <svg>, and
+// a title's box may be covered by its own text run. "This point hits the target, or
+// something inside it" is the contract that matters for a click; "the point's
+// className equals the target's" would fail on a perfectly good click.
+const clickOn = async (selector, pointIn) => {
+  const target = page.locator(selector);
+  await settleHeader();
+  await page.evaluate(() => {
+    const legend = document.getElementById('map-legend');
+    if (legend) legend.scrollTop = 0;
+  });
+  const b = await box(target);
+  const [x, y] = pointIn(b);
+  const hit = await page.evaluate(([px, py, sel]) => {
+    const el = document.elementFromPoint(px, py);
+    const t = document.querySelector(sel);
+    return el ? (t && (t === el || t.contains(el)) ? 'ok' : `${el.tagName}.${el.className}`) : null;
+  }, [x, y, selector]);
+  expect(hit, `the click point must land on ${selector}`).toBe('ok');
+  await page.mouse.click(x, y);
+};
+
+const clickHeadTop = () => clickOn('.map-legend-head', (b) => [b.x + 6, b.y + 1]);
+const clickHeadBottom = () => clickOn('.map-legend-head', (b) => [b.x + 6, b.y + b.height - 1]);
+const clickWord = () => clickOn('.map-legend-title', (b) => [b.x + 4, b.y + b.height / 2]);
+const clickEye = () => clickOn('#map-legend-bulk-visibility', (b) => [b.x + b.width / 2, b.y + b.height / 2]);
+
+// Rendered width of the caption itself, via a Range over its text node, so the
+// assertion below compares the button's box against its own label rather than
+// against a font-size constant.
+const measuredTextWidth = () => title.evaluate((el) => {
+  const range = document.createRange();
+  range.selectNodeContents(el);
+  return range.getBoundingClientRect().width;
+});
+
+// Inside the title's own box, just past the word.
+//
+// The title is the button, and it is flex: 1 - it stretches to fill the header, so
+// its box runs right up to the eye. That makes it a click target strictly wider
+// than the word, which is the property this test exists to check, so the click goes
+// near its right edge rather than on the letters.
+//
+// This used to click title.x + title.width + 4 and assert only that the point was
+// still inside the header - but the eye is inside the header too, and once the
+// deployments label was shortened the frame narrowed and the click landed on the
+// eye, whose handler calls stopPropagation. A point derived from two sibling boxes
+// is only as stable as the relationship between them; a point derived from the
+// target's own box cannot land on a sibling.
 const clickInFrontOfWord = async () => {
-      const t = await box(title);
-      // Inside the title's own box, just past the word.
-      //
-      // The title is the button, and it is flex: 1 - it stretches to fill the header,
-      // so its box runs right up to the eye. That makes it a click target strictly
-      // wider than the word, which is the property this test exists to check, and
-      // clicking near its right edge is the point of it.
-      //
-      // This used to click title.x + title.width + 4 and assert only that the point
-      // was still inside the header - but the eye is inside the header too, and once
-      // the deployments label was shortened the frame narrowed and the click landed
-      // on the eye, whose handler calls stopPropagation. The second version took the
-      // midpoint between the word and the eye, which sits inside the title's padding:
-      // correct in principle, but it depended on the sticky header being where it was
-      // when measured, and on a scrolled phone frame it was not, so the second click
-      // in the sequence hit nothing. A point derived from the target's own box cannot
-      // land on a sibling.
-      expect(t.width - 3, 'the click target extends past the word')
-        .toBeGreaterThan(await measuredTextWidth());
-      await page.mouse.click(t.x + t.width - 3, t.y + t.height / 2);
-    };
-    // Rendered width of the caption itself, via a Range over its text node, so the
-    // assertion above compares the button's box against its own label rather than
-    // against a font-size constant.
-    const measuredTextWidth = () => title.evaluate((el) => {
-      const range = document.createRange();
-      range.selectNodeContents(el);
-      return range.getBoundingClientRect().width;
-    });
-    const clickWord = async () => {
-      const t = await box(title);
-      await page.mouse.click(t.x + 4, t.y + t.height / 2);
-    };
-    const clickEye = async () => {
-      const e = await box(eye);
-      await page.mouse.click(e.x + e.width / 2, e.y + e.height / 2);
-    };
+  await page.evaluate(() => {
+    const legend = document.getElementById('map-legend');
+    if (legend) legend.scrollTop = 0;
+  });
+  const t = await box(title);
+  expect(t.width - 3, 'the click target extends past the word')
+    .toBeGreaterThan(await measuredTextWidth());
+  await clickOn('.map-legend-title', (b) => [b.x + b.width - 3, b.y + b.height / 2]);
+};
 
     // Collapse state is read from the inline max-height, which is assigned at once,
     // rather than from the wrapper's box, which is mid-transition for 150ms after a
