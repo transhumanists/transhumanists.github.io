@@ -31,9 +31,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-import location_contract as lc
-
 import geo_hints
+import location_contract as lc
 
 ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_OUTPUT = ROOT / "data" / "world_layers.json"
@@ -48,22 +47,53 @@ STATUS_VALUES = ("active", "ongoing", "concluded", "inactive", "ended", "resolve
 SOURCE_FEEDS = (
     {"id": "ohchr", "name": "OHCHR", "url": "https://www.ohchr.org/en/rss.xml"},
     {"id": "hrw", "name": "Human Rights Watch", "url": "https://www.hrw.org/rss/news"},
-    {"id": "amnesty", "name": "Amnesty International", "url": "https://www.amnesty.org/en/rss/news/"},
-    {"id": "frontlinedefenders", "name": "Front Line Defenders", "url": "https://www.frontlinedefenders.org/en/rss.xml"},
+    {
+        "id": "amnesty",
+        "name": "Amnesty International",
+        "url": "https://www.amnesty.org/en/rss/news/",
+    },
+    {
+        "id": "frontlinedefenders",
+        "name": "Front Line Defenders",
+        "url": "https://www.frontlinedefenders.org/en/rss.xml",
+    },
 )
 
 # An item is only promoted to the map if it reports a violation, not general news.
 # Deliberately specific: broad terms like "protest" would drag in ordinary
 # political reporting and turn the layer into noise.
 VIOLATION_KEYWORDS = (
-    "arbitrary detention", "arbitrary arrest", "detained", "detention",
-    "disappearance", "enforced disappearance", "extrajudicial", "summary execution",
-    "torture", "forced disappearance", "forced displacement", "ethnic cleansing",
-    "genocide", "war crime", "crimes against humanity", "human trafficking",
-    "child soldier", "child marriage", "forced marriage", "female genital mutilation",
-    "persecution", "indigenous rights", "land rights", "press freedom",
-    "journalist killed", "human rights defender", "activist detained",
-    "hate crime", "religious freedom", "conscription", "internment",
+    "arbitrary detention",
+    "arbitrary arrest",
+    "detained",
+    "detention",
+    "disappearance",
+    "enforced disappearance",
+    "extrajudicial",
+    "summary execution",
+    "torture",
+    "forced disappearance",
+    "forced displacement",
+    "ethnic cleansing",
+    "genocide",
+    "war crime",
+    "crimes against humanity",
+    "human trafficking",
+    "child soldier",
+    "child marriage",
+    "forced marriage",
+    "female genital mutilation",
+    "persecution",
+    "indigenous rights",
+    "land rights",
+    "press freedom",
+    "journalist killed",
+    "human rights defender",
+    "activist detained",
+    "hate crime",
+    "religious freedom",
+    "conscription",
+    "internment",
 )
 
 
@@ -152,6 +182,7 @@ def parse_feed(xml_text: str) -> list[dict]:
     """
     items: list[dict] = []
     for block in re.findall(r"<item[^>]*>(.*?)</item>", xml_text, re.S | re.I):
+
         def field(name: str) -> str:
             match = _TAG_RE[name].search(block)
             return _strip_html(match.group(1)) if match else ""
@@ -164,12 +195,14 @@ def parse_feed(xml_text: str) -> list[dict]:
             # Atom puts the URL in an href attribute.
             href = re.search(r'<link[^>]*href="([^"]+)"', block, re.I)
             link = href.group(1) if href else ""
-        items.append({
-            "title": title,
-            "url": link,
-            "note": field("description")[:280],
-            "pubdate": field("pubdate"),
-        })
+        items.append(
+            {
+                "title": title,
+                "url": link,
+                "note": field("description")[:280],
+                "pubdate": field("pubdate"),
+            }
+        )
     return items
 
 
@@ -216,8 +249,12 @@ def _slugify_id(title: str, url: str) -> str:
 def _parse_pubdate(raw: str) -> str | None:
     if not raw:
         return None
-    for fmt in ("%a, %d %b %Y %H:%M:%S %z", "%a, %d %b %Y %H:%M:%S %Z",
-                "%d %b %Y %H:%M:%S %z", "%Y-%m-%d"):
+    for fmt in (
+        "%a, %d %b %Y %H:%M:%S %z",
+        "%a, %d %b %Y %H:%M:%S %Z",
+        "%d %b %Y %H:%M:%S %z",
+        "%Y-%m-%d",
+    ):
         try:
             return datetime.strptime(raw.strip(), fmt).date().isoformat()
         except ValueError:
@@ -227,7 +264,7 @@ def _parse_pubdate(raw: str) -> str | None:
 
 def build_violation(item: dict, source_name: str, today: datetime) -> dict | None:
     """Turn one feed item into a layer entry, or None if it is unusable."""
-    haystack = f"{item.get('title','')} {item.get('note','')}"
+    haystack = f"{item.get('title', '')} {item.get('note', '')}"
     if not is_violation_report(haystack):
         return None
     located = locate(item.get("title", ""), item.get("note", ""))
@@ -295,7 +332,9 @@ def load_world_layers(path: Path | None = None) -> dict:
 def _layer_schema_version() -> str:
     schema = ROOT / "schema" / "worldmap-data.schema.json"
     try:
-        return json.loads(schema.read_text(encoding="utf-8"))["files"]["world_layers.json"]["version"]
+        return json.loads(schema.read_text(encoding="utf-8"))["files"]["world_layers.json"][
+            "version"
+        ]
     except (OSError, json.JSONDecodeError, KeyError):
         return "1.1.0"
 
@@ -314,7 +353,9 @@ def merge_entries(existing: list, fresh: list) -> tuple[list, int, int]:
             continue
         by_id[entry["id"]] = entry
         added += 1
-    merged = sorted(by_id.values(), key=lambda e: (e.get("start_date") or "", e.get("id") or ""), reverse=True)
+    merged = sorted(
+        by_id.values(), key=lambda e: (e.get("start_date") or "", e.get("id") or ""), reverse=True
+    )
     return merged, added, len(merged)
 
 
@@ -325,7 +366,7 @@ def collect(today: datetime) -> list[dict]:
         print(f"  Fetching {feed['name']}...")
         body = fetch_url(feed["url"])
         if not body:
-            print(f"    unavailable")
+            print("    unavailable")
             continue
         items = parse_feed(body)
         kept = 0
@@ -340,8 +381,9 @@ def collect(today: datetime) -> list[dict]:
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.strip().splitlines()[0])
-    ap.add_argument("--dry-run", action="store_true",
-                    help="fetch, build and report only - never write")
+    ap.add_argument(
+        "--dry-run", action="store_true", help="fetch, build and report only - never write"
+    )
     ap.add_argument("--output", default=None, help="write to this path instead of data/")
     args = ap.parse_args()
     out_path = Path(args.output) if args.output else None
@@ -371,8 +413,10 @@ def main() -> int:
     data["human_rights_violations"] = merged
     data["last_update"] = today.strftime("%Y-%m-%dT%H:%M:%S+00:00")
 
-    print(f"  {len(fresh)} fresh -> {len(valid)} valid ({dropped} dropped), "
-          f"{added} new, {total} total in layer")
+    print(
+        f"  {len(fresh)} fresh -> {len(valid)} valid ({dropped} dropped), "
+        f"{added} new, {total} total in layer"
+    )
 
     if not args.dry_run:
         target = out_path or DEFAULT_OUTPUT

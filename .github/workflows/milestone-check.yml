@@ -16,6 +16,8 @@ on:
       - "scripts/sync_milestones.py"
       - "scripts/sync_layers.py"
       - "scripts/scrape_historical_milestones.py"
+      - "scripts/metric_coverage.py"
+      - "data/metric_coverage_baseline.json"
       - "data/historical_milestones.json"
 
 permissions:
@@ -81,11 +83,28 @@ jobs:
         # toward filling the gaps rather than a timestamp every six hours.
         run: python scripts/coverage_report.py --snapshot
 
+      - name: Report metric comparability
+        # Widening the source list makes the raw record count go up, which reads
+        # as progress. It is not: a record whose value is its own title can never
+        # be ranked against anything. This reports, per (category, subcategory),
+        # the share of records carrying a number AND a unit, and whether those
+        # records agree on the unit - the two things that decide whether the
+        # published set can be compared at all.
+        run: python scripts/metric_coverage.py
+
       - name: Reject null-island geocoding
         # (0,0) is upstream's "unknown location" sentinel. Storing it plots a dot
         # in the Gulf of Guinea, and check_events has always rejected it while
         # check_milestones used to accept it - so it reached main from a green run.
         run: python scripts/coverage_report.py --fail-on-null-island --quiet
+
+      - name: Gate metric comparability
+        # Fails the job when a subcategory gets LESS comparable than the recorded
+        # baseline, when a new subcategory mixes units, or when a metric that was
+        # extractable is republished as prose. Adding records never fails it.
+        # The baseline is a ratchet: when comparability genuinely improves, re-record
+        # it with --update-baseline so the bar moves up rather than drifting.
+        run: python scripts/metric_coverage.py --gate
 
       - name: Publish invariants
         # Before the commit, alongside validate data files: a refresh that breaks a

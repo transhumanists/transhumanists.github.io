@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>transhumanists - live worldmap</title>
+  <meta name="description" content="Live world map of human progress: breakthroughs, conflicts and deployments pinned by geolocation.">
+  <meta name="robots" content="noindex, follow">
+  <link rel="canonical" href="https://transhumanists.github.io/">
+  <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/assets/css/main.css">
+  <style>
+    /* Isolation overrides. main.css sizes #world-map by the map plate's own 360/142
+       ratio (main.css:363), which is right for a section on the dashboard page and
+       wrong here: inside an embed the frame already has the shape we want, so the
+       map fills the viewport and main.css' letterbox padding is dropped. */
+    html, body { height: 100%; }
+    body { margin: 0; overflow: hidden; background: var(--bg, #060b14); }
+    #world-map { width: 100%; height: 100vh; height: 100dvh; max-width: 100%; aspect-ratio: auto; border-radius: 0; }
+
+    /* ---------------------------------------------------------------------
+       Preview mode.
+
+       map.html is embedded by the Weebly site, where it is a poster: the map
+       is deliberately obscured and cycled through its data layers. Opened
+       directly - or framed by anyone else - it is the full, interactive map.
+       The switch is decided by scripts below and lands as this one class, so
+       everything visual is here and nothing behavioural is in the stylesheet.
+
+       The blur is not decoration: it is the point. A teaser that looks like
+       the finished article would be a lie about what the page is, so the
+       overlay says plainly that this is a blurred preview.
+       --------------------------------------------------------------------- */
+    #world-map.wm-teaser #world-map-canvas {
+      filter: blur(2.6px) saturate(0.55) contrast(1.12);
+      animation: wmDrift 14s ease-in-out infinite alternate;
+      transform: scale(1.04);
+    }
+    @keyframes wmDrift {
+      from { filter: blur(2.6px) saturate(0.55) contrast(1.12) hue-rotate(0deg); }
+      to   { filter: blur(3.4px) saturate(0.4)  contrast(1.2)  hue-rotate(14deg); }
+    }
+    /* Static grain over the plate, inline so the page keeps its zero-dependency
+       rule. Turbulence rather than a tiled PNG: one data URI, no request. */
+    #world-map.wm-teaser::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      opacity: 0.28;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)' opacity='0.55'/%3E%3C/svg%3E");
+      animation: wmGrain 0.9s steps(4) infinite;
+    }
+    @keyframes wmGrain {
+      0%   { background-position: 0 0; }
+      25%  { background-position: -30px 20px; }
+      50%  { background-position: 20px -25px; }
+      75%  { background-position: -15px -10px; }
+      100% { background-position: 0 0; }
+    }
+    #wm-teaser {
+      position: fixed;
+      inset: auto 0 0 0;
+      z-index: 40;
+      display: none;
+      gap: 10px;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      padding: 14px 18px;
+      font: 500 14px/1.45 system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+      color: #e8f0ff;
+      background: linear-gradient(180deg, rgba(6, 11, 20, 0) 0%, rgba(6, 11, 20, 0.92) 55%);
+      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+    }
+    #wm-teaser.wm-on { display: flex; }
+    #wm-teaser .wm-teaser-note { margin: 0; opacity: 0.82; font-weight: 400; }
+    #wm-teaser .wm-layer { font-weight: 700; color: #7fd4ff; }
+    #wm-teaser a {
+      color: #0b1020;
+      background: linear-gradient(135deg, #7fd4ff, #b39dff);
+      padding: 8px 14px;
+      border-radius: 999px;
+      text-decoration: none;
+      font-weight: 700;
+      white-space: nowrap;
+      text-shadow: none;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      #world-map.wm-teaser #world-map-canvas,
+      #world-map.wm-teaser::after { animation: none; }
+    }
+  </style>
+</head>
+<body>
+    <div id="world-map">
+      <canvas id="world-map-canvas"></canvas>
+      <noscript>
+        <p style="margin:0;padding:24px;font-family:system-ui,sans-serif;color:#cfe0ff;background:#060b14">
+          The worldmap needs JavaScript. The same data is readable at
+          <a style="color:#7fd4ff" href="/">the dashboard</a>.
+        </p>
+      </noscript>
+      <div class="map-overlay" aria-live="polite">
+        <div class="map-hint-row">
+          <button id="filter-recent" class="map-hint" aria-pressed="false">
+            <span class="map-hint-dot" style="background: var(--green);"></span>
+            <span class="map-hint-title">
+              <span id="map-stat-active">—</span>
+              <span>breakthrough(s) this week</span>
+            </span>
+          </button>
+        </div>
+        <div class="map-hint-row">
+          <button id="filter-military" class="map-hint" aria-pressed="false">
+            <span class="map-hint-dot" style="background: var(--red);"></span>
+            <span class="map-hint-title">
+              <span id="map-stat-conflicts">—</span>
+              <span>active conflict zones,</span>
+              <span id="map-stat-fleets">—</span>
+              <span>deployments</span>
+            </span>
+          </button>
+        </div>
+        <div class="map-hint-row">
+          <button id="filter-crisis" class="map-hint" aria-pressed="false">
+            <span class="map-hint-dot" style="background: var(--purple);"></span>
+            <span class="map-hint-title">
+              <span id="map-stat-crises">—</span>
+              <span>humanitarian crises</span>
+            </span>
+          </button>
+        </div>
+      </div>
+      <div class="map-timeline" id="map-timeline" role="slider" aria-label="Timeline" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100" tabindex="0">
+        <div class="map-timeline-track" id="map-timeline-track">
+          <div class="map-timeline-years" id="map-timeline-years"></div>
+          <div class="map-timeline-handle" id="map-timeline-handle" role="slider" aria-label="Year" tabindex="0"></div>
+        </div>
+        <div class="map-timeline-year-label" id="map-timeline-year-label"></div>
+      </div>
+      <div class="map-tooltip" id="map-tooltip" role="tooltip"></div>
+    </div>
+
+  <!--
+    Preview chrome. A sibling of #world-map on purpose: everything inside
+    #world-map is the block copied from index.md, and test/map_page.test.mjs
+    asserts that block byte-for-byte, so teaser markup living in here would fail
+    the drift guard on every edit.
+  -->
+  <aside id="wm-teaser" aria-live="polite">
+    <p class="wm-teaser-note">
+      Blurred preview &mdash; showing <span class="wm-layer" id="wm-teaser-layer">live layers</span>
+    </p>
+    <a href="https://transhumanists.github.io/#world-map" target="_blank" rel="noopener">Open the full worldmap &rarr;</a>
+  </aside>
+
+  <!--
+    Who gets the preview.
+
+    Direct visitors, and every frame that is not the Weebly site, get the real
+    map: full detail, every layer, interactive. Only the known embed gets the
+    obscured cycling poster.
+
+    The framing test is the reliable signal. The referrer test narrows it, and
+    cannot be the whole answer: the embed is cross-origin, so this page cannot
+    read where it was framed from, and browsers send only the origin under the
+    default strict-origin-when-cross-origin policy. Anything stronger - checking
+    the visitor's IP, or resolving the referrer host - needs either a third-party
+    lookup or an edge function, and this repository has neither; the page stays
+    dependency-free by design. So the decision is made from what a browser will
+    actually tell us, and every path that cannot identify the embed as the
+    Weebly site resolves to the full map.
+  -->
+  <script>
+  (function(){
+    var EMBED_ORIGINS = ['https://transhumanists.weebly.com'];
+    var DWELL_MS = 4500;
+    var LEGEND_WAIT_MS = 12000;
+    var POLL_MS = 250;
+
+    function isKnownEmbed(ref){
+      return EMBED_ORIGINS.some(function(origin){ return ref.indexOf(origin) === 0; });
+    }
+    function wantsPreview(){
+      // Explicit override, and how the preview is exercised without an iframe
+      // of a live Weebly page. Anything else is unrecognised, so it is ignored
+      // rather than guessed at.
+      var flag = new URLSearchParams(window.location.search).get('preview');
+      if(flag === '1') return true;
+      if(flag === '0') return false;
+
+      var framed = true;
+      // Reading window.top throws when the parent is cross-origin, which is
+      // itself proof that there is one.
+      try { framed = window.self !== window.top; } catch(e){ framed = true; }
+      if(!framed) return false;
+
+      var referrer = document.referrer || '';
+      // No referrer means unidentifiable, not foreign: privacy settings strip it
+      // from perfectly good embeds, and the frame itself is still the signal.
+      return referrer === '' || isKnownEmbed(referrer);
+    }
+
+    if(!wantsPreview()) return;
+
+    var map = document.getElementById('world-map');
+    var bar = document.getElementById('wm-teaser');
+    var readout = document.getElementById('wm-teaser-layer');
+    if(!map || !bar) return;
+    map.classList.add('wm-teaser');
+    bar.classList.add('wm-on');
+
+    var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if(reduced) return;   // a still poster: the blur stays, nothing moves
+
+    var keys = null, step = 0, timer = 0, stopped = false, deadline = Date.now() + LEGEND_WAIT_MS;
+
+    function rows(){ return document.querySelectorAll('#map-legend [data-layer]'); }
+    function rowFor(key){ return document.querySelector('#map-legend [data-layer="' + key + '"]'); }
+    // The legend is rebuilt whenever it re-renders, so a captured node can go
+    // stale between steps. State is read from aria-pressed, which is what the
+    // rows set from the layer's actual visibility.
+    function setRow(key, on){
+      var row = rowFor(key);
+      if(row && (row.getAttribute('aria-pressed') === 'true') !== on) row.click();
+    }
+    function labelFor(key){
+      var row = rowFor(key);
+      var label = row && row.querySelector('.map-legend-label');
+      return (label && label.textContent || key).trim();
+    }
+    function advance(){
+      if(stopped) return;
+      if(keys === null){
+        keys = Array.prototype.map.call(rows(), function(r){ return r.getAttribute('data-layer'); });
+        if(!keys.length){
+          // No legend yet: data still loading, or nothing to show. Keep looking
+          // until the deadline, then leave the map alone rather than spinning.
+          if(Date.now() > deadline) return;
+          timer = setTimeout(advance, POLL_MS);
+          return;
+        }
+      }
+      keys.forEach(function(key){ setRow(key, false); });
+      // The legend can be rebuilt with fewer rows than when the keys were read -
+      // a filter or a data refresh - so the cursor can run off the end. Rest is
+      // the right answer there, not an exception inside a timer.
+      var key = keys[step];
+      if(!key) return;
+      setRow(key, true);
+      if(readout) readout.textContent = labelFor(key);
+      step++;
+      if(step >= keys.length) return;   // one full pass, then it rests
+      timer = setTimeout(advance, DWELL_MS);
+    }
+    function pause(){
+      if(timer){ clearTimeout(timer); timer = 0; }
+    }
+
+    // The first step only after the legend exists, but the fuzz is already on.
+    timer = setTimeout(advance, POLL_MS);
+    document.addEventListener('visibilitychange', function(){
+      pause();
+      if(!document.hidden && !stopped) advance();
+    });
+    // A visitor who touches the legend wants control, not a slideshow.
+    document.addEventListener('click', function(e){
+      if(e.target && e.target.closest && e.target.closest('#map-legend')){
+        stopped = true;
+        pause();
+      }
+    }, true);
+  })();
+  </script>
+
+  <!--
+    Embed target for the Weebly page and any other third-party frame.
+
+    The markup above is a copy of the WORLD MAP block in index.md, and worldmap.js
+    reaches for its element ids without checking (map-legend, map-timeline-handle,
+    terminator-toggle and friends are built by the script, but #world-map,
+    #world-map-canvas, #map-tooltip and the filter buttons are not). If the
+    dashboard block changes, copy the change here too - a rename on one page only
+    renders a blank plate on the other.
+
+    zoom-in, zoom-out and reset-view are read at worldmap.js:4095-4097 and exist
+    on neither page; the reads land on null and the script carries on. Do not add
+    them here to "fix" the isolated page - that would be a behaviour change to the
+    dashboard's map, not a port.
+
+    Only main.css and worldmap.js are loaded on purpose: the site layout would drag
+    in nav, footer, the ecosystem directory and the auth dock, and none of it
+    belongs inside a frame. worldmap.js fetches /data/events.json and
+    /data/world_layers.json relative to this origin, which is why this page has to
+    stay on the site rather than being served from somewhere else.
+
+    There is deliberately no CSP meta tag here. The one in _layouts/default.html
+    sets frame-ancestors 'none', which browsers ignore when it arrives in a meta
+    element - and would block this page from being framed if it ever arrived as a
+    real header. GitHub Pages sends no X-Frame-Options and no CSP header (verified
+    against /live.html), so framing works without one.
+  -->
+  <script src="/assets/js/worldmap.js"></script>
+</body>
+</html>

@@ -20,6 +20,7 @@ Options:
     --dry-run           Show what would be ingested without writing
     --validate-only     Validate the catalog schema and exit
 """
+
 from __future__ import annotations
 
 import argparse
@@ -31,14 +32,22 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import location_contract as lc
-
 import sync_milestones as sm
 
 DEFAULT_CATALOG = Path("data/historical_milestones.json")
 DEFAULT_HISTORY = Path("data/milestones_history.json")
 DEFAULT_LIMIT = 5
 
-REQUIRED_CATALOG_FIELDS = {"id", "category", "subcategory", "title", "date", "source", "url", "geolocation"}
+REQUIRED_CATALOG_FIELDS = {
+    "id",
+    "category",
+    "subcategory",
+    "title",
+    "date",
+    "source",
+    "url",
+    "geolocation",
+}
 
 
 def validate_catalog_entry(entry: dict, index: int) -> list[str]:
@@ -74,7 +83,9 @@ def validate_catalog_entry(entry: dict, index: int) -> list[str]:
                 if not (-90 <= lat <= 90) or not (-180 <= lon <= 180):
                     errors.append(f"Entry {index}: geolocation out of bounds")
                 elif lc.is_unlocated({"lat": lat, "lon": lon}):
-                    errors.append(f"Entry {index}: geolocation is (0, 0) - will be skipped by build_events")
+                    errors.append(
+                        f"Entry {index}: geolocation is (0, 0) - will be skipped by build_events"
+                    )
             except (ValueError, TypeError):
                 errors.append(f"Entry {index}: geolocation not numeric")
     if "value" in entry:
@@ -150,18 +161,30 @@ def pick_next_batch(catalog: dict, existing_ids: set[str], limit: int) -> list[d
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--limit", type=int, default=DEFAULT_LIMIT,
-                    help=f"Number of entries to ingest per run (default: {DEFAULT_LIMIT})")
-    ap.add_argument("--catalog", type=Path, default=DEFAULT_CATALOG,
-                    help="Path to the historical milestone catalog")
-    ap.add_argument("--history", type=Path, default=DEFAULT_HISTORY,
-                    help="Path to the archive file")
-    ap.add_argument("--today", default=None,
-                    help="Override today's date (YYYY-MM-DD) for deterministic tests")
-    ap.add_argument("--dry-run", action="store_true",
-                    help="Show what would be ingested without writing")
-    ap.add_argument("--validate-only", action="store_true",
-                    help="Validate the catalog schema and exit")
+    ap.add_argument(
+        "--limit",
+        type=int,
+        default=DEFAULT_LIMIT,
+        help=f"Number of entries to ingest per run (default: {DEFAULT_LIMIT})",
+    )
+    ap.add_argument(
+        "--catalog",
+        type=Path,
+        default=DEFAULT_CATALOG,
+        help="Path to the historical milestone catalog",
+    )
+    ap.add_argument(
+        "--history", type=Path, default=DEFAULT_HISTORY, help="Path to the archive file"
+    )
+    ap.add_argument(
+        "--today", default=None, help="Override today's date (YYYY-MM-DD) for deterministic tests"
+    )
+    ap.add_argument(
+        "--dry-run", action="store_true", help="Show what would be ingested without writing"
+    )
+    ap.add_argument(
+        "--validate-only", action="store_true", help="Validate the catalog schema and exit"
+    )
     args = ap.parse_args()
 
     if args.limit <= 0:

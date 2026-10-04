@@ -63,7 +63,6 @@ PLACE_COORDS: dict[str, tuple[float, float, str]] = {
     "malta": (35.9, 14.5, "Southern Europe"),
     "maltese": (35.9, 14.5, "Southern Europe"),
     "cyprus": (35.1, 33.4, "Western Asia"),
-
     # --- North America ------------------------------------------------------
     "united states": (39.8, -98.6, "North America"),
     "united states of america": (39.8, -98.6, "North America"),
@@ -76,7 +75,6 @@ PLACE_COORDS: dict[str, tuple[float, float, str]] = {
     "cuba": (21.5, -77.8, "Caribbean"),
     "haiti": (19.0, -72.3, "Caribbean"),
     "jamaica": (18.1, -77.3, "Caribbean"),
-
     # --- South America ------------------------------------------------------
     "brazil": (-14.2, -51.9, "South America"),
     "argentina": (-38.4, -63.6, "South America"),
@@ -88,7 +86,6 @@ PLACE_COORDS: dict[str, tuple[float, float, str]] = {
     "ecuador": (-1.8, -78.2, "South America"),
     "uruguay": (-32.5, -55.8, "South America"),
     "paraguay": (-23.4, -58.4, "South America"),
-
     # --- Asia ---------------------------------------------------------------
     "china": (35.9, 104.2, "Eastern Asia"),
     "japan": (36.2, 138.3, "Eastern Asia"),
@@ -123,7 +120,6 @@ PLACE_COORDS: dict[str, tuple[float, float, str]] = {
     "brunei": (4.5, 114.7, "South-Eastern Asia"),
     "australia": (-25.3, 133.8, "Oceania"),
     "new zealand": (-41.0, 174.0, "Oceania"),
-
     # --- Middle East & West Asia -------------------------------------------
     "israel": (31.4, 34.9, "Western Asia"),
     "palestine": (31.9, 35.2, "Western Asia"),
@@ -146,7 +142,6 @@ PLACE_COORDS: dict[str, tuple[float, float, str]] = {
     "georgia": (42.3, 43.4, "Western Asia"),
     "armenia": (40.1, 45.0, "Western Asia"),
     "azerbaijan": (40.1, 47.6, "Western Asia"),
-
     # --- Africa -------------------------------------------------------------
     "morocco": (31.8, -7.1, "Northern Africa"),
     "algeria": (28.0, 1.7, "Northern Africa"),
@@ -180,7 +175,6 @@ PLACE_COORDS: dict[str, tuple[float, float, str]] = {
     "zimbabwe": (-19.0, 29.2, "Southern Africa"),
     "south africa": (-30.6, 22.9, "Southern Africa"),
     "eswatini": (-26.5, 31.5, "Southern Africa"),
-
     # --- Agencies, datasets and venues --------------------------------------
     # Not countries, but they do carry a country in their name often enough that
     # matching them beats dropping the milestone.
@@ -215,9 +209,7 @@ def _compile(name: str):
 # milestone sync. Anchored on both ends so "india" cannot match inside
 # "reimagining" and "in" cannot match a bare conjunction.
 _MATCHERS = tuple(
-    (name, _compile(name), PLACE_COORDS[name])
-    for name in _ORDERED_PLACE_NAMES
-    if len(name) >= 4
+    (name, _compile(name), PLACE_COORDS[name]) for name in _ORDERED_PLACE_NAMES if len(name) >= 4
 )
 
 

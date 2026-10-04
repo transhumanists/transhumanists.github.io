@@ -9,7 +9,6 @@ production. The duplicate check below exists so that cannot happen again.
 from __future__ import annotations
 
 import ast
-import re
 import sys
 import unittest
 from pathlib import Path
@@ -40,8 +39,9 @@ class TestTableIntegrity(unittest.TestCase):
         # A repeated key is silently dropped by Python, so the two copies could
         # disagree about a country's coordinates with no error anywhere.
         node = self._place_dict_node()
-        keys = [k.value for k in node.keys
-                if isinstance(k, ast.Constant) and isinstance(k.value, str)]
+        keys = [
+            k.value for k in node.keys if isinstance(k, ast.Constant) and isinstance(k.value, str)
+        ]
         duplicates = {k for k in keys if keys.count(k) > 1}
         self.assertEqual(duplicates, set(), f"duplicate place keys: {sorted(duplicates)}")
 
@@ -85,13 +85,13 @@ class TestMatchPlace(unittest.TestCase):
         # "democratic republic of the congo" must beat the "congo" prefix.
         self.assertEqual(
             geo_hints.match_place("report from the democratic republic of the congo")[0],
-            "democratic republic of the congo")
+            "democratic republic of the congo",
+        )
 
     def test_word_boundaries_prevent_substring_false_positives(self):
         # "india" inside "reimagining" is the failure mode that put an LLM
         # benchmark in Mumbai when the geocoder matched the bare word "in".
-        for text in ("reimagining the pipeline", "indiana dunes study",
-                     "the kindling of interest"):
+        for text in ("reimagining the pipeline", "indiana dunes study", "the kindling of interest"):
             with self.subTest(text=text):
                 self.assertIsNone(geo_hints.match_place(text))
 
@@ -131,8 +131,9 @@ class TestCompiledMatchers(unittest.TestCase):
         self.assertEqual({name for name, _p, _c in geo_hints._MATCHERS}, eligible)
 
     def test_matcher_count_matches_the_table(self):
-        self.assertEqual(len(geo_hints._MATCHERS),
-                         len([k for k in geo_hints.PLACE_COORDS if len(k) >= 4]))
+        self.assertEqual(
+            len(geo_hints._MATCHERS), len([k for k in geo_hints.PLACE_COORDS if len(k) >= 4])
+        )
 
     def test_each_matcher_carries_its_own_coordinates(self):
         for name, _pattern, coords in geo_hints._MATCHERS:
@@ -142,8 +143,10 @@ class TestCompiledMatchers(unittest.TestCase):
     def test_each_matcher_matches_its_own_name(self):
         for name, pattern, _coords in geo_hints._MATCHERS:
             with self.subTest(name=name):
-                self.assertIsNotNone(pattern.search(name.lower()),
-                                     f"compiled pattern does not match its own key {name!r}")
+                self.assertIsNotNone(
+                    pattern.search(name.lower()),
+                    f"compiled pattern does not match its own key {name!r}",
+                )
 
     def test_short_keys_are_excluded(self):
         for name, _pattern, _coords in geo_hints._MATCHERS:
@@ -155,8 +158,10 @@ class TestCompiledMatchers(unittest.TestCase):
         # would silently let a short name shadow a longer one.
         lengths = [len(name) for name, _p, _c in geo_hints._MATCHERS]
         self.assertEqual(lengths, sorted(lengths, reverse=True))
-        self.assertEqual(geo_hints.match_place("the democratic republic of the congo")[0],
-                         "democratic republic of the congo")
+        self.assertEqual(
+            geo_hints.match_place("the democratic republic of the congo")[0],
+            "democratic republic of the congo",
+        )
 
 
 class TestConvenienceAccessors(unittest.TestCase):

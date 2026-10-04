@@ -6,6 +6,7 @@ complaint. An invariant checker that only ever passes is exactly the failure mod
 this repository already hit once - the null-island gate shipped untested because the
 real data was clean.
 """
+
 from __future__ import annotations
 
 import json
@@ -155,10 +156,13 @@ class TestWalkerFindsNestedCoordinates(unittest.TestCase):
     def test_sentinel_deep_in_the_structure_is_found(self):
         # Not only at the top level of a milestone list - the point of a recursive
         # walk is that an unexpected envelope still gets checked.
-        issues = pi._content_invariants("x.json", {
-            "categories": {"a": {"milestones": []}},
-            "something_new": {"inner": [{"geolocation": {"lat": 0, "lon": 0}}]},
-        })
+        issues = pi._content_invariants(
+            "x.json",
+            {
+                "categories": {"a": {"milestones": []}},
+                "something_new": {"inner": [{"geolocation": {"lat": 0, "lon": 0}}]},
+            },
+        )
         self.assertTrue(any("unusable coordinate" in i for i in issues), issues)
 
     def test_deployment_legs_are_checked(self):
@@ -173,7 +177,8 @@ class TestWalkerFindsNestedCoordinates(unittest.TestCase):
         issues = pi.check(d)
         self.assertTrue(
             any("deployments" in i and "from" in i for i in issues),
-            "a sentinel on a deployment leg should be reported")
+            "a sentinel on a deployment leg should be reported",
+        )
 
     def test_deployment_leg_out_of_range_is_checked(self):
         d = _copy_data()

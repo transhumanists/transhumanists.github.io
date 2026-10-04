@@ -221,11 +221,15 @@
   }
   function hostOf(url) { try { return new URL(url).hostname; } catch (_) { return ''; } }
   function labelFor(host) {
-    if (host.startsWith('transhumanists')) return 'transhumanists';
-    if (host.startsWith('frenzypenguin'))   return 'FrenzyPenguin Media';
-    if (host.startsWith('openstageisland')) return 'Open Stage Island';
-    return 'neohiro';
-  }
+  if (!host) return "Unknown";
+  return host
+    .replace(/^www\./i, "")
+    .replace(/\.github\.io$/i, "")
+    .replace(/^neohiro$/, "neohiro")
+    .replace(/^frenzypenguin-media$/, "fpm")
+    .replace(/^transhumanists$/, "transhumanists")
+    .replace(/^openstageisland$/, "openstageisland");
+}
   function escapeHtml(s) {
     return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   }

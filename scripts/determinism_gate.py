@@ -67,8 +67,9 @@ def compare_runs(dir_a: Path | str, dir_b: Path | str) -> list[str]:
         # The pipeline writes to <output-dir>/data/.
         a_path, b_path = dir_a / "data" / name, dir_b / "data" / name
         if not a_path.exists() or not b_path.exists():
-            failures.append(f"{name}: missing from one or both runs "
-                            f"({a_path.exists=}, {b_path.exists=})")
+            failures.append(
+                f"{name}: missing from one or both runs ({a_path.exists=}, {b_path.exists=})"
+            )
             continue
         a, b = load_stable(a_path), load_stable(b_path)
         if a != b:
@@ -79,8 +80,7 @@ def compare_runs(dir_a: Path | str, dir_b: Path | str) -> list[str]:
 def assert_deterministic(dir_a: Path | str, dir_b: Path | str) -> None:
     failures = compare_runs(dir_a, dir_b)
     if failures:
-        raise AssertionError(
-            "Regeneration is not deterministic:\n  " + "\n  ".join(failures))
+        raise AssertionError("Regeneration is not deterministic:\n  " + "\n  ".join(failures))
 
 
 def milestone_count(data: dict) -> int:
@@ -102,14 +102,17 @@ def assert_idempotent(run_dir: Path | str) -> None:
     before, after = milestone_count(first), milestone_count(second)
     if before != after:
         raise AssertionError(
-            f"unifier is not idempotent: {before} -> {after} milestones after a second pass")
+            f"unifier is not idempotent: {before} -> {after} milestones after a second pass"
+        )
 
 
 def main(argv: list[str]) -> int:
     """CLI entry point, so CI can run this without manipulating PYTHONPATH."""
     if len(argv) < 2:
-        print(f"usage: {Path(__file__).name} <run-a-dir> <run-b-dir> [--idempotent <dir>]",
-              file=sys.stderr)
+        print(
+            f"usage: {Path(__file__).name} <run-a-dir> <run-b-dir> [--idempotent <dir>]",
+            file=sys.stderr,
+        )
         return 2
     failures = compare_runs(argv[0], argv[1])
     if failures:

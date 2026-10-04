@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Self-tests for scripts/sync_layers.py (stdlib only)."""
+
 from __future__ import annotations
 
 import json
@@ -170,15 +171,23 @@ class TestConflictZonesFromWikipedia(unittest.TestCase):
 
 class TestMergeConflictZones(unittest.TestCase):
     def test_enriches_curated_missing_start_date(self):
-        curated = [{"id": "zone-ukraine", "name": "Ukraine · Donbas front", "region": "Eastern Europe"}]
+        curated = [
+            {"id": "zone-ukraine", "name": "Ukraine · Donbas front", "region": "Eastern Europe"}
+        ]
         wiki = sl.conflict_zones_from_wikipedia(sl.parse_wikipedia_conflicts(_wikitext_fixture()))
         merged, changes = sl.merge_conflict_zones(curated, wiki)
         self.assertEqual(merged[0]["start_date"], "2022-01-01")
         self.assertTrue(any("enriched zone-ukraine" in c for c in changes))
 
     def test_keeps_more_precise_curated_start_date(self):
-        curated = [{"id": "zone-ukraine", "name": "Ukraine · Donbas front", "region": "Eastern Europe",
-                    "start_date": "2022-02-24"}]
+        curated = [
+            {
+                "id": "zone-ukraine",
+                "name": "Ukraine · Donbas front",
+                "region": "Eastern Europe",
+                "start_date": "2022-02-24",
+            }
+        ]
         wiki = sl.conflict_zones_from_wikipedia(sl.parse_wikipedia_conflicts(_wikitext_fixture()))
         merged, _ = sl.merge_conflict_zones(curated, wiki)
         self.assertEqual(merged[0]["start_date"], "2022-02-24")
@@ -186,8 +195,16 @@ class TestMergeConflictZones(unittest.TestCase):
     def test_keeps_curated_concluded_status_and_end_date(self):
         # A curator-concluded zone must never be flipped back to active by the
         # wiki merge — wiki only enriches/updates start_date.
-        curated = [{"id": "zone-colombian-conflict", "name": "Colombian conflict", "region": "South America",
-                    "status": "concluded", "start_date": "1964-01-01", "end_date": "2016-11-24"}]
+        curated = [
+            {
+                "id": "zone-colombian-conflict",
+                "name": "Colombian conflict",
+                "region": "South America",
+                "status": "concluded",
+                "start_date": "1964-01-01",
+                "end_date": "2016-11-24",
+            }
+        ]
         wiki = sl.conflict_zones_from_wikipedia(sl.parse_wikipedia_conflicts(_wikitext_fixture()))
         merged, _ = sl.merge_conflict_zones(curated, wiki)
         self.assertEqual(merged[0]["status"], "concluded")
@@ -211,8 +228,12 @@ class TestMergeConflictZones(unittest.TestCase):
 
 class TestNormalization(unittest.TestCase):
     def test_fleet_concluded_derived_from_end_date(self):
-        fleet = {"id": "fleet-01", "from": {"lat": 1, "lon": 2}, "to": {"lat": 3, "lon": 4},
-                 "end_date": "2023-06-01"}
+        fleet = {
+            "id": "fleet-01",
+            "from": {"lat": 1, "lon": 2},
+            "to": {"lat": 3, "lon": 4},
+            "end_date": "2023-06-01",
+        }
         out = sl.normalize_lifecycle_fleet(fleet)
         self.assertEqual(out["status"], "concluded")
         self.assertEqual(out["start_date"], "")
@@ -223,8 +244,9 @@ class TestNormalization(unittest.TestCase):
         self.assertEqual(out["end_date"], "")
 
     def test_explicit_status_wins(self):
-        out = sl.normalize_lifecycle_fleet({"id": "fleet-03", "status": "active",
-                                            "end_date": "2023-01-01"})
+        out = sl.normalize_lifecycle_fleet(
+            {"id": "fleet-03", "status": "active", "end_date": "2023-01-01"}
+        )
         self.assertEqual(out["status"], "active")
 
     def test_zone_defaults(self):
@@ -234,9 +256,15 @@ class TestNormalization(unittest.TestCase):
         self.assertEqual(out["end_date"], "")
 
     def test_zone_preserves_explicit_concluded_status_and_end(self):
-        out = sl.normalize_lifecycle_zone({"id": "zone-x", "name": "X",
-                                           "status": "concluded", "start_date": "2020-01-01",
-                                           "end_date": "2024-06-01"})
+        out = sl.normalize_lifecycle_zone(
+            {
+                "id": "zone-x",
+                "name": "X",
+                "status": "concluded",
+                "start_date": "2020-01-01",
+                "end_date": "2024-06-01",
+            }
+        )
         self.assertEqual(out["status"], "concluded")
         self.assertEqual(out["end_date"], "2024-06-01")
 
@@ -256,15 +284,34 @@ class TestFingerprint(unittest.TestCase):
 class TestEndToEnd(unittest.TestCase):
     def _write(self, tmp: Path) -> Path:
         p = tmp / "world_layers.json"
-        p.write_text(json.dumps({
-            "version": "1.0.0",
-            "last_update": "",
-            "conflict_zones": [{"id": "zone-ukraine", "name": "Ukraine · Donbas front",
-                                "region": "Eastern Europe", "lat": 48.38, "lon": 31.17,
-                                "radiusDeg": 4.0}],
-            "deployments": [{"id": "fleet-01", "from": {"lat": 41.5, "lon": 28.9},
-                             "to": {"lat": 44.6, "lon": 33.5}, "name": "Black Sea Fleet"}] * 3,
-        }), encoding="utf-8")
+        p.write_text(
+            json.dumps(
+                {
+                    "version": "1.0.0",
+                    "last_update": "",
+                    "conflict_zones": [
+                        {
+                            "id": "zone-ukraine",
+                            "name": "Ukraine · Donbas front",
+                            "region": "Eastern Europe",
+                            "lat": 48.38,
+                            "lon": 31.17,
+                            "radiusDeg": 4.0,
+                        }
+                    ],
+                    "deployments": [
+                        {
+                            "id": "fleet-01",
+                            "from": {"lat": 41.5, "lon": 28.9},
+                            "to": {"lat": 44.6, "lon": 33.5},
+                            "name": "Black Sea Fleet",
+                        }
+                    ]
+                    * 3,
+                }
+            ),
+            encoding="utf-8",
+        )
         return p
 
     def test_online_merge_is_applied_to_output(self):
@@ -301,12 +348,25 @@ class TestEndToEnd(unittest.TestCase):
         # with an empty "deployments" array (which would hide every fleet arrow).
         with tempfile.TemporaryDirectory() as tmp:
             p = Path(tmp) / "world_layers.json"
-            p.write_text(json.dumps({
-                "version": "1.0.0",
-                "last_update": "",
-                "conflict_zones": [{"id": "zone-ukraine", "name": "Ukraine", "lat": 48.38, "lon": 31.17}],
-                "fleet_movements": [{"id": "fleet-01", "from": {"lat": 1, "lon": 2}, "to": {"lat": 3, "lon": 4}}],
-            }), encoding="utf-8")
+            p.write_text(
+                json.dumps(
+                    {
+                        "version": "1.0.0",
+                        "last_update": "",
+                        "conflict_zones": [
+                            {"id": "zone-ukraine", "name": "Ukraine", "lat": 48.38, "lon": 31.17}
+                        ],
+                        "fleet_movements": [
+                            {
+                                "id": "fleet-01",
+                                "from": {"lat": 1, "lon": 2},
+                                "to": {"lat": 3, "lon": 4},
+                            }
+                        ],
+                    }
+                ),
+                encoding="utf-8",
+            )
             rc = sl.main(["--offline", "--write", "--json", str(p)])
             self.assertEqual(rc, 0)
             data = json.loads(p.read_text(encoding="utf-8"))

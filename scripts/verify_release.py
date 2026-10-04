@@ -65,19 +65,18 @@ def _declared_bun_version() -> str:
 
 def _bun_version(bun: str) -> str:
     try:
-        out = subprocess.run([bun, "--version"], capture_output=True,
-                             text=True, timeout=60)
+        out = subprocess.run([bun, "--version"], capture_output=True, text=True, timeout=60)
         return out.stdout.strip() or "unknown"
     except (OSError, subprocess.SubprocessError):
         return "unknown"
 
 
-def _run(argv: list[str], env: dict[str, str], cwd: Path = ROOT
-         ) -> tuple[bool, str]:
+def _run(argv: list[str], env: dict[str, str], cwd: Path = ROOT) -> tuple[bool, str]:
     """Run a step. Returns (ok, detail) where detail is tail output on failure."""
     try:
-        proc = subprocess.run(argv, cwd=str(cwd), env=env,
-                              capture_output=True, text=True, timeout=900)
+        proc = subprocess.run(
+            argv, cwd=str(cwd), env=env, capture_output=True, text=True, timeout=900
+        )
     except FileNotFoundError:
         return False, "not installed: %s" % argv[0]
     except subprocess.TimeoutExpired:
@@ -95,23 +94,42 @@ def _determinism(env: dict[str, str]) -> tuple[bool, str]:
         tmpd = Path(tmp)
         for name in ("gen-a", "gen-b"):
             ok, detail = _run(
-                [sys.executable, "scripts/sync_milestones.py",
-                 "--output-dir", str(tmpd / name),
-                 "--upstream", "data/milestones.json",
-                 "--today", DETERMINISM_TODAY], env)
+                [
+                    sys.executable,
+                    "scripts/sync_milestones.py",
+                    "--output-dir",
+                    str(tmpd / name),
+                    "--upstream",
+                    "data/milestones.json",
+                    "--today",
+                    DETERMINISM_TODAY,
+                ],
+                env,
+            )
             if not ok:
                 return False, "%s regeneration failed\n%s" % (name, detail)
 
         ok, detail = _run(
-            [sys.executable, "scripts/determinism_gate.py",
-             str(tmpd / "gen-a"), str(tmpd / "gen-b")], env)
+            [
+                sys.executable,
+                "scripts/determinism_gate.py",
+                str(tmpd / "gen-a"),
+                str(tmpd / "gen-b"),
+            ],
+            env,
+        )
         if not ok:
             return False, detail
 
         return _run(
-            [sys.executable, "scripts/check_data.py",
-             str(tmpd / "gen-a" / "data" / "events.json"),
-             str(tmpd / "gen-a" / "data" / "milestones.json")], env)
+            [
+                sys.executable,
+                "scripts/check_data.py",
+                str(tmpd / "gen-a" / "data" / "events.json"),
+                str(tmpd / "gen-a" / "data" / "milestones.json"),
+            ],
+            env,
+        )
 
 
 def _playwright_installed() -> bool:
@@ -125,27 +143,39 @@ def _playwright_installed() -> bool:
     return (ROOT / "node_modules" / "@playwright" / "test").is_dir()
 
 
-def _build_steps(bun: str, tmpdir: Path, skip_determinism: bool,
-                 skip_browser: bool) -> list[tuple[str, list[str] | None]]:
+def _build_steps(
+    bun: str, tmpdir: Path, skip_determinism: bool, skip_browser: bool
+) -> list[tuple[str, list[str] | None]]:
     """(label, argv) pairs. argv of None means the in-process determinism check."""
     steps: list[tuple[str, list[str] | None]] = [
         ("Python unit tests", [sys.executable, "-m", "pytest", "scripts/", "-q"]),
         ("Data validation", [sys.executable, "scripts/check_data.py"]),
         ("JS unit tests", [bun] + JS_UNIT_ARGV),
-        ("JS static parse", [bun, "build", "assets/js/worldmap.js",
-                             "--no-bundle", "--outdir", str(tmpdir / "parse-check")]),
+        (
+            "JS static parse",
+            [
+                bun,
+                "build",
+                "assets/js/worldmap.js",
+                "--no-bundle",
+                "--outdir",
+                str(tmpdir / "parse-check"),
+            ],
+        ),
     ]
     # Fails only on null-island, which is a correctness bug. Low year coverage and
     # unlocated records are reported but never fail the build: they are a
     # data-filling backlog, not a regression, and gating on them would block every
     # unrelated fix until the archive were complete.
-    steps.append(("No null-island geocoding",
-                  [sys.executable, "scripts/coverage_report.py",
-                   "--fail-on-null-island", "--quiet"]))
+    steps.append(
+        (
+            "No null-island geocoding",
+            [sys.executable, "scripts/coverage_report.py", "--fail-on-null-island", "--quiet"],
+        )
+    )
     # Runs after Data validation and before determinism, because it asserts
     # cross-file properties that per-file validation cannot see.
-    steps.append(("Publish invariants hold",
-                  [sys.executable, "scripts/publish_invariants.py"]))
+    steps.append(("Publish invariants hold", [sys.executable, "scripts/publish_invariants.py"]))
     if not skip_determinism:
         steps.append(("Data regeneration is deterministic", None))
     if not skip_browser and _playwright_installed():
@@ -156,25 +186,33 @@ def _build_steps(bun: str, tmpdir: Path, skip_determinism: bool,
 
 def main() -> int:
     ap = argparse.ArgumentParser(
-        description=__doc__,
-        formatter_class=argparse.RawDescriptionHelpFormatter)
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
     ap.add_argument("--bun", help="path to the bun binary to use")
-    ap.add_argument("--also-bun", action="append", default=[], metavar="PATH",
-                    help="extra bun binary to cross-check the JS suite against")
-    ap.add_argument("--skip-determinism", action="store_true",
-                    help="omit the regenerate-and-compare gate (faster inner loop)")
-    ap.add_argument("--skip-browser", action="store_true",
-                    help="omit the Playwright layout checks")
-    ap.add_argument("--require-browser", action="store_true",
-                    help="fail instead of skipping when Playwright is not installed")
-    ap.add_argument("--quiet", action="store_true",
-                    help="print only the summary and any failures")
+    ap.add_argument(
+        "--also-bun",
+        action="append",
+        default=[],
+        metavar="PATH",
+        help="extra bun binary to cross-check the JS suite against",
+    )
+    ap.add_argument(
+        "--skip-determinism",
+        action="store_true",
+        help="omit the regenerate-and-compare gate (faster inner loop)",
+    )
+    ap.add_argument("--skip-browser", action="store_true", help="omit the Playwright layout checks")
+    ap.add_argument(
+        "--require-browser",
+        action="store_true",
+        help="fail instead of skipping when Playwright is not installed",
+    )
+    ap.add_argument("--quiet", action="store_true", help="print only the summary and any failures")
     args = ap.parse_args()
 
     bun = args.bun or shutil.which("bun")
     if not bun:
-        print("FAIL  bun not found on PATH; install it or pass --bun",
-              file=sys.stderr)
+        print("FAIL  bun not found on PATH; install it or pass --bun", file=sys.stderr)
         return 2
 
     env = _env()
@@ -185,8 +223,7 @@ def main() -> int:
 
     with tempfile.TemporaryDirectory() as tmp:
         tmpdir = Path(tmp)
-        for label, argv in _build_steps(bun, tmpdir, args.skip_determinism,
-                                         args.skip_browser):
+        for label, argv in _build_steps(bun, tmpdir, args.skip_determinism, args.skip_browser):
             total_steps += 1
             step_skipped = None
             t0 = time.time()
@@ -195,8 +232,7 @@ def main() -> int:
             if step_skipped:
                 skipped.append(step_skipped)
                 if not args.quiet:
-                    print("  skip  %-42s          (no Playwright installed)"
-                          % label)
+                    print("  skip  %-42s          (no Playwright installed)" % label)
             elif ok:
                 if not args.quiet:
                     print("  ok    %-42s %5.1fs" % (label, dt))
@@ -215,18 +251,17 @@ def main() -> int:
                 failures.append((label, detail))
                 print("  FAIL  %-42s" % label)
 
-    if (not args.skip_browser and not _playwright_installed()):
+    if not args.skip_browser and not _playwright_installed():
         reason = "Browser layout checks (Playwright not installed)"
         if args.require_browser:
-            failures.append((reason,
-                             "run `bun install` to add @playwright/test, or drop "
-                             "--require-browser"))
+            failures.append(
+                (reason, "run `bun install` to add @playwright/test, or drop --require-browser")
+            )
             print("  FAIL  %-42s" % reason)
         else:
             skipped.append(reason)
             if not args.quiet:
-                print("  skip  %-42s          (run `bun install` to enable)"
-                      % reason)
+                print("  skip  %-42s          (run `bun install` to enable)" % reason)
 
     version = _bun_version(bun)
     total = time.time() - started
@@ -247,8 +282,7 @@ def main() -> int:
         return 1
 
     if skipped:
-        print("%d of %d steps skipped: %s"
-              % (len(skipped), total_steps, ", ".join(skipped)))
+        print("%d of %d steps skipped: %s" % (len(skipped), total_steps, ", ".join(skipped)))
     print("all %d steps passed in %.1fs" % (total_steps - len(skipped), total))
     return 0
 

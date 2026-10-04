@@ -1,0 +1,236 @@
+{
+  "_comment": "Accepted state of metric comparability, written by scripts/metric_coverage.py --update-baseline. The gate fails only when a subcategory gets LESS comparable than recorded here, so this file is a ratchet: improve it deliberately, never let it drift downward silently.",
+  "generated": "2026-10-04",
+  "groups": {
+    "Biotechnology & Biohacking/biosensors": {
+      "coherence": 0.5,
+      "comparable_rate": 0.667,
+      "records": 3
+    },
+    "Biotechnology & Biohacking/gene_editing": {
+      "coherence": 1.0,
+      "comparable_rate": 0.25,
+      "records": 4
+    },
+    "Biotechnology & Biohacking/gene_therapy": {
+      "coherence": 0.5,
+      "comparable_rate": 0.667,
+      "records": 3
+    },
+    "Biotechnology & Biohacking/immunotherapy": {
+      "coherence": 1.0,
+      "comparable_rate": 0.333,
+      "records": 3
+    },
+    "Biotechnology & Biohacking/longevity": {
+      "coherence": 1.0,
+      "comparable_rate": 1.0,
+      "records": 1
+    },
+    "Biotechnology & Biohacking/macroscopy": {
+      "coherence": 1.0,
+      "comparable_rate": 1.0,
+      "records": 1
+    },
+    "Biotechnology & Biohacking/medical_implants": {
+      "coherence": 1.0,
+      "comparable_rate": 1.0,
+      "records": 1
+    },
+    "Biotechnology & Biohacking/microscopy": {
+      "coherence": 1.0,
+      "comparable_rate": 0.5,
+      "records": 2
+    },
+    "Biotechnology & Biohacking/ml_perturbation": {
+      "coherence": 0.0,
+      "comparable_rate": 0.0,
+      "records": 1
+    },
+    "Biotechnology & Biohacking/neuroscience": {
+      "coherence": 1.0,
+      "comparable_rate": 0.5,
+      "records": 2
+    },
+    "Biotechnology & Biohacking/synthetic_biology": {
+      "coherence": 1.0,
+      "comparable_rate": 0.143,
+      "records": 7
+    },
+    "Computing & AGI/agentic_ai": {
+      "coherence": 0.5,
+      "comparable_rate": 0.8,
+      "records": 5
+    },
+    "Computing & AGI/benchmarks": {
+      "coherence": 0.333,
+      "comparable_rate": 0.6,
+      "records": 5
+    },
+    "Computing & AGI/computing_power": {
+      "coherence": 0.0,
+      "comparable_rate": 0.0,
+      "records": 2
+    },
+    "Computing & AGI/frontier_models": {
+      "coherence": 1.0,
+      "comparable_rate": 0.333,
+      "records": 3
+    },
+    "Computing & AGI/gpu_efficiency": {
+      "coherence": 1.0,
+      "comparable_rate": 1.0,
+      "records": 1
+    },
+    "Computing & AGI/graph_theory": {
+      "coherence": 0.0,
+      "comparable_rate": 0.0,
+      "records": 2
+    },
+    "Computing & AGI/language_models": {
+      "coherence": 0.5,
+      "comparable_rate": 0.5,
+      "records": 4
+    },
+    "Computing & AGI/legal_datasets": {
+      "coherence": 1.0,
+      "comparable_rate": 1.0,
+      "records": 1
+    },
+    "Computing & AGI/low_resource_speech": {
+      "coherence": 0.0,
+      "comparable_rate": 0.0,
+      "records": 1
+    },
+    "Computing & AGI/machine_learning": {
+      "coherence": 1.0,
+      "comparable_rate": 0.333,
+      "records": 3
+    },
+    "Computing & AGI/ml_structural_analysis": {
+      "coherence": 1.0,
+      "comparable_rate": 0.5,
+      "records": 2
+    },
+    "Computing & AGI/multimodal": {
+      "coherence": 1.0,
+      "comparable_rate": 1.0,
+      "records": 1
+    },
+    "Computing & AGI/networking": {
+      "coherence": 0.0,
+      "comparable_rate": 0.0,
+      "records": 1
+    },
+    "Computing & AGI/ocr": {
+      "coherence": 1.0,
+      "comparable_rate": 1.0,
+      "records": 1
+    },
+    "Computing & AGI/pattern_mining": {
+      "coherence": 1.0,
+      "comparable_rate": 1.0,
+      "records": 1
+    },
+    "Cybersecurity/encryption": {
+      "coherence": 0.5,
+      "comparable_rate": 0.667,
+      "records": 3
+    },
+    "Cybersecurity/exploits": {
+      "coherence": 0.5,
+      "comparable_rate": 0.333,
+      "records": 6
+    },
+    "Military & Defense/air_defense": {
+      "coherence": 0.5,
+      "comparable_rate": 0.4,
+      "records": 5
+    },
+    "Military & Defense/fleet_movements": {
+      "coherence": 1.0,
+      "comparable_rate": 1.0,
+      "records": 1
+    },
+    "Military & Defense/naval": {
+      "coherence": 1.0,
+      "comparable_rate": 1.0,
+      "records": 1
+    },
+    "Military & Defense/range": {
+      "coherence": 1.0,
+      "comparable_rate": 0.5,
+      "records": 2
+    },
+    "Quantum Physics/error_correction": {
+      "coherence": 1.0,
+      "comparable_rate": 1.0,
+      "records": 1
+    },
+    "Quantum Physics/holographic_principle": {
+      "coherence": 0.0,
+      "comparable_rate": 0.0,
+      "records": 2
+    },
+    "Quantum Physics/quantum_networking": {
+      "coherence": 1.0,
+      "comparable_rate": 1.0,
+      "records": 1
+    },
+    "Quantum Physics/quantum_resource_theory": {
+      "coherence": 0.0,
+      "comparable_rate": 0.0,
+      "records": 3
+    },
+    "Quantum Physics/quantum_supremacy": {
+      "coherence": 0.5,
+      "comparable_rate": 1.0,
+      "records": 2
+    },
+    "Quantum Physics/qubit_count": {
+      "coherence": 1.0,
+      "comparable_rate": 1.0,
+      "records": 3
+    },
+    "Quantum Physics/time_crystals": {
+      "coherence": 1.0,
+      "comparable_rate": 1.0,
+      "records": 1
+    },
+    "Renewable Energy/battery_density": {
+      "coherence": 1.0,
+      "comparable_rate": 1.0,
+      "records": 1
+    },
+    "Renewable Energy/fusion": {
+      "coherence": 0.25,
+      "comparable_rate": 1.0,
+      "records": 4
+    },
+    "Renewable Energy/solar_efficiency": {
+      "coherence": 1.0,
+      "comparable_rate": 1.0,
+      "records": 2
+    },
+    "Spaceflight & Aeronautics/deep_space": {
+      "coherence": 1.0,
+      "comparable_rate": 0.333,
+      "records": 3
+    },
+    "Spaceflight & Aeronautics/hypersonic": {
+      "coherence": 1.0,
+      "comparable_rate": 1.0,
+      "records": 1
+    },
+    "Spaceflight & Aeronautics/launch": {
+      "coherence": 1.0,
+      "comparable_rate": 0.167,
+      "records": 6
+    },
+    "Spaceflight & Aeronautics/payload": {
+      "coherence": 1.0,
+      "comparable_rate": 1.0,
+      "records": 1
+    }
+  }
+}

@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Self-tests for scripts/check_data.py (stdlib only)."""
+
 from __future__ import annotations
 
 import json
@@ -20,9 +21,15 @@ def _events_payload(*events: dict) -> dict:
     return {"last_update": "2026-09-23", "version": "1.0.0", "events": list(events)}
 
 
-def _layers_payload(zones: list[dict], fleets: list[dict], crises: list[dict] | None = None) -> dict:
-    payload = {"version": cd._FILE_VERSION, "last_update": "2026-09-25T00:00:00+00:00",
-               "conflict_zones": zones, "fleet_movements": fleets}
+def _layers_payload(
+    zones: list[dict], fleets: list[dict], crises: list[dict] | None = None
+) -> dict:
+    payload = {
+        "version": cd._FILE_VERSION,
+        "last_update": "2026-09-25T00:00:00+00:00",
+        "conflict_zones": zones,
+        "fleet_movements": fleets,
+    }
     if crises is not None:
         payload["crisis_zones"] = crises
     return payload
@@ -31,8 +38,12 @@ def _layers_payload(zones: list[dict], fleets: list[dict], crises: list[dict] | 
 class TestCheckEvents(unittest.TestCase):
     def test_happy_path(self):
         payload = _events_payload(
-            {"title": "X", "category": "Renewable Energy", "date": "2026-03-15",
-             "geolocation": {"lat": 1.5, "lon": 2.5}},
+            {
+                "title": "X",
+                "category": "Renewable Energy",
+                "date": "2026-03-15",
+                "geolocation": {"lat": 1.5, "lon": 2.5},
+            },
         )
         self.assertEqual(cd.check_events(payload["events"]), [])
 
@@ -40,37 +51,55 @@ class TestCheckEvents(unittest.TestCase):
         # Was `test_missing_geolocation_fails`. Dropping an unlocatable milestone
         # deleted it from the feed, dashboard, catalog and metrics with no trace,
         # which is worse than publishing it without a dot.
-        payload = _events_payload({"title": "X", "category": "Renewable Energy", "date": "2026-03-15"})
+        payload = _events_payload(
+            {"title": "X", "category": "Renewable Energy", "date": "2026-03-15"}
+        )
         self.assertEqual(cd.check_events(payload["events"]), [])
 
     def test_nonfinite_coordinate_fails(self):
         payload = _events_payload(
-            {"title": "X", "category": "Biotechnology & Biohacking", "date": "2026-03-15",
-             "geolocation": {"lat": 1e400, "lon": 0}},
+            {
+                "title": "X",
+                "category": "Biotechnology & Biohacking",
+                "date": "2026-03-15",
+                "geolocation": {"lat": 1e400, "lon": 0},
+            },
         )
         issues = cd.check_events(payload["events"])
         self.assertTrue(any("geolocation" in i for i in issues))
 
     def test_bool_coordinate_fails(self):
         payload = _events_payload(
-            {"title": "X", "category": "Biotechnology & Biohacking", "date": "2026-03-15",
-             "geolocation": {"lat": True, "lon": 0}},
+            {
+                "title": "X",
+                "category": "Biotechnology & Biohacking",
+                "date": "2026-03-15",
+                "geolocation": {"lat": True, "lon": 0},
+            },
         )
         issues = cd.check_events(payload["events"])
         self.assertTrue(any("geolocation" in i for i in issues))
 
     def test_out_of_range_fails(self):
         payload = _events_payload(
-            {"title": "X", "category": "Biotechnology & Biohacking", "date": "2026-03-15",
-             "geolocation": {"lat": 91, "lon": 190}},
+            {
+                "title": "X",
+                "category": "Biotechnology & Biohacking",
+                "date": "2026-03-15",
+                "geolocation": {"lat": 91, "lon": 190},
+            },
         )
         issues = cd.check_events(payload["events"])
         self.assertTrue(any("geolocation" in i for i in issues))
 
     def test_bad_title_type_fails(self):
         payload = _events_payload(
-            {"title": 42, "category": "Biotechnology & Biohacking", "date": "2026-03-15",
-             "geolocation": {"lat": 1, "lon": 1}},
+            {
+                "title": 42,
+                "category": "Biotechnology & Biohacking",
+                "date": "2026-03-15",
+                "geolocation": {"lat": 1, "lon": 1},
+            },
         )
         self.assertTrue(any("title" in i for i in cd.check_events(payload["events"])))
 
@@ -83,8 +112,12 @@ class TestCheckEvents(unittest.TestCase):
 
     def test_non_string_date_fails(self):
         payload = _events_payload(
-            {"title": "X", "category": "Renewable Energy", "date": 42,
-             "geolocation": {"lat": 1, "lon": 1}},
+            {
+                "title": "X",
+                "category": "Renewable Energy",
+                "date": 42,
+                "geolocation": {"lat": 1, "lon": 1},
+            },
         )
         issues = cd.check_events(payload["events"])
         self.assertTrue(any("date" in i for i in issues))
@@ -93,8 +126,12 @@ class TestCheckEvents(unittest.TestCase):
         # parseDateToISO would pass "2026-02-30" through unvalidated; the
         # validator must reject it so a non-date never renders on the map.
         payload = _events_payload(
-            {"title": "X", "category": "Renewable Energy", "date": "2026-02-30",
-             "geolocation": {"lat": 1, "lon": 1}},
+            {
+                "title": "X",
+                "category": "Renewable Energy",
+                "date": "2026-02-30",
+                "geolocation": {"lat": 1, "lon": 1},
+            },
         )
         issues = cd.check_events(payload["events"])
         self.assertTrue(any("date" in i for i in issues))
@@ -102,8 +139,12 @@ class TestCheckEvents(unittest.TestCase):
     def test_malformed_or_empty_date_fails(self):
         for bad in ("banana", "", "  ", "32/13/2026"):
             payload = _events_payload(
-                {"title": "X", "category": "Renewable Energy", "date": bad,
-                 "geolocation": {"lat": 1, "lon": 1}},
+                {
+                    "title": "X",
+                    "category": "Renewable Energy",
+                    "date": bad,
+                    "geolocation": {"lat": 1, "lon": 1},
+                },
             )
             issues = cd.check_events(payload["events"])
             self.assertTrue(any("date" in i for i in issues), f"bad date {bad!r}")
@@ -114,19 +155,34 @@ class TestCheckEvents(unittest.TestCase):
         # must keep the acceptance surface identical to the map's.
         for bad in ("20260315", "20260315T100000"):
             payload = _events_payload(
-                {"title": "X", "category": "Renewable Energy", "date": bad,
-                 "geolocation": {"lat": 1, "lon": 1}},
+                {
+                    "title": "X",
+                    "category": "Renewable Energy",
+                    "date": bad,
+                    "geolocation": {"lat": 1, "lon": 1},
+                },
             )
             issues = cd.check_events(payload["events"])
             self.assertTrue(any("date" in i for i in issues), f"bad date {bad!r}")
 
     def test_frontend_accepted_date_shapes_pass(self):
         # Same acceptance surface as worldmap.js parseDateToISO.
-        for good in ("2026-03-15", "15/03/2026", "15-03-2026", "2026", "2026-03",
-                     "2026-03-15T10:00:00", "2026-03-15T19:23:03+00:00"):
+        for good in (
+            "2026-03-15",
+            "15/03/2026",
+            "15-03-2026",
+            "2026",
+            "2026-03",
+            "2026-03-15T10:00:00",
+            "2026-03-15T19:23:03+00:00",
+        ):
             payload = _events_payload(
-                {"title": "X", "category": "Renewable Energy", "date": good,
-                 "geolocation": {"lat": 1, "lon": 1}},
+                {
+                    "title": "X",
+                    "category": "Renewable Energy",
+                    "date": good,
+                    "geolocation": {"lat": 1, "lon": 1},
+                },
             )
             self.assertEqual(cd.check_events(payload["events"]), [], f"good date {good!r}")
 
@@ -140,15 +196,18 @@ class TestSourceUrlScheme(unittest.TestCase):
     _ABSENT = ...  # sentinel: omit the key entirely, unlike an explicit null
 
     def _issues(self, url=_ABSENT):
-        entry = {"title": "X", "category": "Renewable Energy", "date": "2026-03-15",
-                 "geolocation": {"lat": 1, "lon": 1}}
+        entry = {
+            "title": "X",
+            "category": "Renewable Energy",
+            "date": "2026-03-15",
+            "geolocation": {"lat": 1, "lon": 1},
+        }
         if url is not self._ABSENT:
             entry["url"] = url
         return cd.check_events(_events_payload(entry)["events"])
 
     def test_https_and_http_pass(self):
-        for good in ("https://example.org/a", "http://example.org/a",
-                     "HTTPS://EXAMPLE.ORG/A"):
+        for good in ("https://example.org/a", "http://example.org/a", "HTTPS://EXAMPLE.ORG/A"):
             self.assertEqual(self._issues(good), [], f"good url {good!r}")
 
     def test_scheme_is_the_only_thing_validated(self):
@@ -167,11 +226,20 @@ class TestSourceUrlScheme(unittest.TestCase):
         # javascript: would run on click. data:/vbscript: are equally unusable.
         # The accept surface is exactly the renderers' /^https?:\/\//i test, so a
         # scheme-less or protocol-relative URL is rejected too.
-        for bad in ("javascript:alert(1)", "JavaScript:alert(1)", "data:text/html,<script>",
-                    "vbscript:msgbox", "ftp://example.org/f", "example.org/a",
-                    "//example.org/a", "https:/example.org", " javascript:alert(1)"):
+        for bad in (
+            "javascript:alert(1)",
+            "JavaScript:alert(1)",
+            "data:text/html,<script>",
+            "vbscript:msgbox",
+            "ftp://example.org/f",
+            "example.org/a",
+            "//example.org/a",
+            "https:/example.org",
+            " javascript:alert(1)",
+        ):
             self.assertTrue(
-                any("url" in i for i in self._issues(bad)), f"bad url {bad!r} must fail",
+                any("url" in i for i in self._issues(bad)),
+                f"bad url {bad!r} must fail",
             )
 
     def test_padded_url_is_accepted_so_the_gate_never_outruns_the_front_end(self):
@@ -221,12 +289,15 @@ class TestSourceUrlScheme(unittest.TestCase):
             # In the Python string, backslashes are escaped: \/
             self.assertIn(r"const SOURCE_URL_RE = /^https?:\/\//i", content)
 
+
 class TestCheckLayers(unittest.TestCase):
     def test_happy_path(self):
         zones = [{"name": "Z", "lat": 10, "lon": 10, "radiusDeg": 3}]
         fleets = [{"from": {"lat": 1, "lon": 2}, "to": {"lat": 3, "lon": 4}}]
         payload = _layers_payload(zones, fleets)
-        issues = cd.check_zones(payload["conflict_zones"]) + cd.check_fleets(payload["fleet_movements"])
+        issues = cd.check_zones(payload["conflict_zones"]) + cd.check_fleets(
+            payload["fleet_movements"]
+        )
         self.assertEqual(issues, [])
 
     def test_zone_without_name_fails(self):
@@ -399,9 +470,12 @@ class TestCheckLayerLifecycle(unittest.TestCase):
         # The validator must render the same verdict on every machine, so its
         # clock must not drift with the local timezone.
         self.assertEqual(len(cd._today_iso()), 10)
-        self.assertTrue(cd._today_iso().endswith(cd._today_iso()[4:]) == (cd._today_iso()[4] == "-"))
+        self.assertTrue(
+            cd._today_iso().endswith(cd._today_iso()[4:]) == (cd._today_iso()[4] == "-")
+        )
         import datetime as _dt
         from datetime import timezone as _tz
+
         now_utc = _dt.datetime.now(_tz.utc).isoformat()[:10]
         self.assertEqual(cd._today_iso(), now_utc)
 
@@ -409,16 +483,31 @@ class TestCheckLayerLifecycle(unittest.TestCase):
         # Deployments keep their own (CSS-coloured) lifecycle contract, so an
         # ended deployment must not trip the zone semantic rules.
         fleets = [
-            {"from": {"lat": 0, "lon": 1}, "to": {"lat": 1, "lon": 1},
-             "status": "concluded", "start_date": "2022", "end_date": "2022-12"},
-            {"from": {"lat": 0, "lon": 1}, "to": {"lat": 1, "lon": 1},
-             "status": "concluded", "start_date": "2022"},
+            {
+                "from": {"lat": 0, "lon": 1},
+                "to": {"lat": 1, "lon": 1},
+                "status": "concluded",
+                "start_date": "2022",
+                "end_date": "2022-12",
+            },
+            {
+                "from": {"lat": 0, "lon": 1},
+                "to": {"lat": 1, "lon": 1},
+                "status": "concluded",
+                "start_date": "2022",
+            },
         ]
         self.assertEqual(cd.check_fleets(fleets), [])
 
     def test_lifecycle_is_checked_on_fleets_too(self):
         fleets = [
-            {"from": {"lat": 0, "lon": 1}, "to": {"lat": 1, "lon": 1}, "status": "concluded", "start_date": "2022", "end_date": "2022-12"},
+            {
+                "from": {"lat": 0, "lon": 1},
+                "to": {"lat": 1, "lon": 1},
+                "status": "concluded",
+                "start_date": "2022",
+                "end_date": "2022-12",
+            },
             {"from": {"lat": 0, "lon": 1}, "to": {"lat": 1, "lon": 1}, "status": "whatever"},
         ]
         issues = cd.check_fleets(fleets)
@@ -457,19 +546,26 @@ class TestSpecificUrlRule(unittest.TestCase):
     def test_bare_origins_are_not_specific(self):
         import milestone_identity
 
-        for url in ("https://spacex.com", "https://www.nature.com/",
-                    "http://example.org", "https://arxiv.org", ""):
+        for url in (
+            "https://spacex.com",
+            "https://www.nature.com/",
+            "http://example.org",
+            "https://arxiv.org",
+            "",
+        ):
             with self.subTest(url=url):
                 self.assertFalse(milestone_identity.is_specific_url(url))
 
     def test_document_urls_are_specific(self):
         import milestone_identity
 
-        for url in ("https://arxiv.org/abs/2401.12345",
-                    "https://www.nature.com/articles/s41587-026-03307-w",
-                    "https://en.wikipedia.org/wiki/IBM_Q_System_One",
-                    "https://example.com/paper.pdf",
-                    "https://example.com/search?q=khipu"):
+        for url in (
+            "https://arxiv.org/abs/2401.12345",
+            "https://www.nature.com/articles/s41587-026-03307-w",
+            "https://en.wikipedia.org/wiki/IBM_Q_System_One",
+            "https://example.com/paper.pdf",
+            "https://example.com/search?q=khipu",
+        ):
             with self.subTest(url=url):
                 self.assertTrue(milestone_identity.is_specific_url(url))
 
@@ -501,12 +597,22 @@ class TestSpecificUrlRule(unittest.TestCase):
     def test_two_spacex_flights_sharing_an_org_url_do_not_merge(self):
         import sync_milestones
 
-        a = {"title": "Starship payload to LEO", "value": "156", "unit": "t",
-             "date": "2026-06-30", "category": "Spaceflight & Aeronautics",
-             "url": "https://spacex.com"}
-        b = {"title": "Falcon Heavy lift to GTO", "value": "156", "unit": "t",
-             "date": "2026-06-30", "category": "Spaceflight & Aeronautics",
-             "url": "https://spacex.com"}
+        a = {
+            "title": "Starship payload to LEO",
+            "value": "156",
+            "unit": "t",
+            "date": "2026-06-30",
+            "category": "Spaceflight & Aeronautics",
+            "url": "https://spacex.com",
+        }
+        b = {
+            "title": "Falcon Heavy lift to GTO",
+            "value": "156",
+            "unit": "t",
+            "date": "2026-06-30",
+            "category": "Spaceflight & Aeronautics",
+            "url": "https://spacex.com",
+        }
         self.assertFalse(sync_milestones._dedupe_same_report(a, b))
         out, changes = sync_milestones.unify_duplicate_milestones([a, b])
         self.assertEqual(len(out), 2)
@@ -515,44 +621,69 @@ class TestSpecificUrlRule(unittest.TestCase):
     def test_same_specific_document_still_merges(self):
         import sync_milestones
 
-        a = {"title": "Alpha result", "value": "5", "unit": "x",
-             "date": "2026-06-30", "category": "Quantum Physics",
-             "url": "https://arxiv.org/abs/2401.1"}
-        b = {"title": "Beta result", "value": "5", "unit": "x",
-             "date": "2026-06-30", "category": "Quantum Physics",
-             "url": "https://arxiv.org/abs/2401.1"}
+        a = {
+            "title": "Alpha result",
+            "value": "5",
+            "unit": "x",
+            "date": "2026-06-30",
+            "category": "Quantum Physics",
+            "url": "https://arxiv.org/abs/2401.1",
+        }
+        b = {
+            "title": "Beta result",
+            "value": "5",
+            "unit": "x",
+            "date": "2026-06-30",
+            "category": "Quantum Physics",
+            "url": "https://arxiv.org/abs/2401.1",
+        }
         self.assertTrue(sync_milestones._dedupe_same_report(a, b))
         out, _ = sync_milestones.unify_duplicate_milestones([a, b])
         self.assertEqual(len(out), 1)
 
-
     def test_bare_origins_are_not_specific(self):
         import milestone_identity
 
-        for url in ("https://spacex.com", "https://www.nature.com/",
-                    "http://example.org", "https://arxiv.org", ""):
+        for url in (
+            "https://spacex.com",
+            "https://www.nature.com/",
+            "http://example.org",
+            "https://arxiv.org",
+            "",
+        ):
             with self.subTest(url=url):
                 self.assertFalse(milestone_identity.is_specific_url(url))
 
     def test_document_urls_are_specific(self):
         import milestone_identity
 
-        for url in ("https://arxiv.org/abs/2401.12345",
-                    "https://www.nature.com/articles/s41587-026-03307-w",
-                    "https://en.wikipedia.org/wiki/IBM_Q_System_One",
-                    "https://example.com/paper.pdf",
-                    "https://example.com/search?q=khipu"):
+        for url in (
+            "https://arxiv.org/abs/2401.12345",
+            "https://www.nature.com/articles/s41587-026-03307-w",
+            "https://en.wikipedia.org/wiki/IBM_Q_System_One",
+            "https://example.com/paper.pdf",
+            "https://example.com/search?q=khipu",
+        ):
             with self.subTest(url=url):
                 self.assertTrue(milestone_identity.is_specific_url(url))
 
     def test_title_tokens_still_merge_records_without_a_url(self):
         import sync_milestones
 
-        a = {"title": "Khipu mining result achieved", "value": "0.86",
-             "date": "2026-06-30", "category": "Computing & AGI"}
-        b = {"title": "Khipu mining result reported", "value": "0.86",
-             "date": "2026-06-30", "category": "Computing & AGI"}
+        a = {
+            "title": "Khipu mining result achieved",
+            "value": "0.86",
+            "date": "2026-06-30",
+            "category": "Computing & AGI",
+        }
+        b = {
+            "title": "Khipu mining result reported",
+            "value": "0.86",
+            "date": "2026-06-30",
+            "category": "Computing & AGI",
+        }
         self.assertTrue(sync_milestones._dedupe_same_report(a, b))
+
 
 class TestSharedIdentityRule(unittest.TestCase):
     """The unifier and the validator must agree on what a duplicate is.
@@ -587,45 +718,96 @@ class TestSharedIdentityRule(unittest.TestCase):
 
         pairs = [
             # Same date/value, corroborating title, different URLs -> one result.
-            ({"title": "Khipu mining result achieved", "value": "0.86",
-              "date": "2026-06-30", "url": "https://arxiv.org/abs/1"},
-             {"title": "Khipu mining result reported", "value": 0.86,
-              "date": "2026-06-30", "url": "https://arxiv.org/abs/2"}, True),
+            (
+                {
+                    "title": "Khipu mining result achieved",
+                    "value": "0.86",
+                    "date": "2026-06-30",
+                    "url": "https://arxiv.org/abs/1",
+                },
+                {
+                    "title": "Khipu mining result reported",
+                    "value": 0.86,
+                    "date": "2026-06-30",
+                    "url": "https://arxiv.org/abs/2",
+                },
+                True,
+            ),
             # Same specific article -> one result.
-            ({"title": "Alpha result", "value": "5", "date": "2026-06-30",
-              "url": "https://arxiv.org/abs/9"},
-             {"title": "Beta result", "value": "5", "date": "2026-06-30",
-              "url": "https://arxiv.org/abs/9"}, True),
+            (
+                {
+                    "title": "Alpha result",
+                    "value": "5",
+                    "date": "2026-06-30",
+                    "url": "https://arxiv.org/abs/9",
+                },
+                {
+                    "title": "Beta result",
+                    "value": "5",
+                    "date": "2026-06-30",
+                    "url": "https://arxiv.org/abs/9",
+                },
+                True,
+            ),
             # Shared generic org URL is not corroboration -> two results.
-            ({"title": "Starship payload to LEO", "value": "156", "date": "2026-06-30",
-              "url": "https://spacex.com"},
-             {"title": "Falcon Heavy lift to GTO", "value": "156", "date": "2026-06-30",
-              "url": "https://spacex.com"}, False),
+            (
+                {
+                    "title": "Starship payload to LEO",
+                    "value": "156",
+                    "date": "2026-06-30",
+                    "url": "https://spacex.com",
+                },
+                {
+                    "title": "Falcon Heavy lift to GTO",
+                    "value": "156",
+                    "date": "2026-06-30",
+                    "url": "https://spacex.com",
+                },
+                False,
+            ),
         ]
         for a, b, expected in pairs:
             with self.subTest(pair=(a["title"], b["title"])):
                 verdict = milestone_identity.same_report(a, b)
                 self.assertEqual(verdict, expected)
                 # The unifier must reach the same conclusion end to end.
-                merged, _ = sync_milestones.unify_duplicate_milestones([
-                    dict(a, id="ms-a", unit="t", category="Computing & AGI"),
-                    dict(b, id="ms-b", unit="t", category="Computing & AGI"),
-                ])
+                merged, _ = sync_milestones.unify_duplicate_milestones(
+                    [
+                        dict(a, id="ms-a", unit="t", category="Computing & AGI"),
+                        dict(b, id="ms-b", unit="t", category="Computing & AGI"),
+                    ]
+                )
                 self.assertEqual(len(merged), 1 if expected else 2)
 
     def test_paired_and_non_paired_cases_agree(self):
         import milestone_identity
         import sync_milestones
 
-        a = {"title": "Khipu mining result achieved", "value": "0.86",
-             "date": "2026-06-30", "url": "https://arxiv.org/abs/1"}
-        b = {"title": "Khipu mining result reported", "value": 0.86,
-             "date": "2026-06-30", "url": "https://arxiv.org/abs/2"}
+        a = {
+            "title": "Khipu mining result achieved",
+            "value": "0.86",
+            "date": "2026-06-30",
+            "url": "https://arxiv.org/abs/1",
+        }
+        b = {
+            "title": "Khipu mining result reported",
+            "value": 0.86,
+            "date": "2026-06-30",
+            "url": "https://arxiv.org/abs/2",
+        }
         # Generic shared URL, unrelated content: not the same reported result.
-        c = {"title": "Starship payload to LEO", "value": "156",
-             "date": "2026-06-30", "url": "https://spacex.com"}
-        d = {"title": "Falcon Heavy lift to GTO", "value": "156",
-             "date": "2026-06-30", "url": "https://spacex.com"}
+        c = {
+            "title": "Starship payload to LEO",
+            "value": "156",
+            "date": "2026-06-30",
+            "url": "https://spacex.com",
+        }
+        d = {
+            "title": "Falcon Heavy lift to GTO",
+            "value": "156",
+            "date": "2026-06-30",
+            "url": "https://spacex.com",
+        }
 
         for x, y, expected in ((a, b, True), (c, d, False), (a, c, False)):
             with self.subTest(pair=(x["title"], y["title"])):
@@ -635,8 +817,13 @@ class TestSharedIdentityRule(unittest.TestCase):
     def test_group_keys_differ_only_by_unit(self):
         import milestone_identity
 
-        rec = {"title": "T", "value": "0.86", "date": "2026-06-30",
-               "category": "Computing & AGI", "unit": "TWh"}
+        rec = {
+            "title": "T",
+            "value": "0.86",
+            "date": "2026-06-30",
+            "category": "Computing & AGI",
+            "unit": "TWh",
+        }
         with_unit = milestone_identity.report_group_key(rec, include_unit=True)
         without_unit = milestone_identity.report_group_key(rec, include_unit=False)
         self.assertEqual(len(with_unit), 4)
@@ -690,14 +877,20 @@ class TestSchemaMatchesEnforcement(unittest.TestCase):
     def test_documented_optionality_matches_enforcement(self):
         # The doc says optional, so enforcement must agree: an event with no
         # geolocation and no flag has to pass.
-        payload = _events_payload({
-            "title": "X", "category": "Robotics & Drones", "date": "2026-03-15"})
+        payload = _events_payload(
+            {"title": "X", "category": "Robotics & Drones", "date": "2026-03-15"}
+        )
         self.assertEqual(cd.check_events(payload["events"]), [])
 
     def test_documented_rejection_of_null_island_matches_enforcement(self):
-        payload = _events_payload({
-            "title": "X", "category": "Robotics & Drones", "date": "2026-03-15",
-            "geolocation": {"lat": 0, "lon": 0}})
+        payload = _events_payload(
+            {
+                "title": "X",
+                "category": "Robotics & Drones",
+                "date": "2026-03-15",
+                "geolocation": {"lat": 0, "lon": 0},
+            }
+        )
         issues = cd.check_events(payload["events"])
         self.assertTrue(any("no-location marker" in i for i in issues), issues)
 
@@ -712,8 +905,12 @@ class TestUnlocatedEvents(unittest.TestCase):
 
     def _event(self, **over):
         base = {
-            "id": "ev-1", "title": "T", "category": "Cybersecurity",
-            "date": "2026-03-15", "source": "S", "value": "1",
+            "id": "ev-1",
+            "title": "T",
+            "category": "Cybersecurity",
+            "date": "2026-03-15",
+            "source": "S",
+            "value": "1",
         }
         base.update(over)
         return base
@@ -743,10 +940,12 @@ class TestUnlocatedEvents(unittest.TestCase):
 
     def test_unlocated_events_still_participate_in_ordering_and_duplicate_checks(self):
         # Being unlocated must not exempt a record from list-level invariants.
-        issues = cd.check_events([
-            self._event(id="ev-a", title="Old", date="2026-01-01", located=False),
-            self._event(id="ev-b", title="New", date="2026-09-01", located=False),
-        ])
+        issues = cd.check_events(
+            [
+                self._event(id="ev-a", title="Old", date="2026-01-01", located=False),
+                self._event(id="ev-b", title="New", date="2026-09-01", located=False),
+            ]
+        )
         self.assertTrue(any("newest-first" in i for i in issues), issues)
 
 
@@ -758,10 +957,17 @@ class TestEventOrdering(unittest.TestCase):
     milestone ended up at index 54.
     """
 
-    def _ev(self, i, title, value, date, url="https://example.com/x", cat="Biotechnology & Biohacking"):
+    def _ev(
+        self, i, title, value, date, url="https://example.com/x", cat="Biotechnology & Biohacking"
+    ):
         return {
-            "id": i, "title": title, "category": cat, "value": value,
-            "date": date, "url": url, "geolocation": {"lat": 1, "lon": 1},
+            "id": i,
+            "title": title,
+            "category": cat,
+            "value": value,
+            "date": date,
+            "url": url,
+            "geolocation": {"lat": 1, "lon": 1},
         }
 
     def test_newest_first_passes(self):
@@ -802,16 +1008,31 @@ class TestDuplicateReportDetection(unittest.TestCase):
 
     def _ev(self, i, title, value, date, url="https://example.com/x", cat="Computing & AGI"):
         return {
-            "id": i, "title": title, "category": cat, "value": value,
-            "date": date, "url": url, "geolocation": {"lat": 1, "lon": 1},
+            "id": i,
+            "title": title,
+            "category": cat,
+            "value": value,
+            "date": date,
+            "url": url,
+            "geolocation": {"lat": 1, "lon": 1},
         }
 
     def test_same_metric_same_date_same_category_is_reported(self):
         events = [
-            self._ev("x1", "Khipu mining result achieved", "0.86", "2026-06-30",
-                     url="https://arxiv.org/abs/1"),
-            self._ev("x2", "Khipu mining result reported", "0.86", "2026-06-30",
-                     url="https://arxiv.org/abs/2"),
+            self._ev(
+                "x1",
+                "Khipu mining result achieved",
+                "0.86",
+                "2026-06-30",
+                url="https://arxiv.org/abs/1",
+            ),
+            self._ev(
+                "x2",
+                "Khipu mining result reported",
+                "0.86",
+                "2026-06-30",
+                url="https://arxiv.org/abs/2",
+            ),
         ]
         issues = cd.check_duplicate_reports(events)
         self.assertEqual(len(issues), 1)
@@ -822,44 +1043,94 @@ class TestDuplicateReportDetection(unittest.TestCase):
     def test_shared_generic_url_alone_does_not_count(self):
         # Two SpaceX flights citing spacex.com are two events, not one.
         events = [
-            self._ev("a", "Starship payload to LEO", "156", "2026-02-01",
-                     url="https://spacex.com", cat="Spaceflight & Aeronautics"),
-            self._ev("b", "Falcon Heavy lift to GTO", "63", "2026-01-01",
-                     url="https://spacex.com", cat="Spaceflight & Aeronautics"),
+            self._ev(
+                "a",
+                "Starship payload to LEO",
+                "156",
+                "2026-02-01",
+                url="https://spacex.com",
+                cat="Spaceflight & Aeronautics",
+            ),
+            self._ev(
+                "b",
+                "Falcon Heavy lift to GTO",
+                "63",
+                "2026-01-01",
+                url="https://spacex.com",
+                cat="Spaceflight & Aeronautics",
+            ),
         ]
         self.assertEqual(cd.check_duplicate_reports(events), [])
 
     def test_two_ibm_milestones_in_one_article_are_not_duplicates(self):
         events = [
-            self._ev("g", "IBM Condor 1121 qubit processor", "1121", "2026-03-01",
-                     url="https://en.wikipedia.org/wiki/IBM_Q_System_One", cat="Quantum Physics"),
-            self._ev("h", "IBM Eagle 127 qubit processor", "127", "2026-02-01",
-                     url="https://en.wikipedia.org/wiki/IBM_Q_System_One", cat="Quantum Physics"),
+            self._ev(
+                "g",
+                "IBM Condor 1121 qubit processor",
+                "1121",
+                "2026-03-01",
+                url="https://en.wikipedia.org/wiki/IBM_Q_System_One",
+                cat="Quantum Physics",
+            ),
+            self._ev(
+                "h",
+                "IBM Eagle 127 qubit processor",
+                "127",
+                "2026-02-01",
+                url="https://en.wikipedia.org/wiki/IBM_Q_System_One",
+                cat="Quantum Physics",
+            ),
         ]
         self.assertEqual(cd.check_duplicate_reports(events), [])
 
     def test_shared_value_with_unrelated_titles_is_not_a_duplicate(self):
         events = [
-            self._ev("c", "Alpha protein folding benchmark", "0.86", "2026-03-02", url="https://a.com"),
-            self._ev("d", "Beta solar cell efficiency record", "0.86", "2026-03-01",
-                     url="https://b.com", cat="Renewable Energy"),
+            self._ev(
+                "c", "Alpha protein folding benchmark", "0.86", "2026-03-02", url="https://a.com"
+            ),
+            self._ev(
+                "d",
+                "Beta solar cell efficiency record",
+                "0.86",
+                "2026-03-01",
+                url="https://b.com",
+                cat="Renewable Energy",
+            ),
         ]
         self.assertEqual(cd.check_duplicate_reports(events), [])
 
     def test_same_value_on_different_dates_is_not_a_duplicate(self):
         events = [
-            self._ev("e", "Rigetti 100 qubit processor", "100", "2026-05-01", url="https://a.com",
-                     cat="Quantum Physics"),
-            self._ev("f", "Rigetti 100 qubit processor", "100", "2026-01-01", url="https://b.com",
-                     cat="Quantum Physics"),
+            self._ev(
+                "e",
+                "Rigetti 100 qubit processor",
+                "100",
+                "2026-05-01",
+                url="https://a.com",
+                cat="Quantum Physics",
+            ),
+            self._ev(
+                "f",
+                "Rigetti 100 qubit processor",
+                "100",
+                "2026-01-01",
+                url="https://b.com",
+                cat="Quantum Physics",
+            ),
         ]
         self.assertEqual(cd.check_duplicate_reports(events), [])
 
     def test_shared_value_in_different_categories_is_not_a_duplicate(self):
         events = [
             self._ev("g", "Khipu provenance result", "0.86", "2026-03-01", url="https://a.com"),
-            self._ev("h", "Khipu provenance result", "0.86", "2026-03-01", url="https://b.com",
-                     cat="Biotechnology & Biohacking"),
+            self._ev(
+                "h",
+                "Khipu provenance result",
+                "0.86",
+                "2026-03-01",
+                url="https://b.com",
+                cat="Biotechnology & Biohacking",
+            ),
         ]
         self.assertEqual(cd.check_duplicate_reports(events), [])
 
@@ -873,16 +1144,28 @@ class TestDuplicateReportDetection(unittest.TestCase):
     def test_numeric_and_string_spellings_are_caught(self):
         events = [
             self._ev("k", "Khipu mining result", 0.86, "2026-03-01", url="https://a.com"),
-            self._ev("l", "Khipu mining result restated", "0.860", "2026-03-01", url="https://b.com"),
+            self._ev(
+                "l", "Khipu mining result restated", "0.860", "2026-03-01", url="https://b.com"
+            ),
         ]
         self.assertEqual(len(cd.check_duplicate_reports(events)), 1)
 
     def test_shared_specific_url_is_enough_without_shared_words(self):
         events = [
-            self._ev("m", "Totally unrelated wording alpha", "5", "2026-03-01",
-                     url="https://arxiv.org/abs/same"),
-            self._ev("n", "Nothing alike whatsoever beta", "5", "2026-03-01",
-                     url="https://arxiv.org/abs/same"),
+            self._ev(
+                "m",
+                "Totally unrelated wording alpha",
+                "5",
+                "2026-03-01",
+                url="https://arxiv.org/abs/same",
+            ),
+            self._ev(
+                "n",
+                "Nothing alike whatsoever beta",
+                "5",
+                "2026-03-01",
+                url="https://arxiv.org/abs/same",
+            ),
         ]
         self.assertEqual(len(cd.check_duplicate_reports(events)), 1)
 
@@ -891,9 +1174,13 @@ class TestDuplicateReportDetection(unittest.TestCase):
         # be quadratic over data already known to be broken.
         events = [
             {
-                "id": f"i{n}", "title": "Khipu mining result", "category": "Computing & AGI",
-                "value": "1", "date": "2026-01-01",
-                "url": f"https://e.com/{n}", "geolocation": {"lat": 1, "lon": 1},
+                "id": f"i{n}",
+                "title": "Khipu mining result",
+                "category": "Computing & AGI",
+                "value": "1",
+                "date": "2026-01-01",
+                "url": f"https://e.com/{n}",
+                "geolocation": {"lat": 1, "lon": 1},
             }
             for n in range(400)
         ]
@@ -907,12 +1194,17 @@ class TestDuplicateReportDetection(unittest.TestCase):
         events = []
         for bucket in range(60):
             for n in range(2):
-                events.append({
-                    "id": f"b{bucket}-{n}", "title": "Khipu mining result",
-                    "category": "Computing & AGI", "value": str(bucket),
-                    "date": "2026-01-01", "url": f"https://e.com/{bucket}/{n}",
-                    "geolocation": {"lat": 1, "lon": 1},
-                })
+                events.append(
+                    {
+                        "id": f"b{bucket}-{n}",
+                        "title": "Khipu mining result",
+                        "category": "Computing & AGI",
+                        "value": str(bucket),
+                        "date": "2026-01-01",
+                        "url": f"https://e.com/{bucket}/{n}",
+                        "geolocation": {"lat": 1, "lon": 1},
+                    }
+                )
         issues = cd.check_duplicate_reports(events)
         self.assertLessEqual(len(issues), cd._MAX_DUP_ISSUES + 1)
         self.assertIn("capped at", issues[-1])
@@ -932,20 +1224,29 @@ class TestMergedSourcesField(unittest.TestCase):
 
     def _milestone(self, i, **over):
         base = {
-            "id": i, "title": "T", "category": "Computing & AGI",
-            "subcategory": "x", "value": "1", "date": "2026-01-01",
-            "url": "https://example.com", "geolocation": {"lat": 1, "lon": 1},
+            "id": i,
+            "title": "T",
+            "category": "Computing & AGI",
+            "subcategory": "x",
+            "value": "1",
+            "date": "2026-01-01",
+            "url": "https://example.com",
+            "geolocation": {"lat": 1, "lon": 1},
         }
         base.update(over)
         return base
 
     def _wrap(self, milestones):
         return {
-            "version": "1.0.0", "last_update": "2026-01-01T00:00:00+00:00",
+            "version": "1.0.0",
+            "last_update": "2026-01-01T00:00:00+00:00",
             "categories": {
                 "computing_agi": {
-                    "name": "Computing & AGI", "icon": "x", "color": "#fff",
-                    "subcategories": ["x"], "milestones": milestones,
+                    "name": "Computing & AGI",
+                    "icon": "x",
+                    "color": "#fff",
+                    "subcategories": ["x"],
+                    "milestones": milestones,
                 }
             },
         }
@@ -975,17 +1276,21 @@ class TestMergedSourcesField(unittest.TestCase):
         self.assertTrue(any("duplicate source" in i for i in cd.check_milestones(data)))
 
     def test_category_not_newest_first_is_rejected(self):
-        data = self._wrap([
-            self._milestone("a", date="2026-01-01"),
-            self._milestone("b", date="2026-09-01"),
-        ])
+        data = self._wrap(
+            [
+                self._milestone("a", date="2026-01-01"),
+                self._milestone("b", date="2026-09-01"),
+            ]
+        )
         self.assertTrue(any("newest-first" in i for i in cd.check_milestones(data)))
 
     def test_category_newest_first_passes(self):
-        data = self._wrap([
-            self._milestone("a", date="2026-09-01"),
-            self._milestone("b", date="2026-01-01"),
-        ])
+        data = self._wrap(
+            [
+                self._milestone("a", date="2026-09-01"),
+                self._milestone("b", date="2026-01-01"),
+            ]
+        )
         self.assertEqual(cd.check_milestones(data), [])
 
 
@@ -1012,8 +1317,9 @@ class TestZoneTierRadiusIsCwdIndependent(unittest.TestCase):
                 sync_layers = importlib.import_module("sync_layers")
                 check_data = importlib.import_module("check_data")
                 declared = cd._LIFECYCLE_CTRL.get("zone_tier_radius")
-                self.assertEqual(sync_layers.TIER_RADIUS,
-                                 {str(k): float(v) for k, v in declared.items()})
+                self.assertEqual(
+                    sync_layers.TIER_RADIUS, {str(k): float(v) for k, v in declared.items()}
+                )
                 self.assertEqual(check_data._ZONE_TIER_RADIUS, dict(declared))
             finally:
                 os.chdir(before)
@@ -1047,8 +1353,7 @@ class TestZoneTierRadiusSingleSource(unittest.TestCase):
         import sync_layers
 
         declared = cd._LIFECYCLE_CTRL.get("zone_tier_radius")
-        self.assertEqual(sync_layers.TIER_RADIUS,
-                         {str(k): float(v) for k, v in declared.items()})
+        self.assertEqual(sync_layers.TIER_RADIUS, {str(k): float(v) for k, v in declared.items()})
 
     def test_fallbacks_agree_with_the_schema(self):
         # Each module keeps a hardcoded default so it still runs if the schema is
@@ -1058,21 +1363,18 @@ class TestZoneTierRadiusSingleSource(unittest.TestCase):
         #
         # Only literals carrying a decimal point are radii; TIER_ORDER next to them
         # is an unrelated integer sort table.
-        declared = {str(k): float(v) for k, v in
-                    cd._LIFECYCLE_CTRL["zone_tier_radius"].items()}
-        pattern = (r'\{\s*"major":\s*([\d.]+),\s*"minor":\s*([\d.]+),'
-                   r'\s*"conflict":\s*([\d.]+)\s*\}')
+        declared = {str(k): float(v) for k, v in cd._LIFECYCLE_CTRL["zone_tier_radius"].items()}
+        pattern = (
+            r'\{\s*"major":\s*([\d.]+),\s*"minor":\s*([\d.]+),'
+            r'\s*"conflict":\s*([\d.]+)\s*\}'
+        )
         for name in ("check_data.py", "sync_layers.py"):
             src = (cd.ROOT / "scripts" / name).read_text(encoding="utf-8")
-            literals = [m for m in re.findall(pattern, src)
-                        if any("." in part for part in m)]
+            literals = [m for m in re.findall(pattern, src) if any("." in part for part in m)]
             with self.subTest(module=name):
-                self.assertEqual(len(literals), 1,
-                                 "expected exactly one radius fallback literal")
-                found = dict(zip(("major", "minor", "conflict"),
-                                 (float(v) for v in literals[0])))
-                self.assertEqual(found, declared,
-                                 "the schema-missing fallback has drifted")
+                self.assertEqual(len(literals), 1, "expected exactly one radius fallback literal")
+                found = dict(zip(("major", "minor", "conflict"), (float(v) for v in literals[0])))
+                self.assertEqual(found, declared, "the schema-missing fallback has drifted")
 
     def test_schema_documents_the_rule(self):
         rules = " ".join(cd._SCHEMA["files"]["world_layers.json"]["rules"])
@@ -1090,8 +1392,7 @@ class TestZoneTierRadius(unittest.TestCase):
     """
 
     def _zone(self, **over):
-        base = {"id": "z", "name": "Z", "lat": 10, "lon": 10, "status": "active",
-                "radiusDeg": 2.5}
+        base = {"id": "z", "name": "Z", "lat": 10, "lon": 10, "status": "active", "radiusDeg": 2.5}
         base.update(over)
         return base
 
@@ -1099,8 +1400,8 @@ class TestZoneTierRadius(unittest.TestCase):
         for tier, radius in (("major", 4.0), ("minor", 3.0), ("conflict", 2.5)):
             with self.subTest(tier=tier):
                 self.assertEqual(
-                    cd._check_zone_tier_radius(
-                        [self._zone(tier=tier, radiusDeg=radius)], "z"), [])
+                    cd._check_zone_tier_radius([self._zone(tier=tier, radiusDeg=radius)], "z"), []
+                )
 
     def test_missing_tier_is_reported(self):
         issues = cd._check_zone_tier_radius([self._zone()], "z")
@@ -1108,14 +1409,12 @@ class TestZoneTierRadius(unittest.TestCase):
         self.assertIn("no `tier`", issues[0])
 
     def test_tier_radius_mismatch_is_reported(self):
-        issues = cd._check_zone_tier_radius(
-            [self._zone(tier="major", radiusDeg=2.5)], "z")
+        issues = cd._check_zone_tier_radius([self._zone(tier="major", radiusDeg=2.5)], "z")
         self.assertTrue(issues)
         self.assertIn("radiusDeg 4.0", issues[0])
 
     def test_unknown_tier_is_reported(self):
-        issues = cd._check_zone_tier_radius(
-            [self._zone(tier="apocalyptic", radiusDeg=2.5)], "z")
+        issues = cd._check_zone_tier_radius([self._zone(tier="apocalyptic", radiusDeg=2.5)], "z")
         self.assertTrue(issues)
         self.assertIn("unknown tier", issues[0])
 
@@ -1128,10 +1427,11 @@ class TestZoneTierRadius(unittest.TestCase):
         if not path.exists():
             self.skipTest("world_layers.json not present")
         import json
+
         data = json.loads(path.read_text(encoding="utf-8"))
         self.assertEqual(
-            cd._check_zone_tier_radius(data.get("conflict_zones") or [], "conflict_zones"),
-            [])
+            cd._check_zone_tier_radius(data.get("conflict_zones") or [], "conflict_zones"), []
+        )
 
     def test_committed_heavy_conflicts_are_major(self):
         # The specific regression: these three must not fall back to the smallest
@@ -1140,6 +1440,7 @@ class TestZoneTierRadius(unittest.TestCase):
         if not path.exists():
             self.skipTest("world_layers.json not present")
         import json
+
         data = json.loads(path.read_text(encoding="utf-8"))
         zones = {z.get("id"): z for z in (data.get("conflict_zones") or [])}
         for zone_id in ("zone-ukraine", "zone-gaza", "zone-red-sea"):
@@ -1183,7 +1484,10 @@ class TestCheckUniqueIds(unittest.TestCase):
         self.assertTrue(any("duplicate id 'fleet-a'" in i for i in issues))
 
     def test_ids_are_unique_by_default(self):
-        zones = [{"id": "a", "name": "A", "lat": 1, "lon": 1}, {"id": "b", "name": "B", "lat": 2, "lon": 2}]
+        zones = [
+            {"id": "a", "name": "A", "lat": 1, "lon": 1},
+            {"id": "b", "name": "B", "lat": 2, "lon": 2},
+        ]
         self.assertEqual(cd.check_zones(zones), [])
 
 
@@ -1207,8 +1511,11 @@ class TestCoordinateParityWithTheClient(unittest.TestCase):
         js = self._js()
         m = re.search(r"const ORIGIN_EPSILON\s*=\s*([0-9eE.+-]+)", js)
         self.assertIsNotNone(m, "worldmap.js must declare ORIGIN_EPSILON")
-        self.assertEqual(float(m.group(1)), lc.ORIGIN_EPSILON,
-                         "JS and Python origin tolerance have drifted apart")
+        self.assertEqual(
+            float(m.group(1)),
+            lc.ORIGIN_EPSILON,
+            "JS and Python origin tolerance have drifted apart",
+        )
 
     def test_only_one_coordinate_predicate_remains(self):
         js = self._js()
@@ -1217,9 +1524,11 @@ class TestCoordinateParityWithTheClient(unittest.TestCase):
         # Anchored on a coordinate, so an unrelated `year % step !== 0 && ...`
         # does not trip it.
         inline = re.findall(r"\w+\.(?:lat|lon)\s*===\s*0\s*&&|\w+\.(?:lat|lon)\s*!==\s*0", js)
-        self.assertEqual(inline, [],
-                         "worldmap.js has an inline origin test; route it through "
-                         "hasPlottableCoords()")
+        self.assertEqual(
+            inline,
+            [],
+            "worldmap.js has an inline origin test; route it through hasPlottableCoords()",
+        )
         self.assertIn("const isLocatedCoord = (c) => hasPlottableCoords(c?.lat, c?.lon);", js)
 
     def test_javascript_agrees_with_python_on_the_edges(self):
@@ -1228,6 +1537,7 @@ class TestCoordinateParityWithTheClient(unittest.TestCase):
         import shutil
         import subprocess
         import tempfile
+
         js_body = """
         const ORIGIN_EPSILON = 1e-6;
         function hasPlottableCoords(lat, lon) {
@@ -1249,18 +1559,30 @@ class TestCoordinateParityWithTheClient(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             script = pathlib.Path(tmp) / "probe.js"
             script.write_text(js_body, encoding="utf-8")
-            proc = subprocess.run([bun, "run", str(script)], capture_output=True,
-                                  text=True, cwd=str(cd.ROOT))
+            proc = subprocess.run(
+                [bun, "run", str(script)], capture_output=True, text=True, cwd=str(cd.ROOT)
+            )
             if proc.returncode != 0:
                 self.skipTest(f"bun probe failed: {proc.stderr[:120]}")
             js_results = json.loads(proc.stdout.strip().splitlines()[-1])
-        cases = [(0, 0), (1e-9, -1e-9), (0, 139.69), (51.5, -0.12), (90, 0), (-90, 180),
-                 (91, 0), (0, 181), (float("nan"), 5), (float("inf"), 5),
-                 (None, 5), ("5", 5), (True, 5)]
+        cases = [
+            (0, 0),
+            (1e-9, -1e-9),
+            (0, 139.69),
+            (51.5, -0.12),
+            (90, 0),
+            (-90, 180),
+            (91, 0),
+            (0, 181),
+            (float("nan"), 5),
+            (float("inf"), 5),
+            (None, 5),
+            ("5", 5),
+            (True, 5),
+        ]
         for (lat, lon), js_ok in zip(cases, js_results):
             py_ok = lc.is_located({"lat": lat, "lon": lon})
-            self.assertEqual(js_ok, py_ok,
-                             f"JS and Python disagree on ({lat!r}, {lon!r})")
+            self.assertEqual(js_ok, py_ok, f"JS and Python disagree on ({lat!r}, {lon!r})")
 
 
 class TestSchemaParity(unittest.TestCase):
@@ -1329,13 +1651,14 @@ def js_category_aliases(source: str) -> dict:
             if depth == 0:
                 break
         i += 1
-    return dict(re.findall(r"'([^']+)'\s*:\s*'([^']+)'", stripped[brace:i + 1]))
+    return dict(re.findall(r"'([^']+)'\s*:\s*'([^']+)'", stripped[brace : i + 1]))
 
 
 def _copy() -> dict:
     """A throwaway copy of the data dir, for tests that must not write."""
     import shutil
     import tempfile
+
     tmp = tempfile.mkdtemp(prefix="worldmap-data-")
     dst = Path(tmp) / "data"
     shutil.copytree(cd.DATA_DIR, dst)
@@ -1363,8 +1686,12 @@ class TestEventCategories(unittest.TestCase):
     """
 
     def _event(self, category: object) -> dict:
-        return {"title": "X", "category": category, "date": "2026-03-15",
-                "geolocation": {"lat": 1.5, "lon": 2.5}}
+        return {
+            "title": "X",
+            "category": category,
+            "date": "2026-03-15",
+            "geolocation": {"lat": 1.5, "lon": 2.5},
+        }
 
     def test_every_canonical_category_is_accepted(self):
         for category in cd._CATEGORIES:
@@ -1393,8 +1720,7 @@ class TestEventCategories(unittest.TestCase):
         # Nine: the original seven, with standalone Biotechnology replaced by
         # Biotechnology & Biohacking, plus Mobility & Logistics and Robotics & Drones.
         self.assertEqual(len(cats), 9)
-        for expected in ("Biotechnology & Biohacking", "Mobility & Logistics",
-                        "Robotics & Drones"):
+        for expected in ("Biotechnology & Biohacking", "Mobility & Logistics", "Robotics & Drones"):
             self.assertIn(expected, cats)
 
     def test_schema_category_order_matches_declared_categories(self):
@@ -1462,11 +1788,16 @@ class TestEventCategories(unittest.TestCase):
                 # to see it) without weakening the datalayer-level default.
                 self.assertIs(spec.get("default_on"), False)
                 if spec.get("follows_parent"):
-                    self.assertIs(spec.get("nested"), True,
-                                  f"{spec['key']} follows a parent, so it must be nested")
+                    self.assertIs(
+                        spec.get("nested"),
+                        True,
+                        f"{spec['key']} follows a parent, so it must be nested",
+                    )
                 if spec.get("nested"):
-                    self.assertTrue(spec.get("follows_parent"),
-                                    f"{spec['key']} is nested, so it must name its parent")
+                    self.assertTrue(
+                        spec.get("follows_parent"),
+                        f"{spec['key']} is nested, so it must name its parent",
+                    )
                 # A nested row must actually be indented in the legend, or the
                 # relationship exists only in the schema.
                 if spec.get("nested"):
@@ -1496,12 +1827,14 @@ class TestEventCategories(unittest.TestCase):
         if not js_file.exists():
             self.skipTest("worldmap.js not checked out")
         import re
+
         js = js_file.read_text(encoding="utf-8")
         # Rows registered through appendLayerRow with a layer key.
         registered = set(re.findall(r"appendLayerRow\(fragment, \{\s*key: '([^']+)'", js))
         self.assertTrue(registered, "no legend layer rows found - parser is stale?")
-        self.assertEqual(registered - declared, set(),
-                         "legend rows missing from the schema contract")
+        self.assertEqual(
+            registered - declared, set(), "legend rows missing from the schema contract"
+        )
 
     def test_human_rights_is_a_layer_never_a_category(self):
         # The user-visible contract for the Human Rights layer: it must never gain
@@ -1539,9 +1872,11 @@ class TestEventCategories(unittest.TestCase):
         # rows by their declared label.
         rendered_labels = [label for _key, label in rendered]
         declared = [d for d in order if d in rendered_labels]
-        self.assertEqual(rendered_labels[:len(declared)], declared,
-                         "worldmap.js renders categories in a different order "
-                         "than the schema declares")
+        self.assertEqual(
+            rendered_labels[: len(declared)],
+            declared,
+            "worldmap.js renders categories in a different order than the schema declares",
+        )
 
     def test_no_third_declaration_of_the_legend_order(self):
         # The order is declared in the schema and rendered in worldmap.js. A
@@ -1551,6 +1886,7 @@ class TestEventCategories(unittest.TestCase):
 
     def test_every_alias_target_is_a_canonical_category(self):
         import sync_milestones as sync
+
         self.assertTrue(sync.CATEGORY_ALIASES, "alias table should not be empty")
         for alias, canonical in sync.CATEGORY_ALIASES.items():
             with self.subTest(alias=alias):
@@ -1575,10 +1911,12 @@ class TestEventCategories(unittest.TestCase):
         )
         self.assertEqual(
             js_category_aliases(hostile),
-            {"Quantum": "Quantum Physics", "Energy": "Renewable Energy"})
+            {"Quantum": "Quantum Physics", "Energy": "Renewable Energy"},
+        )
         # And the real table must survive the same treatment.
         real = js_category_aliases(
-            (cd.ROOT / "assets" / "js" / "worldmap.js").read_text(encoding="utf-8"))
+            (cd.ROOT / "assets" / "js" / "worldmap.js").read_text(encoding="utf-8")
+        )
         self.assertGreater(len(real), 10)
         for value in real.values():
             self.assertNotIn("{", value)
@@ -1592,7 +1930,6 @@ class TestEventCategories(unittest.TestCase):
         Parsed out of the JS source rather than hand-copied, because a hand-copied
         list would drift the moment someone edited one side.
         """
-        import re
         import sync_milestones as sync
 
         src = (cd.ROOT / "assets" / "js" / "worldmap.js").read_text(encoding="utf-8")
@@ -1600,10 +1937,16 @@ class TestEventCategories(unittest.TestCase):
         self.assertGreater(len(js_aliases), 10, "alias table parse looks wrong")
 
         py_aliases = dict(sync.CATEGORY_ALIASES)
-        self.assertEqual(sorted(set(py_aliases) - set(js_aliases)), [],
-                         "Python accepts labels the browser does not")
-        self.assertEqual(sorted(set(js_aliases) - set(py_aliases)), [],
-                         "browser accepts labels the validator rejects")
+        self.assertEqual(
+            sorted(set(py_aliases) - set(js_aliases)),
+            [],
+            "Python accepts labels the browser does not",
+        )
+        self.assertEqual(
+            sorted(set(js_aliases) - set(py_aliases)),
+            [],
+            "browser accepts labels the validator rejects",
+        )
         for alias in sorted(set(js_aliases) & set(py_aliases)):
             with self.subTest(alias=alias):
                 self.assertEqual(js_aliases[alias], py_aliases[alias])
@@ -1623,8 +1966,13 @@ class TestEventCategories(unittest.TestCase):
 
 class TestWorldLayersHeader(unittest.TestCase):
     def _payload(self, **overrides: object) -> dict:
-        base = {"version": cd._FILE_VERSION, "last_update": "2026-09-25T00:00:00+00:00",
-                "conflict_zones": [], "crisis_zones": [], "deployments": []}
+        base = {
+            "version": cd._FILE_VERSION,
+            "last_update": "2026-09-25T00:00:00+00:00",
+            "conflict_zones": [],
+            "crisis_zones": [],
+            "deployments": [],
+        }
         base.update(overrides)
         return base
 
@@ -1642,10 +1990,14 @@ class TestWorldLayersHeader(unittest.TestCase):
     def test_missing_or_empty_last_update_fails(self):
         for value in (None, "", 42):
             issues = cd.check_data(self._payload(last_update=value), "world_layers.json")
-            self.assertTrue(any("last_update must be a non-empty UTC timestamp" in i for i in issues), value)
+            self.assertTrue(
+                any("last_update must be a non-empty UTC timestamp" in i for i in issues), value
+            )
 
     def test_naive_timestamp_fails(self):
-        issues = cd.check_data(self._payload(last_update="2026-09-25T00:00:00"), "world_layers.json")
+        issues = cd.check_data(
+            self._payload(last_update="2026-09-25T00:00:00"), "world_layers.json"
+        )
         self.assertTrue(any("must carry a UTC offset" in i for i in issues))
 
     def test_garbage_timestamp_fails(self):
@@ -1665,68 +2017,94 @@ class TestCheckFile(unittest.TestCase):
             # A real located pair: (0,0) is now rejected outright as the
             # no-location marker, which this fixture previously relied on.
             (d / "events.json").write_text(
-                json.dumps(_events_payload({"title": "X", "category": "Cybersecurity", "date": "2026-03-15",
-                                            "geolocation": {"lat": 51.5, "lon": -0.12}})),
+                json.dumps(
+                    _events_payload(
+                        {
+                            "title": "X",
+                            "category": "Cybersecurity",
+                            "date": "2026-03-15",
+                            "geolocation": {"lat": 51.5, "lon": -0.12},
+                        }
+                    )
+                ),
                 encoding="utf-8",
             )
             (d / "world_layers.json").write_text(
-                json.dumps(_layers_payload(
-                    [{"name": "Z", "lat": 1, "lon": 1, "tier": "conflict", "radiusDeg": 2.5}],
-                    [{"from": {"lat": 0, "lon": 1}, "to": {"lat": 1, "lon": 1}}],
-                    crises=[{"name": "C", "lat": 2, "lon": 2}],
-                )),
+                json.dumps(
+                    _layers_payload(
+                        [{"name": "Z", "lat": 1, "lon": 1, "tier": "conflict", "radiusDeg": 2.5}],
+                        [{"from": {"lat": 0, "lon": 1}, "to": {"lat": 1, "lon": 1}}],
+                        crises=[{"name": "C", "lat": 2, "lon": 2}],
+                    )
+                ),
                 encoding="utf-8",
             )
             (d / "milestones.json").write_text(
-                json.dumps({
-                    "version": "1.0.0",
-                    "last_update": "2026-09-25T00:00:00Z",
-                    "categories": {}
-                }),
+                json.dumps(
+                    {"version": "1.0.0", "last_update": "2026-09-25T00:00:00Z", "categories": {}}
+                ),
                 encoding="utf-8",
             )
             # The archive is validated too (ARCHIVE_FILES), so main() now expects it
             # alongside the three REQUIRED_FILES. Without this the end-to-end test
             # fails on a missing file rather than on anything it meant to assert.
             (d / "milestones_history.json").write_text(
-                json.dumps([{
-                    "id": "ms-e2e-1",
-                    "category": "Cybersecurity",
-                    "subcategory": "general",
-                    "title": "Archived milestone",
-                    "date": "2026-03-15",
-                    "source": "Example",
-                    "url": "https://example.org/a",
-                    "geolocation": {"lat": 51.5, "lon": -0.12},
-                }]),
+                json.dumps(
+                    [
+                        {
+                            "id": "ms-e2e-1",
+                            "category": "Cybersecurity",
+                            "subcategory": "general",
+                            "title": "Archived milestone",
+                            "date": "2026-03-15",
+                            "source": "Example",
+                            "url": "https://example.org/a",
+                            "geolocation": {"lat": 51.5, "lon": -0.12},
+                        }
+                    ]
+                ),
                 encoding="utf-8",
             )
             # activity.json and historical_milestones.json are validated too, so
             # main() expects them alongside the rest.
-            (d / "activity.json").write_text(json.dumps({
-                "last_update": "2026-09-25T00:00:00Z",
-                "bucket": "month",
-                "first": "2026-01-01",
-                "last": "2026-03-01",
-                "total": 2,
-                "days": [{"date": "2026-01-01", "count": 1},
-                         {"date": "2026-03-01", "count": 1}],
-                "spikes": [],
-            }), encoding="utf-8")
-            (d / "historical_milestones.json").write_text(json.dumps({
-                "description": "curated",
-                "version": "1.0.0",
-                "milestones": [{
-                    "id": "his-e2e-1",
-                    "category": "Cybersecurity",
-                    "subcategory": "general",
-                    "title": "Archived historic milestone",
-                    "date": "2026-01-05",
-                    "source": "Example",
-                    "url": "https://example.org/a",
-                    "geolocation": {"lat": 51.5, "lon": -0.12},
-                }],
-            }), encoding="utf-8")
+            (d / "activity.json").write_text(
+                json.dumps(
+                    {
+                        "last_update": "2026-09-25T00:00:00Z",
+                        "bucket": "month",
+                        "first": "2026-01-01",
+                        "last": "2026-03-01",
+                        "total": 2,
+                        "days": [
+                            {"date": "2026-01-01", "count": 1},
+                            {"date": "2026-03-01", "count": 1},
+                        ],
+                        "spikes": [],
+                    }
+                ),
+                encoding="utf-8",
+            )
+            (d / "historical_milestones.json").write_text(
+                json.dumps(
+                    {
+                        "description": "curated",
+                        "version": "1.0.0",
+                        "milestones": [
+                            {
+                                "id": "his-e2e-1",
+                                "category": "Cybersecurity",
+                                "subcategory": "general",
+                                "title": "Archived historic milestone",
+                                "date": "2026-01-05",
+                                "source": "Example",
+                                "url": "https://example.org/a",
+                                "geolocation": {"lat": 51.5, "lon": -0.12},
+                            }
+                        ],
+                    }
+                ),
+                encoding="utf-8",
+            )
             self.assertEqual(cd.main([str(d)]), 0)
 
     def test_missing_file_is_an_error(self):

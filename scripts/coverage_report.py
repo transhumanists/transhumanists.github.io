@@ -18,6 +18,7 @@ Usage:
     python scripts/coverage_report.py --json
     python scripts/coverage_report.py --min-year 1945 --max-year 2026
 """
+
 from __future__ import annotations
 
 import argparse
@@ -70,10 +71,14 @@ def geocode_state(m: dict) -> str:
     # different responses, and lumping them together hides which one you have.
     if isinstance(geo, dict):
         lat, lon = geo.get("lat"), geo.get("lon")
-        if (isinstance(lat, (int, float)) and isinstance(lon, (int, float))
-                and not isinstance(lat, bool) and not isinstance(lon, bool)
-                and abs(float(lat)) <= lc.ORIGIN_EPSILON
-                and abs(float(lon)) <= lc.ORIGIN_EPSILON):
+        if (
+            isinstance(lat, (int, float))
+            and isinstance(lon, (int, float))
+            and not isinstance(lat, bool)
+            and not isinstance(lon, bool)
+            and abs(float(lat)) <= lc.ORIGIN_EPSILON
+            and abs(float(lon)) <= lc.ORIGIN_EPSILON
+        ):
             return "null_island"
     return "malformed"
 
@@ -119,16 +124,14 @@ def build(min_year: int, max_year: int, sources: tuple[str, ...]) -> dict:
     ambiguous = 0
     for m in records:
         url = str(m.get("url") or "").strip().lower()
-        key = (str(m.get("title") or "").strip().lower(),
-               str(m.get("date") or "")[:10], url)
+        key = (str(m.get("title") or "").strip().lower(), str(m.get("date") or "")[:10], url)
         if key in seen:
             duplicates += 1
             continue
         # Same title and day, different source: kept as two records, but counted so
         # the report can say the dedupe was ambiguous here rather than silently
         # resolving it one way.
-        if url and any(
-                k[0] == key[0] and k[1] == key[1] and k[2] != url for k in seen):
+        if url and any(k[0] == key[0] and k[1] == key[1] and k[2] != url for k in seen):
             ambiguous += 1
         seen[key] = m
     unique = list(seen.values())
@@ -144,20 +147,23 @@ def build(min_year: int, max_year: int, sources: tuple[str, ...]) -> dict:
             years[year] += 1
             cats[year][m.get("category") or "(uncategorised)"] += 1
         if geocode_state(m) == "unlocated":
-            unlocated.append({
-                "title": (m.get("title") or "")[:90],
-                "date": raw[:10],
-                "category": m.get("category"),
-                "source": m.get("source"),
-                "url": m.get("url"),
-            })
+            unlocated.append(
+                {
+                    "title": (m.get("title") or "")[:90],
+                    "date": raw[:10],
+                    "category": m.get("category"),
+                    "source": m.get("source"),
+                    "url": m.get("url"),
+                }
+            )
 
     populated = sorted(y for y in years if min_year <= y <= max_year)
     empty = [y for y in range(min_year, max_year + 1) if y not in years]
-    sparse = [{"year": y, "count": years[y],
-               "categories": len(cats[y]),
-               "only": sorted(cats[y])}
-              for y in populated if years[y] < 3 or len(cats[y]) < 2]
+    sparse = [
+        {"year": y, "count": years[y], "categories": len(cats[y]), "only": sorted(cats[y])}
+        for y in populated
+        if years[y] < 3 or len(cats[y]) < 2
+    ]
 
     return {
         "totals": {
@@ -181,10 +187,16 @@ def build(min_year: int, max_year: int, sources: tuple[str, ...]) -> dict:
         "by_category": _by_category(unique),
         "unlocated": unlocated,
         "null_island_records": [
-            {"title": (m.get("title") or "")[:90], "date": str(m.get("date") or "")[:10],
-             "category": m.get("category"), "source": m.get("source"),
-             "file": m.get("_file")}
-            for m in unique if geocode_state(m) == "null_island"],
+            {
+                "title": (m.get("title") or "")[:90],
+                "date": str(m.get("date") or "")[:10],
+                "category": m.get("category"),
+                "source": m.get("source"),
+                "file": m.get("_file"),
+            }
+            for m in unique
+            if geocode_state(m) == "null_island"
+        ],
     }
 
 
@@ -201,8 +213,11 @@ def snapshot_digest(report: dict) -> str:
     entry is written only when something changed.
     """
     findings = {
-        "totals": {k: report["totals"][k] for k in sorted(report["totals"])
-                   if k != "same_title_and_day_different_source"},
+        "totals": {
+            k: report["totals"][k]
+            for k in sorted(report["totals"])
+            if k != "same_title_and_day_different_source"
+        },
         "years_populated": report["years"]["populated"],
         "years_empty": report["years"]["empty"],
         "by_category": report["by_category"],
@@ -223,29 +238,40 @@ def write_snapshot(report: dict, data_dir: Path, measured_at: str) -> str:
     if path.exists():
         try:
             history = json.loads(path.read_text(encoding="utf-8")).get("history") or []
-        except Exception:  # noqa: BLE001 - a corrupt snapshot must not block the run
+        except Exception:
             history = []
     if history and history[-1].get("digest") == digest:
         return "unchanged"
-    history.append({
-        "measured_at": measured_at,
-        "digest": digest,
-        "unique": report["totals"]["unique"],
-        "located": report["totals"]["located"],
-        "unlocated": report["totals"]["unlocated"],
-        "null_island": report["totals"]["null_island"],
-        "years_populated": report["years"]["populated"],
-        "years_empty": report["years"]["empty"],
-        "by_category": report["by_category"],
-        "by_year": report["years"]["by_year"],
-    })
+    history.append(
+        {
+            "measured_at": measured_at,
+            "digest": digest,
+            "unique": report["totals"]["unique"],
+            "located": report["totals"]["located"],
+            "unlocated": report["totals"]["unlocated"],
+            "null_island": report["totals"]["null_island"],
+            "years_populated": report["years"]["populated"],
+            "years_empty": report["years"]["empty"],
+            "by_category": report["by_category"],
+            "by_year": report["years"]["by_year"],
+        }
+    )
     # Bounded: this is a changelog of change, not a full history of every run.
     history = history[-200:]
-    path.write_text(json.dumps(
-        {"description": "Coverage history: one entry per change in coverage findings. "
-                        "Generated by scripts/coverage_report.py --snapshot.",
-         "version": "1.0.0",
-         "history": history}, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    path.write_text(
+        json.dumps(
+            {
+                "description": "Coverage history: one entry per change in coverage findings. "
+                "Generated by scripts/coverage_report.py --snapshot.",
+                "version": "1.0.0",
+                "history": history,
+            },
+            indent=2,
+            ensure_ascii=False,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
     return "appended"
 
 
@@ -254,29 +280,48 @@ def render(r: dict) -> str:
     lines = []
     lines.append("milestone coverage")
     lines.append("=" * 60)
-    lines.append("  unique milestones      %d  (from %d records, %d duplicated across files)"
-                 % (t["unique"], t["records_read"], t["duplicate_across_files"]))
+    lines.append(
+        "  unique milestones      %d  (from %d records, %d duplicated across files)"
+        % (t["unique"], t["records_read"], t["duplicate_across_files"])
+    )
     if t.get("same_title_and_day_different_source"):
-        lines.append("  same title+day, differing source: %d  (kept as separate records)"
-                     % t["same_title_and_day_different_source"])
+        lines.append(
+            "  same title+day, differing source: %d  (kept as separate records)"
+            % t["same_title_and_day_different_source"]
+        )
     lines.append("  geocoded              %d" % t["located"])
-    lines.append("  unlocated             %d   (no dot on the map - correct, not a bug)"
-                 % t["unlocated"])
+    lines.append(
+        "  unlocated             %d   (no dot on the map - correct, not a bug)" % t["unlocated"]
+    )
     if t["null_island"]:
-        lines.append("  NULL ISLAND           %d   <-- bug: these plot in the Gulf of Guinea"
-                     % t["null_island"])
+        lines.append(
+            "  NULL ISLAND           %d   <-- bug: these plot in the Gulf of Guinea"
+            % t["null_island"]
+        )
         # Named `rec`, not `r`: `r` is the report dict this whole function renders
         # from, and rebinding it mid-function silently retargets every later access.
         for rec in r.get("null_island_records", [])[:10]:
-            lines.append("      %s  %-26s %s" % (rec.get("date") or "----------",
-                                                str(rec.get("category"))[:26],
-                                                rec.get("title")[:56]))
+            lines.append(
+                "      %s  %-26s %s"
+                % (
+                    rec.get("date") or "----------",
+                    str(rec.get("category"))[:26],
+                    rec.get("title")[:56],
+                )
+            )
     if t["malformed"]:
         lines.append("  malformed             %d" % t["malformed"])
     lines.append("")
-    lines.append("  years %d-%d  populated %d / %d   empty %d"
-                 % (y["range"][0], y["range"][1], y["populated"],
-                    y["range"][1] - y["range"][0] + 1, y["empty"]))
+    lines.append(
+        "  years %d-%d  populated %d / %d   empty %d"
+        % (
+            y["range"][0],
+            y["range"][1],
+            y["populated"],
+            y["range"][1] - y["range"][0] + 1,
+            y["empty"],
+        )
+    )
     if y["empty_years"]:
         # Compress to ranges so a 51-year gap is one line, not 51.
         runs, start = [], None
@@ -287,62 +332,78 @@ def render(r: dict) -> str:
             elif yr == prev + 1:
                 prev = yr
             else:
-                runs.append((start, prev)); start = prev = yr
+                runs.append((start, prev))
+                start = prev = yr
         if start is not None:
             runs.append((start, prev))
-        lines.append("  empty years: " + ", ".join(
-            ("%d-%d" % (a, b)) if a != b else "%d" % a for a, b in runs))
+        lines.append(
+            "  empty years: "
+            + ", ".join(("%d-%d" % (a, b)) if a != b else "%d" % a for a, b in runs)
+        )
     if y["sparse_years"]:
         lines.append("")
-        lines.append("  years with <3 milestones or a single category "
-                     "(thin on the slider):")
+        lines.append("  years with <3 milestones or a single category (thin on the slider):")
         for s in y["sparse_years"][:20]:
-            lines.append("    %d  n=%-3d cats=%d  %s"
-                         % (s["year"], s["count"], s["categories"],
-                            ", ".join(s["only"])[:60]))
+            lines.append(
+                "    %d  n=%-3d cats=%d  %s"
+                % (s["year"], s["count"], s["categories"], ", ".join(s["only"])[:60])
+            )
     lines.append("")
     lines.append("  per-category totals:")
     for c in r["by_category"]:
         lines.append("    %-28s %d" % (c, r["by_category"][c]))
     if r["unlocated"]:
         lines.append("")
-        lines.append("  unlocated records (%d) - evidence available for a geocoding pass:"
-                     % len(r["unlocated"]))
+        lines.append(
+            "  unlocated records (%d) - evidence available for a geocoding pass:"
+            % len(r["unlocated"])
+        )
         for u in r["unlocated"][:25]:
-            lines.append("    %s  %-26s %s" % (u["date"] or "----------",
-                                                str(u["category"])[:26],
-                                                u["title"][:56]))
+            lines.append(
+                "    %s  %-26s %s"
+                % (u["date"] or "----------", str(u["category"])[:26], u["title"][:56])
+            )
         if len(r["unlocated"]) > 25:
             lines.append("    ... and %d more" % (len(r["unlocated"]) - 25))
     return "\n".join(lines)
 
 
-DEFAULT_FILES = ("milestones.json", "milestones_history.json",
-                 "historical_milestones.json")
+DEFAULT_FILES = ("milestones.json", "milestones_history.json", "historical_milestones.json")
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(description=__doc__,
-                                 formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
     ap.add_argument("--json", action="store_true", help="machine-readable output")
     ap.add_argument("--min-year", type=int, default=1945)
     ap.add_argument("--max-year", type=int, default=2026)
-    ap.add_argument("--fail-on-null-island", action="store_true",
-                    help="exit 1 if any record is geocoded to (0,0)")
-    ap.add_argument("--snapshot", action="store_true",
-                    help="append an entry to coverage_history.json, but only when the "
-                         "findings changed - so the file is a changelog of progress "
-                         "toward filling the year gaps, not a per-run timestamp")
-    ap.add_argument("--quiet", action="store_true",
-                    help="print nothing; only meaningful with --fail-on-null-island, "
-                         "where the exit code is the whole result. Keeps the gate "
-                         "step out of the log without hiding a failure.")
+    ap.add_argument(
+        "--fail-on-null-island",
+        action="store_true",
+        help="exit 1 if any record is geocoded to (0,0)",
+    )
+    ap.add_argument(
+        "--snapshot",
+        action="store_true",
+        help="append an entry to coverage_history.json, but only when the "
+        "findings changed - so the file is a changelog of progress "
+        "toward filling the year gaps, not a per-run timestamp",
+    )
+    ap.add_argument(
+        "--quiet",
+        action="store_true",
+        help="print nothing; only meaningful with --fail-on-null-island, "
+        "where the exit code is the whole result. Keeps the gate "
+        "step out of the log without hiding a failure.",
+    )
     args = ap.parse_args()
 
     r = build(args.min_year, args.max_year, DEFAULT_FILES)
     if args.snapshot:
-        result = write_snapshot(r, DATA_DIR, datetime.now(timezone.utc)
-                                .strftime("%Y-%m-%dT%H:%M:%SZ"))
+        result = write_snapshot(
+            r, DATA_DIR, datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+        )
         print("coverage snapshot: %s" % result)
     if not args.quiet:
         print(json.dumps(r, indent=2) if args.json else render(r))
@@ -351,10 +412,12 @@ def main() -> int:
             # Never fail silently: a gate step that prints nothing and exits 1 looks
             # identical to one that crashed, and the first thing anyone does is read
             # the log.
-            offenders = [u for u in r.get("null_island_records", [])
-                         if isinstance(u, dict)]
-            print("::error::%d milestone(s) geocoded to (0,0), the no-location marker"
-                  % r["totals"]["null_island"], file=sys.stderr)
+            offenders = [u for u in r.get("null_island_records", []) if isinstance(u, dict)]
+            print(
+                "::error::%d milestone(s) geocoded to (0,0), the no-location marker"
+                % r["totals"]["null_island"],
+                file=sys.stderr,
+            )
             for u in offenders[:10]:
                 print("  %s  %s" % (u.get("date") or "----------", u.get("title")), file=sys.stderr)
         return 1

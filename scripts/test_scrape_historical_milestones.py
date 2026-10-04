@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """Self-tests for scripts/scrape_historical_milestones.py (stdlib only)."""
+
 from __future__ import annotations
 
 import json
 import sys
 import tempfile
 import unittest
-from datetime import date
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -87,10 +87,12 @@ class TestValidateCatalog(unittest.TestCase):
         self.assertGreaterEqual(len(errors), 2)
 
     def test_duplicate_ids(self):
-        catalog = {"milestones": [
-            make_catalog_entry(id="dup"),
-            make_catalog_entry(id="dup"),
-        ]}
+        catalog = {
+            "milestones": [
+                make_catalog_entry(id="dup"),
+                make_catalog_entry(id="dup"),
+            ]
+        }
         ok, errors = shm.validate_catalog(catalog)
         self.assertFalse(ok)
         self.assertTrue(any("duplicate id" in e for e in errors))
@@ -151,10 +153,15 @@ class TestMainFunction(unittest.TestCase):
         self.catalog_path = Path(self.tmpdir.name) / "catalog.json"
         self.history_path = Path(self.tmpdir.name) / "history.json"
         self.catalog_path.write_text(
-            json.dumps({"milestones": [
-                make_catalog_entry(id="a", date="2019-01-01"),
-                make_catalog_entry(id="b", date="2020-01-01"),
-            ]}), encoding="utf-8"
+            json.dumps(
+                {
+                    "milestones": [
+                        make_catalog_entry(id="a", date="2019-01-01"),
+                        make_catalog_entry(id="b", date="2020-01-01"),
+                    ]
+                }
+            ),
+            encoding="utf-8",
         )
 
     def tearDown(self):
@@ -163,6 +170,7 @@ class TestMainFunction(unittest.TestCase):
     def _run_main(self, *args):
         import io
         from contextlib import redirect_stdout
+
         old_argv = sys.argv
         sys.argv = ["scrape_historical_milestones.py"] + list(args)
         buf = io.StringIO()
@@ -176,20 +184,31 @@ class TestMainFunction(unittest.TestCase):
     def test_validate_only(self):
         rc, out = self._run_main(
             "--validate-only",
-            "--catalog", str(self.catalog_path),
-            "--history", str(self.history_path),
+            "--catalog",
+            str(self.catalog_path),
+            "--history",
+            str(self.history_path),
         )
         self.assertEqual(rc, 0)
         self.assertIn("catalog valid", out)
 
     def test_validate_only_fails_on_bad_catalog(self):
-        self.catalog_path.write_text(json.dumps({"milestones": [
-            make_catalog_entry(id="a", date="bad"),
-        ]}), encoding="utf-8")
+        self.catalog_path.write_text(
+            json.dumps(
+                {
+                    "milestones": [
+                        make_catalog_entry(id="a", date="bad"),
+                    ]
+                }
+            ),
+            encoding="utf-8",
+        )
         rc, out = self._run_main(
             "--validate-only",
-            "--catalog", str(self.catalog_path),
-            "--history", str(self.history_path),
+            "--catalog",
+            str(self.catalog_path),
+            "--history",
+            str(self.history_path),
         )
         self.assertEqual(rc, 1)
         self.assertIn("malformed date", out)
@@ -197,8 +216,10 @@ class TestMainFunction(unittest.TestCase):
     def test_dry_run_flag(self):
         rc, out = self._run_main(
             "--dry-run",
-            "--catalog", str(self.catalog_path),
-            "--history", str(self.history_path),
+            "--catalog",
+            str(self.catalog_path),
+            "--history",
+            str(self.history_path),
         )
         self.assertEqual(rc, 0)
         self.assertIn("[dry-run]", out)
@@ -206,9 +227,12 @@ class TestMainFunction(unittest.TestCase):
 
     def test_today_flag(self):
         rc, out = self._run_main(
-            "--today", "2026-09-29",
-            "--catalog", str(self.catalog_path),
-            "--history", str(self.history_path),
+            "--today",
+            "2026-09-29",
+            "--catalog",
+            str(self.catalog_path),
+            "--history",
+            str(self.history_path),
         )
         self.assertEqual(rc, 0)
         result = json.loads(self.history_path.read_text(encoding="utf-8"))
@@ -216,26 +240,34 @@ class TestMainFunction(unittest.TestCase):
 
     def test_invalid_today_date(self):
         rc, out = self._run_main(
-            "--today", "not-a-date",
-            "--catalog", str(self.catalog_path),
-            "--history", str(self.history_path),
+            "--today",
+            "not-a-date",
+            "--catalog",
+            str(self.catalog_path),
+            "--history",
+            str(self.history_path),
         )
         self.assertEqual(rc, 1)
         self.assertIn("Invalid --today", out)
 
     def test_negative_limit(self):
         rc, out = self._run_main(
-            "--limit", "-1",
-            "--catalog", str(self.catalog_path),
-            "--history", str(self.history_path),
+            "--limit",
+            "-1",
+            "--catalog",
+            str(self.catalog_path),
+            "--history",
+            str(self.history_path),
         )
         self.assertEqual(rc, 1)
         self.assertIn("--limit must be a positive", out)
 
     def test_missing_catalog_file(self):
         rc, out = self._run_main(
-            "--catalog", str(Path(self.tmpdir.name) / "nonexistent.json"),
-            "--history", str(self.history_path),
+            "--catalog",
+            str(Path(self.tmpdir.name) / "nonexistent.json"),
+            "--history",
+            str(self.history_path),
         )
         self.assertEqual(rc, 1)
         self.assertIn("Failed to load catalog", out)
@@ -243,8 +275,10 @@ class TestMainFunction(unittest.TestCase):
     def test_malformed_history_file(self):
         self.history_path.write_text("not json", encoding="utf-8")
         rc, out = self._run_main(
-            "--catalog", str(self.catalog_path),
-            "--history", str(self.history_path),
+            "--catalog",
+            str(self.catalog_path),
+            "--history",
+            str(self.history_path),
         )
         self.assertEqual(rc, 1)
         self.assertIn("malformed", out)
@@ -252,28 +286,33 @@ class TestMainFunction(unittest.TestCase):
 
 class TestPickNextBatch(unittest.TestCase):
     def test_oldest_first(self):
-        catalog = {"milestones": [
-            make_catalog_entry(id="a", date="2020-06-01"),
-            make_catalog_entry(id="b", date="2019-01-01"),
-            make_catalog_entry(id="c", date="2021-01-01"),
-        ]}
+        catalog = {
+            "milestones": [
+                make_catalog_entry(id="a", date="2020-06-01"),
+                make_catalog_entry(id="b", date="2019-01-01"),
+                make_catalog_entry(id="c", date="2021-01-01"),
+            ]
+        }
         batch = shm.pick_next_batch(catalog, set(), 2)
         self.assertEqual([e["id"] for e in batch], ["b", "a"])
 
     def test_respects_limit(self):
-        catalog = {"milestones": [
-            make_catalog_entry(id=f"m{i}", date=f"2020-01-{i+1:02d}")
-            for i in range(10)
-        ]}
+        catalog = {
+            "milestones": [
+                make_catalog_entry(id=f"m{i}", date=f"2020-01-{i + 1:02d}") for i in range(10)
+            ]
+        }
         batch = shm.pick_next_batch(catalog, set(), 3)
         self.assertEqual(len(batch), 3)
 
     def test_skips_existing_ids(self):
-        catalog = {"milestones": [
-            make_catalog_entry(id="a", date="2019-01-01"),
-            make_catalog_entry(id="b", date="2020-01-01"),
-            make_catalog_entry(id="c", date="2021-01-01"),
-        ]}
+        catalog = {
+            "milestones": [
+                make_catalog_entry(id="a", date="2019-01-01"),
+                make_catalog_entry(id="b", date="2020-01-01"),
+                make_catalog_entry(id="c", date="2021-01-01"),
+            ]
+        }
         batch = shm.pick_next_batch(catalog, {"a"}, 2)
         self.assertEqual([e["id"] for e in batch], ["b", "c"])
 
@@ -297,9 +336,7 @@ class TestIntegration(unittest.TestCase):
         self.tmpdir.cleanup()
 
     def _write_catalog(self, entries):
-        self.catalog_path.write_text(
-            json.dumps({"milestones": entries}), encoding="utf-8"
-        )
+        self.catalog_path.write_text(json.dumps({"milestones": entries}), encoding="utf-8")
 
     def test_dry_run_writes_nothing(self):
         self._write_catalog([make_catalog_entry(id="a", date="2020-01-01")])
@@ -360,7 +397,9 @@ class TestIntegration(unittest.TestCase):
 
 class TestCatalogFile(unittest.TestCase):
     def test_load_real_catalog(self):
-        catalog_path = Path(__file__).resolve().parent.parent / "data" / "historical_milestones.json"
+        catalog_path = (
+            Path(__file__).resolve().parent.parent / "data" / "historical_milestones.json"
+        )
         if not catalog_path.exists():
             self.skipTest("Real catalog not found")
         catalog = shm.load_catalog(catalog_path)
@@ -369,18 +408,25 @@ class TestCatalogFile(unittest.TestCase):
         self.assertGreater(len(catalog.get("milestones", [])), 0)
 
     def test_real_catalog_has_all_categories(self):
-        catalog_path = Path(__file__).resolve().parent.parent / "data" / "historical_milestones.json"
+        catalog_path = (
+            Path(__file__).resolve().parent.parent / "data" / "historical_milestones.json"
+        )
         if not catalog_path.exists():
             self.skipTest("Real catalog not found")
         catalog = shm.load_catalog(catalog_path)
         categories = {e["category"] for e in catalog["milestones"]}
         expected = {
-            "Biotechnology", "Computing & AGI", "Quantum Physics",
-            "Renewable Energy", "Cybersecurity", "Spaceflight & Aeronautics",
+            "Biotechnology",
+            "Computing & AGI",
+            "Quantum Physics",
+            "Renewable Energy",
+            "Cybersecurity",
+            "Spaceflight & Aeronautics",
             "Military & Defense",
         }
-        self.assertTrue(expected.issubset(categories),
-                        f"Missing categories: {expected - categories}")
+        self.assertTrue(
+            expected.issubset(categories), f"Missing categories: {expected - categories}"
+        )
 
 
 if __name__ == "__main__":

@@ -8,6 +8,7 @@ upstream one and `build_site_categories` emitted a null-island milestone.
 The stages are wired together here exactly as `sync_milestones.main()` wires them,
 because the defect lived in the wiring rather than in any single stage.
 """
+
 from __future__ import annotations
 
 import datetime as dt
@@ -81,8 +82,7 @@ class TestUpstreamSentinelNeverReachesPublishedData(unittest.TestCase):
     def test_null_island_upstream_record_is_scrubbed_everywhere(self):
         out = self._run_pipeline([_milestone(geolocation=dict(NULL_ISLAND))])
         for stage in ("history", "feed", "categories"):
-            self.assertEqual(_null_island_in(out[stage]), [],
-                             "null-island leaked into %s" % stage)
+            self.assertEqual(_null_island_in(out[stage]), [], "null-island leaked into %s" % stage)
 
     def test_record_still_survives_as_unlocated(self):
         # Scrubbing must drop the coordinate, never the milestone.
@@ -97,10 +97,12 @@ class TestUpstreamSentinelNeverReachesPublishedData(unittest.TestCase):
         self.assertEqual(cats[0]["geolocation"], geo)
 
     def test_mixed_batch_keeps_the_good_one_located(self):
-        out = self._run_pipeline([
-            _milestone(id="ms-bad", geolocation=dict(NULL_ISLAND)),
-            _milestone(id="ms-good", geolocation={"lat": 35.68, "lon": 139.69}),
-        ])
+        out = self._run_pipeline(
+            [
+                _milestone(id="ms-bad", geolocation=dict(NULL_ISLAND)),
+                _milestone(id="ms-good", geolocation={"lat": 35.68, "lon": 139.69}),
+            ]
+        )
         by_id = {m["id"]: m for m in out["categories"]["computing_agi"]["milestones"]}
         self.assertNotIn("geolocation", by_id["ms-bad"])
         self.assertEqual(by_id["ms-good"]["geolocation"], {"lat": 35.68, "lon": 139.69})
@@ -123,10 +125,18 @@ class TestUpstreamSentinelNeverReachesPublishedData(unittest.TestCase):
     def test_archived_sentinel_survives_a_second_run(self):
         # A record already in the archive as unlocated must not be resurrected as
         # (0,0) merely because upstream still sends the sentinel for it.
-        archived = {"id": "ms-e2e-1", "title": "A milestone", "category": "Computing & AGI",
-                    "subcategory": "benchmarks", "date": "2024-05-01", "source": "Example",
-                    "url": "https://example.org/a", "first_seen": "2024-05-02",
-                    "last_seen": "2024-05-02", "located": False}
+        archived = {
+            "id": "ms-e2e-1",
+            "title": "A milestone",
+            "category": "Computing & AGI",
+            "subcategory": "benchmarks",
+            "date": "2024-05-01",
+            "source": "Example",
+            "url": "https://example.org/a",
+            "first_seen": "2024-05-02",
+            "last_seen": "2024-05-02",
+            "located": False,
+        }
         upstream = _upstream([_milestone(geolocation=dict(NULL_ISLAND))])
         site = sm.transform_upstream_to_site_format(upstream)
         current = list(sm.iter_milestones(site))

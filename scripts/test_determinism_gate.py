@@ -55,8 +55,10 @@ class TestLoadStable(unittest.TestCase):
     def test_last_update_is_stripped(self):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "events.json"
-            path.write_text(json.dumps({"last_update": "2026-10-01T00:00:00Z",
-                                        "events": [1, 2]}), encoding="utf-8")
+            path.write_text(
+                json.dumps({"last_update": "2026-10-01T00:00:00Z", "events": [1, 2]}),
+                encoding="utf-8",
+            )
             loaded = gate.load_stable(path)
         self.assertNotIn("last_update", loaded)
         self.assertEqual(loaded["events"], [1, 2])
@@ -66,13 +68,12 @@ class TestLoadStable(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             base = Path(tmp)
             (base / "a.json").write_text(
-                json.dumps({"last_update": "2026-10-01T00:00:00Z", "events": [1]}),
-                encoding="utf-8")
+                json.dumps({"last_update": "2026-10-01T00:00:00Z", "events": [1]}), encoding="utf-8"
+            )
             (base / "b.json").write_text(
-                json.dumps({"last_update": "2026-10-01T00:00:01Z", "events": [1]}),
-                encoding="utf-8")
-            self.assertEqual(gate.load_stable(base / "a.json"),
-                             gate.load_stable(base / "b.json"))
+                json.dumps({"last_update": "2026-10-01T00:00:01Z", "events": [1]}), encoding="utf-8"
+            )
+            self.assertEqual(gate.load_stable(base / "a.json"), gate.load_stable(base / "b.json"))
 
 
 class TestCompareRuns(unittest.TestCase):
@@ -81,11 +82,14 @@ class TestCompareRuns(unittest.TestCase):
         data = run / "data"
         data.mkdir(parents=True)
         (data / "events.json").write_text(
-            json.dumps({"last_update": "x", "events": events}), encoding="utf-8")
+            json.dumps({"last_update": "x", "events": events}), encoding="utf-8"
+        )
         (data / "milestones.json").write_text(
-            json.dumps(milestones if milestones is not None
-                       else {"last_update": "x", "categories": {}}),
-            encoding="utf-8")
+            json.dumps(
+                milestones if milestones is not None else {"last_update": "x", "categories": {}}
+            ),
+            encoding="utf-8",
+        )
         return run
 
     def test_identical_runs_pass(self):
@@ -136,10 +140,17 @@ class TestIdempotence(unittest.TestCase):
         run = root / name
         data = run / "data"
         data.mkdir(parents=True)
-        (data / "milestones.json").write_text(json.dumps({
-            "last_update": "x",
-            "categories": {"quantum": {"milestones": [{"id": f"m{i}"} for i in range(count)]}},
-        }), encoding="utf-8")
+        (data / "milestones.json").write_text(
+            json.dumps(
+                {
+                    "last_update": "x",
+                    "categories": {
+                        "quantum": {"milestones": [{"id": f"m{i}"} for i in range(count)]}
+                    },
+                }
+            ),
+            encoding="utf-8",
+        )
         return run
 
     def test_milestone_count_sums_categories(self):
@@ -155,10 +166,17 @@ class TestIdempotence(unittest.TestCase):
             run = self._run(root, "a", 5)
             remerged = run / "data-remerged"
             remerged.mkdir()
-            (remerged / "milestones.json").write_text(json.dumps({
-                "last_update": "y",
-                "categories": {"quantum": {"milestones": [{"id": f"m{i}"} for i in range(5)]}},
-            }), encoding="utf-8")
+            (remerged / "milestones.json").write_text(
+                json.dumps(
+                    {
+                        "last_update": "y",
+                        "categories": {
+                            "quantum": {"milestones": [{"id": f"m{i}"} for i in range(5)]}
+                        },
+                    }
+                ),
+                encoding="utf-8",
+            )
             gate.assert_idempotent(run)
 
     def test_a_shrinking_feed_is_rejected(self):
@@ -167,10 +185,17 @@ class TestIdempotence(unittest.TestCase):
             run = self._run(root, "a", 5)
             remerged = run / "data-remerged"
             remerged.mkdir()
-            (remerged / "milestones.json").write_text(json.dumps({
-                "last_update": "y",
-                "categories": {"quantum": {"milestones": [{"id": f"m{i}"} for i in range(3)]}},
-            }), encoding="utf-8")
+            (remerged / "milestones.json").write_text(
+                json.dumps(
+                    {
+                        "last_update": "y",
+                        "categories": {
+                            "quantum": {"milestones": [{"id": f"m{i}"} for i in range(3)]}
+                        },
+                    }
+                ),
+                encoding="utf-8",
+            )
             with self.assertRaises(AssertionError) as ctx:
                 gate.assert_idempotent(run)
             self.assertIn("not idempotent", str(ctx.exception))
@@ -225,11 +250,21 @@ class TestRealRegeneration(unittest.TestCase):
             env = dict(os.environ, STALE_ERROR_DAYS="99")
             for name in ("gen-a", "gen-b"):
                 proc = subprocess.run(
-                    [sys.executable, str(ROOT / "scripts" / "sync_milestones.py"),
-                     "--output-dir", str(Path(tmp) / name),
-                     "--upstream", str(ROOT / "data" / "milestones.json"),
-                     "--today", "2026-10-01"],
-                    capture_output=True, text=True, env=env, cwd=str(ROOT))
+                    [
+                        sys.executable,
+                        str(ROOT / "scripts" / "sync_milestones.py"),
+                        "--output-dir",
+                        str(Path(tmp) / name),
+                        "--upstream",
+                        str(ROOT / "data" / "milestones.json"),
+                        "--today",
+                        "2026-10-01",
+                    ],
+                    capture_output=True,
+                    text=True,
+                    env=env,
+                    cwd=str(ROOT),
+                )
                 if proc.returncode != 0:
                     self.skipTest(f"regeneration unavailable offline: {proc.stderr[:200]}")
             failures = gate.compare_runs(Path(tmp) / "gen-a", Path(tmp) / "gen-b")

@@ -5,6 +5,7 @@ answer: an absent dot is visibly missing, a confident wrong one is not. The test
 weighted accordingly - far more of them assert that something is *refused* than that
 something is found.
 """
+
 from __future__ import annotations
 
 import sys
@@ -34,8 +35,12 @@ class TestDemonyms(unittest.TestCase):
     def test_a_summary_only_signal_is_below_the_floor(self):
         # A summary mention scores 1.0 against a floor of 3.0. One weak mention,
         # however specific the adjective, is not a location.
-        out = ag.resolve({"title": "A study of small fish",
-                          "summary": "Samples were collected in Maltese waters."})
+        out = ag.resolve(
+            {
+                "title": "A study of small fish",
+                "summary": "Samples were collected in Maltese waters.",
+            }
+        )
         self.assertFalse(out["located"], out)
 
     def test_no_signal_at_all_is_refused(self):
@@ -72,9 +77,11 @@ class TestAffiliations(unittest.TestCase):
     def test_several_affiliations_refuse_rather_than_pick_one(self):
         # The rule that matters most: an article naming three institutions is not
         # evidence for any one of them, and used to resolve by sort order.
-        body = ("a theorist at Tsinghua University in China, the Perimeter Institute "
-                "for Theoretical Physics in Waterloo, Canada, and a physicist at "
-                "Stanford University all built on the result")
+        body = (
+            "a theorist at Tsinghua University in China, the Perimeter Institute "
+            "for Theoretical Physics in Waterloo, Canada, and a physicist at "
+            "Stanford University all built on the result"
+        )
         out = ag.resolve({"title": "A result"}, body)
         self.assertFalse(out["located"], out)
 
@@ -86,8 +93,10 @@ class TestAffiliations(unittest.TestCase):
 
 class TestTextExtraction(unittest.TestCase):
     def test_scripts_and_tags_are_stripped(self):
-        html = "<html><head><title>x</title><script>var a='Berlin';</script></head>" \
-               "<body><p>Results from Kyoto</p></body></html>"
+        html = (
+            "<html><head><title>x</title><script>var a='Berlin';</script></head>"
+            "<body><p>Results from Kyoto</p></body></html>"
+        )
         text = ag.extract_text(html)
         self.assertNotIn("var a", text)
         self.assertIn("Kyoto", text)
@@ -109,9 +118,14 @@ class TestFetchIsGuarded(unittest.TestCase):
     """
 
     def test_private_and_loopback_addresses_are_refused(self):
-        for url in ("http://127.0.0.1/", "http://localhost:8080/x",
-                    "http://[::1]/", "https://10.0.0.5/internal",
-                    "https://192.168.1.1/", "http://169.254.169.254/latest/meta-data/"):
+        for url in (
+            "http://127.0.0.1/",
+            "http://localhost:8080/x",
+            "http://[::1]/",
+            "https://10.0.0.5/internal",
+            "https://192.168.1.1/",
+            "http://169.254.169.254/latest/meta-data/",
+        ):
             ok, why = ag._public_host(url)
             self.assertFalse(ok, "%s should be refused" % url)
             self.assertTrue(why, "refusal should say why")
@@ -133,9 +147,12 @@ class TestFetchIsGuarded(unittest.TestCase):
     def test_redirects_are_revalidated(self):
         # Validating only the first URL is not enough: a public host can 302 to the
         # metadata service, so the handler has to re-check every hop.
-        self.assertTrue(issubclass(ag._NoPrivateRedirects,
-                                   __import__("urllib.request",
-                                              fromlist=["request"]).HTTPRedirectHandler))
+        self.assertTrue(
+            issubclass(
+                ag._NoPrivateRedirects,
+                __import__("urllib.request", fromlist=["request"]).HTTPRedirectHandler,
+            )
+        )
 
 
 class TestCacheHygiene(unittest.TestCase):
@@ -145,15 +162,21 @@ class TestCacheHygiene(unittest.TestCase):
         # 108KB of it.
         import json
         import tempfile
+
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "cache.json"
             original = ag.CACHE_PATH
             ag.CACHE_PATH = path
             try:
-                ag.save_cache({"https://e.org/a": {
-                    "text": "secrets of the fetched page",
-                    "fetched": "abc",
-                    "outcome": {"located": False, "reason": "no signal"}}})
+                ag.save_cache(
+                    {
+                        "https://e.org/a": {
+                            "text": "secrets of the fetched page",
+                            "fetched": "abc",
+                            "outcome": {"located": False, "reason": "no signal"},
+                        }
+                    }
+                )
                 stored = json.loads(path.read_text(encoding="utf-8"))
             finally:
                 ag.CACHE_PATH = original
@@ -163,15 +186,19 @@ class TestCacheHygiene(unittest.TestCase):
     def test_cache_prunes_records_that_are_no_longer_queued(self):
         import json
         import tempfile
+
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "cache.json"
             original = ag.CACHE_PATH
             ag.CACHE_PATH = path
             try:
                 ag.save_cache(
-                    {"https://e.org/keep": {"outcome": {"located": False}},
-                     "https://e.org/gone": {"outcome": {"located": False}}},
-                    keep_urls={"https://e.org/keep"})
+                    {
+                        "https://e.org/keep": {"outcome": {"located": False}},
+                        "https://e.org/gone": {"outcome": {"located": False}},
+                    },
+                    keep_urls={"https://e.org/keep"},
+                )
                 stored = json.loads(path.read_text(encoding="utf-8"))
             finally:
                 ag.CACHE_PATH = original
@@ -181,9 +208,11 @@ class TestCacheHygiene(unittest.TestCase):
         if not ag.CACHE_PATH.exists():
             self.skipTest("no cache committed")
         import json
+
         stored = json.loads(ag.CACHE_PATH.read_text(encoding="utf-8"))
-        offenders = [u for u, v in stored["articles"].items()
-                     if isinstance(v, dict) and "text" in v]
+        offenders = [
+            u for u, v in stored["articles"].items() if isinstance(v, dict) and "text" in v
+        ]
         self.assertEqual(offenders, [], "page text still stored: %s" % offenders[:3])
 
 
@@ -195,8 +224,12 @@ class TestResolveIsPure(unittest.TestCase):
         self.assertEqual(a, b)
 
     def test_output_is_never_the_origin_sentinel(self):
-        for title in ("Maltese OCR", "A study of Maltese fish",
-                      "Graph Sandwich Conjecture", "USCIS decisions dataset"):
+        for title in (
+            "Maltese OCR",
+            "A study of Maltese fish",
+            "Graph Sandwich Conjecture",
+            "USCIS decisions dataset",
+        ):
             out = ag.resolve({"title": title})
             if out.get("located"):
                 self.assertNotEqual((out["lat"], out["lon"]), (0, 0), title)
@@ -207,8 +240,7 @@ class TestWeighting(unittest.TestCase):
         # Japan in the title (3.0), Germany in the summary (1.0). Both are real
         # entries in the place table, so this is a genuine contest rather than one
         # signal with nothing to beat it.
-        out = ag.resolve({"title": "Results from Japan",
-                          "summary": "The team met in Germany."})
+        out = ag.resolve({"title": "Results from Japan", "summary": "The team met in Germany."})
         self.assertTrue(out["located"], out)
         self.assertIn("japan", out["evidence"].lower())
 
@@ -221,12 +253,12 @@ class TestWeighting(unittest.TestCase):
     def test_the_same_place_twice_is_not_independent_corroboration(self):
         # Title and summary are the same paper; agreeing with itself is not a second
         # independent route to the coordinate.
-        out = ag.resolve({"title": "Results from Japan",
-                          "summary": "Further results from Japan."})
+        out = ag.resolve({"title": "Results from Japan", "summary": "Further results from Japan."})
         self.assertFalse(out["located"], out)
 
     def test_confidence_values_are_from_the_declared_set(self):
         import location_contract as lc
+
         out = ag.resolve({"title": "Results from Japan and Japan"})
         if out.get("located"):
             self.assertTrue(lc.validate_confidence(out["confidence"]))

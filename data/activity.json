@@ -1,9 +1,9 @@
 {
-  "last_update": "2026-10-02T17:01:42+00:00",
+  "last_update": "2026-10-04T11:50:28+00:00",
   "bucket": "month",
   "first": "1945-07-01",
   "last": "2026-10-01",
-  "total": 110,
+  "total": 154,
   "days": [
     {
       "date": "1945-07-01",
@@ -3623,7 +3623,7 @@
     },
     {
       "date": "2020-11-01",
-      "count": 0
+      "count": 2
     },
     {
       "date": "2020-12-01",
@@ -3667,7 +3667,7 @@
     },
     {
       "date": "2021-10-01",
-      "count": 0
+      "count": 2
     },
     {
       "date": "2021-11-01",
@@ -3747,7 +3747,7 @@
     },
     {
       "date": "2023-06-01",
-      "count": 0
+      "count": 3
     },
     {
       "date": "2023-07-01",
@@ -3811,7 +3811,7 @@
     },
     {
       "date": "2024-10-01",
-      "count": 0
+      "count": 4
     },
     {
       "date": "2024-11-01",
@@ -3831,7 +3831,7 @@
     },
     {
       "date": "2025-03-01",
-      "count": 0
+      "count": 4
     },
     {
       "date": "2025-04-01",
@@ -3843,7 +3843,7 @@
     },
     {
       "date": "2025-06-01",
-      "count": 0
+      "count": 3
     },
     {
       "date": "2025-07-01",
@@ -3859,7 +3859,7 @@
     },
     {
       "date": "2025-10-01",
-      "count": 0
+      "count": 5
     },
     {
       "date": "2025-11-01",
@@ -3899,15 +3899,15 @@
     },
     {
       "date": "2026-08-01",
-      "count": 20
+      "count": 22
     },
     {
       "date": "2026-09-01",
-      "count": 16
+      "count": 31
     },
     {
       "date": "2026-10-01",
-      "count": 3
+      "count": 7
     }
   ],
   "spikes": [
@@ -3917,14 +3917,14 @@
       "reason": "Seed2.0 model achieves world-leading reasoning and multimodal capabilities; ORACLE-2 Omni achieves 0.73 macro F1 for real-time transient classification using multimodal data; Mnemosyne introduces Agentic Transaction Processing with formal safety guarantees for AI workflows"
     },
     {
-      "date": "2026-09-28",
-      "count": 4,
-      "reason": "New ionizable lipid LC-1 enables efficient LNP delivery of large gene editors to multiple tissues; Lipid nanoparticles optimized for large RNA cargo enhance in vivo genome editing; AI-guided optimization yields thermostable mRNA vaccines stable at 37°C for 2 months"
+      "date": "2026-09-07",
+      "count": 8,
+      "reason": "Largest local LLM claimed for the CHUWI UniBox AI495 Pro; Largest local LLM claimed for the CHUWI UniBox AI395; CHUWI UniBox AI495 Pro unified memory bandwidth"
     },
     {
-      "date": "2026-09-25",
-      "count": 3,
-      "reason": "Photolabile oligonucleotides enable spatially resolved single-cell transcriptomics and epigenomics; Gravity found to be holographic, collapsing space dimensions; Forecast-Dojo: Replayable Benchmark for LLM Forecasting Agents"
+      "date": "2026-10-01",
+      "count": 5,
+      "reason": "Lenovo ThinkCentre X Ultra chassis volume; Lenovo ThinkCentre X Ultra caps at 128 GB unified memory in a 1.6-litre chassis; HP ZBook Ultra G3a graphics-allocatable unified memory"
     }
   ]
 }

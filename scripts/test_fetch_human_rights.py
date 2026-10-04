@@ -59,8 +59,10 @@ class TestParseFeed(unittest.TestCase):
                 self.assertEqual(fhr.parse_feed(junk), [])
 
     def test_atom_style_link_href_is_used(self):
-        atom = ('<feed><entry><title>Detention reported in Sudan</title>'
-                '<link href="https://example.org/a"/></entry></feed>')
+        atom = (
+            "<feed><entry><title>Detention reported in Sudan</title>"
+            '<link href="https://example.org/a"/></entry></feed>'
+        )
         items = fhr.parse_feed(atom)
         # The parser is item-based, so an entry-only feed yields nothing rather
         # than a half-parsed record.
@@ -69,26 +71,32 @@ class TestParseFeed(unittest.TestCase):
 
 class TestViolationClassification(unittest.TestCase):
     def test_detects_real_violations(self):
-        for text in ("authorities carried out arbitrary detention",
-                     "Witnesses described torture in the camp",
-                     "Report documents enforced disappearance",
-                     "Human rights defender detained"):
+        for text in (
+            "authorities carried out arbitrary detention",
+            "Witnesses described torture in the camp",
+            "Report documents enforced disappearance",
+            "Human rights defender detained",
+        ):
             with self.subTest(text=text):
                 self.assertTrue(fhr.is_violation_report(text))
 
     def test_rejects_ordinary_reporting(self):
-        for text in ("Team wins the football final",
-                     "Minister opens a new hospital",
-                     "Protests continue in the capital",
-                     "A new report on economic growth"):
+        for text in (
+            "Team wins the football final",
+            "Minister opens a new hospital",
+            "Protests continue in the capital",
+            "A new report on economic growth",
+        ):
             with self.subTest(text=text):
                 self.assertFalse(fhr.is_violation_report(text))
 
     def test_headline_is_matched_before_the_body(self):
         # Regression: a UAE article whose boilerplate body named South Sudan used
         # to be plotted in South Sudan, ~4,000 km away.
-        located = fhr.locate("United Arab Emirates: a year on, critic remains in detention",
-                             "Photo: a South Sudanese policeman")
+        located = fhr.locate(
+            "United Arab Emirates: a year on, critic remains in detention",
+            "Photo: a South Sudanese policeman",
+        )
         self.assertIsNotNone(located)
         lat, lon, region = located
         self.assertEqual(region, "Western Asia")
@@ -99,8 +107,9 @@ class TestViolationClassification(unittest.TestCase):
         # The hints are country-level on purpose: a headline that names only a
         # city cannot be placed reliably, and a coarse country anchor is better
         # than a wrong point.
-        located = fhr.locate("Defenders sentenced after a crackdown",
-                             "The court in Sudan ruled on the appeal.")
+        located = fhr.locate(
+            "Defenders sentenced after a crackdown", "The court in Sudan ruled on the appeal."
+        )
         self.assertIsNotNone(located)
         self.assertEqual(located[2], "Northern Africa")
 
@@ -119,11 +128,15 @@ class TestViolationClassification(unittest.TestCase):
 class TestBuildViolation(unittest.TestCase):
     def test_keeps_a_locatable_violation(self):
         entry = fhr.build_violation(
-            {"title": "Myanmar: political prisoners tortured",
-             "url": "https://www.hrw.org/news/2026/09/22/x",
-             "note": "Witnesses described torture.",
-             "pubdate": "Tue, 22 Sep 2026 08:00:00 +0000"},
-            "Human Rights Watch", TODAY)
+            {
+                "title": "Myanmar: political prisoners tortured",
+                "url": "https://www.hrw.org/news/2026/09/22/x",
+                "note": "Witnesses described torture.",
+                "pubdate": "Tue, 22 Sep 2026 08:00:00 +0000",
+            },
+            "Human Rights Watch",
+            TODAY,
+        )
         self.assertIsNotNone(entry)
         self.assertEqual(entry["source"], "Human Rights Watch")
         self.assertEqual(entry["region"], "South-Eastern Asia")  # UN geoscheme label
@@ -133,20 +146,38 @@ class TestBuildViolation(unittest.TestCase):
 
     def test_drops_a_non_violation(self):
         entry = fhr.build_violation(
-            {"title": "Local team wins the football final", "url": "https://example.com/s",
-             "note": "", "pubdate": ""}, "Test", TODAY)
+            {
+                "title": "Local team wins the football final",
+                "url": "https://example.com/s",
+                "note": "",
+                "pubdate": "",
+            },
+            "Test",
+            TODAY,
+        )
         self.assertIsNone(entry)
 
     def test_drops_a_violation_it_cannot_place(self):
         # Better to omit than to plot at (0,0), which the validator rejects.
         entry = fhr.build_violation(
-            {"title": "Report documents torture in detention", "url": "https://example.com/t",
-             "note": "", "pubdate": ""}, "Test", TODAY)
+            {
+                "title": "Report documents torture in detention",
+                "url": "https://example.com/t",
+                "note": "",
+                "pubdate": "",
+            },
+            "Test",
+            TODAY,
+        )
         self.assertIsNone(entry)
 
     def test_ids_are_stable_across_runs_and_url_changes(self):
-        item = {"title": "Myanmar: prisoners tortured", "url": "https://example.com/stable",
-                "note": "", "pubdate": ""}
+        item = {
+            "title": "Myanmar: prisoners tortured",
+            "url": "https://example.com/stable",
+            "note": "",
+            "pubdate": "",
+        }
         first = fhr.build_violation(item, "S", TODAY)
         again = fhr.build_violation(item, "S", TODAY)
         self.assertEqual(first["id"], again["id"])
@@ -156,10 +187,15 @@ class TestBuildViolation(unittest.TestCase):
 
     def test_note_is_plain_text_with_entities_resolved(self):
         entry = fhr.build_violation(
-            {"title": "Sudan: torture reported in detention",
-             "url": "https://example.com/s", "pubdate": "",
-             "note": "&lt;p&gt;Witnesses described &amp;nbsp;torture.&lt;/p&gt;"},
-            "S", TODAY)
+            {
+                "title": "Sudan: torture reported in detention",
+                "url": "https://example.com/s",
+                "pubdate": "",
+                "note": "&lt;p&gt;Witnesses described &amp;nbsp;torture.&lt;/p&gt;",
+            },
+            "S",
+            TODAY,
+        )
         self.assertNotIn("<", entry["note"])
         self.assertIn("torture", entry["note"])
         self.assertNotIn("&nbsp;", entry["note"])
@@ -168,8 +204,15 @@ class TestBuildViolation(unittest.TestCase):
         for raw in ("", "not a date", "Mon, 32 Xxx 2026"):
             with self.subTest(raw=raw):
                 entry = fhr.build_violation(
-                    {"title": "Sudan: detention and torture", "url": "https://example.com/s",
-                     "note": "", "pubdate": raw}, "S", TODAY)
+                    {
+                        "title": "Sudan: detention and torture",
+                        "url": "https://example.com/s",
+                        "note": "",
+                        "pubdate": raw,
+                    },
+                    "S",
+                    TODAY,
+                )
                 self.assertIsNotNone(entry)
                 self.assertEqual(entry["start_date"], "2026-10-01")
 
@@ -177,9 +220,16 @@ class TestBuildViolation(unittest.TestCase):
 class TestValidateEntry(unittest.TestCase):
     def _base(self, **over):
         base = {
-            "id": "hr-1", "name": "Report", "region": "Western Asia",
-            "lat": 23.4, "lon": 53.8, "status": "active", "start_date": "2026-09-22",
-            "source": "HRW", "url": "https://example.com/a", "note": "",
+            "id": "hr-1",
+            "name": "Report",
+            "region": "Western Asia",
+            "lat": 23.4,
+            "lon": 53.8,
+            "status": "active",
+            "start_date": "2026-09-22",
+            "source": "HRW",
+            "url": "https://example.com/a",
+            "note": "",
         }
         base.update(over)
         return base
@@ -209,9 +259,16 @@ class TestValidateEntry(unittest.TestCase):
 class TestMergeEntries(unittest.TestCase):
     def _entry(self, id_, name="Report"):
         return {
-            "id": id_, "name": name, "region": "Western Asia", "lat": 23.4, "lon": 53.8,
-            "status": "active", "start_date": "2026-09-22", "source": "HRW",
-            "url": "https://example.com/a", "note": "",
+            "id": id_,
+            "name": name,
+            "region": "Western Asia",
+            "lat": 23.4,
+            "lon": 53.8,
+            "status": "active",
+            "start_date": "2026-09-22",
+            "source": "HRW",
+            "url": "https://example.com/a",
+            "note": "",
         }
 
     def test_new_entries_are_added(self):
@@ -236,7 +293,8 @@ class TestMergeEntries(unittest.TestCase):
 
     def test_output_is_sorted_newest_first(self):
         merged, _, _ = fhr.merge_entries(
-            [], [self._entry("hr-a"), dict(self._entry("hr-b"), start_date="2026-01-01")])
+            [], [self._entry("hr-a"), dict(self._entry("hr-b"), start_date="2026-01-01")]
+        )
         dates = [e["start_date"] for e in merged]
         self.assertEqual(dates, sorted(dates, reverse=True))
 
@@ -295,15 +353,16 @@ class TestSummaryChrome(unittest.TestCase):
     """
 
     def test_leading_caption_control_is_removed(self):
-        out = _strip_html("Click to expand Image Samuel Peter Oyay (Beirut) "
-                          "\u2013 A commentator remains in prison.")
+        out = _strip_html(
+            "Click to expand Image Samuel Peter Oyay (Beirut) "
+            "\u2013 A commentator remains in prison."
+        )
         self.assertFalse(out.lower().startswith("click to expand"))
         self.assertTrue(out.startswith("Samuel Peter Oyay"))
         self.assertIn("remains in prison", out)
 
     def test_it_is_removed_from_markup_too(self):
-        self.assertEqual(_strip_html("<p>Click to expand Image</p><p>Real text.</p>"),
-                         "Real text.")
+        self.assertEqual(_strip_html("<p>Click to expand Image</p><p>Real text.</p>"), "Real text.")
 
     def test_case_insensitive(self):
         self.assertEqual(_strip_html("click to expand image Caption."), "Caption.")
@@ -311,9 +370,11 @@ class TestSummaryChrome(unittest.TestCase):
     def test_prose_mentioning_the_phrase_survives(self):
         # Regression guard: an unanchored pattern turned "the user must click to
         # expand image data" into "the user must data".
-        for text in ("The user must click to expand image data before analysis.",
-                     "Researchers click to enlarge images to inspect damage.",
-                     "Summary text. Click to expand Image Caption credit (Beirut)."):
+        for text in (
+            "The user must click to expand image data before analysis.",
+            "Researchers click to enlarge images to inspect damage.",
+            "Summary text. Click to expand Image Caption credit (Beirut).",
+        ):
             with self.subTest(text=text):
                 self.assertEqual(_strip_html(text), text)
 
@@ -330,7 +391,6 @@ class TestSummaryChrome(unittest.TestCase):
             self.skipTest("data/world_layers.json not present")
         data = json.loads(path.read_text(encoding="utf-8"))
         for entry in data.get("human_rights_violations", []):
-            note = (entry.get("note") or "")
+            note = entry.get("note") or ""
             with self.subTest(entry=entry.get("id")):
                 self.assertNotIn("click to expand image", note.lower())
-

@@ -11,6 +11,7 @@ Usage:
                                              # events.json + world_layers.json)
 Exit code is 1 if any problem is found.
 """
+
 from __future__ import annotations
 
 import json
@@ -30,7 +31,6 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import location_contract as lc
-
 import milestone_identity
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -67,7 +67,9 @@ _LON_MAX = float(_COORD_CTRL.get("lon_max", 180.0))
 
 _LIFECYCLE_CTRL = _SCHEMA.get("controls", {}).get("layer_lifecycle", {})
 _STATUS_VALUES = set(
-    _LIFECYCLE_CTRL.get("status_values", ["active", "ongoing", "concluded", "inactive", "ended", "resolved"])
+    _LIFECYCLE_CTRL.get(
+        "status_values", ["active", "ongoing", "concluded", "inactive", "ended", "resolved"]
+    )
 )
 _DATE_RE = re.compile(_LIFECYCLE_CTRL.get("date_pattern", r"^\d{4}(-\d{2}){0,2}$"))
 
@@ -85,11 +87,7 @@ _FILE_VERSION = _SCHEMA.get("files", {}).get("world_layers.json", {}).get("versi
 def _is_number(v: object) -> bool:
     # JSON has no NaN/Infinity literal, but "1e400" parses to float('inf');
     # reject that *and* bool, exactly like Number.isFinite on the JS side.
-    return (
-        isinstance(v, (int, float))
-        and not isinstance(v, bool)
-        and math.isfinite(float(v))
-    )
+    return isinstance(v, (int, float)) and not isinstance(v, bool) and math.isfinite(float(v))
 
 
 def _why_unlocated(geo) -> str:
@@ -102,19 +100,26 @@ def _why_unlocated(geo) -> str:
     if not isinstance(geo, dict):
         return "must be an object with lat and lon, or omitted entirely"
     lat, lon = geo.get("lat"), geo.get("lon")
-    if not isinstance(lat, (int, float)) or not isinstance(lon, (int, float)) \
-            or isinstance(lat, bool) or isinstance(lon, bool):
+    if (
+        not isinstance(lat, (int, float))
+        or not isinstance(lon, (int, float))
+        or isinstance(lat, bool)
+        or isinstance(lon, bool)
+    ):
         return "lat and lon must both be numbers"
     if not (_coord_ok(lat, lon)):
         return "must be a finite lat/lon pair in range"
-    return (f"({lat}, {lon}) is the no-location marker; omit the key instead of "
-            "publishing null island")
+    return (
+        f"({lat}, {lon}) is the no-location marker; omit the key instead of publishing null island"
+    )
 
 
 def _coord_ok(lat: object, lon: object) -> bool:
     return (
-        _is_number(lat) and _LAT_MIN <= float(lat) <= _LAT_MAX
-        and _is_number(lon) and _LON_MIN <= float(lon) <= _LON_MAX
+        _is_number(lat)
+        and _LAT_MIN <= float(lat) <= _LAT_MAX
+        and _is_number(lon)
+        and _LON_MIN <= float(lon) <= _LON_MAX
     )
 
 
@@ -196,9 +201,12 @@ def _check_lifecycle(kind: str, i: int, item: dict) -> list[str]:
     #     (e.g. start "2025" vs end "2024-12" is an empty window whatever the
     #     real day; start "2024" vs end "2024-06-30" stays valid/unflagged).
     if (
-        isinstance(start, str) and isinstance(end, str)
-        and _valid_date(start) and _valid_date(end)
-        and start.strip() and end.strip()
+        isinstance(start, str)
+        and isinstance(end, str)
+        and _valid_date(start)
+        and _valid_date(end)
+        and start.strip()
+        and end.strip()
     ):
         s, e = start.strip(), end.strip()
         if len(s) == len(e):
@@ -222,16 +230,24 @@ def _check_lifecycle(kind: str, i: int, item: dict) -> list[str]:
             issues.append(f"{kind}[{i}]: {status_norm!r} zone must carry an end_date")
         if not concluded_family and status_norm in {"active", "ongoing", ""}:
             if (
-                isinstance(end, str) and end.strip()
-                and _valid_date(end) and _date_bounds(end)[1] < _today_iso()
+                isinstance(end, str)
+                and end.strip()
+                and _valid_date(end)
+                and _date_bounds(end)[1] < _today_iso()
             ):
-                issues.append(f"{kind}[{i}]: status {status_norm!r} but end_date {end.strip()} has already passed")
+                issues.append(
+                    f"{kind}[{i}]: status {status_norm!r} but end_date {end.strip()} has already passed"
+                )
         elif concluded_family:
             if (
-                isinstance(end, str) and end.strip()
-                and _valid_date(end) and _date_bounds(end)[0] > _today_iso()
+                isinstance(end, str)
+                and end.strip()
+                and _valid_date(end)
+                and _date_bounds(end)[0] > _today_iso()
             ):
-                issues.append(f"{kind}[{i}]: concluded zone end_date {end.strip()} lies in the future")
+                issues.append(
+                    f"{kind}[{i}]: concluded zone end_date {end.strip()} lies in the future"
+                )
     return issues
 
 
@@ -243,9 +259,7 @@ def _check_unique_ids(kind: str, items: list) -> list[str]:
             ident = item.get("id")
             if isinstance(ident, str) and ident:
                 if ident in seen:
-                    issues.append(
-                        f"{kind}: duplicate id {ident!r} (entries {seen[ident]} and {i})"
-                    )
+                    issues.append(f"{kind}: duplicate id {ident!r} (entries {seen[ident]} and {i})")
                 else:
                     seen[ident] = i
     return issues
@@ -398,7 +412,9 @@ def check_event_ordering(events: list) -> list[str]:
     issues: list[str] = []
     if not isinstance(events, list):
         return []
-    dates = [e.get("date") for e in events if isinstance(e, dict) and isinstance(e.get("date"), str)]
+    dates = [
+        e.get("date") for e in events if isinstance(e, dict) and isinstance(e.get("date"), str)
+    ]
     for i in range(1, len(dates)):
         if dates[i] > dates[i - 1]:
             issues.append(
@@ -424,8 +440,7 @@ def check_events(events: object) -> list[str]:
             issues.append(f"events[{i}]: category must be a string")
         elif _CATEGORY_SET and ev["category"] not in _CATEGORY_SET:
             issues.append(
-                f"events[{i}]: category {ev['category']!r} is not one of "
-                f"{sorted(_CATEGORY_SET)}"
+                f"events[{i}]: category {ev['category']!r} is not one of {sorted(_CATEGORY_SET)}"
             )
         if not _valid_event_date(ev.get("date")):
             issues.append(f"events[{i}]: date must be a parseable date string")
@@ -501,7 +516,8 @@ def _check_zone_tier_radius(items: list, kind: str) -> list[str]:
         if tier is None:
             issues.append(
                 f"{kind}[{i}] ({zone.get('id')}): no `tier`, so the radius defaults to "
-                f"the smallest value; declare one of {sorted(_ZONE_TIER_RADIUS)}")
+                f"the smallest value; declare one of {sorted(_ZONE_TIER_RADIUS)}"
+            )
             continue
         if tier not in _ZONE_TIER_RADIUS:
             issues.append(f"{kind}[{i}] ({zone.get('id')}): unknown tier {tier!r}")
@@ -510,7 +526,8 @@ def _check_zone_tier_radius(items: list, kind: str) -> list[str]:
         if isinstance(radius, (int, float)) and radius != expected:
             issues.append(
                 f"{kind}[{i}] ({zone.get('id')}): tier {tier!r} should be drawn at "
-                f"radiusDeg {expected}, but the record says {radius}")
+                f"radiusDeg {expected}, but the record says {radius}"
+            )
     return issues
 
 
@@ -533,15 +550,25 @@ def check_fleets(fleets: object, kind: str = "deployments") -> list[str]:
         if is_infantry:
             # Infantry deployments use lat/lon instead of from/to
             if not _coord_located(f.get("lat"), f.get("lon")):
-                issues.append(f"{kind}[{i}]: lat/lon must be a located coordinate (finite, in range, not 0,0)")
+                issues.append(
+                    f"{kind}[{i}]: lat/lon must be a located coordinate (finite, in range, not 0,0)"
+                )
         else:
             # Fleet/ground movements use from/to
-            if not _coord_located(f.get("from", {}).get("lat") if isinstance(f.get("from"), dict) else None,
-                                  f.get("from", {}).get("lon") if isinstance(f.get("from"), dict) else None):
-                issues.append(f"{kind}[{i}]: from must be a located lat/lon pair (finite, in range, not 0,0)")
-            if not _coord_located(f.get("to", {}).get("lat") if isinstance(f.get("to"), dict) else None,
-                                  f.get("to", {}).get("lon") if isinstance(f.get("to"), dict) else None):
-                issues.append(f"{kind}[{i}]: to must be a located lat/lon pair (finite, in range, not 0,0)")
+            if not _coord_located(
+                f.get("from", {}).get("lat") if isinstance(f.get("from"), dict) else None,
+                f.get("from", {}).get("lon") if isinstance(f.get("from"), dict) else None,
+            ):
+                issues.append(
+                    f"{kind}[{i}]: from must be a located lat/lon pair (finite, in range, not 0,0)"
+                )
+            if not _coord_located(
+                f.get("to", {}).get("lat") if isinstance(f.get("to"), dict) else None,
+                f.get("to", {}).get("lon") if isinstance(f.get("to"), dict) else None,
+            ):
+                issues.append(
+                    f"{kind}[{i}]: to must be a located lat/lon pair (finite, in range, not 0,0)"
+                )
         issues.extend(_check_lifecycle(kind, i, f))
     issues.extend(_check_unique_ids(kind, fleets if isinstance(fleets, list) else []))
     return issues
@@ -591,11 +618,17 @@ def check_milestones(data: object) -> list[str]:
                 if not isinstance(m.get("title"), str):
                     issues.append(f"categories[{cat_key}].milestones[{i}].title: must be a string")
                 if not isinstance(m.get("category"), str):
-                    issues.append(f"categories[{cat_key}].milestones[{i}].category: must be a string")
+                    issues.append(
+                        f"categories[{cat_key}].milestones[{i}].category: must be a string"
+                    )
                 if not isinstance(m.get("subcategory"), str):
-                    issues.append(f"categories[{cat_key}].milestones[{i}].subcategory: must be a string")
+                    issues.append(
+                        f"categories[{cat_key}].milestones[{i}].subcategory: must be a string"
+                    )
                 if not _valid_event_date(m.get("date")):
-                    issues.append(f"categories[{cat_key}].milestones[{i}].date: must be a parseable date string")
+                    issues.append(
+                        f"categories[{cat_key}].milestones[{i}].date: must be a parseable date string"
+                    )
                 geo = m.get("geolocation")
                 # Absent means unlocated, which is valid and which the map renders
                 # as "no dot". (0, 0) is NOT the way to spell unlocated: it is the
@@ -603,15 +636,17 @@ def check_milestones(data: object) -> list[str]:
                 # check_events has always enforced this; milestones did not.
                 if geo is not None and lc.is_unlocated(geo):
                     issues.append(
-                        f"categories[{cat_key}].milestones[{i}].geolocation: "
-                        + _why_unlocated(geo))
+                        f"categories[{cat_key}].milestones[{i}].geolocation: " + _why_unlocated(geo)
+                    )
                 if not _valid_source_url(m.get("url")):
                     issues.append(
                         f"categories[{cat_key}].milestones[{i}].url: must be absent or an http(s) URL, got {m.get('url')!r}"
                     )
                 for flag in ("is_record", "is_breakthrough", "is_new"):
                     if flag in m and not isinstance(m[flag], bool):
-                        issues.append(f"categories[{cat_key}].milestones[{i}].{flag}: must be a boolean if present")
+                        issues.append(
+                            f"categories[{cat_key}].milestones[{i}].{flag}: must be a boolean if present"
+                        )
                 # Written by unify_duplicate_milestones() when one reported result
                 # arrived from several sources. It must be a non-empty list of
                 # non-empty strings, and it only appears on a merged record, so it
@@ -674,9 +709,7 @@ def check_human_rights(items: object) -> list[str]:
                 f"human_rights_violations[{i}]: must carry a located lat/lon pair "
                 f"(not null island), got ({item.get('lat')!r}, {item.get('lon')!r})"
             )
-        issues.extend(
-            _check_lifecycle("human_rights_violations", i, item)
-        )
+        issues.extend(_check_lifecycle("human_rights_violations", i, item))
         if not _valid_source_url(item.get("url")):
             issues.append(
                 f"human_rights_violations[{i}].url: must be absent or an http(s) URL, "
@@ -691,9 +724,15 @@ def check_human_rights(items: object) -> list[str]:
 # kind, so an unlisted value would silently fall back to the generic label and
 # two different facts would read identically. test_check_data.py asserts the two
 # tables hold the same keys.
-ALLIANCE_DOT_KINDS = frozenset({
-    "accession", "posture", "mandate", "industrial", "capability",
-})
+ALLIANCE_DOT_KINDS = frozenset(
+    {
+        "accession",
+        "posture",
+        "mandate",
+        "industrial",
+        "capability",
+    }
+)
 
 
 def check_alliance_dots(items: object) -> list[str]:
@@ -738,8 +777,7 @@ def check_alliance_dots(items: object) -> list[str]:
         issues.extend(_check_lifecycle("alliance_dots", i, item))
         if not _valid_source_url(item.get("url")):
             issues.append(
-                f"alliance_dots[{i}].url: must be absent or an http(s) URL, "
-                f"got {item.get('url')!r}"
+                f"alliance_dots[{i}].url: must be absent or an http(s) URL, got {item.get('url')!r}"
             )
     issues.extend(_check_unique_ids("alliance_dots", items))
     return issues
@@ -760,8 +798,7 @@ def check_data(data: dict, filename: str) -> list[str]:
         return (
             _check_header(data)
             + check_zones(data.get("conflict_zones"))
-        + _check_zone_tier_radius(data.get("conflict_zones") or [],
-                                       "conflict_zones")
+            + _check_zone_tier_radius(data.get("conflict_zones") or [], "conflict_zones")
             + check_crisis_zones(data.get("crisis_zones"))
             + check_fleets(deployments, kind=kind)
             + check_human_rights(data.get("human_rights_violations"))
@@ -828,8 +865,9 @@ def check_archive(data, filename: str) -> list[str]:
         if not _valid_source_url(rec.get("url")):
             issues.append(f"{filename}[{i}].url: must be absolute http(s)")
         if rec.get("category") not in _CATEGORIES:
-            issues.append(f"{filename}[{i}].category: {rec.get('category')!r} is not a "
-                          "canonical category")
+            issues.append(
+                f"{filename}[{i}].category: {rec.get('category')!r} is not a canonical category"
+            )
         geo = rec.get("geolocation")
         if geo is not None and lc.is_unlocated(geo):
             issues.append(f"{filename}[{i}].geolocation: " + _why_unlocated(geo))
@@ -850,8 +888,7 @@ def check_activity(data, filename: str) -> list[str]:
         return [f"{filename}: must be an object"]
     issues: list[str] = []
     if data.get("bucket") not in ("day", "week", "month", "year"):
-        issues.append(f"{filename}.bucket: must be day|week|month|year, got "
-                      f"{data.get('bucket')!r}")
+        issues.append(f"{filename}.bucket: must be day|week|month|year, got {data.get('bucket')!r}")
     days = data.get("days")
     if not isinstance(days, list) or not days:
         issues.append(f"{filename}.days: must be a non-empty list")
@@ -892,17 +929,25 @@ def check_activity(data, filename: str) -> list[str]:
 
     total = data.get("total")
     if isinstance(total, int) and not isinstance(total, bool):
-        summed = sum(e["count"] for e in days
-                     if isinstance(e, dict) and isinstance(e.get("count"), int)
-                     and not isinstance(e.get("count"), bool))
+        summed = sum(
+            e["count"]
+            for e in days
+            if isinstance(e, dict)
+            and isinstance(e.get("count"), int)
+            and not isinstance(e.get("count"), bool)
+        )
         if total != summed:
-            issues.append(f"{filename}.total: {total} does not match the sum of "
-                          f"days ({summed}); the header count and the bars disagree")
+            issues.append(
+                f"{filename}.total: {total} does not match the sum of "
+                f"days ({summed}); the header count and the bars disagree"
+            )
     if seen:
         for field, expected in (("first", min(seen)), ("last", max(seen))):
             if data.get(field) != expected:
-                issues.append(f"{filename}.{field}: {data.get(field)!r} does not match "
-                              f"the series bounds ({expected!r})")
+                issues.append(
+                    f"{filename}.{field}: {data.get(field)!r} does not match "
+                    f"the series bounds ({expected!r})"
+                )
     return issues
 
 
@@ -913,6 +958,7 @@ def check_catalog(data, filename: str) -> list[str]:
     so the two cannot disagree about what a catalog entry looks like.
     """
     import scrape_historical_milestones as sh
+
     milestones = data.get("milestones") if isinstance(data, dict) else None
     if not isinstance(milestones, list) or not milestones:
         return [f"{filename}.milestones: must be a non-empty list"]
@@ -928,7 +974,7 @@ def check_catalog(data, filename: str) -> list[str]:
 def check_file(path: Path) -> list[str]:
     try:
         data = json.loads(path.read_text(encoding="utf-8"))
-    except Exception as exc:  # noqa: BLE001 - surface any read/parse failure
+    except Exception as exc:
         return [f"unreadable/unparseable JSON: {exc}"]
     if path.name in ARCHIVE_FILES:
         return check_archive(data, path.name)

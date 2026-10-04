@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Self-tests for scripts/sync_milestones.py (stdlib only)."""
+
 from __future__ import annotations
 
 import contextlib
@@ -42,8 +43,20 @@ class TestMergeHistory(unittest.TestCase):
             make_milestone(id="b", date="2026-08-25", title="new best"),
         ]
         existing = [
-            make_milestone(id="a", date="2026-08-20", title="older", first_seen="2026-08-20", last_seen="2026-08-20"),
-            make_milestone(id="c", date="2026-04-05", title="superseded", first_seen="2026-04-05", last_seen="2026-04-05"),
+            make_milestone(
+                id="a",
+                date="2026-08-20",
+                title="older",
+                first_seen="2026-08-20",
+                last_seen="2026-08-20",
+            ),
+            make_milestone(
+                id="c",
+                date="2026-04-05",
+                title="superseded",
+                first_seen="2026-04-05",
+                last_seen="2026-04-05",
+            ),
         ]
         history = sm.merge_history(existing, current, "2026-09-21")
         self.assertEqual(len(history), 3)  # a updated, b added, c retained
@@ -74,18 +87,27 @@ class TestMergeHistory(unittest.TestCase):
         # Khipu pair survived unification for exactly this reason despite sharing
         # date, value, unit AND article URL.
         upstream = {
-            "id": "ms-a", "title": "ML-driven Structural Pattern Mining of Inka Khipus",
-            "date": "2026-06-30", "value": "0.86", "unit": "F1 score",
-            "category": "Computing & AGI", "source": "Open Khipu Repository",
-            "url": "http://arxiv.org/abs/2607.00185v1", "geolocation": {"lat": -13.5, "lon": -71.9},
+            "id": "ms-a",
+            "title": "ML-driven Structural Pattern Mining of Inka Khipus",
+            "date": "2026-06-30",
+            "value": "0.86",
+            "unit": "F1 score",
+            "category": "Computing & AGI",
+            "source": "Open Khipu Repository",
+            "url": "http://arxiv.org/abs/2607.00185v1",
+            "geolocation": {"lat": -13.5, "lon": -71.9},
         }
         archived = {
-            "id": "ms-b", "title": "ML pipeline achieves 0.86 F1 classifying Inka khipu provenance",
-            "date": "2026-06-30", "value": "0.86", "unit": "F1 score",
+            "id": "ms-b",
+            "title": "ML pipeline achieves 0.86 F1 classifying Inka khipu provenance",
+            "date": "2026-06-30",
+            "value": "0.86",
+            "unit": "F1 score",
             # The archive keeps whatever label upstream used years ago.
             "category": "Computational Archaeology",
             "source": "Academic researchers (Open Khipu Repository)",
-            "url": "http://arxiv.org/abs/2607.00185v1", "geolocation": {"lat": -13.5, "lon": -71.9},
+            "url": "http://arxiv.org/abs/2607.00185v1",
+            "geolocation": {"lat": -13.5, "lon": -71.9},
         }
         out, changes = sm.unify_duplicate_milestones([upstream, archived])
         self.assertEqual(len(out), 1, f"straddling alias pair was not unified: {changes}")
@@ -95,49 +117,64 @@ class TestMergeHistory(unittest.TestCase):
         # A Nature Biotechnology paper from a Stanford lab was being plotted at
         # Nature's London headquarters, because the publisher name is also an
         # institution key and outranked anything the article itself said.
-        got = sm.geocode_milestone({
-            "source": "Nature Biotechnology",
-            "title": "Lipid nanoparticle delivery",
-            "summary": "Researchers at Stanford University improved LNP design",
-        })
+        got = sm.geocode_milestone(
+            {
+                "source": "Nature Biotechnology",
+                "title": "Lipid nanoparticle delivery",
+                "summary": "Researchers at Stanford University improved LNP design",
+            }
+        )
         self.assertIsNotNone(got)
         self.assertNotEqual(
-            got[0], sm.INSTITUTION_COORDS["nature"]["lat"],
+            got[0],
+            sm.INSTITUTION_COORDS["nature"]["lat"],
             "publisher headquarters overrode the article content",
         )
 
     def test_geocoding_falls_back_to_the_publisher_when_the_article_is_silent(self):
-        got = sm.geocode_milestone({
-            "source": "Nature Biotechnology",
-            "title": "New ionizable lipid LC-1",
-            "summary": "Screening identified lipid LC-1",
-        })
+        got = sm.geocode_milestone(
+            {
+                "source": "Nature Biotechnology",
+                "title": "New ionizable lipid LC-1",
+                "summary": "Screening identified lipid LC-1",
+            }
+        )
         self.assertEqual(got[0], sm.INSTITUTION_COORDS["nature"]["lat"])
 
     def test_geocoding_keeps_corporate_anchors_for_corporate_events(self):
         # A SpaceX launch genuinely happens at the SpaceX site, so a publisher
         # anchor is the right answer here rather than a fallback to be avoided.
-        got = sm.geocode_milestone({
-            "source": "SpaceX",
-            "title": "Starship payload to LEO",
-            "summary": "A Starship launch from the Texas site",
-        })
+        got = sm.geocode_milestone(
+            {
+                "source": "SpaceX",
+                "title": "Starship payload to LEO",
+                "summary": "A Starship launch from the Texas site",
+            }
+        )
         self.assertIsNotNone(got)
 
     def test_geocoding_prefers_the_longest_matching_institution(self):
         # "cornell university" is a more precise claim than "cornell"; a shorter
         # alias must not shadow it by virtue of dictionary order.
-        got = sm.geocode_milestone({
-            "source": "arXiv preprint",
-            "title": "Structural pattern mining",
-            "summary": "A Cornell University team reports the result",
-        })
+        got = sm.geocode_milestone(
+            {
+                "source": "arXiv preprint",
+                "title": "Structural pattern mining",
+                "summary": "A Cornell University team reports the result",
+            }
+        )
         self.assertIsNotNone(got)
 
     def test_geocoding_returns_none_when_nothing_is_locatable(self):
-        self.assertIsNone(sm.geocode_milestone({
-            "source": "Unknown", "title": "Nothing locatable", "summary": "",
-        }))
+        self.assertIsNone(
+            sm.geocode_milestone(
+                {
+                    "source": "Unknown",
+                    "title": "Nothing locatable",
+                    "summary": "",
+                }
+            )
+        )
 
     def test_every_alias_resolves_to_a_canonical_site_key(self):
         # Guards the invariant the bucket key now depends on: if an alias ever
@@ -152,7 +189,9 @@ class TestRetentionFeed(unittest.TestCase):
     def test_thin_upstream_never_wipes_feed(self):
         """Collapse regression at the site level: a 3-milestone snapshot
         mirrored after a 40-milestone history must still publish 40."""
-        history = [make_milestone(id=f"ms-{i}", category="Energy", date="2026-08-01") for i in range(40)]
+        history = [
+            make_milestone(id=f"ms-{i}", category="Energy", date="2026-08-01") for i in range(40)
+        ]
         thin = [make_milestone(id="ms-0", title="only record left today")]
         feed = sm.merge_feed(thin, history)
         self.assertEqual(len(feed), 40)
@@ -169,18 +208,29 @@ class TestRetentionFeed(unittest.TestCase):
         # Retained archive records carry short display names ("Spaceflight");
         # the site container must normalise them to the canonical display name.
         ms = [
-            {"id": "ms-b", "category": "Spaceflight", "subcategory": "launch",
-             "title": "Retained launch", "date": "2026-08-01", "category_key": None},
+            {
+                "id": "ms-b",
+                "category": "Spaceflight",
+                "subcategory": "launch",
+                "title": "Retained launch",
+                "date": "2026-08-01",
+                "category_key": None,
+            },
         ]
         cats = sm.build_site_categories(ms, {})
         self.assertEqual(list(cats.keys()), ["spaceflight"])
         self.assertEqual(cats["spaceflight"]["name"], "Spaceflight & Aeronautics")
-        self.assertEqual(cats["spaceflight"]["milestones"][0]["category"], "Spaceflight & Aeronautics")
+        self.assertEqual(
+            cats["spaceflight"]["milestones"][0]["category"], "Spaceflight & Aeronautics"
+        )
 
 
 class TestFingerprint(unittest.TestCase):
     def _artifacts(self):
-        site_format = {"last_update": "2026-09-22T00:00:00", "categories": {"energy": {"name": "Energy"}}}
+        site_format = {
+            "last_update": "2026-09-22T00:00:00",
+            "categories": {"energy": {"name": "Energy"}},
+        }
         history = [make_milestone(id="ms-a", first_seen="2026-08-01", last_seen="2026-09-22")]
         activity = {"last_update": "2026-09-22T00:00:00", "days": [], "spikes": []}
         events = {"last_update": "2026-09-22T00:00:00", "events": []}
@@ -192,10 +242,10 @@ class TestFingerprint(unittest.TestCase):
     def test_fingerprint_ignores_timestamp_churn(self):
         a = self._artifacts()
         b = self._artifacts()
-        b[0]["last_update"] = "2099-01-01T00:00:00"       # milestones last_update
-        b[1][0]["last_seen"] = "2099-01-01"               # archive sighting marker
-        b[2]["last_update"] = "2099-01-01T00:00:00"       # activity timestamp
-        b[3]["last_update"] = "2099-01-01T00:00:00"       # events timestamp
+        b[0]["last_update"] = "2099-01-01T00:00:00"  # milestones last_update
+        b[1][0]["last_seen"] = "2099-01-01"  # archive sighting marker
+        b[2]["last_update"] = "2099-01-01T00:00:00"  # activity timestamp
+        b[3]["last_update"] = "2099-01-01T00:00:00"  # events timestamp
         self.assertEqual(self._fp(*a), self._fp(*b))
 
     def test_fingerprint_changes_on_real_content(self):
@@ -277,7 +327,9 @@ class TestActivity(unittest.TestCase):
 
 class TestEvents(unittest.TestCase):
     def test_events_mapping(self):
-        events = sm.build_events([make_milestone(id="ms-a", category="Energy", value=100, unit="MW")])
+        events = sm.build_events(
+            [make_milestone(id="ms-a", category="Energy", value=100, unit="MW")]
+        )
         self.assertEqual(events["events"][0]["id"], "ev-ms-a")
         self.assertEqual(events["events"][0]["category"], "Renewable Energy")
         self.assertEqual(events["events"][0]["value"], "100 MW")
@@ -286,8 +338,12 @@ class TestEvents(unittest.TestCase):
         # Deleting the record is the wrong answer: it disappears from the feed, the
         # dashboard, the catalog and the metrics, and nothing downstream notices.
         # It is published without a geolocation and the map declines to draw it.
-        no_geo = make_milestone(id="x", geolocation={"lat": 0.0, "lon": 0.0},
-                                title="Unlocatable result", source="Nobody")
+        no_geo = make_milestone(
+            id="x",
+            geolocation={"lat": 0.0, "lon": 0.0},
+            title="Unlocatable result",
+            source="Nobody",
+        )
         events = sm.build_events([no_geo])["events"]
         self.assertEqual(len(events), 1)
         self.assertNotIn("geolocation", events[0])
@@ -297,17 +353,22 @@ class TestEvents(unittest.TestCase):
     def test_events_never_emit_null_island(self):
         # (0,0) upstream must never become a coordinate: it is the no-location
         # marker, and it previously published a dot in the Gulf of Guinea.
-        no_geo = make_milestone(id="x", geolocation={"lat": 0.0, "lon": 0.0},
-                                title="T", source="Nobody")
+        no_geo = make_milestone(
+            id="x", geolocation={"lat": 0.0, "lon": 0.0}, title="T", source="Nobody"
+        )
         for ev in sm.build_events([no_geo])["events"]:
             geo = ev.get("geolocation")
             self.assertFalse(geo and geo["lat"] == 0.0 and geo["lon"] == 0.0)
 
     def test_events_geocode_from_place_names_in_the_article(self):
         # OSINT cascade: no institution named, but the title says which country.
-        m = make_milestone(id="ms-mt", title="Record-low error rate in Maltese OCR",
-                           source="LV-ROVER-MLT researchers", summary="",
-                           geolocation={"lat": 0.0, "lon": 0.0})
+        m = make_milestone(
+            id="ms-mt",
+            title="Record-low error rate in Maltese OCR",
+            source="LV-ROVER-MLT researchers",
+            summary="",
+            geolocation={"lat": 0.0, "lon": 0.0},
+        )
         events = sm.build_events([m])["events"]
         geo = events[0].get("geolocation")
         self.assertIsNotNone(geo, "place name in the title should have geocoded it")
@@ -316,17 +377,25 @@ class TestEvents(unittest.TestCase):
 
     def test_events_article_place_beats_publisher_headquarters(self):
         # A paper from a US agency published by Nature must not land in London.
-        m = make_milestone(id="ms-us", title="USCIS adjudication dataset",
-                           source="Nature Biotechnology", summary="",
-                           geolocation={"lat": 0.0, "lon": 0.0})
+        m = make_milestone(
+            id="ms-us",
+            title="USCIS adjudication dataset",
+            source="Nature Biotechnology",
+            summary="",
+            geolocation={"lat": 0.0, "lon": 0.0},
+        )
         geo = sm.build_events([m])["events"][0].get("geolocation")
         self.assertIsNotNone(geo)
         self.assertNotAlmostEqual(geo["lon"], -0.1278, places=1)
 
     def test_events_value_uses_title_when_no_metric(self):
         m = make_milestone(
-            id="ms-1", value=None, unit=None, category="Energy",
-            title="Fusion milestone", summary="A milestone info string about fusion.",
+            id="ms-1",
+            value=None,
+            unit=None,
+            category="Energy",
+            title="Fusion milestone",
+            summary="A milestone info string about fusion.",
         )
         events = sm.build_events([m])
         self.assertEqual(events["events"][0]["value"], "Fusion milestone")
@@ -373,14 +442,26 @@ class TestUnifyDuplicateMilestones(unittest.TestCase):
     def test_shared_url_alone_is_not_enough(self):
         # Two distinct IBM milestones are described in the same Wikipedia article.
         # A shared url must never merge them.
-        a = self._m("q1", "IBM Condor - the first 1,000+ qubit processor",
-                    category="Quantum Physics", category_key="quantum",
-                    value="1121", unit="qubits", date="2023-12-04",
-                    url="https://en.wikipedia.org/wiki/IBM_Q_System_One")
-        b = self._m("q2", "IBM Eagle - the first 127-qubit processor",
-                    category="Quantum Physics", category_key="quantum",
-                    value="127", unit="qubits", date="2023-12-01",
-                    url="https://en.wikipedia.org/wiki/IBM_Q_System_One")
+        a = self._m(
+            "q1",
+            "IBM Condor - the first 1,000+ qubit processor",
+            category="Quantum Physics",
+            category_key="quantum",
+            value="1121",
+            unit="qubits",
+            date="2023-12-04",
+            url="https://en.wikipedia.org/wiki/IBM_Q_System_One",
+        )
+        b = self._m(
+            "q2",
+            "IBM Eagle - the first 127-qubit processor",
+            category="Quantum Physics",
+            category_key="quantum",
+            value="127",
+            unit="qubits",
+            date="2023-12-01",
+            url="https://en.wikipedia.org/wiki/IBM_Q_System_One",
+        )
         out, _ = sm.unify_duplicate_milestones([a, b])
         self.assertEqual(len(out), 2)
 
@@ -393,8 +474,9 @@ class TestUnifyDuplicateMilestones(unittest.TestCase):
 
     def test_identical_metric_in_different_categories_is_not_merged(self):
         a = self._m("c1", "0.86 F1 khipu result")
-        b = self._m("c2", "0.86 F1 khipu result", category="Biotechnology",
-                    category_key="biotechnology")
+        b = self._m(
+            "c2", "0.86 F1 khipu result", category="Biotechnology", category_key="biotechnology"
+        )
         out, _ = sm.unify_duplicate_milestones([a, b])
         self.assertEqual(len(out), 2)
 
@@ -430,8 +512,11 @@ class TestUnifyDuplicateMilestones(unittest.TestCase):
 
     def test_richest_summary_wins_and_selection_is_deterministic(self):
         a = self._m("d1", "Khipu mining result", summary="")
-        b = self._m("d2", "Khipu mining result restated",
-                    summary="A considerably longer and more informative summary.")
+        b = self._m(
+            "d2",
+            "Khipu mining result restated",
+            summary="A considerably longer and more informative summary.",
+        )
         first, _ = sm.unify_duplicate_milestones([a, b])
         second, _ = sm.unify_duplicate_milestones([b, a])
         # Same winner regardless of input order, so the commit fingerprint is stable.
@@ -459,7 +544,8 @@ class TestUnifyDuplicateMilestones(unittest.TestCase):
         ]
         out, _ = sm.unify_duplicate_milestones(ordered)
         self.assertEqual(
-            [r["id"] for r in out], ["o1", "o2", "o4"],
+            [r["id"] for r in out],
+            ["o1", "o2", "o4"],
             "merged record must appear at its first member's position",
         )
 
@@ -501,12 +587,8 @@ class TestUnifyDuplicateMilestones(unittest.TestCase):
         path = Path(__file__).resolve().parent.parent / "data" / "milestones.json"
         if not path.exists():
             self.skipTest("data/milestones.json not present")
-        site = sm.transform_upstream_to_site_format(
-            json.loads(path.read_text(encoding="utf-8"))
-        )
-        unified, changes = sm.unify_duplicate_milestones(
-            sm.iter_milestones(site)
-        )
+        site = sm.transform_upstream_to_site_format(json.loads(path.read_text(encoding="utf-8")))
+        unified, changes = sm.unify_duplicate_milestones(sm.iter_milestones(site))
         # Running it again over its own output must be a fixed point.
         again, again_changes = sm.unify_duplicate_milestones(unified)
         self.assertEqual(len(unified), len(again))
@@ -536,12 +618,21 @@ class TestCategoryAliases(unittest.TestCase):
     def test_alias_buckets_merge_into_the_canonical_bucket(self):
         upstream = {
             "categories": {
-                "Mathematics": {"name": "Mathematics", "subcategories": ["graph_theory"],
-                                "milestones": [make_milestone(id="ms-math")]},
-                "Quantum Gravity": {"name": "Quantum Gravity", "subcategories": [],
-                                    "milestones": [make_milestone(id="ms-qg")]},
-                "Quantum Physics": {"name": "Quantum Physics", "subcategories": ["error_correction"],
-                                    "milestones": [make_milestone(id="ms-qp")]},
+                "Mathematics": {
+                    "name": "Mathematics",
+                    "subcategories": ["graph_theory"],
+                    "milestones": [make_milestone(id="ms-math")],
+                },
+                "Quantum Gravity": {
+                    "name": "Quantum Gravity",
+                    "subcategories": [],
+                    "milestones": [make_milestone(id="ms-qg")],
+                },
+                "Quantum Physics": {
+                    "name": "Quantum Physics",
+                    "subcategories": ["error_correction"],
+                    "milestones": [make_milestone(id="ms-qp")],
+                },
             }
         }
         cats = sm.transform_upstream_to_site_format(upstream)["categories"]
@@ -553,10 +644,16 @@ class TestCategoryAliases(unittest.TestCase):
     def test_merge_unions_subcategories_without_duplicates(self):
         upstream = {
             "categories": {
-                "Computer Vision": {"name": "Computer Vision", "subcategories": ["ocr", "shared"],
-                                    "milestones": [make_milestone(id="ms-cv")]},
-                "Computing & AGI": {"name": "Computing & AGI", "subcategories": ["shared", "benchmarks"],
-                                    "milestones": [make_milestone(id="ms-agi")]},
+                "Computer Vision": {
+                    "name": "Computer Vision",
+                    "subcategories": ["ocr", "shared"],
+                    "milestones": [make_milestone(id="ms-cv")],
+                },
+                "Computing & AGI": {
+                    "name": "Computing & AGI",
+                    "subcategories": ["shared", "benchmarks"],
+                    "milestones": [make_milestone(id="ms-agi")],
+                },
             }
         }
         bucket = sm.transform_upstream_to_site_format(upstream)["categories"]["computing_agi"]
@@ -565,11 +662,20 @@ class TestCategoryAliases(unittest.TestCase):
     def test_merged_bucket_keeps_canonical_name_and_metadata(self):
         upstream = {
             "categories": {
-                "Legal AI": {"name": "Legal AI", "icon": "x", "color": "#ffffff",
-                             "subcategories": ["legal_datasets"],
-                             "milestones": [make_milestone(id="ms-1")]},
-                "computing_agi": {"name": "Computing & AGI", "icon": "ai", "color": "#ff0066",
-                                  "subcategories": ["agents"], "milestones": [make_milestone(id="ms-2")]},
+                "Legal AI": {
+                    "name": "Legal AI",
+                    "icon": "x",
+                    "color": "#ffffff",
+                    "subcategories": ["legal_datasets"],
+                    "milestones": [make_milestone(id="ms-1")],
+                },
+                "computing_agi": {
+                    "name": "Computing & AGI",
+                    "icon": "ai",
+                    "color": "#ff0066",
+                    "subcategories": ["agents"],
+                    "milestones": [make_milestone(id="ms-2")],
+                },
             }
         }
         bucket = sm.transform_upstream_to_site_format(upstream)["categories"]["computing_agi"]
@@ -578,9 +684,7 @@ class TestCategoryAliases(unittest.TestCase):
         self.assertEqual(bucket["color"], "#ff0066")
 
     def test_published_records_are_canonicalised(self):
-        out = sm.build_site_categories(
-            [make_milestone(id="a", category="Mathematics")], {}
-        )
+        out = sm.build_site_categories([make_milestone(id="a", category="Mathematics")], {})
         self.assertEqual(out["computing_agi"]["milestones"][0]["category"], "Computing & AGI")
         self.assertEqual(out["computing_agi"]["name"], "Computing & AGI")
 

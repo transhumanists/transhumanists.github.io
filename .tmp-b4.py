@@ -17,7 +17,8 @@ for i, l in enumerate(L):
 print()
 print("=== does draw() call it, and does draw() guard re-entry? ===")
 seg = "\n".join(L[1234:1300])
-print("  draw() calls dismissTooltipIfTargetHidden:",
-      "dismissTooltipIfTargetHidden" in seg)
-print("  module-level 'drawing' guard present:",
-      bool(re.search(r"\bdrawing\b|\binDraw\b|isDrawing", "\n".join(L))))
+print("  draw() calls dismissTooltipIfTargetHidden:", "dismissTooltipIfTargetHidden" in seg)
+print(
+    "  module-level 'drawing' guard present:",
+    bool(re.search(r"\bdrawing\b|\binDraw\b|isDrawing", "\n".join(L))),
+)

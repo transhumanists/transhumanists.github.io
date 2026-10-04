@@ -23,6 +23,7 @@ Usage:
     python scripts/publish_invariants.py --data DIR # check somewhere else
     python scripts/publish_invariants.py --json
 """
+
 from __future__ import annotations
 
 import argparse
@@ -45,15 +46,15 @@ def _iter_records(payload):
         return
     if not isinstance(payload, dict):
         return
-    for m in (payload.get("milestones") or []):
+    for m in payload.get("milestones") or []:
         if isinstance(m, dict):
             yield m
     for cat in (payload.get("categories") or {}).values():
         if isinstance(cat, dict):
-            for m in (cat.get("milestones") or []):
+            for m in cat.get("milestones") or []:
                 if isinstance(m, dict):
                     yield m
-    for e in (payload.get("events") or []):
+    for e in payload.get("events") or []:
         if isinstance(e, dict):
             yield e
 
@@ -66,6 +67,7 @@ def _walk_geolocations(payload):
     Deployment legs use `from`/`to` coordinate pairs rather than a `geolocation`
     object, so those are checked separately by their own validator.
     """
+
     def walk(node, path):
         if isinstance(node, dict):
             for key, value in node.items():
@@ -76,6 +78,7 @@ def _walk_geolocations(payload):
         elif isinstance(node, list):
             for i, item in enumerate(node):
                 yield from walk(item, f"{path}[{i}]")
+
     yield from walk(payload, "")
 
 
@@ -90,7 +93,7 @@ def check(data_dir: Path) -> list[str]:
             continue
         try:
             payload = json.loads(path.read_text(encoding="utf-8"))
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             issues.append(f"{name}: unreadable ({exc})")
             continue
         for problem in cd.check_file(path):
@@ -113,7 +116,7 @@ def check(data_dir: Path) -> list[str]:
             continue
         try:
             payload = json.loads(path.read_text(encoding="utf-8"))
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             issues.append(f"{name}: unreadable ({exc})")
             continue
         for problem in cd.check_file(path):
@@ -127,7 +130,7 @@ def check(data_dir: Path) -> list[str]:
             continue
         try:
             payload = json.loads(path.read_text(encoding="utf-8"))
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             issues.append(f"{name}: unreadable ({exc})")
             continue
         for problem in cd.check_file(path):
@@ -144,8 +147,10 @@ def _content_invariants(name: str, payload) -> list[str]:
 
     for where, coords in _walk_geolocations(payload):
         if lc.is_unlocated(coords):
-            issues.append(f"{name}: {where} holds an unusable coordinate; "
-                          "published files omit the key instead of storing a sentinel")
+            issues.append(
+                f"{name}: {where} holds an unusable coordinate; "
+                "published files omit the key instead of storing a sentinel"
+            )
 
     for rec in _iter_records(payload):
         label = rec.get("id") or rec.get("title") or "?"
@@ -153,8 +158,9 @@ def _content_invariants(name: str, payload) -> list[str]:
         if conf is not None and not lc.validate_confidence(conf):
             issues.append(f"{name}: {label!r} has unknown location_confidence {conf!r}")
         if rec.get("located") is True and lc.is_unlocated(rec.get("geolocation")):
-            issues.append(f"{name}: {label!r} claims located=true but carries no "
-                          "usable geolocation")
+            issues.append(
+                f"{name}: {label!r} claims located=true but carries no usable geolocation"
+            )
         cat = rec.get("category")
         if isinstance(cat, str) and cat not in cd._CATEGORIES:
             issues.append(f"{name}: {label!r} has non-canonical category {cat!r}")
@@ -178,7 +184,7 @@ def _cross_file(data_dir: Path) -> list[str]:
     try:
         live = json.loads(live_path.read_text(encoding="utf-8"))
         hist = json.loads(hist_path.read_text(encoding="utf-8"))
-    except Exception:  # noqa: BLE001 - already reported per-file
+    except Exception:
         return issues
 
     live_records = [m for m in _iter_records(live) if m.get("id")]
@@ -191,7 +197,8 @@ def _cross_file(data_dir: Path) -> list[str]:
         issues.append(
             f"{len(missing)} live milestone(s) are absent from the archive, so the "
             f"year slider's history would lose them on the next sync: "
-            f"{', '.join(missing[:5])}{'...' if len(missing) > 5 else ''}")
+            f"{', '.join(missing[:5])}{'...' if len(missing) > 5 else ''}"
+        )
 
     # Duplicates counted over the record list, not over the id set - a set has
     # already thrown the duplicates away, which made an earlier version of this
@@ -206,8 +213,9 @@ def _cross_file(data_dir: Path) -> list[str]:
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(description=__doc__,
-                                 formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
     ap.add_argument("--data", default=None, help="data directory (default: repo's)")
     ap.add_argument("--json", action="store_true")
     args = ap.parse_args()

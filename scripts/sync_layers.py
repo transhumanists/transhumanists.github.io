@@ -27,6 +27,7 @@ Usage:
 Exit code is 0 even when changes are reported; use the fingerprint/return to
 decide whether to commit (mirrors sync_milestones.py conventions).
 """
+
 from __future__ import annotations
 
 import argparse
@@ -37,7 +38,8 @@ import sys
 from datetime import date, datetime, timezone
 from pathlib import Path
 
-from fetch_crisis_zones import SCHEMA_VERSION as LIFECYCLE_VERSION, fetch_url
+from fetch_crisis_zones import SCHEMA_VERSION as LIFECYCLE_VERSION
+from fetch_crisis_zones import fetch_url
 
 WIKIPEDIA_API = (
     "https://en.wikipedia.org/w/api.php"
@@ -70,6 +72,7 @@ def _load_zone_tier_radius() -> dict:
     except (OSError, json.JSONDecodeError, KeyError, TypeError, ValueError):
         pass
     return {"major": 4.0, "minor": 3.0, "conflict": 2.5}
+
 
 # Wikipedia tier -> collision radius (degrees) for the map. Skirmishes are
 # parsed but never promoted to map zones (too noisy for a planet-wide view).
@@ -354,9 +357,7 @@ def conflict_zones_from_wikipedia(items: list[dict]) -> list[dict]:
 
 
 def _zone_matches(zone: dict, wzone: dict) -> bool:
-    hay = " ".join(
-        str(zone.get(k, "")) for k in ("name", "region", "id")
-    ).lower()
+    hay = " ".join(str(zone.get(k, "")) for k in ("name", "region", "id")).lower()
     for c in wzone.get("countries", []):
         if c.lower() in hay:
             return True
@@ -388,14 +389,22 @@ def merge_conflict_zones(
                         czone["start_date"] = f"{w_start_year:04d}-01-01"
                         czone.setdefault("source", wzone["source"])
                         czone.setdefault("url", wzone["url"])
-                        changes.append(f"enriched {czone.get('id')} start_date={czone['start_date']} (Wikipedia newer)")
+                        changes.append(
+                            f"enriched {czone.get('id')} start_date={czone['start_date']} (Wikipedia newer)"
+                        )
                     else:
-                        changes.append(f"skipped older Wikipedia data for {czone.get('id')} (curated newer)")
+                        changes.append(
+                            f"skipped older Wikipedia data for {czone.get('id')} (curated newer)"
+                        )
                 else:
-                    czone["start_date"] = f"{w_start_year:04d}-01-01" if w_start_year else czone.get("start_date", "")
+                    czone["start_date"] = (
+                        f"{w_start_year:04d}-01-01" if w_start_year else czone.get("start_date", "")
+                    )
                     czone.setdefault("source", wzone["source"])
                     czone.setdefault("url", wzone["url"])
-                    changes.append(f"enriched {czone.get('id')} start_date={czone.get('start_date')}")
+                    changes.append(
+                        f"enriched {czone.get('id')} start_date={czone.get('start_date')}"
+                    )
                 matched.add(wi)
                 break
 
@@ -405,10 +414,18 @@ def merge_conflict_zones(
             continue
         if any(_zone_matches(z, wzone) for z in curated):
             w_start_year = _cell_year(wzone.get("start_date", ""))
-            curated_start_year = _cell_year(next((z.get("start_date") for z in curated if _zone_matches(z, wzone)), ""))
+            curated_start_year = _cell_year(
+                next((z.get("start_date") for z in curated if _zone_matches(z, wzone)), "")
+            )
             # Skip older Wikipedia zones when a curated zone exists
-            if w_start_year is not None and curated_start_year is not None and w_start_year < curated_start_year:
-                changes.append(f"suppressed older Wikipedia zone {wzone['id']} ({wzone['name']}) for curated zone")
+            if (
+                w_start_year is not None
+                and curated_start_year is not None
+                and w_start_year < curated_start_year
+            ):
+                changes.append(
+                    f"suppressed older Wikipedia zone {wzone['id']} ({wzone['name']}) for curated zone"
+                )
                 continue
         if len(curated) >= MAX_TOTAL_ZONES or added >= max_new_zones:
             break
@@ -512,7 +529,7 @@ def build_updated_layers(
                 changes.extend(merge_changes)
             else:
                 changes.append("wikipedia fetch failed - keeping existing conflicts")
-        except Exception as exc:  # noqa: BLE001 - pipeline must stay green
+        except Exception as exc:
             changes.append(f"wikipedia parse error ({exc}) - keeping existing conflicts")
 
     data["conflict_zones"] = [
@@ -524,9 +541,7 @@ def build_updated_layers(
     fleets = data.get("deployments")
     if fleets is None:
         fleets = data.get("fleet_movements")
-    data["deployments"] = [
-        normalize_lifecycle_fleet(f) for f in (fleets or [])
-    ]
+    data["deployments"] = [normalize_lifecycle_fleet(f) for f in (fleets or [])]
     data.pop("fleet_movements", None)
     data["version"] = LIFECYCLE_VERSION
     return data, changes
@@ -536,7 +551,9 @@ def main(argv: list[str]) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--offline", action="store_true", help="normalize only, no network")
     parser.add_argument("--write", action="store_true", help="write the file when changed")
-    parser.add_argument("--json", dest="json_path", default=str(WORLD_LAYERS_FILE), help="target JSON file")
+    parser.add_argument(
+        "--json", dest="json_path", default=str(WORLD_LAYERS_FILE), help="target JSON file"
+    )
     parser.add_argument("--wikipedia", default=WIKIPEDIA_API, help=argparse.SUPPRESS)
     args = parser.parse_args(argv)
 
@@ -547,7 +564,9 @@ def main(argv: list[str]) -> int:
         print(f"[error] cannot read {path}: {exc}")
         return 1
 
-    updated, changes = build_updated_layers(data, offline=args.offline, wikipedia_url=args.wikipedia)
+    updated, changes = build_updated_layers(
+        data, offline=args.offline, wikipedia_url=args.wikipedia
+    )
 
     for line in changes:
         print(f"  {line}")
@@ -559,8 +578,10 @@ def main(argv: list[str]) -> int:
             path.write_text(
                 json.dumps(updated, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
             )
-            print(f"[ok] wrote {path} ({len(updated.get('conflict_zones', []))} zones, "
-                  f"{len(updated.get('deployments', []))} deployments)")
+            print(
+                f"[ok] wrote {path} ({len(updated.get('conflict_zones', []))} zones, "
+                f"{len(updated.get('deployments', []))} deployments)"
+            )
         except OSError as exc:
             print(f"[error] cannot write {path}: {exc}")
             return 1

@@ -18,11 +18,11 @@ derives three artifacts:
 Runs from GitHub Actions every 6 hours (see .github/workflows/milestone-check.yml).
 Stdlib-only; usable locally with --dry-run.
 """
+
 from __future__ import annotations
 
 import argparse
 import hashlib
-import math
 import json
 import os
 import re
@@ -46,118 +46,118 @@ import milestone_identity
 
 # Institution coordinates for geocoding fallback (shared with worldmap.js)
 INSTITUTION_COORDS = {
-    'arxiv': { 'lat': 42.4440, 'lon': -76.5019 },  # Cornell University, Ithaca NY
-    'cornell': { 'lat': 42.4440, 'lon': -76.5019 },
-    'cornell university': { 'lat': 42.4440, 'lon': -76.5019 },
-    'mit': { 'lat': 42.3601, 'lon': -71.0942 },
-    'stanford': { 'lat': 37.4275, 'lon': -122.1697 },
-    'harvard': { 'lat': 42.3770, 'lon': -71.1167 },
-    'berkeley': { 'lat': 37.8719, 'lon': -122.2585 },
-    'cmu': { 'lat': 40.4433, 'lon': -79.9438 },
-    'caltech': { 'lat': 34.1377, 'lon': -118.1253 },
-    'princeton': { 'lat': 40.3440, 'lon': -74.6514 },
-    'yale': { 'lat': 41.3111, 'lon': -72.9267 },
-    'columbia': { 'lat': 40.8075, 'lon': -73.9626 },
-    'chicago': { 'lat': 41.7886, 'lon': -87.5987 },
-    'ucla': { 'lat': 34.0689, 'lon': -118.4452 },
-    'ucsd': { 'lat': 32.8801, 'lon': -117.2340 },
-    'eth zurich': { 'lat': 47.3769, 'lon': 8.5417 },
-    'epfl': { 'lat': 46.5197, 'lon': 6.5667 },
-    'oxford': { 'lat': 51.7548, 'lon': -1.2544 },
-    'cambridge': { 'lat': 52.2053, 'lon': 0.1218 },
-    'deepmind': { 'lat': 51.5074, 'lon': -0.1278 },
-    'google': { 'lat': 37.4220, 'lon': -122.0841 },
-    'openai': { 'lat': 37.7749, 'lon': -122.4194 },
-    'anthropic': { 'lat': 37.7749, 'lon': -122.4194 },
-    'nvidia': { 'lat': 37.3688, 'lon': -122.0363 },
-    'ibm': { 'lat': 41.0323, 'lon': -73.5543 },
-    'microsoft': { 'lat': 47.6062, 'lon': -122.3321 },
-    'meta': { 'lat': 37.4848, 'lon': -122.1484 },
-    'apple': { 'lat': 37.3349, 'lon': -122.0090 },
-    'amazon': { 'lat': 47.6062, 'lon': -122.3321 },
-    'spacex': { 'lat': 28.5728, 'lon': -80.6490 },
-    'nasa': { 'lat': 28.5237, 'lon': -80.6810 },
-    'jaxa': { 'lat': 35.6762, 'lon': 139.6503 },
-    'esa': { 'lat': 48.9219, 'lon': 2.3646 },
-    'cern': { 'lat': 46.2333, 'lon': 6.0500 },
-    'llnl': { 'lat': 37.6881, 'lon': -121.7045 },
-    'nifs': { 'lat': 35.6762, 'lon': 139.6503 },
-    'ipp': { 'lat': 54.0956, 'lon': 13.4725 },
-    'quantinuum': { 'lat': 51.5074, 'lon': -0.1278 },
-    'qutech': { 'lat': 52.0116, 'lon': 4.3571 },
-    'broad': { 'lat': 42.3375, 'lon': -71.1061 },
-    'neuralink': { 'lat': 37.4861, 'lon': -122.1519 },
-    'dexcom': { 'lat': 32.8844, 'lon': -117.2340 },
-    'thermofisher': { 'lat': 44.4268, 'lon': -123.0764 },
-    'hms': { 'lat': 42.3375, 'lon': -71.1061 },
-    'mpi-cbg': { 'lat': 51.0504, 'lon': 13.7373 },
-    'sparktx': { 'lat': 39.9526, 'lon': -75.1652 },
-    'jcvi': { 'lat': 32.7157, 'lon': -117.1611 },
-    'eth': { 'lat': 47.3769, 'lon': 8.5417 },
-    'nvidia': { 'lat': 37.3688, 'lon': -122.0363 },
-    'quantumscape': { 'lat': 37.5485, 'lon': -122.0591 },
-    'autogpt': { 'lat': 37.7749, 'lon': -122.4194 },
-    'cncell': { 'lat': 31.2304, 'lon': 121.4737 },
-    'intel': { 'lat': 45.5215, 'lon': -122.6774 },
-    'amd': { 'lat': 37.4220, 'lon': -122.0841 },
-    'tsmc': { 'lat': 24.7867, 'lon': 120.9969 },
-    'asml': { 'lat': 51.5900, 'lon': 5.0500 },
-    'samsung': { 'lat': 37.2636, 'lon': 127.0286 },
-    'hzdr': { 'lat': 51.2323, 'lon': 13.6830 },
-    'nist': { 'lat': 38.8951, 'lon': -77.0364 },
-    'csrc': { 'lat': 38.8951, 'lon': -77.0364 },
-    'cisa': { 'lat': 38.8951, 'lon': -77.0364 },
-    'nvd': { 'lat': 38.8951, 'lon': -77.0364 },
-    'usaf': { 'lat': 38.8951, 'lon': -77.0364 },
-    'norad': { 'lat': 38.8951, 'lon': -77.0364 },
-    'us navy': { 'lat': 36.8508, 'lon': -76.2995 },
-    'rafael': { 'lat': 32.0853, 'lon': 34.7818 },
-    'idf': { 'lat': 32.0853, 'lon': 34.7818 },
-    'almaz-antey': { 'lat': 55.7558, 'lon': 37.6173 },
-    'nato': { 'lat': 50.8609, 'lon': 4.3676 },
-    'ismsc': { 'lat': 13.5, 'lon': 43.0 },
-    'unocha': { 'lat': 31.3, 'lon': 34.3 },
-    'isw': { 'lat': 48.0, 'lon': 37.8 },
-    'usni': { 'lat': 38.8951, 'lon': -77.0364 },
-    'rn': { 'lat': 50.8, 'lon': -1.1 },
-    'iiss': { 'lat': 51.5074, 'lon': -0.1278 },
-    'in': { 'lat': 19.0, 'lon': 72.8 },
-    'plan': { 'lat': 26.7, 'lon': 114.0 },
-    'af': { 'lat': 38.8951, 'lon': -77.0364 },
-    'iaea': { 'lat': 48.2082, 'lon': 16.3738 },
-    'who_org': { 'lat': 46.2276, 'lon': 6.1424 },
-    'un_org': { 'lat': 40.7580, 'lon': -73.9683 },
-    'fda': { 'lat': 38.8951, 'lon': -77.0364 },
-    'ncsc': { 'lat': 51.5074, 'lon': -0.1278 },
-    'gchq': { 'lat': 51.5074, 'lon': -0.1278 },
-    'mossad': { 'lat': 31.9686, 'lon': 35.5064 },
-    'nsa': { 'lat': 38.8951, 'lon': -77.0364 },
-    'plaff': { 'lat': 39.9042, 'lon': 116.4074 },
-    'csir': { 'lat': 51.2323, 'lon': 13.6830 },
-    'significant-gravitas': { 'lat': 37.7749, 'lon': -122.4194 },
-    'github': { 'lat': 37.7749, 'lon': -122.4194 },
+    "arxiv": {"lat": 42.4440, "lon": -76.5019},  # Cornell University, Ithaca NY
+    "cornell": {"lat": 42.4440, "lon": -76.5019},
+    "cornell university": {"lat": 42.4440, "lon": -76.5019},
+    "mit": {"lat": 42.3601, "lon": -71.0942},
+    "stanford": {"lat": 37.4275, "lon": -122.1697},
+    "harvard": {"lat": 42.3770, "lon": -71.1167},
+    "berkeley": {"lat": 37.8719, "lon": -122.2585},
+    "cmu": {"lat": 40.4433, "lon": -79.9438},
+    "caltech": {"lat": 34.1377, "lon": -118.1253},
+    "princeton": {"lat": 40.3440, "lon": -74.6514},
+    "yale": {"lat": 41.3111, "lon": -72.9267},
+    "columbia": {"lat": 40.8075, "lon": -73.9626},
+    "chicago": {"lat": 41.7886, "lon": -87.5987},
+    "ucla": {"lat": 34.0689, "lon": -118.4452},
+    "ucsd": {"lat": 32.8801, "lon": -117.2340},
+    "eth zurich": {"lat": 47.3769, "lon": 8.5417},
+    "epfl": {"lat": 46.5197, "lon": 6.5667},
+    "oxford": {"lat": 51.7548, "lon": -1.2544},
+    "cambridge": {"lat": 52.2053, "lon": 0.1218},
+    "deepmind": {"lat": 51.5074, "lon": -0.1278},
+    "google": {"lat": 37.4220, "lon": -122.0841},
+    "openai": {"lat": 37.7749, "lon": -122.4194},
+    "anthropic": {"lat": 37.7749, "lon": -122.4194},
+    "nvidia": {"lat": 37.3688, "lon": -122.0363},
+    "ibm": {"lat": 41.0323, "lon": -73.5543},
+    "microsoft": {"lat": 47.6062, "lon": -122.3321},
+    "meta": {"lat": 37.4848, "lon": -122.1484},
+    "apple": {"lat": 37.3349, "lon": -122.0090},
+    "amazon": {"lat": 47.6062, "lon": -122.3321},
+    "spacex": {"lat": 28.5728, "lon": -80.6490},
+    "nasa": {"lat": 28.5237, "lon": -80.6810},
+    "jaxa": {"lat": 35.6762, "lon": 139.6503},
+    "esa": {"lat": 48.9219, "lon": 2.3646},
+    "cern": {"lat": 46.2333, "lon": 6.0500},
+    "llnl": {"lat": 37.6881, "lon": -121.7045},
+    "nifs": {"lat": 35.6762, "lon": 139.6503},
+    "ipp": {"lat": 54.0956, "lon": 13.4725},
+    "quantinuum": {"lat": 51.5074, "lon": -0.1278},
+    "qutech": {"lat": 52.0116, "lon": 4.3571},
+    "broad": {"lat": 42.3375, "lon": -71.1061},
+    "neuralink": {"lat": 37.4861, "lon": -122.1519},
+    "dexcom": {"lat": 32.8844, "lon": -117.2340},
+    "thermofisher": {"lat": 44.4268, "lon": -123.0764},
+    "hms": {"lat": 42.3375, "lon": -71.1061},
+    "mpi-cbg": {"lat": 51.0504, "lon": 13.7373},
+    "sparktx": {"lat": 39.9526, "lon": -75.1652},
+    "jcvi": {"lat": 32.7157, "lon": -117.1611},
+    "eth": {"lat": 47.3769, "lon": 8.5417},
+    "nvidia": {"lat": 37.3688, "lon": -122.0363},
+    "quantumscape": {"lat": 37.5485, "lon": -122.0591},
+    "autogpt": {"lat": 37.7749, "lon": -122.4194},
+    "cncell": {"lat": 31.2304, "lon": 121.4737},
+    "intel": {"lat": 45.5215, "lon": -122.6774},
+    "amd": {"lat": 37.4220, "lon": -122.0841},
+    "tsmc": {"lat": 24.7867, "lon": 120.9969},
+    "asml": {"lat": 51.5900, "lon": 5.0500},
+    "samsung": {"lat": 37.2636, "lon": 127.0286},
+    "hzdr": {"lat": 51.2323, "lon": 13.6830},
+    "nist": {"lat": 38.8951, "lon": -77.0364},
+    "csrc": {"lat": 38.8951, "lon": -77.0364},
+    "cisa": {"lat": 38.8951, "lon": -77.0364},
+    "nvd": {"lat": 38.8951, "lon": -77.0364},
+    "usaf": {"lat": 38.8951, "lon": -77.0364},
+    "norad": {"lat": 38.8951, "lon": -77.0364},
+    "us navy": {"lat": 36.8508, "lon": -76.2995},
+    "rafael": {"lat": 32.0853, "lon": 34.7818},
+    "idf": {"lat": 32.0853, "lon": 34.7818},
+    "almaz-antey": {"lat": 55.7558, "lon": 37.6173},
+    "nato": {"lat": 50.8609, "lon": 4.3676},
+    "ismsc": {"lat": 13.5, "lon": 43.0},
+    "unocha": {"lat": 31.3, "lon": 34.3},
+    "isw": {"lat": 48.0, "lon": 37.8},
+    "usni": {"lat": 38.8951, "lon": -77.0364},
+    "rn": {"lat": 50.8, "lon": -1.1},
+    "iiss": {"lat": 51.5074, "lon": -0.1278},
+    "in": {"lat": 19.0, "lon": 72.8},
+    "plan": {"lat": 26.7, "lon": 114.0},
+    "af": {"lat": 38.8951, "lon": -77.0364},
+    "iaea": {"lat": 48.2082, "lon": 16.3738},
+    "who_org": {"lat": 46.2276, "lon": 6.1424},
+    "un_org": {"lat": 40.7580, "lon": -73.9683},
+    "fda": {"lat": 38.8951, "lon": -77.0364},
+    "ncsc": {"lat": 51.5074, "lon": -0.1278},
+    "gchq": {"lat": 51.5074, "lon": -0.1278},
+    "mossad": {"lat": 31.9686, "lon": 35.5064},
+    "nsa": {"lat": 38.8951, "lon": -77.0364},
+    "plaff": {"lat": 39.9042, "lon": 116.4074},
+    "csir": {"lat": 51.2323, "lon": 13.6830},
+    "significant-gravitas": {"lat": 37.7749, "lon": -122.4194},
+    "github": {"lat": 37.7749, "lon": -122.4194},
     # Additional entries for better geocoding coverage
-    'quanta magazine': { 'lat': 40.7580, 'lon': -73.9683 },  # NYC
-    'nature biotechnology': { 'lat': 51.5074, 'lon': -0.1278 },  # London (Nature Publishing)
-    'nature': { 'lat': 51.5074, 'lon': -0.1278 },
-    'fiercebiotech': { 'lat': 42.3601, 'lon': -71.0942 },  # Boston area
-    'open khipu repository': { 'lat': -13.5, 'lon': -71.9 },  # Cusco, Peru (Inca region)
-    'research team': { 'lat': 0.0, 'lon': 0.0 },  # Will not match - generic
-    'research authors': { 'lat': 0.0, 'lon': 0.0 },  # Will not match - generic
-    'academic researchers': { 'lat': 0.0, 'lon': 0.0 },  # Will not match - generic
-    'international mathematics collaboration': { 'lat': 48.8566, 'lon': 2.3522 },  # Paris (IMU)
-    'quantamagazine': { 'lat': 40.7580, 'lon': -73.9683 },  # NYC (Quanta Magazine)
-    'ieee': { 'lat': 40.7580, 'lon': -73.9683 },  # NYC
-    'acm': { 'lat': 40.7580, 'lon': -73.9683 },  # NYC
-    'usenix': { 'lat': 37.7749, 'lon': -122.4194 },  # Berkeley/SF
-    'siggraph': { 'lat': 34.0522, 'lon': -118.2437 },  # LA
-    'neurips': { 'lat': 37.7749, 'lon': -122.4194 },  # Usually virtual/varied
-    'icml': { 'lat': 37.7749, 'lon': -122.4194 },
-    'aaai': { 'lat': 37.7749, 'lon': -122.4194 },
-    'cvpr': { 'lat': 37.7749, 'lon': -122.4194 },
-    'iclr': { 'lat': 37.7749, 'lon': -122.4194 },
-    'ijcai': { 'lat': 37.7749, 'lon': -122.4194 },
-    'aaai': { 'lat': 37.7749, 'lon': -122.4194 },
+    "quanta magazine": {"lat": 40.7580, "lon": -73.9683},  # NYC
+    "nature biotechnology": {"lat": 51.5074, "lon": -0.1278},  # London (Nature Publishing)
+    "nature": {"lat": 51.5074, "lon": -0.1278},
+    "fiercebiotech": {"lat": 42.3601, "lon": -71.0942},  # Boston area
+    "open khipu repository": {"lat": -13.5, "lon": -71.9},  # Cusco, Peru (Inca region)
+    "research team": {"lat": 0.0, "lon": 0.0},  # Will not match - generic
+    "research authors": {"lat": 0.0, "lon": 0.0},  # Will not match - generic
+    "academic researchers": {"lat": 0.0, "lon": 0.0},  # Will not match - generic
+    "international mathematics collaboration": {"lat": 48.8566, "lon": 2.3522},  # Paris (IMU)
+    "quantamagazine": {"lat": 40.7580, "lon": -73.9683},  # NYC (Quanta Magazine)
+    "ieee": {"lat": 40.7580, "lon": -73.9683},  # NYC
+    "acm": {"lat": 40.7580, "lon": -73.9683},  # NYC
+    "usenix": {"lat": 37.7749, "lon": -122.4194},  # Berkeley/SF
+    "siggraph": {"lat": 34.0522, "lon": -118.2437},  # LA
+    "neurips": {"lat": 37.7749, "lon": -122.4194},  # Usually virtual/varied
+    "icml": {"lat": 37.7749, "lon": -122.4194},
+    "aaai": {"lat": 37.7749, "lon": -122.4194},
+    "cvpr": {"lat": 37.7749, "lon": -122.4194},
+    "iclr": {"lat": 37.7749, "lon": -122.4194},
+    "ijcai": {"lat": 37.7749, "lon": -122.4194},
+    "aaai": {"lat": 37.7749, "lon": -122.4194},
 }
 
 MILESTONES_REPO = os.environ.get("MILESTONES_REPO", "transhumanists/milestones")
@@ -225,16 +225,42 @@ CATEGORY_SUBTONES = {
         # for: cyborgs, biohackers, and the implant/prosthesis work that
         # motivates them (e.g. Neil Harbisson's frequency-relaying implant).
         "keywords": (
-            "biohacking", "biohack", "cyborg", "transhumanist", "transhumanism",
-            "neuroprosthetic", "neuroprosthesis", "neural implant", "neuralink",
-            "brain-computer interface", "brain computer interface",
-            "neural interface", "implant", "bone-conductive", "bone conductive",
-            "bone conduction", "sensory substitution", "cochlear", "retinal prosthesis",
-            "retinal implant", "prosthetic", "prostheses", "openwetware",
-            "body hacking", "bodyhack", "grinder", "wearable computing",
-            "human-computer interface", "human computer interface",
-            "augmented reality", "brainwave", "eeg headset", "mind-machine",
-            "mind machine", "sonic toothbrush", "cyborgs",
+            "biohacking",
+            "biohack",
+            "cyborg",
+            "transhumanist",
+            "transhumanism",
+            "neuroprosthetic",
+            "neuroprosthesis",
+            "neural implant",
+            "neuralink",
+            "brain-computer interface",
+            "brain computer interface",
+            "neural interface",
+            "implant",
+            "bone-conductive",
+            "bone conductive",
+            "bone conduction",
+            "sensory substitution",
+            "cochlear",
+            "retinal prosthesis",
+            "retinal implant",
+            "prosthetic",
+            "prostheses",
+            "openwetware",
+            "body hacking",
+            "bodyhack",
+            "grinder",
+            "wearable computing",
+            "human-computer interface",
+            "human computer interface",
+            "augmented reality",
+            "brainwave",
+            "eeg headset",
+            "mind-machine",
+            "mind machine",
+            "sonic toothbrush",
+            "cyborgs",
         ),
     },
 }
@@ -264,7 +290,6 @@ def classify_tone(m: dict) -> str | None:
         if kw in haystack:
             return spec["secondary"]
     return None
-
 
 
 # Upstream display names that are not one of the canonical categories.
@@ -310,6 +335,7 @@ CATEGORY_ALIASES = {
     "Automation": "Robotics & Drones",
 }
 
+
 def slugify(name: str) -> str:
     """Coarse snake_case slug so unknown category names still get a stable key."""
     return re.sub(r"[^a-z0-9_]+", "_", (name or "").lower().replace("&", "")).strip("_")
@@ -329,7 +355,10 @@ UPSTREAM_TO_SITE_KEY.update(
     {alias: DISPLAY_TO_SITE_KEY[canonical] for alias, canonical in CATEGORY_ALIASES.items()}
 )
 UPSTREAM_TO_SITE_KEY.update(
-    {slugify(alias): DISPLAY_TO_SITE_KEY[canonical] for alias, canonical in CATEGORY_ALIASES.items()}
+    {
+        slugify(alias): DISPLAY_TO_SITE_KEY[canonical]
+        for alias, canonical in CATEGORY_ALIASES.items()
+    }
 )
 
 # Every spelling that marks a bucket as a folded alias rather than the category
@@ -340,27 +369,31 @@ _ALIAS_KEYS = set(CATEGORY_ALIASES) | {slugify(alias) for alias in CATEGORY_ALIA
 # Reverse map: display name -> display name (for backward compat with upstream data)
 # Also include upstream display names that differ from site display names
 DISPLAY_TO_DISPLAY = {v: v for v in SITE_KEY_TO_DISPLAY.values()}
-DISPLAY_TO_DISPLAY.update({
-    "Energy": "Renewable Energy",
-    "Quantum": "Quantum Physics",
-    "Spaceflight": "Spaceflight & Aeronautics",
-    "Defense": "Military & Defense",
-    "Computing & AGI": "Computing & AGI",
-    "Cybersecurity": "Cybersecurity",
-    # Split/renamed categories: upstream's old names fold into the new canonical
-    # display so historical milestones are re-labelled, not duplicated.
-    "Biotechnology": "Biotechnology & Biohacking",
-    "Biohacking": "Biotechnology & Biohacking",
-    "Logistics": "Mobility & Logistics",
-    "Transportation": "Mobility & Logistics",
-    "Robotics": "Robotics & Drones",
-})
+DISPLAY_TO_DISPLAY.update(
+    {
+        "Energy": "Renewable Energy",
+        "Quantum": "Quantum Physics",
+        "Spaceflight": "Spaceflight & Aeronautics",
+        "Defense": "Military & Defense",
+        "Computing & AGI": "Computing & AGI",
+        "Cybersecurity": "Cybersecurity",
+        # Split/renamed categories: upstream's old names fold into the new canonical
+        # display so historical milestones are re-labelled, not duplicated.
+        "Biotechnology": "Biotechnology & Biohacking",
+        "Biohacking": "Biotechnology & Biohacking",
+        "Logistics": "Mobility & Logistics",
+        "Transportation": "Mobility & Logistics",
+        "Robotics": "Robotics & Drones",
+    }
+)
 DISPLAY_TO_DISPLAY.update(CATEGORY_ALIASES)
 
 
 def display_category(name: str) -> str:
     # Try snake_case key first, then display name, then fallback
-    return SITE_KEY_TO_DISPLAY.get(name or "", DISPLAY_TO_DISPLAY.get(name or "", name or "Unknown"))
+    return SITE_KEY_TO_DISPLAY.get(
+        name or "", DISPLAY_TO_DISPLAY.get(name or "", name or "Unknown")
+    )
 
 
 def transform_upstream_to_site_format(upstream: dict) -> dict:
@@ -376,7 +409,9 @@ def transform_upstream_to_site_format(upstream: dict) -> dict:
     # Site keys whose bucket is already branded by a canonical (non-alias) entry.
     canonical_keys: set = set()
     for upstream_key, cat_data in upstream.get("categories", {}).items():
-        site_key = UPSTREAM_TO_SITE_KEY.get(upstream_key, upstream_key.lower().replace(" ", "_").replace("&", ""))
+        site_key = UPSTREAM_TO_SITE_KEY.get(
+            upstream_key, upstream_key.lower().replace(" ", "_").replace("&", "")
+        )
         # The canonical display name wins over the upstream one: a bucket that
         # arrived as an alias must be labelled with the category it folded into.
         display_name = SITE_KEY_TO_DISPLAY.get(site_key) or cat_data.get("name") or upstream_key
@@ -415,7 +450,9 @@ def transform_upstream_to_site_format(upstream: dict) -> dict:
     return {
         "last_update": upstream.get("last_update", now_iso()),
         "version": upstream.get("version", "1.0.0"),
-        "schema": upstream.get("schema", "https://transhumanists.github.io/schema/milestone-v1.json"),
+        "schema": upstream.get(
+            "schema", "https://transhumanists.github.io/schema/milestone-v1.json"
+        ),
         "categories": site_categories,
     }
 
@@ -468,8 +505,10 @@ def fetch_upstream(repo: str, branch: str) -> dict | None:
             # are all transient in practice - retry with backoff, then degrade
             # to the keep-local path instead of crashing the pipeline.
             if attempt < 2:
-                backoff = 5 * (2 ** attempt)
-                print(f"::warning::Fetch attempt {attempt + 1} failed: {e}, retrying in {backoff}s...")
+                backoff = 5 * (2**attempt)
+                print(
+                    f"::warning::Fetch attempt {attempt + 1} failed: {e}, retrying in {backoff}s..."
+                )
                 time.sleep(backoff)
             else:
                 print(f"::warning::Could not fetch from source after 3 attempts: {e}")
@@ -510,7 +549,9 @@ def merge_upstreams(upstreams: list[dict]) -> dict:
                 merged.setdefault("categories", {})[cat_key] = cat_data
             else:
                 # Merge milestones, avoiding duplicates by ID
-                existing_ids = {m.get("id") for m in merged["categories"][cat_key].get("milestones", [])}
+                existing_ids = {
+                    m.get("id") for m in merged["categories"][cat_key].get("milestones", [])
+                }
                 for milestone in cat_data.get("milestones", []):
                     if milestone.get("id") not in existing_ids:
                         merged["categories"][cat_key]["milestones"].append(milestone)
@@ -553,15 +594,24 @@ def validate(data) -> tuple[bool, str]:
                 try:
                     lat, lon = float(geo["lat"]), float(geo["lon"])
                     if not (-90 <= lat <= 90) or not (-180 <= lon <= 180):
-                        return False, f"Milestone {m.get('id', 'unknown')} geolocation out of bounds"
+                        return (
+                            False,
+                            f"Milestone {m.get('id', 'unknown')} geolocation out of bounds",
+                        )
                 except (ValueError, TypeError):
                     return False, f"Milestone {m.get('id', 'unknown')} geolocation not numeric"
             if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", str(m.get("date", ""))):
-                return False, f"Milestone {m.get('id', 'unknown')} has malformed date {m.get('date')!r}"
+                return (
+                    False,
+                    f"Milestone {m.get('id', 'unknown')} has malformed date {m.get('date')!r}",
+                )
             try:
                 date.fromisoformat(str(m.get("date", "")))
             except ValueError:
-                return False, f"Milestone {m.get('id', 'unknown')} has invalid date {m.get('date')!r}"
+                return (
+                    False,
+                    f"Milestone {m.get('id', 'unknown')} has invalid date {m.get('date')!r}",
+                )
     return True, "OK"
 
 
@@ -569,10 +619,14 @@ def canonical_id(m: dict) -> str:
     ident = str(m.get("id", "")).strip()
     if ident:
         return ident
-    blob = ":".join([
-        str(m.get("category", "")), str(m.get("subcategory", "")),
-        str(m.get("title", "")), str(m.get("date", "")),
-    ])
+    blob = ":".join(
+        [
+            str(m.get("category", "")),
+            str(m.get("subcategory", "")),
+            str(m.get("title", "")),
+            str(m.get("date", "")),
+        ]
+    )
     return "ms-" + hashlib.sha1(blob.encode("utf-8")).hexdigest()[:12]
 
 
@@ -682,7 +736,10 @@ def merge_feed(current: list, history: list) -> list:
         cleaned = _scrub_inherited(m)
         by_id[cleaned.get("id", canonical_id(cleaned))] = cleaned
     feed = list(by_id.values())
-    feed.sort(key=lambda r: (r.get("date") or "", r.get("category") or "", r.get("title") or ""), reverse=True)
+    feed.sort(
+        key=lambda r: (r.get("date") or "", r.get("category") or "", r.get("title") or ""),
+        reverse=True,
+    )
     return feed
 
 
@@ -801,8 +858,7 @@ def unify_duplicate_milestones(milestones: list) -> tuple[list, list[str]]:
         out.append(merged)
         ids = ", ".join(str(r.get("id")) for r in cluster)
         changes.append(
-            f"unified {len(cluster)} records into {primary.get('id')} "
-            f"({'; '.join(sources)})"
+            f"unified {len(cluster)} records into {primary.get('id')} ({'; '.join(sources)})"
         )
         changes.append(f"  merged ids: {ids}")
 
@@ -817,6 +873,7 @@ def _dedupe_pick_primary(cluster: list[dict]) -> dict:
     runs over the same input always produce the same output and the commit
     fingerprint does not churn.
     """
+
     def rank(rec: dict) -> tuple:
         summary = str(rec.get("summary") or "")
         url = str(rec.get("url") or "").strip()
@@ -846,7 +903,9 @@ def build_site_categories(milestones: list, upstream_categories: dict) -> dict:
     cats: dict[str, dict] = {}
     for m in milestones:
         key = m.get("category_key")
-        key = key or DISPLAY_TO_SITE_KEY.get(m.get("category"), slugify(m.get("category", "Unknown")))
+        key = key or DISPLAY_TO_SITE_KEY.get(
+            m.get("category"), slugify(m.get("category", "Unknown"))
+        )
         if key not in cats:
             known = (upstream_categories or {}).get(key, {})
             name = known.get("name") or SITE_KEY_TO_DISPLAY.get(key, m.get("category") or key)
@@ -902,7 +961,10 @@ def build_activity(history: list, today: date, include_spikes: bool = True) -> d
             "first": today.isoformat(),
             "last": today.isoformat(),
             "total": 0,
-            "days": [{"date": (today - timedelta(days=i)).isoformat(), "count": 0} for i in range(29, -1, -1)],
+            "days": [
+                {"date": (today - timedelta(days=i)).isoformat(), "count": 0}
+                for i in range(29, -1, -1)
+            ],
             "spikes": [],
         }
 
@@ -918,7 +980,9 @@ def build_activity(history: list, today: date, include_spikes: bool = True) -> d
         bucket = "day"
 
     if bucket == "day":
-        buckets: dict[str, int] = {d.isoformat(): counts.get(d, 0) for d in date_range(earliest, today)}
+        buckets: dict[str, int] = {
+            d.isoformat(): counts.get(d, 0) for d in date_range(earliest, today)
+        }
     elif bucket == "week":
         # ISO week buckets: key = Monday of each week.
         week_counts: Counter = Counter()
@@ -958,13 +1022,16 @@ def build_activity(history: list, today: date, include_spikes: bool = True) -> d
     spikes = []
     if include_spikes and counts:
         for d, c in counts.most_common(3):
-            reasons = [r.get("title") for r in history
-                       if r.get("date") == d.isoformat() and r.get("title")]
-            spikes.append({
-                "date": d.isoformat(),
-                "count": c,
-                "reason": "; ".join(reasons[:3]) if reasons else "Multiple milestones",
-            })
+            reasons = [
+                r.get("title") for r in history if r.get("date") == d.isoformat() and r.get("title")
+            ]
+            spikes.append(
+                {
+                    "date": d.isoformat(),
+                    "count": c,
+                    "reason": "; ".join(reasons[:3]) if reasons else "Multiple milestones",
+                }
+            )
 
     return {
         "last_update": now_iso(),
@@ -1015,7 +1082,7 @@ def _match_institution(text: str) -> tuple[str, dict] | None:
         # generic phrases like "research team"; skip them via the shared predicate.
         if lc.is_unlocated(coords):
             continue
-        pattern = fr"(^|[^a-z0-9]){re.escape(key.lower())}([^a-z0-9]|$)"
+        pattern = rf"(^|[^a-z0-9]){re.escape(key.lower())}([^a-z0-9]|$)"
         if re.search(pattern, text) and (best is None or len(key) > len(best[0])):
             best = (key, coords)
     return best
@@ -1035,8 +1102,11 @@ def geocode_with_confidence(m: dict) -> tuple[float | None, float | None, str]:
     content = (str(m.get("title") or ""), str(m.get("summary") or ""))
     weak = (str(m.get("subcategory") or ""),)
 
-    for fields, level in ((content, "institution"), (weak, "subcategory"),
-                          ((str(m.get("source") or ""),), "source")):
+    for fields, level in (
+        (content, "institution"),
+        (weak, "subcategory"),
+        ((str(m.get("source") or ""),), "source"),
+    ):
         text = " ".join(fields).lower()
         if not text.strip():
             continue
@@ -1057,6 +1127,7 @@ def geocode_with_confidence(m: dict) -> tuple[float | None, float | None, str]:
     title = str(m.get("title") or "").lower()
     if title.strip():
         import article_geocode
+
         demonym = article_geocode.match_demonym(title)
         if demonym:
             lat, lon, name = demonym
@@ -1194,22 +1265,22 @@ def enrich_with_historic_milestones(feed: list, history: list, today: date) -> l
     """Add historic milestones to the feed if recent milestones are sparse."""
     # Check how many milestones in the last 30 days
     recent_cutoff = today - timedelta(days=30)
-    recent_count = sum(1 for m in feed 
-                       if m.get("date") and m["date"] >= recent_cutoff.isoformat())
-    
+    recent_count = sum(1 for m in feed if m.get("date") and m["date"] >= recent_cutoff.isoformat())
+
     # If fewer than 5 milestones in the last 30 days, add historic ones
     if recent_count < 5:
         # Get historic milestones from archive (older than 30 days)
         historic_cutoff = today - timedelta(days=30)
-        historic_milestones = [h for h in history 
-                               if h.get("date") and h["date"] < historic_cutoff.isoformat()]
-        
+        historic_milestones = [
+            h for h in history if h.get("date") and h["date"] < historic_cutoff.isoformat()
+        ]
+
         # Sort by date descending and take up to 20 historic milestones
         historic_milestones.sort(key=lambda x: x.get("date", ""), reverse=True)
         existing_ids = {m.get("id") for m in feed}
         unseen = [h for h in historic_milestones if h.get("id") not in existing_ids]
         feed.extend(unseen[:20])
-    
+
     return feed
 
 
@@ -1242,7 +1313,11 @@ def churn_free_view(site_format: dict, history: list, activity: dict, events: di
 
     def scrub(obj):
         if isinstance(obj, dict):
-            return {k: scrub(v) for k, v in obj.items() if k not in ("last_update", "first_seen", "last_seen")}
+            return {
+                k: scrub(v)
+                for k, v in obj.items()
+                if k not in ("last_update", "first_seen", "last_seen")
+            }
         if isinstance(obj, list):
             return [scrub(x) for x in obj]
         return obj
@@ -1252,10 +1327,16 @@ def churn_free_view(site_format: dict, history: list, activity: dict, events: di
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--dry-run", action="store_true", help="fetch/validate/derive but write nothing")
+    ap.add_argument(
+        "--dry-run", action="store_true", help="fetch/validate/derive but write nothing"
+    )
     ap.add_argument("--output-dir", default=".", help="directory containing data/ (default: cwd)")
-    ap.add_argument("--upstream", default=None, help="read upstream JSON from file instead of network")
-    ap.add_argument("--today", default=None, help="override 'today' (YYYY-MM-DD) for deterministic tests")
+    ap.add_argument(
+        "--upstream", default=None, help="read upstream JSON from file instead of network"
+    )
+    ap.add_argument(
+        "--today", default=None, help="override 'today' (YYYY-MM-DD) for deterministic tests"
+    )
     args = ap.parse_args()
 
     data_dir = Path(args.output_dir) / "data"
@@ -1281,7 +1362,9 @@ def main() -> int:
 
     if upstream is None:
         # Keep local data; do not churn. Loud so the breakage is visible.
-        print("::error::No upstream data fetched - pipeline likely broken (scrape/score upstream). Keeping local data.")
+        print(
+            "::error::No upstream data fetched - pipeline likely broken (scrape/score upstream). Keeping local data."
+        )
         return 1
 
     valid, msg = validate(upstream)
@@ -1295,7 +1378,9 @@ def main() -> int:
 
     # 2. Merge into the history archive (the full per-metric timeline)
     existing_history = load_json(history_file, [])
-    history = merge_history(existing_history if isinstance(existing_history, list) else [], current, seen_on)
+    history = merge_history(
+        existing_history if isinstance(existing_history, list) else [], current, seen_on
+    )
 
     # 3. The published feed is the union of the upstream snapshot and every
     #    milestone the archive has ever seen - upstream collapse must never
@@ -1316,10 +1401,10 @@ def main() -> int:
 
     # 4. Derive outputs
     activity = build_activity(history, today)
-    
+
     # Enrich feed with historic milestones if recent data is sparse
     feed = enrich_with_historic_milestones(feed, history, today)
-    
+
     events = build_events(feed)
 
     # 5. Staleness gate (milestone date freshness, not data-file freshness)
@@ -1327,12 +1412,16 @@ def main() -> int:
     if latest is not None:
         stale_days = (today - latest).days
         if stale_days > STALE_ERROR_DAYS:
-            print(f"::error::Milestone data is {stale_days} days stale (latest milestone {latest}). "
-                  f"Extraction is likely broken upstream. Raising the sync failure.")
+            print(
+                f"::error::Milestone data is {stale_days} days stale (latest milestone {latest}). "
+                f"Extraction is likely broken upstream. Raising the sync failure."
+            )
             return 1
         if stale_days > STALE_WARN_DAYS:
-            print(f"::warning::Milestone data is {stale_days} days stale (latest milestone {latest}). "
-                  f"No new records since {latest}.")
+            print(
+                f"::warning::Milestone data is {stale_days} days stale (latest milestone {latest}). "
+                f"No new records since {latest}."
+            )
     else:
         print("::error::No dated milestones found - refusing to publish.")
         return 1
@@ -1345,8 +1434,10 @@ def main() -> int:
     new_fp = content_fingerprint(*churn_free_view(site_format, history, activity, events))
 
     if args.dry_run:
-        print(f"[dry-run] would write {len(history)} history records, "
-              f"{len(events['events'])} events, activity {activity['bucket']} x {len(activity['days'])}")
+        print(
+            f"[dry-run] would write {len(history)} history records, "
+            f"{len(events['events'])} events, activity {activity['bucket']} x {len(activity['days'])}"
+        )
         return 0
 
     if new_fp == prev_fp:
@@ -1360,10 +1451,12 @@ def main() -> int:
     save_json(events_file, events)
     save_json(fingerprint_file, new_fp)
 
-    print(f"OK: wrote {len(history)} history records (by {len({h.get('subcategory') for h in history})} metrics), "
-          f"{len(feed)} feed milestones, {len(events['events'])} events, "
-          f"activity {activity['bucket']} x {len(activity['days'])} days "
-          f"({activity['first']} -> {activity['last']}).")
+    print(
+        f"OK: wrote {len(history)} history records (by {len({h.get('subcategory') for h in history})} metrics), "
+        f"{len(feed)} feed milestones, {len(events['events'])} events, "
+        f"activity {activity['bucket']} x {len(activity['days'])} days "
+        f"({activity['first']} -> {activity['last']})."
+    )
     return 0
 
 

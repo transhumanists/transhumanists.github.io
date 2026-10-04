@@ -2,13 +2,21 @@
  * Shared AI dock — bottom bar with persistent sway + GitHub OAuth.
  * SSOT: template-shared/assets/js/auth-bar.js
  *
- * Flow (simplest possible):
- *   1. User clicks AI/Login/Contact/Dashboard/User tab in the bottom rail.
- *   2. The corresponding panel slides up from the dock with a sway animation.
- *   3. For Login: browser is redirected to github.com/login/oauth/authorize.
- *   4. GitHub redirects back to /auth/callback?code=...&state=...
- *   5. Server (functions/api/auth.js) exchanges code → session_id + role.
- *   6. Auth bar reads #session= from URL, stores in localStorage, displays UI.
+ * Scope (narrower than it used to be):
+ *   - The dock renders the Assistant tab plus the signed-in state. AI and Contact
+ *     are ONE surface now; there is no Contact tab and no dock-local composer.
+ *   - The conversation itself is the screenwide sheet mounted by network-ux.js,
+ *     and messages are delivered by brain-bridge (see network/brain_bridge/).
+ *     Clicking Assistant therefore goes through AuthBar.selectTab(null) to
+ *     collapse the dock, not through selectTab('ai').
+ *   - Login is triggered from the TOP bar (nav.html) via AuthBar.selectTab('login').
+ *
+ * Flow:
+ *   1. User clicks Login (top bar) → the login panel slides up from the dock.
+ *   2. Browser redirects to github.com/login/oauth/authorize.
+ *   3. GitHub redirects back to /auth/callback?code=...&state=...
+ *   4. Server (functions/api/auth.js) exchanges code → session_id + role.
+ *   5. Auth bar reads #session= from URL, stores in localStorage, displays UI.
  *
  * Required:
  *   - auth-bar.html (markup, with id="ai-dock"...)
@@ -32,39 +40,9 @@
   const OAUTH_STATE_KEY = 'neohiro_oauth_state_v1';
   const AUTH_CALLBACK = (typeof window !== 'undefined' && window.AUTH_CALLBACK) || '/auth/callback';
   const AUTH_STATE_ENDPOINT = (typeof window !== 'undefined' && window.AUTH_STATE_ENDPOINT) || '/auth/state';
-  const CONTACT_ENDPOINT = '/api/contact';
   const SESSION_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 
-  const STORAGE_TAB_KEY = 'ai_dock_active_tab_v1';
-const state = { activeTab: null };
-
-  // Panels that take over the rail. The AI conversation panel is the reason:
-  // it is wide enough to need the full width, so the rail slides down out of the
-  // way and the panel takes its place - one control surface at the bottom of the
-  // screen rather than two stacked ones competing for the same 52px.
-  const RAIL_HIDING_TABS = new Set(['ai']);
-
-  function setRailHidden(hidden) {
-    const dock = $('ai-dock');
-    if (!dock) return;
-    dock.classList.toggle('ai-dock--rail-hidden', Boolean(hidden));
-    // The rail is a real navigation landmark. While it is off screen it must not
-    // be reachable, or a keyboard user tabs into buttons they cannot see.
-    qa('.ai-dock__rail').forEach((rail) => {
-      rail.setAttribute('aria-hidden', hidden ? 'true' : 'false');
-      rail.inert = Boolean(hidden);
-    });
-  }
-
-function persistActiveTab() {
-  try {
-    if (state.activeTab) {
-      sessionStorage.setItem(STORAGE_TAB_KEY, state.activeTab);
-    } else {
-      sessionStorage.removeItem(STORAGE_TAB_KEY);
-    }
-  } catch (_) {}
-}
+  const state = { activeTab: null };
 
   function $(id) { return document.getElementById(id); }
   function qa(sel, ctx) { return Array.from((ctx || document).querySelectorAll(sel)); }
@@ -89,9 +67,7 @@ function persistActiveTab() {
       t.classList.remove('active');
     });
     hide($('ai-dock__backdrop'));
-    setRailHidden(false);
     state.activeTab = null;
-    try { sessionStorage.removeItem(STORAGE_TAB_KEY); } catch (_) {}
   }
 
   function selectTab(tabId) {
@@ -108,20 +84,15 @@ function persistActiveTab() {
     tab.classList.add('active');
     show(panel);
     state.activeTab = tabId;
-    persistActiveTab();
-    setRailHidden(RAIL_HIDING_TABS.has(tabId));
 
+    // The backdrop dims the page behind the dock panels that need focus
+    // (login, account). The Assistant tab deliberately does NOT open a panel —
+    // it hands off to the screenwide conversation sheet instead.
     const backdrop = $('ai-dock__backdrop');
-    if (tabId === 'contact' || tabId === 'login' || tabId === 'ai') {
-      if (backdrop) backdrop.hidden = false;
-    } else {
-      if (backdrop) backdrop.hidden = true;
-    }
+    if (backdrop) backdrop.hidden = !(tabId === 'login' || tabId === 'user');
 
-    if (tabId === 'contact') {
-      setTimeout(() => { const input = $('ai-dock__contact-input'); if (input) input.focus(); }, 350);
-    } else if (tabId === 'ai') {
-      setTimeout(() => { const input = $('ai-dock__chat-input'); if (input) input.focus(); }, 350);
+    if (tabId === 'login') {
+      setTimeout(() => { const btn = $('ai-dock__gh-btn'); if (btn) btn.focus(); }, 350);
     }
   }
 
@@ -303,61 +274,6 @@ function persistActiveTab() {
     } catch (_) { return false; }
   }
 
-  async function sendContact() {
-    const form = $('ai-dock__contact-form');
-    const success = $('ai-dock__contact-success');
-    const error = $('ai-dock__contact-error');
-    const errorMsg = $('ai-dock__contact-error-msg');
-    const input = $('ai-dock__contact-input');
-    const submitBtn = form ? form.querySelector('[type=submit]') : null;
-
-    if (!input || !input.value.trim()) return;
-    if (submitBtn) submitBtn.disabled = true;
-    hide(success); hide(error);
-
-    const session = readStoredSession();
-    try {
-      const body = {
-        message: input.value.trim(),
-        source: location.origin + location.pathname,
-        ts: new Date().toISOString(),
-      };
-      if (session) body.session_id = session.session_id;
-
-      const r = await fetch(CONTACT_ENDPOINT, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      });
-      if (!r.ok) {
-        const d = await r.json().catch(() => ({}));
-        throw new Error(d.error || `HTTP ${r.status}`);
-      }
-      hide(form);
-      show(success);
-      input.value = '';
-    } catch (e) {
-      if (errorMsg) errorMsg.textContent = e.message || 'Something went wrong. Try again.';
-      show(error);
-    } finally {
-      if (submitBtn) submitBtn.disabled = false;
-    }
-  }
-
-  function initContactForm() {
-    const form = $('ai-dock__contact-form');
-    const input = $('ai-dock__contact-input');
-    const charCount = $('ai-dock__char-count');
-    if (input && charCount) {
-      input.addEventListener('input', () => {
-        const len = input.value.length;
-        charCount.textContent = `${len} / 1000`;
-        charCount.style.color = len > 900 ? 'var(--red, #f85149)' : '';
-      });
-    }
-    if (form) form.addEventListener('submit', (e) => { e.preventDefault(); sendContact(); });
-  }
-
   function initBackdrop() {
     const backdrop = $('ai-dock__backdrop');
     if (backdrop) backdrop.addEventListener('click', () => selectTab(null));
@@ -371,14 +287,6 @@ function persistActiveTab() {
 
   async function init() {
     await consumeCallback();
-
-    // Restore active tab from sessionStorage
-    try {
-      const savedTab = sessionStorage.getItem(STORAGE_TAB_KEY);
-      if (savedTab && $(`ai-dock__panel--${savedTab}`)) {
-        state.activeTab = savedTab;
-      }
-    } catch (_) {}
 
     qa('.ai-dock__tab').forEach(tab => {
       tab.addEventListener('click', (e) => {
@@ -396,30 +304,9 @@ function persistActiveTab() {
     const logoutUser = $('ai-dock__user-logout');
     if (logoutUser) logoutUser.addEventListener('click', () => { clearSession(); setUser(null); closeAll(); });
 
-    initContactForm();
     initBackdrop();
     initEscClose();
     setUser(readStoredSession());
-
-    // Restore active tab after setUser to ensure UI is correct
-    if (state.activeTab) {
-      const panel = $(`ai-dock__panel--${state.activeTab}`);
-      const tab = $(`ai-dock__tab--${state.activeTab}`);
-      if (panel && tab) {
-        qa('.ai-dock__panel').forEach(hide);
-        qa('.ai-dock__tab').forEach(t => {
-          t.setAttribute('aria-selected', 'false');
-          t.classList.remove('active');
-        });
-        tab.setAttribute('aria-selected', 'true');
-        tab.classList.add('active');
-        show(panel);
-        const backdrop = $('ai-dock__backdrop');
-        if (['contact', 'login', 'ai'].includes(state.activeTab)) {
-          if (backdrop) backdrop.hidden = false;
-        }
-      }
-    }
   }
 
   if (document.readyState === 'loading') {

@@ -73,6 +73,10 @@
   // precisions - "YYYY-MM-DD", "YYYY-MM" and bare "YYYY" - so a strict
   // YYYY-MM-DD test alone would silently drop two thirds of the tactical series,
   // and the chart would be quietly wrong rather than obviously empty.
+  //
+  // The output is NOT calendar-validated here; bucketCounts does that. This
+  // function's job is to normalise a precision, not to decide what is a real day,
+  // and two opinions about validity is one too many.
   function parseDateToISO(value) {
     if (value === null || value === undefined) return null;
     const s = String(value).trim();
@@ -449,24 +453,29 @@
 function nextChartBucket(key, size) {
   switch (size) {
     case 'day': {
-      const [y, m, d] = key.split('-').map(Number);
-      const dt = new Date(Date.UTC(y, m - 1, d + 1));
+      const m = key.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      if (!m) return key;
+      const dt = new Date(Date.UTC(+m[1], +m[2] - 1, +m[3] + 1));
       return dt.toISOString().slice(0, 10);
     }
     case 'week': {
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(key)) return key;
       const dt = new Date(key + 'T00:00:00Z');
       dt.setUTCDate(dt.getUTCDate() + 7);
       return dt.toISOString().slice(0, 10);
     }
     case 'month': {
-      const [y, m] = key.split('-').map(Number);
-      return m === 12 ? `${y + 1}-01` : `${y}-${pad2(m + 1)}`;
+      const m = key.match(/^(\d{4})-(\d{2})$/);
+      if (!m) return key;
+      const y = +m[1];
+      const mo = +m[2];
+      return mo === 12 ? `${y + 1}-01` : `${y}-${pad2(mo + 1)}`;
     }
     case 'quarter': {
       const qm = key.match(/^(\d{4})-Q([1-4])$/);
       if (!qm) return key;
-      const y = Number(qm[1]);
-      const q = Number(qm[2]);
+      const y = parseInt(qm[1], 10);
+      const q = parseInt(qm[2], 10);
       return q === 4 ? `${y + 1}-01` : `${y}-${pad2((q - 1) * 3 + 4)}`;
     }
     case 'year': {
@@ -482,6 +491,26 @@ function nextChartBucket(key, size) {
   }
 }
 
+  // A calendar-valid YYYY-MM-DD. A regex alone is not enough: it accepts
+  // 2026-13-45, and feeding that to `new Date(Date.UTC(...))` silently rolls it
+  // forward into a real date - a single malformed record produced 6,400 daily
+  // buckets and a chart that ran off the page again, which is the exact failure
+  // this whole refactor exists to remove. Round-tripping is the cheapest correct
+  // check: re-read each field out of the date and compare.
+  function isCalendarDate(iso) {
+    if (typeof iso !== 'string') return false;
+    const m = iso.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (!m) return false;
+    const y = parseInt(m[1], 10);
+    const mo = parseInt(m[2], 10);
+    const d = parseInt(m[3], 10);
+    if (mo < 1 || mo > 12 || d < 1 || d > 31) return false;
+    const dt = new Date(Date.UTC(y, mo - 1, d));
+    return dt.getUTCFullYear() === y
+      && dt.getUTCMonth() === mo - 1
+      && dt.getUTCDate() === d;
+  }
+
   // Contiguous buckets from the first record to the last, with counts filled in.
   // `records` is [{date, count}]; a count may be absent (treat as 1) so the same
   // function serves a count series and a plain list of dated records.
@@ -490,7 +519,7 @@ function nextChartBucket(key, size) {
     let first = null;
     let last = null;
     for (const r of records) {
-      if (!r || typeof r.date !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(r.date)) continue;
+      if (!r || !isCalendarDate(r.date)) continue;
       const { key } = chartBucket(r.date, size);
       const n = Number.isFinite(r.count) ? r.count : 1;
       counts.set(key, (counts.get(key) || 0) + n);
@@ -698,6 +727,10 @@ function nextChartBucket(key, size) {
   // ended, not only on the day it began. Counting only starts would make the
   // series fall away exactly when things were resolving.
   function tacticalRecords(layers) {
+    // Guarded rather than assuming: a failed or shape-changed fetch must leave
+    // the frame empty and explained, not throw inside the loader and take the
+    // rest of the page's initialisation with it.
+    if (!layers || typeof layers !== 'object') return [];
     const out = [];
     const add = (list) => (list || []).forEach((item) => {
       const start = parseDateToISO(normalizeLayerDate(item.start_date));
@@ -981,7 +1014,7 @@ function nextChartBucket(key, size) {
       card.addEventListener('keydown', e => {
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
-          openMilestoneModal(m);
+          openMilestoneModal(m, card);
         }
       });
 
@@ -1622,7 +1655,7 @@ function nextChartBucket(key, size) {
         card.setAttribute('tabindex', '-1');
         card.addEventListener('click', () => {
           pause();
-          openMilestoneModal(m);
+          openMilestoneModal(m, card);
         });
         card.addEventListener('keydown', (e) => {
           if (e.key === 'Enter' || e.key === ' ') {

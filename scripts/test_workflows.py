@@ -26,15 +26,54 @@ except ImportError:  # pragma: no cover
 
 # Tools present on a GitHub runner without an explicit install.
 PREINSTALLED = {
-    "python", "python3", "pip", "pip3", "bash", "sh", "git", "node", "npm",
-    "npx", "wc", "grep", "sed", "awk", "curl", "date", "mkdir", "cp", "test",
+    "python",
+    "python3",
+    "pip",
+    "pip3",
+    "bash",
+    "sh",
+    "git",
+    "node",
+    "npm",
+    "npx",
+    "wc",
+    "grep",
+    "sed",
+    "awk",
+    "curl",
+    "date",
+    "mkdir",
+    "cp",
+    "test",
 }
 
 # Shell keywords that begin a control structure rather than a command.
 SHELL_KEYWORDS = {
-    "if", "then", "else", "elif", "fi", "for", "in", "do", "done", "while",
-    "case", "esac", "function", "echo", "exit", "set", "export", "cd", "true",
-    "false", "return", "local", "readonly", "declare", "source",
+    "if",
+    "then",
+    "else",
+    "elif",
+    "fi",
+    "for",
+    "in",
+    "do",
+    "done",
+    "while",
+    "case",
+    "esac",
+    "function",
+    "echo",
+    "exit",
+    "set",
+    "export",
+    "cd",
+    "true",
+    "false",
+    "return",
+    "local",
+    "readonly",
+    "declare",
+    "source",
 }
 
 _ASSIGNMENT = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*=")
@@ -115,7 +154,7 @@ def _node_dev_dependencies():
         return set()
     names = set()
     for key in ("dependencies", "devDependencies"):
-        for dep in (data.get(key) or {}):
+        for dep in data.get(key) or {}:
             names.add(dep.split("@")[0] if not dep.startswith("@") else dep.split("@")[1])
     return names
 
@@ -164,17 +203,19 @@ class TestWorkflowDependencies(unittest.TestCase):
                                 if "bunx:" + tool not in installed:
                                     problems.append(
                                         f"{path.name}:{job_name} runs "
-                                        f"`bunx {tool}` with no install step")
+                                        f"`bunx {tool}` with no install step"
+                                    )
                             continue
                         if token not in installed:
                             problems.append(
-                                f"{path.name}:{job_name} runs {token!r} "
-                                f"with no install step")
+                                f"{path.name}:{job_name} runs {token!r} with no install step"
+                            )
 
                 if bunx_tools and not has_node_install:
                     problems.append(
                         f"{path.name}:{job_name} uses bunx "
-                        f"({', '.join(sorted(bunx_tools))}) with no `bun install`")
+                        f"({', '.join(sorted(bunx_tools))}) with no `bun install`"
+                    )
 
         self.assertEqual(problems, [], "\n".join(problems))
 
@@ -184,6 +225,7 @@ class TestWorkflowDependencies(unittest.TestCase):
         # command-level audit sees nothing wrong - the missing thing is the
         # pytest *package*. Flag the module itself.
         import sys
+
         if yaml is None:
             self.skipTest("pyyaml not available")
         stdlib = set(sys.stdlib_module_names)
@@ -204,14 +246,16 @@ class TestWorkflowDependencies(unittest.TestCase):
                         if module in stdlib or module in installed:
                             continue
                         problems.append(
-                            f"{path.name}:{job_name} runs 'python -m {module}' "
-                            f"with no pip install")
+                            f"{path.name}:{job_name} runs 'python -m {module}' with no pip install"
+                        )
         self.assertEqual(problems, [], "\n".join(problems))
 
     def test_the_audit_is_not_vacuous(self):
         # Guards the parser above: if _commands stopped finding anything, this
         # test would still pass and the real check would be meaningless.
-        sample = "set -euo pipefail\nif git diff --quiet; then\n  echo no\nfi\nts=$(date)\npytest -q\n"
+        sample = (
+            "set -euo pipefail\nif git diff --quiet; then\n  echo no\nfi\nts=$(date)\npytest -q\n"
+        )
         self.assertIn("pytest", _commands(sample))
         self.assertNotIn("ts=$(date", _commands(sample))
         self.assertNotIn("set", _commands(sample))
@@ -225,9 +269,11 @@ class TestFetchWorkflowsAreDataOnly(unittest.TestCase):
 
     def _runs(self, name):
         data = yaml.safe_load((WORKFLOW_DIR / name).read_text(encoding="utf-8"))
-        return "\n".join((s.get("run") or "")
-                         for job in (data.get("jobs") or {}).values()
-                         for s in (job.get("steps") or []))
+        return "\n".join(
+            (s.get("run") or "")
+            for job in (data.get("jobs") or {}).values()
+            for s in (job.get("steps") or [])
+        )
 
     def test_fetch_jobs_validate_the_data_they_publish(self):
         if yaml is None:
@@ -236,8 +282,11 @@ class TestFetchWorkflowsAreDataOnly(unittest.TestCase):
             if not (WORKFLOW_DIR / name).exists():
                 continue
             with self.subTest(workflow=name):
-                self.assertIn("check_data.py", self._runs(name),
-                              "a fetch job must validate the file it is about to commit")
+                self.assertIn(
+                    "check_data.py",
+                    self._runs(name),
+                    "a fetch job must validate the file it is about to commit",
+                )
 
     def test_fetch_jobs_do_not_run_unit_tests(self):
         # CI runs the test modules on every push; re-running them at fetch time
@@ -260,9 +309,11 @@ class TestDataWriterCoordination(unittest.TestCase):
 
     def _runs_all(self, name):
         data = yaml.safe_load((WORKFLOW_DIR / name).read_text(encoding="utf-8"))
-        return "\n".join((s.get("run") or "")
-                         for job in (data.get("jobs") or {}).values()
-                         for s in (job.get("steps") or []))
+        return "\n".join(
+            (s.get("run") or "")
+            for job in (data.get("jobs") or {}).values()
+            for s in (job.get("steps") or [])
+        )
 
     def test_world_layer_writers_share_one_concurrency_group(self):
         if yaml is None:
@@ -277,8 +328,11 @@ class TestDataWriterCoordination(unittest.TestCase):
         present = {k: v for k, v in groups.items() if v}
         if len(present) < 2:
             self.skipTest("fewer than two world_layers writers present")
-        self.assertEqual(len(set(present.values())), 1,
-                         f"world_layers.json writers use different concurrency groups: {present}")
+        self.assertEqual(
+            len(set(present.values())),
+            1,
+            f"world_layers.json writers use different concurrency groups: {present}",
+        )
 
     def test_data_writers_never_cancel_an_in_flight_write(self):
         # Cancelling mid-write truncates a data file. CI is allowed to cancel
@@ -310,8 +364,6 @@ class TestDataWriterCoordination(unittest.TestCase):
                 self.assertIn("git pull --rebase", runs)
 
 
-
-
 class TestLockfileMatchesThePinnedToolchain(unittest.TestCase):
     """bun.lock must be readable by the Bun that CI installs.
 
@@ -331,7 +383,8 @@ class TestLockfileMatchesThePinnedToolchain(unittest.TestCase):
             raw.startswith("{"),
             "bun.lock is not JSON; a newer Bun wrote it in its text format, which the "
             "Bun version CI pins cannot parse. Regenerate it with that version: "
-            "`bun install` under the pinned Bun.")
+            "`bun install` under the pinned Bun.",
+        )
         # Not json.loads: Bun emits trailing commas, so the file is JSON5-ish and a
         # strict parse fails on exactly the line after the version.
         import re
@@ -341,8 +394,8 @@ class TestLockfileMatchesThePinnedToolchain(unittest.TestCase):
         return int(m.group(1))
 
     def test_lockfile_is_the_version_ci_can_read(self):
-        import re
         import pathlib
+        import re
 
         root = pathlib.Path(__file__).resolve().parents[1]
         ci = (root / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
@@ -359,8 +412,7 @@ class TestLockfileMatchesThePinnedToolchain(unittest.TestCase):
         # The audit trusts that `bun install` makes a bunx tool available. If
         # _bunx_tools stopped finding anything the audit would pass on every job
         # that uses bunx, so it gets its own guard.
-        self.assertEqual(_bunx_tools("bunx playwright test"),
-                         {"playwright"})
+        self.assertEqual(_bunx_tools("bunx playwright test"), {"playwright"})
         self.assertEqual(_bunx_tools("bun x playwright install"), set())
         self.assertEqual(_bunx_tools("bun install --frozen-lockfile"), set())
 
@@ -406,8 +458,7 @@ class TestLockfileMatchesThePinnedToolchain(unittest.TestCase):
         pkg = root / "package.json"
         self.assertTrue(pkg.is_file(), "package.json is missing")
         data = json.loads(pkg.read_text(encoding="utf-8"))
-        self.assertIn("@playwright/test",
-                      (data.get("devDependencies") or {}))
+        self.assertIn("@playwright/test", (data.get("devDependencies") or {}))
 
 
 class TestVerifyReleaseBrowserStep(unittest.TestCase):
@@ -453,8 +504,7 @@ class TestVerifyReleaseBrowserStep(unittest.TestCase):
 
         with tempfile.TemporaryDirectory() as tmp:
             tmpdir = Path(tmp)
-            labels = [label for label, _ in
-                      vr._build_steps("bun", tmpdir, True, False)]
+            labels = [label for label, _ in vr._build_steps("bun", tmpdir, True, False)]
             if vr._playwright_installed():
                 self.assertIn("Browser layout checks", labels)
             else:
@@ -466,8 +516,7 @@ class TestVerifyReleaseBrowserStep(unittest.TestCase):
         from pathlib import Path
 
         with tempfile.TemporaryDirectory() as tmp:
-            labels = [label for label, _ in
-                      vr._build_steps("bun", Path(tmp), True, True)]
+            labels = [label for label, _ in vr._build_steps("bun", Path(tmp), True, True)]
             self.assertNotIn("Browser layout checks", labels)
 
     def test_it_uses_the_local_binary_not_a_fetch(self):
@@ -482,8 +531,7 @@ class TestVerifyReleaseBrowserStep(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             argv = dict(vr._build_steps("bun", Path(tmp), True, False))
             if "Browser layout checks" in argv:
-                self.assertEqual(argv["Browser layout checks"],
-                                 ["bun", "x", "playwright", "test"])
+                self.assertEqual(argv["Browser layout checks"], ["bun", "x", "playwright", "test"])
 
 
 class TestVerifyReleaseCoversCI(unittest.TestCase):
@@ -507,15 +555,31 @@ class TestVerifyReleaseCoversCI(unittest.TestCase):
         script = pathlib.Path(__file__).resolve().parents[1] / "scripts" / "verify_release.py"
         self.assertTrue(script.is_file())
         # --help must not need any third-party package.
-        proc = subprocess.run([sys.executable, str(script), "--help"],
-                              capture_output=True, text=True)
+        proc = subprocess.run(
+            [sys.executable, str(script), "--help"], capture_output=True, text=True
+        )
         self.assertEqual(proc.returncode, 0, proc.stderr)
 
     # Shell plumbing rather than a check: not something the local mirror has to run.
     # `pip install` is dependency setup - the check that follows it is the one that
     # has to be mirrored.
-    _SHELL_NOISE = ("set ", "export ", "mkdir", "cp ", "rm ", "test ", "grep ",
-                    "echo ", "#", "-", "env:", "if ", "fi", "done", "pip ")
+    _SHELL_NOISE = (
+        "set ",
+        "export ",
+        "mkdir",
+        "cp ",
+        "rm ",
+        "test ",
+        "grep ",
+        "echo ",
+        "#",
+        "-",
+        "env:",
+        "if ",
+        "fi",
+        "done",
+        "pip ",
+    )
 
     def _ci_commands(self):
         """Every real command CI runs, as (program, line) pairs.
@@ -541,11 +605,12 @@ class TestVerifyReleaseCoversCI(unittest.TestCase):
 
     def test_ci_was_actually_parsed(self):
         cmds = self._ci_commands()
-        self.assertGreaterEqual(len(cmds), 6,
-                                "expected to parse the CI steps, got %r" % cmds)
+        self.assertGreaterEqual(len(cmds), 6, "expected to parse the CI steps, got %r" % cmds)
         programs = {p for p, _ in cmds}
-        self.assertTrue({"python", "bun"} <= programs | {"python3"},
-                        "unexpected CI programs: %s" % sorted(programs))
+        self.assertTrue(
+            {"python", "bun"} <= programs | {"python3"},
+            "unexpected CI programs: %s" % sorted(programs),
+        )
 
     def test_every_ci_command_is_covered(self):
         """Each command CI runs must be reachable from verify_release.py.
@@ -588,8 +653,9 @@ class TestVerifyReleaseCoversCI(unittest.TestCase):
                 # A tool CI uses that the local mirror has never heard of.
                 uncovered.append(line)
 
-        self.assertEqual(uncovered, [], "CI runs commands verify_release.py "
-                                         "does not: %s" % uncovered)
+        self.assertEqual(
+            uncovered, [], "CI runs commands verify_release.py does not: %s" % uncovered
+        )
 
     def test_the_script_actually_runs_the_js_steps_ci_runs(self):
         import pathlib
@@ -611,14 +677,22 @@ class TestVerifyReleaseCoversCI(unittest.TestCase):
         root = pathlib.Path(__file__).resolve().parents[1]
         proc = subprocess.run(
             [sys.executable, "-m", "pytest", "scripts/", "-q", "--collect-only"],
-            cwd=str(root), capture_output=True, text=True)
+            cwd=str(root),
+            capture_output=True,
+            text=True,
+        )
         self.assertEqual(proc.returncode, 0, proc.stdout[-800:])
-        for name in ("test_sync.py", "test_sync_layers.py",
-                     "test_fetch_crisis_zones.py", "test_fetch_human_rights.py",
-                     "test_determinism_gate.py", "test_geo_hints.py",
-                     "test_workflows.py", "test_check_data.py"):
-            self.assertIn(name, proc.stdout,
-                          "%s is not collected by the pytest step" % name)
+        for name in (
+            "test_sync.py",
+            "test_sync_layers.py",
+            "test_fetch_crisis_zones.py",
+            "test_fetch_human_rights.py",
+            "test_determinism_gate.py",
+            "test_geo_hints.py",
+            "test_workflows.py",
+            "test_check_data.py",
+        ):
+            self.assertIn(name, proc.stdout, "%s is not collected by the pytest step" % name)
 
     def test_it_reports_the_pinned_bun_version(self):
         import pathlib
@@ -627,8 +701,9 @@ class TestVerifyReleaseCoversCI(unittest.TestCase):
 
         root = pathlib.Path(__file__).resolve().parents[1]
         ci = (root / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
-        self.assertIn(verify_release.CI_BUN_VERSION, ci,
-                      "CI_BUN_VERSION no longer matches the workflow pin")
+        self.assertIn(
+            verify_release.CI_BUN_VERSION, ci, "CI_BUN_VERSION no longer matches the workflow pin"
+        )
 
     def test_determinism_day_matches_ci(self):
         import pathlib
@@ -637,8 +712,9 @@ class TestVerifyReleaseCoversCI(unittest.TestCase):
 
         root = pathlib.Path(__file__).resolve().parents[1]
         ci = (root / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
-        self.assertIn(verify_release.DETERMINISM_TODAY, ci,
-                      "DETERMINISM_TODAY no longer matches the workflow")
+        self.assertIn(
+            verify_release.DETERMINISM_TODAY, ci, "DETERMINISM_TODAY no longer matches the workflow"
+        )
 
     def test_it_uses_only_the_standard_library(self):
         import ast
@@ -655,10 +731,7 @@ class TestVerifyReleaseCoversCI(unittest.TestCase):
             elif isinstance(node, ast.ImportFrom) and node.level == 0 and node.module:
                 imported.add(node.module.split(".")[0])
         third_party = imported - stdlib - {"verify_release"}
-        self.assertEqual(third_party, set(),
-                         "verify_release.py must run with no pip install")
-
-
+        self.assertEqual(third_party, set(), "verify_release.py must run with no pip install")
 
 
 if __name__ == "__main__":

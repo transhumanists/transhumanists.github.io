@@ -26,6 +26,7 @@ Usage:
     python scripts/article_geocode.py --refresh --limit 20
     python scripts/article_geocode.py --apply --dry-run # write resolved coords
 """
+
 from __future__ import annotations
 
 import argparse
@@ -173,9 +174,9 @@ DEMONYMS: dict[str, tuple[float, float, str]] = {
 }
 
 _DEMONYM_RE = {
-    k: re.compile(r"(?<![a-z])" + re.escape(k.rstrip("-")) + r"(?![a-z])")
-    for k in DEMONYMS
+    k: re.compile(r"(?<![a-z])" + re.escape(k.rstrip("-")) + r"(?![a-z])") for k in DEMONYMS
 }
+
 
 # ---------------------------------------------------------------- fetching
 def _tls_context() -> ssl.SSLContext:
@@ -203,8 +204,9 @@ def _public_host(url: str) -> tuple[bool, str]:
     if not host:
         return False, "no host"
     try:
-        infos = socket.getaddrinfo(host, parts.port or (443 if parts.scheme == "https" else 80),
-                                   proto=socket.IPPROTO_TCP)
+        infos = socket.getaddrinfo(
+            host, parts.port or (443 if parts.scheme == "https" else 80), proto=socket.IPPROTO_TCP
+        )
     except OSError as exc:
         return False, "dns: %s" % exc.strerror
     for info in infos:
@@ -239,10 +241,13 @@ def fetch_text(url: str) -> tuple[str | None, str]:
     ok, why = _public_host(url)
     if not ok:
         return None, why
-    req = urllib.request.Request(url, headers={
-        "User-Agent": USER_AGENT,
-        "Accept": "text/html,application/xhtml+xml,application/json;q=0.9,*/*;q=0.5",
-    })
+    req = urllib.request.Request(
+        url,
+        headers={
+            "User-Agent": USER_AGENT,
+            "Accept": "text/html,application/xhtml+xml,application/json;q=0.9,*/*;q=0.5",
+        },
+    )
     try:
         opener = urllib.request.build_opener(_NoPrivateRedirects())
         with opener.open(req, timeout=TIMEOUT) as resp:
@@ -250,7 +255,7 @@ def fetch_text(url: str) -> tuple[str | None, str]:
             ctype = resp.headers.get("Content-Type", "")
     except urllib.error.HTTPError as exc:
         return None, "http %s" % exc.code
-    except Exception as exc:  # noqa: BLE001 - any network failure is just "no text"
+    except Exception as exc:
         return None, type(exc).__name__
     if "pdf" in ctype.lower() or raw[:5] == b"%PDF-":
         return None, "pdf (no text extraction)"
@@ -265,8 +270,7 @@ def fetch_text(url: str) -> tuple[str | None, str]:
     return extract_text(html), ""
 
 
-_SCRIPTISH = re.compile(
-    r"<(script|style|noscript|svg|head)\b[^>]*>.*?</\1>", re.I | re.S)
+_SCRIPTISH = re.compile(r"<(script|style|noscript|svg|head)\b[^>]*>.*?</\1>", re.I | re.S)
 _TAG = re.compile(r"<[^>]+>")
 _WS = re.compile(r"[ \t\r\f\v]+")
 _MULTI_NL = re.compile(r"\n{3,}")
@@ -280,6 +284,7 @@ def extract_text(html: str) -> str:
     text = re.sub(r"<br\s*/?>|</p>|</div>|</li>|</h[1-6]>", "\n", text, flags=re.I)
     text = _TAG.sub(" ", text)
     import html as html_mod
+
     text = html_mod.unescape(text)
     text = _WS.sub(" ", text)
     return _MULTI_NL.sub("\n\n", text).strip()
@@ -323,10 +328,10 @@ def affiliation_windows(text: str) -> list[str]:
     windows = []
     for m in AFFIL_CUE.finditer(text):
         start = m.end()
-        window = text[start:start + AFFIL_WINDOW]
+        window = text[start : start + AFFIL_WINDOW]
         if not window.strip():
             continue
-        if JUNK_NEAR_CUE.search(text[max(0, m.start() - 30):start + 40]):
+        if JUNK_NEAR_CUE.search(text[max(0, m.start() - 30) : start + 40]):
             continue
         windows.append(window)
         if len(windows) >= 60:
@@ -426,6 +431,7 @@ def _kind_of(key: str) -> str:
 def _within_km(a, b) -> bool:
     """Great-circle distance between two coordinates, in km."""
     import math
+
     lat1, lon1 = math.radians(a[0]), math.radians(a[1])
     lat2, lon2 = math.radians(b[0]), math.radians(b[1])
     dlat, dlon = lat2 - lat1, lon2 - lon1
@@ -455,8 +461,7 @@ def resolve(record: dict, body: str | None = None) -> dict:
                 slot["kinds"].add(kind)
                 break
         else:
-            merged[(coord[0], coord[1])] = {"score": weight, "keys": {key},
-                                            "kinds": {kind}}
+            merged[(coord[0], coord[1])] = {"score": weight, "keys": {key}, "kinds": {kind}}
 
     def scan(field: str, weight: float, use_demonyms: bool):
         if not field or not field.strip():
@@ -494,7 +499,9 @@ def resolve(record: dict, body: str | None = None) -> dict:
 
     ranked = sorted(
         ((v["score"], coord, v) for coord, v in merged.items()),
-        key=lambda t: (t[0], str(t[1])), reverse=True)
+        key=lambda t: (t[0], str(t[1])),
+        reverse=True,
+    )
     top_score, coord, top = ranked[0]
     runner_up = ranked[1][0] if len(ranked) > 1 else 0.0
 
@@ -502,9 +509,11 @@ def resolve(record: dict, body: str | None = None) -> dict:
         return sorted(entry["keys"])[0]
 
     if top_score < MIN_SCORE:
-        return {"located": False,
-                "reason": "best signal %s scored %.1f, below the %.1f floor"
-                          % (label(top), top_score, MIN_SCORE)}
+        return {
+            "located": False,
+            "reason": "best signal %s scored %.1f, below the %.1f floor"
+            % (label(top), top_score, MIN_SCORE),
+        }
     # Either it beats the field outright, or it is corroborated by two independent
     # routes to the same place. Without the second clause a single weak mention with
     # no competitor wins by default - which is how a dataset about a federal agency
@@ -523,9 +532,11 @@ def resolve(record: dict, body: str | None = None) -> dict:
     # finding. With a rival present the ordinary margin rule applies.
     stated = top_score >= W_AFFILIATION and runner_up == 0.0
     if not (corroborated or beat_a_rival or stated):
-        return {"located": False,
-                "reason": "uncorroborated: %s (%.1f), no rival and no second route"
-                          % (label(top), top_score)}
+        return {
+            "located": False,
+            "reason": "uncorroborated: %s (%.1f), no rival and no second route"
+            % (label(top), top_score),
+        }
 
     kinds = top["kinds"]
     if "institution" in kinds:
@@ -534,10 +545,16 @@ def resolve(record: dict, body: str | None = None) -> dict:
         confidence = "place"
     else:
         confidence = "article"
-    return {"located": True, "lat": coord[0], "lon": coord[1],
-            "confidence": confidence, "evidence": label(top),
-            "corroborated_by": sorted(top["keys"])[1:],
-            "score": top_score, "margin": top_score - runner_up}
+    return {
+        "located": True,
+        "lat": coord[0],
+        "lon": coord[1],
+        "confidence": confidence,
+        "evidence": label(top),
+        "corroborated_by": sorted(top["keys"])[1:],
+        "score": top_score,
+        "margin": top_score - runner_up,
+    }
 
 
 # ------------------------------------------------------------------- cache
@@ -545,7 +562,7 @@ def load_cache() -> dict:
     if CACHE_PATH.exists():
         try:
             return json.loads(CACHE_PATH.read_text(encoding="utf-8")).get("articles", {})
-        except Exception:  # noqa: BLE001 - a corrupt cache must not block the run
+        except Exception:
             return {}
     return {}
 
@@ -578,16 +595,26 @@ def save_cache(cache: dict, keep_urls: set[str] | None = None) -> None:
         clean[url] = entry
     cache.clear()
     cache.update(clean)
-    CACHE_PATH.write_text(json.dumps({
-        "description": "Derived article-body geocoding outcomes. Stores the resolved "
-                       "coordinate and the evidence for it - never the fetched page "
-                       "text. Written only by scripts/article_geocode.py --refresh.",
-        "version": "1.0.0",
-        "articles": cache}, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    CACHE_PATH.write_text(
+        json.dumps(
+            {
+                "description": "Derived article-body geocoding outcomes. Stores the resolved "
+                "coordinate and the evidence for it - never the fetched page "
+                "text. Written only by scripts/article_geocode.py --refresh.",
+                "version": "1.0.0",
+                "articles": cache,
+            },
+            indent=2,
+            ensure_ascii=False,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
 
 
 def _text_digest(text: str) -> str:
     import hashlib
+
     return hashlib.sha256(text.encode("utf-8")).hexdigest()[:16]
 
 
@@ -612,14 +639,20 @@ def iter_unlocated(sources=("data/milestones.json", "data/milestones_history.jso
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(description=__doc__,
-                                 formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--report", action="store_true",
-                    help="resolve from title/summary/cache only; no network")
-    ap.add_argument("--refresh", action="store_true",
-                    help="fetch article bodies for unlocated records and cache them")
-    ap.add_argument("--apply", action="store_true",
-                    help="write resolved coordinates into the data files")
+    ap = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
+    ap.add_argument(
+        "--report", action="store_true", help="resolve from title/summary/cache only; no network"
+    )
+    ap.add_argument(
+        "--refresh",
+        action="store_true",
+        help="fetch article bodies for unlocated records and cache them",
+    )
+    ap.add_argument(
+        "--apply", action="store_true", help="write resolved coordinates into the data files"
+    )
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--limit", type=int, default=25)
     args = ap.parse_args()
@@ -628,7 +661,7 @@ def main() -> int:
     cache = load_cache()
 
     if args.refresh:
-        for rec in queue[:args.limit]:
+        for rec in queue[: args.limit]:
             url = rec.get("url") or ""
             body, reason = fetch_text(url)
             if body is None:
@@ -637,9 +670,14 @@ def main() -> int:
                 continue
             outcome = resolve(rec, body)
             cache[url] = {"fetched": _text_digest(body), "outcome": outcome}
-            print("  fetched %6d chars -> %-10s %s"
-                  % (len(body), "resolved" if outcome.get("located") else "no signal",
-                     (rec.get("title") or "")[:48]))
+            print(
+                "  fetched %6d chars -> %-10s %s"
+                % (
+                    len(body),
+                    "resolved" if outcome.get("located") else "no signal",
+                    (rec.get("title") or "")[:48],
+                )
+            )
         save_cache(cache, keep_urls={r.get("url") or "" for r in queue})
         print("cache written: %s (%d entries)" % (CACHE_PATH.name, len(cache)))
 
@@ -661,14 +699,17 @@ def main() -> int:
         rows.append((rec, outcome))
 
     resolved = [r for r in rows if r[1].get("located")]
-    print("\n%d/%d unlocated records resolved%s"
-          % (len(resolved), len(rows),
-             " (replayed from cached article bodies)" if replayed else ""))
+    print(
+        "\n%d/%d unlocated records resolved%s"
+        % (len(resolved), len(rows), " (replayed from cached article bodies)" if replayed else "")
+    )
     for rec, out in rows:
         title = (rec.get("title") or "")[:56]
         if out.get("located"):
-            print("  OK   %-56s %8.3f,%8.3f  %-11s %s"
-                  % (title, out["lat"], out["lon"], out["confidence"], out["evidence"]))
+            print(
+                "  OK   %-56s %8.3f,%8.3f  %-11s %s"
+                % (title, out["lat"], out["lon"], out["confidence"], out["evidence"])
+            )
         else:
             print("  --   %-56s %s" % (title, out.get("reason", "")[:60]))
 
@@ -699,15 +740,19 @@ def _apply(resolved) -> int:
                     items.extend(cat.get("milestones") or [])
         for m in items:
             for rec, out in resolved:
-                if (m.get("url") or "") == (rec.get("url") or "") and \
-                        lc.is_unlocated(m.get("geolocation")):
+                if (m.get("url") or "") == (rec.get("url") or "") and lc.is_unlocated(
+                    m.get("geolocation")
+                ):
                     m["geolocation"] = {"lat": out["lat"], "lon": out["lon"]}
                     m["location_confidence"] = out["confidence"]
                     m.pop("located", None)
                     changed += 1
                     break
-        path.write_text(json.dumps(payload, indent=2, ensure_ascii=False).replace("\n", nl) + nl,
-                        encoding="utf-8", newline="")
+        path.write_text(
+            json.dumps(payload, indent=2, ensure_ascii=False).replace("\n", nl) + nl,
+            encoding="utf-8",
+            newline="",
+        )
     return changed
 
 

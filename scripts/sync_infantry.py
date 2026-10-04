@@ -11,16 +11,17 @@ Sources:
 
 This is a stdlib-only script compatible with the existing pipeline.
 """
+
 from __future__ import annotations
 
 import json
 import re
-import sys
 import ssl
+import sys
 import time
 import urllib.error
 import urllib.request
-from datetime import date, datetime, timezone
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import TypedDict
 
@@ -37,6 +38,7 @@ _UNVERIFIED_TLS_HOSTS: set[str] = set()
 
 
 # ─── Data Structures ────────────────────────────────────────────────────────
+
 
 class InfantryDeployment(TypedDict):
     id: str
@@ -57,6 +59,7 @@ class InfantryDeployment(TypedDict):
 
 
 # ─── HTTP Helpers ──────────────────────────────────────────────────────────
+
 
 def _tls_context(host: str) -> ssl.SSLContext:
     if host in _UNVERIFIED_TLS_HOSTS:
@@ -80,6 +83,7 @@ def _mark_unverified_host(host: str) -> bool:
 
 def _inflate_bounded(data: bytes, wbits: int) -> bytes:
     import zlib
+
     obj = zlib.decompressobj(wbits)
     out = obj.decompress(data, _MAX_HTTP_BODY + 1)
     if obj.unconsumed_tail or not obj.eof or len(out) > _MAX_HTTP_BODY:
@@ -96,6 +100,7 @@ def _decode_body(resp) -> str:
         return _inflate_bounded(data, 47).decode("utf-8", errors="replace")
     if encoding == "deflate":
         import zlib
+
         try:
             return _inflate_bounded(data, 15).decode("utf-8", errors="replace")
         except zlib.error:
@@ -113,8 +118,10 @@ def fetch_url(url: str, timeout: int = 30) -> str | None:
                 return _decode_body(resp)
         except (urllib.error.URLError, ssl.SSLError, OSError) as e:
             if attempt < 2:
-                backoff = 5 * (2 ** attempt)
-                print(f"  WARNING: fetch attempt {attempt + 1} failed: {e}, retrying in {backoff}s...")
+                backoff = 5 * (2**attempt)
+                print(
+                    f"  WARNING: fetch attempt {attempt + 1} failed: {e}, retrying in {backoff}s..."
+                )
                 time.sleep(backoff)
             else:
                 if "CERTIFICATE_VERIFY_FAILED" in str(e).upper() or "CERTIFICATE" in str(e).upper():
@@ -361,6 +368,7 @@ REGION_MAP: dict[str, str] = {
     "french guiana": "South America",
 }
 
+
 def get_region(country: str) -> str:
     key = country.strip().lower()
     return REGION_MAP.get(key, "Unknown")
@@ -546,27 +554,31 @@ STATIC_INFANTRY_DEPLOYMENTS: list[InfantryDeployment] = [
 
 # ─── News Source Fetching (OSINT) ────────────────────────────────────────
 
+
 def fetch_osint_deployments() -> list[InfantryDeployment]:
     """Fetch recent troop movement reports from OSINT sources."""
     deployments: list[InfantryDeployment] = []
-    
+
     # Source 1: ISW (Institute for the Study of War) - they publish daily Ukraine updates
-    isw_data = fetch_url("https://www.understandingwar.org/backgrounder/russian-offensive-campaign-assessment")
+    isw_data = fetch_url(
+        "https://www.understandingwar.org/backgrounder/russian-offensive-campaign-assessment"
+    )
     if isw_data:
         # Parse ISW reports for troop numbers and movements
         # This is a simplified parser - would need enhancement for production
         pass
-    
+
     # Source 2: CSIS Beyond Parallel - North Korea troop movements
     # Source 3: IISS Military Balance API (if available)
     # Source 4: Government defense ministry RSS feeds
-    
+
     # For now, return empty - static curated data is the primary source
     # News sources can be added incrementally
     return deployments
 
 
 # ─── Merge Logic ──────────────────────────────────────────────────────────
+
 
 def _deployment_id(name: str) -> str:
     slug = re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-")[:50]
@@ -579,13 +591,13 @@ def merge_infantry_deployments(
     """Merge news-derived deployments into curated ones."""
     changes: list[str] = []
     curated = list(curated)
-    
+
     # Create lookup for existing deployments by country+kind
     existing_by_country: dict[tuple[str, str], InfantryDeployment] = {}
     for d in curated:
         key = (d["country"].lower(), d["kind"])
         existing_by_country[key] = d
-    
+
     for news_dep in news:
         key = (news_dep["country"].lower(), news_dep["kind"])
         if key in existing_by_country:
@@ -599,24 +611,27 @@ def merge_infantry_deployments(
                 existing["status"] = news_dep["status"]
                 if news_dep.get("end_date"):
                     existing["end_date"] = news_dep["end_date"]
-                changes.append(f"updated {existing['id']} from news: troops={news_dep['troops']}, status={news_dep['status']}")
+                changes.append(
+                    f"updated {existing['id']} from news: troops={news_dep['troops']}, status={news_dep['status']}"
+                )
         else:
             # New deployment from news
             curated.append(news_dep)
             changes.append(f"added {news_dep['id']} from news: {news_dep['name']}")
-    
+
     return curated, changes
 
 
 # ─── Main Pipeline ────────────────────────────────────────────────────────
 
+
 def build_infantry_deployments(offline: bool = False) -> tuple[list[InfantryDeployment], list[str]]:
     """Build infantry deployments list from curated + news sources."""
     changes: list[str] = []
-    
+
     # Start with static curated deployments
     deployments = list(STATIC_INFANTRY_DEPLOYMENTS)
-    
+
     if not offline:
         try:
             news_deployments = fetch_osint_deployments()
@@ -630,7 +645,7 @@ def build_infantry_deployments(offline: bool = False) -> tuple[list[InfantryDepl
             changes.append(f"OSINT fetch error ({e}) - keeping curated data")
     else:
         changes.append("offline mode - using curated infantry deployments only")
-    
+
     return deployments, changes
 
 
@@ -638,7 +653,13 @@ def load_world_layers() -> dict:
     """Load world_layers.json"""
     if WORLD_LAYERS_FILE.exists():
         return json.loads(WORLD_LAYERS_FILE.read_text(encoding="utf-8"))
-    return {"version": "1.1.0", "last_update": "", "conflict_zones": [], "crisis_zones": [], "deployments": []}
+    return {
+        "version": "1.1.0",
+        "last_update": "",
+        "conflict_zones": [],
+        "crisis_zones": [],
+        "deployments": [],
+    }
 
 
 def save_world_layers(data: dict) -> bool:
@@ -662,14 +683,19 @@ def normalize_infantry_deployment(dep: InfantryDeployment) -> InfantryDeployment
 
 def main(argv: list[str]) -> int:
     import argparse
+
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--offline", action="store_true", help="use curated data only, no network")
-    parser.add_argument("--write", action="store_true", help="write merged deployments to world_layers.json")
-    parser.add_argument("--json", dest="json_path", default=str(WORLD_LAYERS_FILE), help="target JSON file")
+    parser.add_argument(
+        "--write", action="store_true", help="write merged deployments to world_layers.json"
+    )
+    parser.add_argument(
+        "--json", dest="json_path", default=str(WORLD_LAYERS_FILE), help="target JSON file"
+    )
     args = parser.parse_args(argv)
 
     deployments, changes = build_infantry_deployments(offline=args.offline)
-    
+
     for line in changes:
         print(f"  {line}")
 
@@ -678,21 +704,25 @@ def main(argv: list[str]) -> int:
 
     # Load world_layers and merge
     data = load_world_layers()
-    
+
     # Separate existing fleet deployments
     existing_deployments = data.get("deployments", [])
     fleet_deployments = [d for d in existing_deployments if d.get("kind") == "fleet"]
-    ground_deployments = [d for d in existing_deployments if d.get("kind") in ("ground", "infantry", "mobilization", "deployment", "rotation")]
-    
+    ground_deployments = [
+        d
+        for d in existing_deployments
+        if d.get("kind") in ("ground", "infantry", "mobilization", "deployment", "rotation")
+    ]
+
     # Merge infantry deployments with existing ground deployments, deduplicating by ID
     existing_ground_by_id = {d["id"]: d for d in ground_deployments}
     for new_dep in deployments:
         existing_ground_by_id[new_dep["id"]] = new_dep
     all_ground = list(existing_ground_by_id.values())
-    
+
     # Combine with fleet deployments
     all_deployments = fleet_deployments + all_ground
-    
+
     data["deployments"] = all_deployments
     data["version"] = "1.1.0"
     data["last_update"] = datetime.now(timezone.utc).isoformat(timespec="seconds")
@@ -704,7 +734,9 @@ def main(argv: list[str]) -> int:
             print("[error] failed to write world_layers.json")
             return 1
     else:
-        print(f"[info] {len(deployments)} infantry deployments, {len(all_deployments)} total deployments (dry-run)")
+        print(
+            f"[info] {len(deployments)} infantry deployments, {len(all_deployments)} total deployments (dry-run)"
+        )
 
     return 0
 

@@ -12,7 +12,10 @@
       "source": "Los Alamos National Laboratory",
       "url": "https://en.wikipedia.org/wiki/Trinity_(nuclear_test)",
       "date": "1945-07-16",
-      "geolocation": { "lat": 33.6772, "lon": -106.4754 }
+      "geolocation": {
+        "lat": 33.6772,
+        "lon": -106.4754
+      }
     },
     {
       "id": "his-1945-11-15-eniac",
@@ -24,7 +27,10 @@
       "source": "University of Pennsylvania",
       "url": "https://en.wikipedia.org/wiki/ENIAC",
       "date": "1945-11-15",
-      "geolocation": { "lat": 39.9526, "lon": -75.1652 }
+      "geolocation": {
+        "lat": 39.9526,
+        "lon": -75.1652
+      }
     },
     {
       "id": "his-1953-04-25-dna-double-helix",
@@ -36,7 +42,10 @@
       "source": "Nature",
       "url": "https://en.wikipedia.org/wiki/Molecular_structure_of_Nucleic_Acids",
       "date": "1953-04-25",
-      "geolocation": { "lat": 52.2053, "lon": 0.1218 }
+      "geolocation": {
+        "lat": 52.2053,
+        "lon": 0.1218
+      }
     },
     {
       "id": "his-1954-04-25-silicon-solar-cell",
@@ -48,7 +57,10 @@
       "source": "Bell Labs",
       "url": "https://en.wikipedia.org/wiki/Solar_cell",
       "date": "1954-04-25",
-      "geolocation": { "lat": 40.69, "lon": -74.401 }
+      "geolocation": {
+        "lat": 40.69,
+        "lon": -74.401
+      }
     },
     {
       "id": "his-1957-10-04-sputnik-1",
@@ -60,7 +72,10 @@
       "source": "Roscosmos",
       "url": "https://en.wikipedia.org/wiki/Sputnik_1",
       "date": "1957-10-04",
-      "geolocation": { "lat": 45.965, "lon": 63.305 }
+      "geolocation": {
+        "lat": 45.965,
+        "lon": 63.305
+      }
     },
     {
       "id": "his-1961-04-12-vostok-1",
@@ -72,7 +87,10 @@
       "source": "Roscosmos",
       "url": "https://en.wikipedia.org/wiki/Vostok_1",
       "date": "1961-04-12",
-      "geolocation": { "lat": 45.965, "lon": 63.305 }
+      "geolocation": {
+        "lat": 45.965,
+        "lon": 63.305
+      }
     },
     {
       "id": "his-1969-07-20-apollo-11",
@@ -84,7 +102,10 @@
       "source": "NASA",
       "url": "https://en.wikipedia.org/wiki/Apollo_11",
       "date": "1969-07-20",
-      "geolocation": { "lat": -0.674, "lon": 23.473 }
+      "geolocation": {
+        "lat": -0.674,
+        "lon": 23.473
+      }
     },
     {
       "id": "his-1969-10-29-arpanet",
@@ -96,7 +117,10 @@
       "source": "UCLA / SRI International",
       "url": "https://en.wikipedia.org/wiki/ARPANET",
       "date": "1969-10-29",
-      "geolocation": { "lat": 34.0689, "lon": -118.4452 }
+      "geolocation": {
+        "lat": 34.0689,
+        "lon": -118.4452
+      }
     },
     {
       "id": "his-1971-11-15-intel-4004",
@@ -108,7 +132,10 @@
       "source": "Intel",
       "url": "https://en.wikipedia.org/wiki/Intel_4004",
       "date": "1971-11-15",
-      "geolocation": { "lat": 37.3541, "lon": -121.9552 }
+      "geolocation": {
+        "lat": 37.3541,
+        "lon": -121.9552
+      }
     },
     {
       "id": "his-1973-01-01-recombinant-dna",
@@ -120,7 +147,10 @@
       "source": "Stanford University",
       "url": "https://en.wikipedia.org/wiki/Recombinant_DNA",
       "date": "1973-01-01",
-      "geolocation": { "lat": 37.4275, "lon": -122.1697 }
+      "geolocation": {
+        "lat": 37.4275,
+        "lon": -122.1697
+      }
     },
     {
       "id": "his-1976-07-01-four-color-theorem",
@@ -132,7 +162,10 @@
       "source": "University of Illinois Urbana-Champaign",
       "url": "https://en.wikipedia.org/wiki/Four_color_theorem",
       "date": "1976-07-01",
-      "geolocation": { "lat": 40.102, "lon": -88.2272 }
+      "geolocation": {
+        "lat": 40.102,
+        "lon": -88.2272
+      }
     },
     {
       "id": "his-1981-04-12-sts-1",
@@ -144,7 +177,10 @@
       "source": "NASA",
       "url": "https://en.wikipedia.org/wiki/STS-1",
       "date": "1981-04-12",
-      "geolocation": { "lat": 28.5728, "lon": -80.649 }
+      "geolocation": {
+        "lat": 28.5728,
+        "lon": -80.649
+      }
     },
     {
       "id": "his-1981-05-06-feynman-quantum",
@@ -156,7 +192,10 @@
       "source": "Caltech / MIT",
       "url": "https://en.wikipedia.org/wiki/Quantum_computing",
       "date": "1981-05-06",
-      "geolocation": { "lat": 34.1377, "lon": -118.1253 }
+      "geolocation": {
+        "lat": 34.1377,
+        "lon": -118.1253
+      }
     },
     {
       "id": "his-1983-03-23-sdi-announced",
@@ -168,7 +207,10 @@
       "source": "White House",
       "url": "https://en.wikipedia.org/wiki/Strategic_Defense_Initiative",
       "date": "1983-03-23",
-      "geolocation": { "lat": 38.9072, "lon": -77.0369 }
+      "geolocation": {
+        "lat": 38.9072,
+        "lon": -77.0369
+      }
     },
     {
       "id": "his-1983-04-01-pcr",
@@ -180,7 +222,10 @@
       "source": "Cetus Corporation",
       "url": "https://en.wikipedia.org/wiki/Polymerase_chain_reaction",
       "date": "1983-04-01",
-      "geolocation": { "lat": 37.8313, "lon": -122.2853 }
+      "geolocation": {
+        "lat": 37.8313,
+        "lon": -122.2853
+      }
     },
     {
       "id": "his-1988-11-02-morris-worm",
@@ -192,7 +237,10 @@
       "source": "MIT / Cornell",
       "url": "https://en.wikipedia.org/wiki/Morris_worm",
       "date": "1988-11-02",
-      "geolocation": { "lat": 42.3601, "lon": -71.0942 }
+      "geolocation": {
+        "lat": 42.3601,
+        "lon": -71.0942
+      }
     },
     {
       "id": "his-1991-01-18-patriot-scud",
@@ -204,7 +252,10 @@
       "source": "US Army",
       "url": "https://en.wikipedia.org/wiki/MIM-104_Patriot",
       "date": "1991-01-18",
-      "geolocation": { "lat": 24.7136, "lon": 46.6753 }
+      "geolocation": {
+        "lat": 24.7136,
+        "lon": 46.6753
+      }
     },
     {
       "id": "his-1994-10-01-shor-algorithm",
@@ -216,7 +267,10 @@
       "source": "AT&T Bell Labs",
       "url": "https://en.wikipedia.org/wiki/Shor%27s_algorithm",
       "date": "1994-10-01",
-      "geolocation": { "lat": 40.69, "lon": -74.401 }
+      "geolocation": {
+        "lat": 40.69,
+        "lon": -74.401
+      }
     },
     {
       "id": "his-1996-07-05-dolly",
@@ -228,7 +282,10 @@
       "source": "Roslin Institute",
       "url": "https://en.wikipedia.org/wiki/Dolly_(sheep)",
       "date": "1996-07-05",
-      "geolocation": { "lat": 55.9533, "lon": -3.1883 }
+      "geolocation": {
+        "lat": 55.9533,
+        "lon": -3.1883
+      }
     },
     {
       "id": "his-1997-05-11-deep-blue",
@@ -240,7 +297,10 @@
       "source": "IBM",
       "url": "https://en.wikipedia.org/wiki/Deep_Blue_(chess_computer)",
       "date": "1997-05-11",
-      "geolocation": { "lat": 40.758, "lon": -73.9683 }
+      "geolocation": {
+        "lat": 40.758,
+        "lon": -73.9683
+      }
     },
     {
       "id": "his-1997-12-01-ads-cft",
@@ -252,7 +312,10 @@
       "source": "Institute for Advanced Study",
       "url": "https://en.wikipedia.org/wiki/AdS/CFT_correspondence",
       "date": "1997-12-01",
-      "geolocation": { "lat": 40.3487, "lon": -74.6564 }
+      "geolocation": {
+        "lat": 40.3487,
+        "lon": -74.6564
+      }
     },
     {
       "id": "his-2003-04-14-human-genome",
@@ -264,7 +327,10 @@
       "source": "NIH / Wellcome Trust",
       "url": "https://en.wikipedia.org/wiki/Human_Genome_Project",
       "date": "2003-04-14",
-      "geolocation": { "lat": 38.9847, "lon": -77.0947 }
+      "geolocation": {
+        "lat": 38.9847,
+        "lon": -77.0947
+      }
     },
     {
       "id": "his-2007-04-27-estonia-cyber",
@@ -276,7 +342,10 @@
       "source": "Estonian Ministry of Defence",
       "url": "https://en.wikipedia.org/wiki/Cyberattacks_on_Estonia_(2007)",
       "date": "2007-04-27",
-      "geolocation": { "lat": 59.437, "lon": 24.7536 }
+      "geolocation": {
+        "lat": 59.437,
+        "lon": 24.7536
+      }
     },
     {
       "id": "his-2010-06-17-stuxnet",
@@ -288,7 +357,10 @@
       "source": "Symantec / VirusBlokAda",
       "url": "https://en.wikipedia.org/wiki/Stuxnet",
       "date": "2010-06-17",
-      "geolocation": { "lat": 33.5066, "lon": 51.9163 }
+      "geolocation": {
+        "lat": 33.5066,
+        "lon": 51.9163
+      }
     },
     {
       "id": "his-2011-04-05-iron-dome",
@@ -300,31 +372,10 @@
       "source": "Rafael / IDF",
       "url": "https://en.wikipedia.org/wiki/Iron_Dome",
       "date": "2011-04-05",
-      "geolocation": { "lat": 32.0853, "lon": 34.7818 }
-    },
-    {
-      "id": "his-2012-06-28-crispr",
-      "category": "Biotechnology",
-      "subcategory": "gene_editing",
-      "title": "CRISPR-Cas9 programmable genome editing is published",
-      "value": null,
-      "unit": null,
-      "source": "UC Berkeley / Umeå University",
-      "url": "https://en.wikipedia.org/wiki/CRISPR",
-      "date": "2012-06-28",
-      "geolocation": { "lat": 37.8719, "lon": -122.2585 }
-    },
-    {
-      "id": "his-2012-09-30-alexnet",
-      "category": "Computing & AGI",
-      "subcategory": "machine_learning",
-      "title": "AlexNet wins ImageNet and ignites the deep-learning era",
-      "value": 15.3,
-      "unit": "top-5 error %",
-      "source": "University of Toronto",
-      "url": "https://en.wikipedia.org/wiki/AlexNet",
-      "date": "2012-09-30",
-      "geolocation": { "lat": 43.6532, "lon": -79.3832 }
+      "geolocation": {
+        "lat": 32.0853,
+        "lon": 34.7818
+      }
     },
     {
       "id": "his-2012-05-25-dragon-iss",
@@ -336,7 +387,40 @@
       "source": "SpaceX",
       "url": "https://en.wikipedia.org/wiki/Dragon_C2%2B",
       "date": "2012-05-25",
-      "geolocation": { "lat": 33.9204, "lon": -118.3279 }
+      "geolocation": {
+        "lat": 33.9204,
+        "lon": -118.3279
+      }
+    },
+    {
+      "id": "his-2012-06-28-crispr",
+      "category": "Biotechnology",
+      "subcategory": "gene_editing",
+      "title": "CRISPR-Cas9 programmable genome editing is published",
+      "value": null,
+      "unit": null,
+      "source": "UC Berkeley / Umeå University",
+      "url": "https://en.wikipedia.org/wiki/CRISPR",
+      "date": "2012-06-28",
+      "geolocation": {
+        "lat": 37.8719,
+        "lon": -122.2585
+      }
+    },
+    {
+      "id": "his-2012-09-30-alexnet",
+      "category": "Computing & AGI",
+      "subcategory": "machine_learning",
+      "title": "AlexNet wins ImageNet and ignites the deep-learning era",
+      "value": 15.3,
+      "unit": "top-5 error %",
+      "source": "University of Toronto",
+      "url": "https://en.wikipedia.org/wiki/AlexNet",
+      "date": "2012-09-30",
+      "geolocation": {
+        "lat": 43.6532,
+        "lon": -79.3832
+      }
     },
     {
       "id": "his-2014-04-07-heartbleed",
@@ -348,7 +432,10 @@
       "source": "Codenomicon / Google Security",
       "url": "https://en.wikipedia.org/wiki/Heartbleed",
       "date": "2014-04-07",
-      "geolocation": { "lat": 47.3769, "lon": 8.5417 }
+      "geolocation": {
+        "lat": 47.3769,
+        "lon": 8.5417
+      }
     },
     {
       "id": "his-2015-12-21-falcon9-landing",
@@ -360,7 +447,10 @@
       "source": "SpaceX",
       "url": "https://en.wikipedia.org/wiki/Falcon_9_full_thrust",
       "date": "2015-12-21",
-      "geolocation": { "lat": 28.4882, "lon": -80.5774 }
+      "geolocation": {
+        "lat": 28.4882,
+        "lon": -80.5774
+      }
     },
     {
       "id": "his-2016-03-15-alphago",
@@ -372,7 +462,10 @@
       "source": "DeepMind",
       "url": "https://en.wikipedia.org/wiki/AlphaGo",
       "date": "2016-03-15",
-      "geolocation": { "lat": 37.5665, "lon": 126.978 }
+      "geolocation": {
+        "lat": 37.5665,
+        "lon": 126.978
+      }
     },
     {
       "id": "his-2017-06-12-transformer",
@@ -384,7 +477,10 @@
       "source": "Google Brain",
       "url": "https://en.wikipedia.org/wiki/Transformer_(deep_learning_architecture)",
       "date": "2017-06-12",
-      "geolocation": { "lat": 43.6532, "lon": -79.3832 }
+      "geolocation": {
+        "lat": 43.6532,
+        "lon": -79.3832
+      }
     },
     {
       "id": "his-2019-10-23-quantum-supremacy",
@@ -396,7 +492,10 @@
       "source": "Google Quantum AI",
       "url": "https://en.wikipedia.org/wiki/Quantum_supremacy",
       "date": "2019-10-23",
-      "geolocation": { "lat": 34.414, "lon": -119.695 }
+      "geolocation": {
+        "lat": 34.414,
+        "lon": -119.695
+      }
     },
     {
       "id": "his-2020-06-11-gpt3",
@@ -408,7 +507,40 @@
       "source": "OpenAI",
       "url": "https://en.wikipedia.org/wiki/GPT-3",
       "date": "2020-06-11",
-      "geolocation": { "lat": 37.7749, "lon": -122.4194 }
+      "geolocation": {
+        "lat": 37.7749,
+        "lon": -122.4194
+      }
+    },
+    {
+      "id": "his-2020-11-10-apple-m1-memory-bandwidth",
+      "category": "Computing & AGI",
+      "subcategory": "memory_bandwidth",
+      "title": "Apple M1 unified memory bandwidth",
+      "value": 68.25,
+      "unit": "GB/s",
+      "source": "Wikipedia",
+      "url": "https://en.wikipedia.org/wiki/Apple_M1",
+      "date": "2020-11-10",
+      "geolocation": {
+        "lat": 37.3327,
+        "lon": -122.0312
+      }
+    },
+    {
+      "id": "his-2020-11-10-apple-m1-unified-memory",
+      "category": "Computing & AGI",
+      "subcategory": "unified_memory",
+      "title": "Apple M1 makes unified memory standard on consumer Macs with a 16 GB ceiling",
+      "value": 16,
+      "unit": "GB",
+      "source": "Wikipedia",
+      "url": "https://en.wikipedia.org/wiki/Apple_M1",
+      "date": "2020-11-10",
+      "geolocation": {
+        "lat": 37.3327,
+        "lon": -122.0312
+      }
     },
     {
       "id": "his-2020-12-11-mrna-vaccine",
@@ -420,7 +552,10 @@
       "source": "Pfizer / BioNTech / FDA",
       "url": "https://en.wikipedia.org/wiki/History_of_COVID-19_vaccine_development",
       "date": "2020-12-11",
-      "geolocation": { "lat": 40.8075, "lon": -73.9626 }
+      "geolocation": {
+        "lat": 40.8075,
+        "lon": -73.9626
+      }
     },
     {
       "id": "his-2020-12-13-solarwinds",
@@ -432,7 +567,40 @@
       "source": "FireEye / Microsoft",
       "url": "https://en.wikipedia.org/wiki/SolarWinds_attack",
       "date": "2020-12-13",
-      "geolocation": { "lat": 30.2672, "lon": -97.7431 }
+      "geolocation": {
+        "lat": 30.2672,
+        "lon": -97.7431
+      }
+    },
+    {
+      "id": "his-2021-10-18-apple-m1-max-memory-bandwidth",
+      "category": "Computing & AGI",
+      "subcategory": "memory_bandwidth",
+      "title": "Apple M1 Max unified memory bandwidth",
+      "value": 400,
+      "unit": "GB/s",
+      "source": "Wikipedia",
+      "url": "https://en.wikipedia.org/wiki/Apple_M1",
+      "date": "2021-10-18",
+      "geolocation": {
+        "lat": 37.3327,
+        "lon": -122.0312
+      }
+    },
+    {
+      "id": "his-2021-10-18-apple-m1-max-unified-memory",
+      "category": "Computing & AGI",
+      "subcategory": "unified_memory",
+      "title": "Apple M1 Max raises consumer unified memory to 64 GB",
+      "value": 64,
+      "unit": "GB",
+      "source": "Wikipedia",
+      "url": "https://en.wikipedia.org/wiki/Apple_M1",
+      "date": "2021-10-18",
+      "geolocation": {
+        "lat": 37.3327,
+        "lon": -122.0312
+      }
     },
     {
       "id": "his-2021-11-16-ibm-eagle",
@@ -444,7 +612,10 @@
       "source": "IBM Quantum",
       "url": "https://en.wikipedia.org/wiki/IBM_Q_System_One",
       "date": "2021-11-16",
-      "geolocation": { "lat": 41.2115, "lon": -73.8532 }
+      "geolocation": {
+        "lat": 41.2115,
+        "lon": -73.8532
+      }
     },
     {
       "id": "his-2021-12-25-jwst",
@@ -456,7 +627,10 @@
       "source": "NASA / ESA / CSA",
       "url": "https://en.wikipedia.org/wiki/James_Webb_Space_Telescope",
       "date": "2021-12-25",
-      "geolocation": { "lat": 5.2372, "lon": -52.7608 }
+      "geolocation": {
+        "lat": 5.2372,
+        "lon": -52.7608
+      }
     },
     {
       "id": "his-2022-11-30-chatgpt",
@@ -468,7 +642,10 @@
       "source": "OpenAI",
       "url": "https://en.wikipedia.org/wiki/ChatGPT",
       "date": "2022-11-30",
-      "geolocation": { "lat": 37.7749, "lon": -122.4194 }
+      "geolocation": {
+        "lat": 37.7749,
+        "lon": -122.4194
+      }
     },
     {
       "id": "his-2022-12-05-nif-ignition",
@@ -480,7 +657,10 @@
       "source": "LLNL NIF",
       "url": "https://en.wikipedia.org/wiki/National_Ignition_Facility",
       "date": "2022-12-05",
-      "geolocation": { "lat": 37.6881, "lon": -121.7045 }
+      "geolocation": {
+        "lat": 37.6881,
+        "lon": -121.7045
+      }
     },
     {
       "id": "his-2023-03-14-gpt4",
@@ -492,7 +672,55 @@
       "source": "OpenAI",
       "url": "https://en.wikipedia.org/wiki/GPT-4",
       "date": "2023-03-14",
-      "geolocation": { "lat": 37.7749, "lon": -122.4194 }
+      "geolocation": {
+        "lat": 37.7749,
+        "lon": -122.4194
+      }
+    },
+    {
+      "id": "his-2023-06-05-apple-m2-ultra-memory-bandwidth",
+      "category": "Computing & AGI",
+      "subcategory": "memory_bandwidth",
+      "title": "Apple M2 Ultra unified memory bandwidth",
+      "value": 800,
+      "unit": "GB/s",
+      "source": "Wikipedia",
+      "url": "https://en.wikipedia.org/wiki/Apple_M2",
+      "date": "2023-06-05",
+      "geolocation": {
+        "lat": 37.3327,
+        "lon": -122.0312
+      }
+    },
+    {
+      "id": "his-2023-06-05-apple-m2-ultra-price-per-gb",
+      "category": "Computing & AGI",
+      "subcategory": "price_per_gb",
+      "title": "Mac Studio M2 Ultra with 192 GB unified memory, price per GB",
+      "value": 29.16,
+      "unit": "USD/GB",
+      "source": "AppleToolbox",
+      "url": "https://appletoolbox.com/2023-mac-studio-everything-you-need-to-know/",
+      "date": "2023-06-05",
+      "geolocation": {
+        "lat": 37.3327,
+        "lon": -122.0312
+      }
+    },
+    {
+      "id": "his-2023-06-05-apple-m2-ultra-unified-memory",
+      "category": "Computing & AGI",
+      "subcategory": "unified_memory",
+      "title": "Apple M2 Ultra ships 192 GB unified memory",
+      "value": 192,
+      "unit": "GB",
+      "source": "Wikipedia",
+      "url": "https://en.wikipedia.org/wiki/Apple_M2",
+      "date": "2023-06-05",
+      "geolocation": {
+        "lat": 37.3327,
+        "lon": -122.0312
+      }
     },
     {
       "id": "his-2023-10-12-vesuvius-challenge",
@@ -504,7 +732,10 @@
       "source": "Vesuvius Challenge",
       "url": "https://en.wikipedia.org/wiki/Herculaneum_papyri",
       "date": "2023-10-12",
-      "geolocation": { "lat": 40.8518, "lon": 14.2681 }
+      "geolocation": {
+        "lat": 40.8518,
+        "lon": 14.2681
+      }
     },
     {
       "id": "his-2023-12-04-ibm-condor",
@@ -516,7 +747,565 @@
       "source": "IBM Quantum",
       "url": "https://en.wikipedia.org/wiki/IBM_Q_System_One",
       "date": "2023-12-04",
-      "geolocation": { "lat": 41.2115, "lon": -73.8532 }
+      "geolocation": {
+        "lat": 41.2115,
+        "lon": -73.8532
+      }
+    },
+    {
+      "id": "his-2024-10-28-apple-m4-pro-memory-bandwidth",
+      "category": "Computing & AGI",
+      "subcategory": "memory_bandwidth",
+      "title": "Apple M4 Pro unified memory bandwidth",
+      "value": 273,
+      "unit": "GB/s",
+      "source": "Apple",
+      "url": "https://support.apple.com/en-us/121555",
+      "date": "2024-10-28",
+      "geolocation": {
+        "lat": 37.3327,
+        "lon": -122.0312
+      }
+    },
+    {
+      "id": "his-2024-10-28-apple-m4-pro-mini-chassis-volume",
+      "category": "Computing & AGI",
+      "subcategory": "chassis_volume",
+      "title": "Mac mini M4 Pro chassis volume",
+      "value": 0.81,
+      "unit": "L",
+      "source": "Apple",
+      "url": "https://support.apple.com/en-us/121555",
+      "date": "2024-10-28",
+      "geolocation": {
+        "lat": 37.3327,
+        "lon": -122.0312
+      }
+    },
+    {
+      "id": "his-2024-10-28-apple-m4-pro-mini-price-per-gb",
+      "category": "Computing & AGI",
+      "subcategory": "price_per_gb",
+      "title": "Mac mini M4 Pro with 64 GB unified memory, price per GB",
+      "value": 28.11,
+      "unit": "USD/GB",
+      "source": "CanItRun",
+      "url": "https://canitrun.net/hardware/macs/mac-mini-m4-pro-64gb",
+      "date": "2024-10-28",
+      "geolocation": {
+        "lat": 37.3327,
+        "lon": -122.0312
+      }
+    },
+    {
+      "id": "his-2024-10-28-apple-m4-pro-unified-memory",
+      "category": "Computing & AGI",
+      "subcategory": "unified_memory",
+      "title": "Apple M4 Pro Mac mini fits 64 GB unified memory into a 0.8-litre cube",
+      "value": 64,
+      "unit": "GB",
+      "source": "Apple",
+      "url": "https://support.apple.com/en-us/121555",
+      "date": "2024-10-28",
+      "geolocation": {
+        "lat": 37.3327,
+        "lon": -122.0312
+      }
+    },
+    {
+      "id": "his-2025-03-05-apple-m3-ultra-local-llm-params",
+      "category": "Computing & AGI",
+      "subcategory": "local_llm_params",
+      "title": "Largest local LLM Apple claims for M3 Ultra memory capacity",
+      "value": 600,
+      "unit": "billion parameters",
+      "source": "The Register",
+      "url": "https://www.theregister.com/on-prem/2025/03/05/apple-m3-ultra-mac-studio-arrives-with-32-cpu-80-gpu-cores/545537",
+      "date": "2025-03-05",
+      "geolocation": {
+        "lat": 37.3327,
+        "lon": -122.0312
+      }
+    },
+    {
+      "id": "his-2025-03-05-apple-m3-ultra-memory-bandwidth",
+      "category": "Computing & AGI",
+      "subcategory": "memory_bandwidth",
+      "title": "Apple M3 Ultra unified memory bandwidth",
+      "value": 819.3,
+      "unit": "GB/s",
+      "source": "Wikipedia",
+      "url": "https://en.wikipedia.org/wiki/Apple_M3",
+      "date": "2025-03-05",
+      "geolocation": {
+        "lat": 37.3327,
+        "lon": -122.0312
+      }
+    },
+    {
+      "id": "his-2025-03-05-apple-m3-ultra-price-per-gb",
+      "category": "Computing & AGI",
+      "subcategory": "price_per_gb",
+      "title": "Mac Studio M3 Ultra with 512 GB unified memory, price per GB",
+      "value": 18.55,
+      "unit": "USD/GB",
+      "source": "MacRumors",
+      "url": "https://www.macrumors.com/2025/03/05/maxed-out-m3-ultra-mac-studio-14099/",
+      "date": "2025-03-05",
+      "geolocation": {
+        "lat": 37.3327,
+        "lon": -122.0312
+      }
+    },
+    {
+      "id": "his-2025-03-05-apple-m3-ultra-unified-memory",
+      "category": "Computing & AGI",
+      "subcategory": "unified_memory",
+      "title": "Apple M3 Ultra takes consumer unified memory to 512 GB",
+      "value": 512,
+      "unit": "GB",
+      "source": "Apple",
+      "url": "https://www.apple.com/newsroom/2025/03/apple-reveals-m3-ultra-taking-apple-silicon-to-a-new-extreme/",
+      "date": "2025-03-05",
+      "geolocation": {
+        "lat": 37.3327,
+        "lon": -122.0312
+      }
+    },
+    {
+      "id": "his-2025-06-03-amd-ryzen-ai-max-395-allocatable-vram",
+      "category": "Computing & AGI",
+      "subcategory": "allocatable_vram",
+      "title": "AMD Ryzen AI Max+ 395 graphics-allocatable unified memory",
+      "value": 112,
+      "unit": "GB",
+      "source": "AMD",
+      "url": "https://www.amd.com/en/developer/resources/technical-articles/2025/amd-ryzen-ai-max-395--a-leap-forward-in-generative-ai-performanc.html",
+      "date": "2025-06-03",
+      "geolocation": {
+        "lat": 37.3541,
+        "lon": -121.9552
+      }
+    },
+    {
+      "id": "his-2025-06-03-amd-ryzen-ai-max-395-memory-bandwidth",
+      "category": "Computing & AGI",
+      "subcategory": "memory_bandwidth",
+      "title": "AMD Ryzen AI Max+ 395 unified memory bandwidth",
+      "value": 256,
+      "unit": "GB/s",
+      "source": "AMD",
+      "url": "https://www.amd.com/en/developer/resources/technical-articles/2025/amd-ryzen-ai-max-395--a-leap-forward-in-generative-ai-performanc.html",
+      "date": "2025-06-03",
+      "geolocation": {
+        "lat": 37.3541,
+        "lon": -121.9552
+      }
+    },
+    {
+      "id": "his-2025-06-03-amd-ryzen-ai-max-395-unified-memory",
+      "category": "Computing & AGI",
+      "subcategory": "unified_memory",
+      "title": "AMD Ryzen AI Max+ 395 (Strix Halo) brings 128 GB unified memory to x86 desktops",
+      "value": 128,
+      "unit": "GB",
+      "source": "AMD",
+      "url": "https://www.amd.com/en/developer/resources/technical-articles/2025/amd-ryzen-ai-max-395--a-leap-forward-in-generative-ai-performanc.html",
+      "date": "2025-06-03",
+      "geolocation": {
+        "lat": 37.3541,
+        "lon": -121.9552
+      }
+    },
+    {
+      "id": "his-2025-10-15-nvidia-dgx-spark-chassis-volume",
+      "category": "Computing & AGI",
+      "subcategory": "chassis_volume",
+      "title": "NVIDIA DGX Spark chassis volume",
+      "value": 1.14,
+      "unit": "L",
+      "source": "NVIDIA",
+      "url": "https://www.nvidia.com/en-us/products/workstations/dgx-spark/",
+      "date": "2025-10-15",
+      "geolocation": {
+        "lat": 37.337,
+        "lon": -121.964
+      }
+    },
+    {
+      "id": "his-2025-10-15-nvidia-dgx-spark-local-llm-params",
+      "category": "Computing & AGI",
+      "subcategory": "local_llm_params",
+      "title": "Largest local LLM NVIDIA claims for DGX Spark",
+      "value": 200,
+      "unit": "billion parameters",
+      "source": "NVIDIA",
+      "url": "https://www.nvidia.com/en-us/products/workstations/dgx-spark/",
+      "date": "2025-10-15",
+      "geolocation": {
+        "lat": 37.337,
+        "lon": -121.964
+      }
+    },
+    {
+      "id": "his-2025-10-15-nvidia-dgx-spark-memory-bandwidth",
+      "category": "Computing & AGI",
+      "subcategory": "memory_bandwidth",
+      "title": "NVIDIA DGX Spark unified memory bandwidth",
+      "value": 273,
+      "unit": "GB/s",
+      "source": "NVIDIA",
+      "url": "https://www.nvidia.com/en-us/products/workstations/dgx-spark/",
+      "date": "2025-10-15",
+      "geolocation": {
+        "lat": 37.337,
+        "lon": -121.964
+      }
+    },
+    {
+      "id": "his-2025-10-15-nvidia-dgx-spark-price-per-gb",
+      "category": "Computing & AGI",
+      "subcategory": "price_per_gb",
+      "title": "NVIDIA DGX Spark 128 GB, price per GB",
+      "value": 31.24,
+      "unit": "USD/GB",
+      "source": "StorageReview",
+      "url": "https://www.storagereview.com/review/nvidia-dgx-spark-review-the-ai-appliance-bringing-datacenter-capabilities-to-desktops",
+      "date": "2025-10-15",
+      "geolocation": {
+        "lat": 37.337,
+        "lon": -121.964
+      }
+    },
+    {
+      "id": "his-2025-10-15-nvidia-dgx-spark-unified-memory",
+      "category": "Computing & AGI",
+      "subcategory": "unified_memory",
+      "title": "NVIDIA DGX Spark ships with 128 GB of coherent CPU-GPU unified memory",
+      "value": 128,
+      "unit": "GB",
+      "source": "NVIDIA",
+      "url": "https://www.nvidia.com/en-us/products/workstations/dgx-spark/",
+      "date": "2025-10-15",
+      "geolocation": {
+        "lat": 37.337,
+        "lon": -121.964
+      }
+    },
+    {
+      "id": "his-2026-08-25-apple-m5-ultra-memory-bandwidth",
+      "category": "Computing & AGI",
+      "subcategory": "memory_bandwidth",
+      "title": "Apple M5 Ultra unified memory bandwidth",
+      "value": 1200,
+      "unit": "GB/s",
+      "source": "Apple",
+      "url": "https://www.apple.com/newsroom/2026/08/apple-introduces-new-mac-studio-with-m5-max-and-m5-ultra/",
+      "date": "2026-08-25",
+      "geolocation": {
+        "lat": 37.3327,
+        "lon": -122.0312
+      }
+    },
+    {
+      "id": "his-2026-08-25-apple-m5-ultra-unified-memory",
+      "category": "Computing & AGI",
+      "subcategory": "unified_memory",
+      "title": "Apple M5 Ultra holds the consumer unified-memory ceiling at 512 GB",
+      "value": 512,
+      "unit": "GB",
+      "source": "Apple",
+      "url": "https://www.apple.com/newsroom/2026/08/apple-introduces-new-mac-studio-with-m5-max-and-m5-ultra/",
+      "date": "2026-08-25",
+      "geolocation": {
+        "lat": 37.3327,
+        "lon": -122.0312
+      }
+    },
+    {
+      "id": "his-2026-09-07-chuwi-unibox-ai395-allocatable-vram",
+      "category": "Computing & AGI",
+      "subcategory": "allocatable_vram",
+      "title": "CHUWI UniBox AI395 graphics-allocatable unified memory",
+      "value": 96,
+      "unit": "GB",
+      "source": "iGeekphone",
+      "url": "https://www.igeekphone.com/chuwi-unibox-ai495-pro-unveiled-with-ryzen-ai-max-pro-495-and-192gb-memory/",
+      "date": "2026-09-07",
+      "geolocation": {
+        "lat": 22.5431,
+        "lon": 114.0579
+      }
+    },
+    {
+      "id": "his-2026-09-07-chuwi-unibox-ai395-local-llm-params",
+      "category": "Computing & AGI",
+      "subcategory": "local_llm_params",
+      "title": "Largest local LLM claimed for the CHUWI UniBox AI395",
+      "value": 235,
+      "unit": "billion parameters",
+      "source": "iGeekphone",
+      "url": "https://www.igeekphone.com/chuwi-unibox-ai495-pro-unveiled-with-ryzen-ai-max-pro-495-and-192gb-memory/",
+      "date": "2026-09-07",
+      "geolocation": {
+        "lat": 22.5431,
+        "lon": 114.0579
+      }
+    },
+    {
+      "id": "his-2026-09-07-chuwi-unibox-ai395-unified-memory",
+      "category": "Computing & AGI",
+      "subcategory": "unified_memory",
+      "title": "CHUWI UniBox AI395 offers the same 2.9-litre chassis with 128 GB unified memory",
+      "value": 128,
+      "unit": "GB",
+      "source": "CHUWI",
+      "url": "https://store.chuwi.com/pages/unibox-ai495-pro",
+      "date": "2026-09-07",
+      "geolocation": {
+        "lat": 22.5431,
+        "lon": 114.0579
+      }
+    },
+    {
+      "id": "his-2026-09-07-chuwi-unibox-ai495-pro-allocatable-vram",
+      "category": "Computing & AGI",
+      "subcategory": "allocatable_vram",
+      "title": "CHUWI UniBox AI495 Pro graphics-allocatable unified memory",
+      "value": 160,
+      "unit": "GB",
+      "source": "PCCentral",
+      "url": "https://pccentral.net/chuwi-unibox-ai495-pro-192gb-ram-300b-llms/",
+      "date": "2026-09-07",
+      "geolocation": {
+        "lat": 22.5431,
+        "lon": 114.0579
+      }
+    },
+    {
+      "id": "his-2026-09-07-chuwi-unibox-ai495-pro-chassis-volume",
+      "category": "Computing & AGI",
+      "subcategory": "chassis_volume",
+      "title": "CHUWI UniBox AI495 Pro chassis volume",
+      "value": 2.9,
+      "unit": "L",
+      "source": "Notebookcheck",
+      "url": "https://www.notebookcheck.net/Chuwi-launches-new-mini-PC-globally-with-OCuLink-10-GbE-Ethernet-and-192-GB-RAM.1391948.0.html",
+      "date": "2026-09-07",
+      "geolocation": {
+        "lat": 22.5431,
+        "lon": 114.0579
+      }
+    },
+    {
+      "id": "his-2026-09-07-chuwi-unibox-ai495-pro-local-llm-params",
+      "category": "Computing & AGI",
+      "subcategory": "local_llm_params",
+      "title": "Largest local LLM claimed for the CHUWI UniBox AI495 Pro",
+      "value": 300,
+      "unit": "billion parameters",
+      "source": "PCCentral",
+      "url": "https://pccentral.net/chuwi-unibox-ai495-pro-192gb-ram-300b-llms/",
+      "date": "2026-09-07",
+      "geolocation": {
+        "lat": 22.5431,
+        "lon": 114.0579
+      }
+    },
+    {
+      "id": "his-2026-09-07-chuwi-unibox-ai495-pro-memory-bandwidth",
+      "category": "Computing & AGI",
+      "subcategory": "memory_bandwidth",
+      "title": "CHUWI UniBox AI495 Pro unified memory bandwidth",
+      "value": 273,
+      "unit": "GB/s",
+      "source": "CHUWI",
+      "url": "https://store.chuwi.com/pages/unibox-ai495-pro",
+      "date": "2026-09-07",
+      "geolocation": {
+        "lat": 22.5431,
+        "lon": 114.0579
+      }
+    },
+    {
+      "id": "his-2026-09-07-chuwi-unibox-ai495-pro-unified-memory",
+      "category": "Computing & AGI",
+      "subcategory": "unified_memory",
+      "title": "CHUWI UniBox AI495 Pro puts 192 GB unified memory in a 2.9-litre chassis",
+      "value": 192,
+      "unit": "GB",
+      "source": "CHUWI",
+      "url": "https://store.chuwi.com/pages/unibox-ai495-pro",
+      "date": "2026-09-07",
+      "geolocation": {
+        "lat": 22.5431,
+        "lon": 114.0579
+      }
+    },
+    {
+      "id": "his-2026-09-17-beelink-gtr9-pro-price-per-gb",
+      "category": "Computing & AGI",
+      "subcategory": "price_per_gb",
+      "title": "Beelink GTR9 Pro 128 GB, price per GB",
+      "value": 33.98,
+      "unit": "USD/GB",
+      "source": "DataHardware",
+      "url": "https://datahardware.ai/blog/192gb-vs-128gb-unified-memory-local-llm-2026",
+      "date": "2026-09-17",
+      "geolocation": {
+        "lat": 22.5431,
+        "lon": 114.0579
+      }
+    },
+    {
+      "id": "his-2026-09-17-framework-desktop-128gb-price-per-gb",
+      "category": "Computing & AGI",
+      "subcategory": "price_per_gb",
+      "title": "Framework Desktop 128 GB, price per GB",
+      "value": 26.95,
+      "unit": "USD/GB",
+      "source": "DataHardware",
+      "url": "https://datahardware.ai/blog/192gb-vs-128gb-unified-memory-local-llm-2026",
+      "date": "2026-09-17",
+      "geolocation": {
+        "lat": 37.7749,
+        "lon": -122.4194
+      }
+    },
+    {
+      "id": "his-2026-09-17-gmktec-evo-x2-price-per-gb",
+      "category": "Computing & AGI",
+      "subcategory": "price_per_gb",
+      "title": "GMKtec EVO-X2 128 GB, price per GB",
+      "value": 28.51,
+      "unit": "USD/GB",
+      "source": "DataHardware",
+      "url": "https://datahardware.ai/blog/192gb-vs-128gb-unified-memory-local-llm-2026",
+      "date": "2026-09-17",
+      "geolocation": {
+        "lat": 22.5431,
+        "lon": 114.0579
+      }
+    },
+    {
+      "id": "his-2026-09-17-hp-z2-mini-g1a-price-per-gb",
+      "category": "Computing & AGI",
+      "subcategory": "price_per_gb",
+      "title": "HP Z2 Mini G1a 128 GB, price per GB",
+      "value": 25.78,
+      "unit": "USD/GB",
+      "source": "DataHardware",
+      "url": "https://datahardware.ai/blog/192gb-vs-128gb-unified-memory-local-llm-2026",
+      "date": "2026-09-17",
+      "geolocation": {
+        "lat": 37.4419,
+        "lon": -122.143
+      }
+    },
+    {
+      "id": "his-2026-09-17-minisforum-ms-s1-max-price-per-gb",
+      "category": "Computing & AGI",
+      "subcategory": "price_per_gb",
+      "title": "Minisforum MS-S1 Max 128 GB, price per GB",
+      "value": 29.68,
+      "unit": "USD/GB",
+      "source": "DataHardware",
+      "url": "https://datahardware.ai/blog/192gb-vs-128gb-unified-memory-local-llm-2026",
+      "date": "2026-09-17",
+      "geolocation": {
+        "lat": 22.5431,
+        "lon": 114.0579
+      }
+    },
+    {
+      "id": "his-2026-09-30-framework-desktop-192gb-price-per-gb",
+      "category": "Computing & AGI",
+      "subcategory": "price_per_gb",
+      "title": "Framework Desktop 192 GB, price per GB",
+      "value": 35.41,
+      "unit": "USD/GB",
+      "source": "Framework",
+      "url": "https://frame.work/desktop?slug=desktop-amd-aimax400&tab=specs",
+      "date": "2026-09-30",
+      "geolocation": {
+        "lat": 37.7749,
+        "lon": -122.4194
+      }
+    },
+    {
+      "id": "his-2026-09-30-framework-desktop-chassis-volume",
+      "category": "Computing & AGI",
+      "subcategory": "chassis_volume",
+      "title": "Framework Desktop chassis volume",
+      "value": 4.5,
+      "unit": "L",
+      "source": "Framework",
+      "url": "https://frame.work/desktop?slug=desktop-amd-aimax400&tab=specs",
+      "date": "2026-09-30",
+      "geolocation": {
+        "lat": 37.7749,
+        "lon": -122.4194
+      }
+    },
+    {
+      "id": "his-2026-10-01-hp-zbook-ultra-g3a-allocatable-vram",
+      "category": "Computing & AGI",
+      "subcategory": "allocatable_vram",
+      "title": "HP ZBook Ultra G3a graphics-allocatable unified memory",
+      "value": 160,
+      "unit": "GB",
+      "source": "PCQuest",
+      "url": "https://www.pcquest.com/news-launches/amd-ryzen-ai-max-pro-400-brings-192gb-memory-to-local-ai-pcs-12593980",
+      "date": "2026-10-01",
+      "geolocation": {
+        "lat": 37.4419,
+        "lon": -122.143
+      }
+    },
+    {
+      "id": "his-2026-10-01-hp-zbook-ultra-g3a-unified-memory",
+      "category": "Computing & AGI",
+      "subcategory": "unified_memory",
+      "title": "HP ZBook Ultra G3a brings 192 GB unified memory to a mobile workstation",
+      "value": 192,
+      "unit": "GB",
+      "source": "PCQuest",
+      "url": "https://www.pcquest.com/news-launches/amd-ryzen-ai-max-pro-400-brings-192gb-memory-to-local-ai-pcs-12593980",
+      "date": "2026-10-01",
+      "geolocation": {
+        "lat": 37.4419,
+        "lon": -122.143
+      }
+    },
+    {
+      "id": "his-2026-10-01-lenovo-thinkcentre-x-ultra-chassis-volume",
+      "category": "Computing & AGI",
+      "subcategory": "chassis_volume",
+      "title": "Lenovo ThinkCentre X Ultra chassis volume",
+      "value": 1.6,
+      "unit": "L",
+      "source": "PCQuest",
+      "url": "https://www.pcquest.com/news-launches/amd-ryzen-ai-max-pro-400-brings-192gb-memory-to-local-ai-pcs-12593980",
+      "date": "2026-10-01",
+      "geolocation": {
+        "lat": 35.8232,
+        "lon": -78.8256
+      }
+    },
+    {
+      "id": "his-2026-10-01-lenovo-thinkcentre-x-ultra-unified-memory",
+      "category": "Computing & AGI",
+      "subcategory": "unified_memory",
+      "title": "Lenovo ThinkCentre X Ultra caps at 128 GB unified memory in a 1.6-litre chassis",
+      "value": 128,
+      "unit": "GB",
+      "source": "PCQuest",
+      "url": "https://www.pcquest.com/news-launches/amd-ryzen-ai-max-pro-400-brings-192gb-memory-to-local-ai-pcs-12593980",
+      "date": "2026-10-01",
+      "geolocation": {
+        "lat": 35.8232,
+        "lon": -78.8256
+      }
     }
   ]
 }

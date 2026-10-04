@@ -8,11 +8,11 @@ list in world_layers.json.
 Designed for a daily GitHub Actions run (with a read-only live-probe mode).
 Stdlib-only.
 """
+
 from __future__ import annotations
 
 import argparse
 import json
-import os
 import re
 import ssl
 import sys
@@ -23,8 +23,9 @@ import zlib
 from datetime import date, datetime, timezone
 
 sys.path.insert(0, str(__import__("pathlib").Path(__file__).resolve().parent))
-import location_contract as lc  # noqa: E402 - sibling import needs the path above
 from pathlib import Path
+
+import location_contract as lc
 
 WORLD_LAYERS_FILE = Path("data/world_layers.json")
 CRISIS_ZONES_KEY = "crisis_zones"
@@ -40,7 +41,9 @@ UNHCR_RSS = "https://www.unhcr.org/rss.xml"  # UNHCR official RSS feed
 WFP_RSS = "https://www.wfp.org/rss.xml"  # WFP official RSS feed
 FAO_RSS = "https://www.fao.org/rss.xml"  # FAO official RSS feed
 WHO_EMERGENCIES = "https://www.who.int/emergencies/disease-outbreak-news"  # WHO emergencies page
-OCHA_HAPI = "https://data.humdata.org/api/3/action/package_search?q=humanitarian+crisis&rows=50"  # HDX API
+OCHA_HAPI = (
+    "https://data.humdata.org/api/3/action/package_search?q=humanitarian+crisis&rows=50"  # HDX API
+)
 
 # Better headers to avoid 403/410 errors
 REQUEST_HEADERS = {
@@ -57,6 +60,7 @@ REQUEST_HEADERS = {
     "Cache-Control": "max-age=0",
 }
 
+
 # Schema version written by load_world_layers when the file is missing. The
 # schema (schema/worldmap-data.schema.json) is the single source of truth -
 # same derivation as check_data.py._FILE_VERSION, and the value sync_layers.py
@@ -67,7 +71,7 @@ def _load_schema_version() -> str:
         version = schema["files"]["world_layers.json"]["version"]
         if isinstance(version, str) and re.fullmatch(r"\d+\.\d+\.\d+", version):
             return version
-    except Exception:  # noqa: BLE001 - schema missing/malformed while developing locally
+    except Exception:
         pass
     return "1.1.0"
 
@@ -87,7 +91,7 @@ STATIC_CRISIS_ZONES = [
         "start_date": "2003-01-01",
         "note": "Humanitarian catastrophe, 25M+ in need",
         "source": "UN OCHA",
-        "url": "https://www.unocha.org"
+        "url": "https://www.unocha.org",
     },
     {
         "id": "crisis-yemen",
@@ -100,7 +104,7 @@ STATIC_CRISIS_ZONES = [
         "start_date": "2015-01-01",
         "note": "World's worst humanitarian crisis",
         "source": "WHO",
-        "url": "https://www.who.int"
+        "url": "https://www.who.int",
     },
     {
         "id": "crisis-myanmar",
@@ -113,7 +117,7 @@ STATIC_CRISIS_ZONES = [
         "start_date": "2017-01-01",
         "note": "1M+ stateless refugees in camps",
         "source": "UNHCR",
-        "url": "https://www.unhcr.org"
+        "url": "https://www.unhcr.org",
     },
     {
         "id": "crisis-afghanistan",
@@ -126,7 +130,7 @@ STATIC_CRISIS_ZONES = [
         "start_date": "2021-01-01",
         "note": "28M+ facing acute food insecurity",
         "source": "WFP",
-        "url": "https://www.wfp.org"
+        "url": "https://www.wfp.org",
     },
     {
         "id": "crisis-somalia",
@@ -139,7 +143,7 @@ STATIC_CRISIS_ZONES = [
         "start_date": "2021-01-01",
         "note": "5 consecutive failed rainy seasons",
         "source": "FAO",
-        "url": "https://www.fao.org"
+        "url": "https://www.fao.org",
     },
     {
         "id": "crisis-syria",
@@ -152,7 +156,7 @@ STATIC_CRISIS_ZONES = [
         "start_date": "2011-01-01",
         "note": "15M+ in need of humanitarian aid",
         "source": "UN OCHA",
-        "url": "https://www.unocha.org"
+        "url": "https://www.unocha.org",
     },
     {
         "id": "crisis-haiti",
@@ -165,7 +169,7 @@ STATIC_CRISIS_ZONES = [
         "start_date": "2021-01-01",
         "note": "5M+ in need, gang violence & cholera",
         "source": "UN OCHA",
-        "url": "https://www.unocha.org"
+        "url": "https://www.unocha.org",
     },
     {
         "id": "crisis-ethiopia",
@@ -179,7 +183,7 @@ STATIC_CRISIS_ZONES = [
         "end_date": "2022-11-02",
         "note": "Millions displaced, famine risk",
         "source": "UN OCHA",
-        "url": "https://www.unocha.org"
+        "url": "https://www.unocha.org",
     },
     {
         "id": "crisis-sahel",
@@ -192,7 +196,7 @@ STATIC_CRISIS_ZONES = [
         "start_date": "2012-01-01",
         "note": "10M+ displaced across Sahel",
         "source": "UN OCHA",
-        "url": "https://www.unocha.org"
+        "url": "https://www.unocha.org",
     },
     {
         "id": "crisis-drc",
@@ -205,7 +209,7 @@ STATIC_CRISIS_ZONES = [
         "start_date": "2017-01-01",
         "note": "Conflict, Ebola, displacement",
         "source": "WHO",
-        "url": "https://www.who.int"
+        "url": "https://www.who.int",
     },
 ]
 
@@ -354,7 +358,9 @@ def fetch_url(url: str, timeout: int = 30) -> str | None:
                 continue
             print(f"  Attempt {attempt + 1}/3 failed: TLS error: {e}")
         except urllib.error.URLError as e:
-            if isinstance(getattr(e, "reason", None), ssl.SSLCertVerificationError) and _mark_unverified_host(host):
+            if isinstance(
+                getattr(e, "reason", None), ssl.SSLCertVerificationError
+            ) and _mark_unverified_host(host):
                 continue
             print(f"  Attempt {attempt + 1}/3 failed: {e.reason}")
         except Exception as e:
@@ -369,20 +375,36 @@ def parse_ocha_rss(xml_text: str) -> list[dict]:
     for item in items:
         title_match = re.search(r"<title><!\[CDATA\[(.*?)\]\]></title>|<title>(.*?)</title>", item)
         link_match = re.search(r"<link><!\[CDATA\[(.*?)\]\]></link>|<link>(.*?)</link>", item)
-        desc_match = re.search(r"<description><!\[CDATA\[(.*?)\]\]></description>|<description>(.*?)</description>", item)
-        
+        desc_match = re.search(
+            r"<description><!\[CDATA\[(.*?)\]\]></description>|<description>(.*?)</description>",
+            item,
+        )
+
         title = (title_match.group(1) or title_match.group(2) or "").strip() if title_match else ""
         link = (link_match.group(1) or link_match.group(2) or "").strip() if link_match else ""
         desc = (desc_match.group(1) or desc_match.group(2) or "").strip() if desc_match else ""
-        
+
         text = (title + " " + desc).lower()
-        crisis_keywords = ["famine", "cholera", "displacement", "refugee", "drought", "hunger", "crisis", "emergency", "outbreak", "epidemic"]
+        crisis_keywords = [
+            "famine",
+            "cholera",
+            "displacement",
+            "refugee",
+            "drought",
+            "hunger",
+            "crisis",
+            "emergency",
+            "outbreak",
+            "epidemic",
+        ]
         if any(kw in text for kw in crisis_keywords):
-            crises.append({
-                "title": title[:100],
-                "link": link,
-                "description": desc[:200],
-            })
+            crises.append(
+                {
+                    "title": title[:100],
+                    "link": link,
+                    "description": desc[:200],
+                }
+            )
     return crises
 
 
@@ -391,29 +413,46 @@ def parse_who_page(html_text: str) -> list[dict]:
     crises = []
     # WHO disease outbreak news - try multiple selectors
     # Try article tags first
-    items = re.findall(r'<article[^>]*>(.*?)</article>', html_text, re.DOTALL)
+    items = re.findall(r"<article[^>]*>(.*?)</article>", html_text, re.DOTALL)
     if not items:
         # Try div with class containing 'outbreak' or 'emergency'
-        items = re.findall(r'<div[^>]*class="[^"]*(outbreak|emergency|crisis)[^"]*"[^>]*>(.*?)</div>', html_text, re.DOTALL | re.IGNORECASE)
+        items = re.findall(
+            r'<div[^>]*class="[^"]*(outbreak|emergency|crisis)[^"]*"[^>]*>(.*?)</div>',
+            html_text,
+            re.DOTALL | re.IGNORECASE,
+        )
     if not items:
         # Fallback: any link with emergency/outbreak in href
         items = re.findall(r'<a[^>]*href="([^"]*)"[^>]*>(.*?)</a>', html_text, re.DOTALL)
         items = [(m[1], m[0]) for m in items]  # swap to match expected format
-    
+
     for item in items:
         if isinstance(item, tuple):
             title, link = item[0].strip(), item[1].strip()
         else:
-            title_match = re.search(r'<h[23][^>]*>(.*?)</h[23]>', item)
+            title_match = re.search(r"<h[23][^>]*>(.*?)</h[23]>", item)
             link_match = re.search(r'href="([^"]+)"', item)
             title = title_match.group(1).strip() if title_match else ""
             link = link_match.group(1) if link_match else ""
-        
-        if title and any(kw in title.lower() for kw in ["outbreak", "emergency", "crisis", "cholera", "famine", "epidemic", "disease"]):
-            crises.append({
-                "title": title[:100],
-                "link": link,
-            })
+
+        if title and any(
+            kw in title.lower()
+            for kw in [
+                "outbreak",
+                "emergency",
+                "crisis",
+                "cholera",
+                "famine",
+                "epidemic",
+                "disease",
+            ]
+        ):
+            crises.append(
+                {
+                    "title": title[:100],
+                    "link": link,
+                }
+            )
     return crises
 
 
@@ -436,12 +475,14 @@ def fetch_reliefweb_crises() -> list[dict]:
                     country = fields.get("primary_country")
                     if isinstance(country, dict):
                         country = country.get("name", "")
-                    crises.append({
-                        "title": name[:100],
-                        "link": url,
-                        "date": date_str,
-                        "country": country if isinstance(country, str) else "",
-                    })
+                    crises.append(
+                        {
+                            "title": name[:100],
+                            "link": url,
+                            "date": date_str,
+                            "country": country if isinstance(country, str) else "",
+                        }
+                    )
                 if crises:
                     return crises
             except (json.JSONDecodeError, KeyError, AttributeError, TypeError):
@@ -451,14 +492,21 @@ def fetch_reliefweb_crises() -> list[dict]:
     return []
 
 
-def build_crisis_zones_from_sources(ocha_data: list, who_data: list, reliefweb_data: list, 
-                                    unhcr_data: list, wfp_data: list, fao_data: list, hdx_data: list) -> list[dict]:
+def build_crisis_zones_from_sources(
+    ocha_data: list,
+    who_data: list,
+    reliefweb_data: list,
+    unhcr_data: list,
+    wfp_data: list,
+    fao_data: list,
+    hdx_data: list,
+) -> list[dict]:
     """Build crisis zones from fetched sources, merging with static fallback."""
     zones = []
     seen_names = set()
     seen_ids = set()
     seen_keywords = set()
-    
+
     # Priority: ReliefWeb (structured) > OCHA > HDX > UNHCR > WFP > FAO > WHO
     for source in [reliefweb_data, ocha_data, hdx_data, unhcr_data, wfp_data, fao_data, who_data]:
         for item in source:
@@ -468,7 +516,9 @@ def build_crisis_zones_from_sources(ocha_data: list, who_data: list, reliefweb_d
 
             # Simple geo-location inference from title/keywords (the ReliefWeb
             # primary_country field, when present, is authoritative context).
-            geo_text = " ".join(str(item.get(k, "")) for k in ("country", "title", "description", "link"))
+            geo_text = " ".join(
+                str(item.get(k, "")) for k in ("country", "title", "description", "link")
+            )
             lat, lon, region, keyword = _locate(geo_text)
             # Drop items that cannot be geolocated (they would plot at 0,0
             # "Null Island" - the Gulf of Guinea - and mislead the map).
@@ -524,7 +574,7 @@ def build_crisis_zones_from_sources(ocha_data: list, who_data: list, reliefweb_d
                 break
         if len(zones) >= 15:
             break
-    
+
     # Fallback to static if API failed (drops repeated/duplicate ids + clamps
     # to the 15-zone cap, the same contract the sourced path enforces).
     if not zones:
@@ -634,31 +684,121 @@ _LOCATION_KEYS = tuple(sorted(_LOCATIONS, key=len, reverse=True))
 CRISIS_LABELS: dict[str, tuple[str, str, str, int]] = {
     "sudan": ("Sudan · Darfur famine", "Humanitarian catastrophe, 25M+ in need", "UN OCHA", 2003),
     "darfur": ("Sudan · Darfur famine", "Humanitarian catastrophe, 25M+ in need", "UN OCHA", 2003),
-    "south sudan": ("South Sudan · Conflict & flooding", "Civil conflict, displacement and food insecurity", "UN OCHA", 2013),
+    "south sudan": (
+        "South Sudan · Conflict & flooding",
+        "Civil conflict, displacement and food insecurity",
+        "UN OCHA",
+        2013,
+    ),
     "yemen": ("Yemen · Cholera & famine", "World's worst humanitarian crisis", "WHO", 2015),
-    "myanmar": ("Myanmar · Rohingya displacement", "1M+ stateless refugees in camps", "UNHCR", 2017),
-    "rohingya": ("Myanmar · Rohingya displacement", "1M+ stateless refugees in camps", "UNHCR", 2017),
-    "afghanistan": ("Afghanistan · Winter hunger crisis", "28M+ facing acute food insecurity", "WFP", 2021),
+    "myanmar": (
+        "Myanmar · Rohingya displacement",
+        "1M+ stateless refugees in camps",
+        "UNHCR",
+        2017,
+    ),
+    "rohingya": (
+        "Myanmar · Rohingya displacement",
+        "1M+ stateless refugees in camps",
+        "UNHCR",
+        2017,
+    ),
+    "afghanistan": (
+        "Afghanistan · Winter hunger crisis",
+        "28M+ facing acute food insecurity",
+        "WFP",
+        2021,
+    ),
     "somalia": ("Somalia · Drought & famine", "5 consecutive failed rainy seasons", "FAO", 2021),
     "syria": ("Syria · Humanitarian crisis", "15M+ in need of humanitarian aid", "UN OCHA", 2011),
-    "haiti": ("Haiti · Gang violence & hunger", "5M+ in need, gang violence & cholera", "UN OCHA", 2021),
+    "haiti": (
+        "Haiti · Gang violence & hunger",
+        "5M+ in need, gang violence & cholera",
+        "UN OCHA",
+        2021,
+    ),
     "ethiopia": ("Ethiopia · Tigray conflict", "Millions displaced, famine risk", "UN OCHA", 2020),
     "tigray": ("Ethiopia · Tigray conflict", "Millions displaced, famine risk", "UN OCHA", 2020),
     "sahel": ("Sahel · Conflict & hunger", "10M+ displaced across the Sahel", "UN OCHA", 2012),
-    "drc": ("DRC · Conflict & displacement", "Armed conflict, Ebola and displacement", "UN OCHA", 2017),
-    "congo": ("DRC · Conflict & displacement", "Armed conflict, Ebola and displacement", "UN OCHA", 2017),
-    "ukraine": ("Ukraine · War & civilian needs", "Full-scale invasion, millions displaced", "UN OCHA", 2022),
+    "drc": (
+        "DRC · Conflict & displacement",
+        "Armed conflict, Ebola and displacement",
+        "UN OCHA",
+        2017,
+    ),
+    "congo": (
+        "DRC · Conflict & displacement",
+        "Armed conflict, Ebola and displacement",
+        "UN OCHA",
+        2017,
+    ),
+    "ukraine": (
+        "Ukraine · War & civilian needs",
+        "Full-scale invasion, millions displaced",
+        "UN OCHA",
+        2022,
+    ),
     "gaza": ("Gaza · Humanitarian emergency", "Mass displacement and famine risk", "UN OCHA", 2023),
-    "palestine": ("Gaza · Humanitarian emergency", "Mass displacement and famine risk", "UN OCHA", 2023),
-    "chad": ("Chad · Displacement crisis", "Hundreds of thousands displaced from Darfur", "UNHCR", 2021),
-    "nigeria": ("Nigeria · Insurgency & hunger", "Armed conflict, displacement and food insecurity", "UN OCHA", 2009),
-    "niger": ("Niger · Conflict & hunger", "Armed conflict, displacement and food insecurity", "UN OCHA", 2015),
-    "mali": ("Mali · Displacement crisis", "Armed conflict, displacement and food insecurity", "UN OCHA", 2012),
-    "mozambique": ("Mozambique · Cabo Delgado insurgency", "Insurgent attacks and internal displacement", "UN OCHA", 2017),
-    "cabo delgado": ("Mozambique · Cabo Delgado insurgency", "Insurgent attacks and internal displacement", "UN OCHA", 2017),
-    "kenya": ("Kenya · Floods & displacement", "Flooding, displacement and mudslides", "UN OCHA", 2022),
-    "bangladesh": ("Bangladesh · Floods & displacement", "Flooding, displacement and health needs", "UN OCHA", 2022),
-    "red sea": ("Red Sea · Shipping disruption", "Attacks disrupting commercial shipping routes", "UN OCHA", 2023),
+    "palestine": (
+        "Gaza · Humanitarian emergency",
+        "Mass displacement and famine risk",
+        "UN OCHA",
+        2023,
+    ),
+    "chad": (
+        "Chad · Displacement crisis",
+        "Hundreds of thousands displaced from Darfur",
+        "UNHCR",
+        2021,
+    ),
+    "nigeria": (
+        "Nigeria · Insurgency & hunger",
+        "Armed conflict, displacement and food insecurity",
+        "UN OCHA",
+        2009,
+    ),
+    "niger": (
+        "Niger · Conflict & hunger",
+        "Armed conflict, displacement and food insecurity",
+        "UN OCHA",
+        2015,
+    ),
+    "mali": (
+        "Mali · Displacement crisis",
+        "Armed conflict, displacement and food insecurity",
+        "UN OCHA",
+        2012,
+    ),
+    "mozambique": (
+        "Mozambique · Cabo Delgado insurgency",
+        "Insurgent attacks and internal displacement",
+        "UN OCHA",
+        2017,
+    ),
+    "cabo delgado": (
+        "Mozambique · Cabo Delgado insurgency",
+        "Insurgent attacks and internal displacement",
+        "UN OCHA",
+        2017,
+    ),
+    "kenya": (
+        "Kenya · Floods & displacement",
+        "Flooding, displacement and mudslides",
+        "UN OCHA",
+        2022,
+    ),
+    "bangladesh": (
+        "Bangladesh · Floods & displacement",
+        "Flooding, displacement and health needs",
+        "UN OCHA",
+        2022,
+    ),
+    "red sea": (
+        "Red Sea · Shipping disruption",
+        "Attacks disrupting commercial shipping routes",
+        "UN OCHA",
+        2023,
+    ),
 }
 
 
@@ -716,10 +856,18 @@ def load_world_layers(path: Path | None = None) -> dict | None:
             print(f"  [error] {target}: unreadable/unparseable ({exc}); refusing to overwrite")
             return None
         if not isinstance(data, dict) or not isinstance(data.get("conflict_zones"), list):
-            print(f"  [error] {target}: missing required 'conflict_zones' list; refusing to overwrite")
+            print(
+                f"  [error] {target}: missing required 'conflict_zones' list; refusing to overwrite"
+            )
             return None
         return data
-    return {"version": SCHEMA_VERSION, "last_update": "", "conflict_zones": [], "crisis_zones": [], "deployments": []}
+    return {
+        "version": SCHEMA_VERSION,
+        "last_update": "",
+        "conflict_zones": [],
+        "crisis_zones": [],
+        "deployments": [],
+    }
 
 
 def save_world_layers(data: dict, path: Path | None = None) -> bool:
@@ -746,11 +894,13 @@ def fetch_hdx_crises() -> list[dict]:
                 notes = pkg.get("notes", "")
                 url = f"https://data.humdata.org/dataset/{pkg.get('name', '')}"
                 if title:
-                    hdx_data.append({
-                        "title": title,
-                        "description": notes[:200],
-                        "link": url,
-                    })
+                    hdx_data.append(
+                        {
+                            "title": title,
+                            "description": notes[:200],
+                            "link": url,
+                        }
+                    )
     except Exception as e:
         print(f"  HDX API error: {e}")
     return hdx_data
@@ -758,16 +908,25 @@ def fetch_hdx_crises() -> list[dict]:
 
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.strip().splitlines()[0] if __doc__ else None)
-    ap.add_argument("--dry-run", action="store_true",
-                    help="fetch, build and compare only - never write (live probe mode)")
-    ap.add_argument("--output", default=None,
-                    help="write to this world_layers.json path instead of the repo data dir")
-    ap.add_argument("--normalize-only", action="store_true",
-                    help="apply _finalize_crisis_zones to the existing crisis_zones "
-                         "and stop - no network. Idempotent: it only ever stamps "
-                         "the recency signal and enforces the 15-zone cap, so it is "
-                         "the safe way to backfill last_news_year onto a file that "
-                         "predates the field.")
+    ap.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="fetch, build and compare only - never write (live probe mode)",
+    )
+    ap.add_argument(
+        "--output",
+        default=None,
+        help="write to this world_layers.json path instead of the repo data dir",
+    )
+    ap.add_argument(
+        "--normalize-only",
+        action="store_true",
+        help="apply _finalize_crisis_zones to the existing crisis_zones "
+        "and stop - no network. Idempotent: it only ever stamps "
+        "the recency signal and enforces the 15-zone cap, so it is "
+        "the safe way to backfill last_news_year onto a file that "
+        "predates the field.",
+    )
     args = ap.parse_args(argv)
     out_file: Path | None = Path(args.output) if args.output else None
 
@@ -784,50 +943,52 @@ def main(argv: list[str] | None = None) -> int:
         if not save_world_layers(data, out_file):
             print("Error saving world_layers.json")
             return 1
-        print(f"Normalized {len(data[CRISIS_ZONES_KEY])} crisis zones in "
-              f"{out_file or WORLD_LAYERS_FILE}")
+        print(
+            f"Normalized {len(data[CRISIS_ZONES_KEY])} crisis zones in "
+            f"{out_file or WORLD_LAYERS_FILE}"
+        )
         return 0
 
     print("Fetching crisis zone data...")
-    
+
     # Fetch from sources
     print("  Fetching ReliefWeb...")
     reliefweb = fetch_reliefweb_crises()
     print(f"  Got {len(reliefweb)} ReliefWeb items")
-    
+
     print("  Fetching OCHA RSS...")
     ocha_xml = fetch_url(OCHA_RSS)
     ocha = parse_ocha_rss(ocha_xml) if ocha_xml else []
     print(f"  Got {len(ocha)} OCHA items")
-    
+
     print("  Fetching UNHCR RSS...")
     unhcr_xml = fetch_url(UNHCR_RSS)
     unhcr = parse_ocha_rss(unhcr_xml) if unhcr_xml else []
     print(f"  Got {len(unhcr)} UNHCR items")
-    
+
     print("  Fetching WFP RSS...")
     wfp_xml = fetch_url(WFP_RSS)
     wfp = parse_ocha_rss(wfp_xml) if wfp_xml else []
     print(f"  Got {len(wfp)} WFP items")
-    
+
     print("  Fetching FAO RSS...")
     fao_xml = fetch_url(FAO_RSS)
     fao = parse_ocha_rss(fao_xml) if fao_xml else []
     print(f"  Got {len(fao)} FAO items")
-    
+
     print("  Fetching HDX API...")
     hdx = fetch_hdx_crises()
     print(f"  Got {len(hdx)} HDX items")
-    
+
     print("  Fetching WHO emergencies...")
     who_html = fetch_url(WHO_EMERGENCIES)
     who = parse_who_page(who_html) if who_html else []
     print(f"  Got {len(who)} WHO items")
-    
+
     # Build crisis zones
     crisis_zones = build_crisis_zones_from_sources(ocha, who, reliefweb, unhcr, wfp, fao, hdx)
     print(f"Built {len(crisis_zones)} crisis zones")
-    
+
     # Load existing world_layers. Abort (instead of overwriting an empty shell)
     # when the current file is corrupt/invalid, so conflict + deployment layer
     # data can never be silently wiped by a crisis refresh.
@@ -835,28 +996,29 @@ def main(argv: list[str] | None = None) -> int:
     if data is None:
         return 1
     old_crisis = data.get(CRISIS_ZONES_KEY, [])
-    
+
     # Check if content changed
     new_crisis_json = json.dumps(crisis_zones, sort_keys=True)
     old_crisis_json = json.dumps(old_crisis, sort_keys=True)
-    
+
     if new_crisis_json == old_crisis_json:
         print("No changes to crisis zones")
         return 0
-    
+
     if args.dry_run:
-        print(f"[dry-run] would update {len(crisis_zones)} crisis zones "
-              f"(differs from current {len(old_crisis)})")
+        print(
+            f"[dry-run] would update {len(crisis_zones)} crisis zones "
+            f"(differs from current {len(old_crisis)})"
+        )
         return 0
-    
+
     # Update and save
     data[CRISIS_ZONES_KEY] = crisis_zones
     if save_world_layers(data, out_file):
         print(f"Updated {(out_file or WORLD_LAYERS_FILE)} with {len(crisis_zones)} crisis zones")
         return 0
-    else:
-        print("Error saving world_layers.json")
-        return 1
+    print("Error saving world_layers.json")
+    return 1
 
 
 if __name__ == "__main__":

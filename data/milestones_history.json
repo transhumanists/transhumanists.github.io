@@ -10,7 +10,7 @@
     "url": "https://arxiv.org/abs/2609.38219",
     "date": "2026-10-02",
     "first_seen": "2026-10-02",
-    "last_seen": "2026-10-02",
+    "last_seen": "2026-10-04",
     "located": false,
     "location_confidence": "unlocated"
   },
@@ -25,9 +25,85 @@
     "url": "https://arxiv.org/abs/2609.38469",
     "date": "2026-10-02",
     "first_seen": "2026-10-02",
-    "last_seen": "2026-10-02",
+    "last_seen": "2026-10-04",
     "located": false,
     "location_confidence": "unlocated"
+  },
+  {
+    "id": "his-2026-10-01-lenovo-thinkcentre-x-ultra-chassis-volume",
+    "category": "Computing & AGI",
+    "subcategory": "chassis_volume",
+    "title": "Lenovo ThinkCentre X Ultra chassis volume",
+    "value": 1.6,
+    "unit": "L",
+    "source": "PCQuest",
+    "url": "https://www.pcquest.com/news-launches/amd-ryzen-ai-max-pro-400-brings-192gb-memory-to-local-ai-pcs-12593980",
+    "date": "2026-10-01",
+    "geolocation": {
+      "lat": 35.8232,
+      "lon": -78.8256
+    },
+    "location_confidence": "institution",
+    "summary": "1.6 L with up to 128 GB: 80 GB per litre, the densest of the Gorgon Halo announcements, and cluster-ready across four units.",
+    "first_seen": "2026-10-04",
+    "last_seen": "2026-10-04"
+  },
+  {
+    "id": "his-2026-10-01-lenovo-thinkcentre-x-ultra-unified-memory",
+    "category": "Computing & AGI",
+    "subcategory": "unified_memory",
+    "title": "Lenovo ThinkCentre X Ultra caps at 128 GB unified memory in a 1.6-litre chassis",
+    "value": 128,
+    "unit": "GB",
+    "source": "PCQuest",
+    "url": "https://www.pcquest.com/news-launches/amd-ryzen-ai-max-pro-400-brings-192gb-memory-to-local-ai-pcs-12593980",
+    "date": "2026-10-01",
+    "geolocation": {
+      "lat": 35.8232,
+      "lon": -78.8256
+    },
+    "location_confidence": "institution",
+    "summary": "The same 495 silicon in 1.6 L - 55 GB of unified memory per litre, the densest announcement of the cohort - but only up to 128 GB, and cluster-ready across four units. Proof that the 495 does not guarantee a 192 GB configuration.",
+    "first_seen": "2026-10-04",
+    "last_seen": "2026-10-04"
+  },
+  {
+    "id": "his-2026-10-01-hp-zbook-ultra-g3a-allocatable-vram",
+    "category": "Computing & AGI",
+    "subcategory": "allocatable_vram",
+    "title": "HP ZBook Ultra G3a graphics-allocatable unified memory",
+    "value": 160,
+    "unit": "GB",
+    "source": "PCQuest",
+    "url": "https://www.pcquest.com/news-launches/amd-ryzen-ai-max-pro-400-brings-192gb-memory-to-local-ai-pcs-12593980",
+    "date": "2026-10-01",
+    "geolocation": {
+      "lat": 37.4419,
+      "lon": -122.143
+    },
+    "location_confidence": "institution",
+    "summary": "AMD's 160 GB graphics-memory ceiling carries over to the mobile workstation configurations of the Max PRO 400 series.",
+    "first_seen": "2026-10-04",
+    "last_seen": "2026-10-04"
+  },
+  {
+    "id": "his-2026-10-01-hp-zbook-ultra-g3a-unified-memory",
+    "category": "Computing & AGI",
+    "subcategory": "unified_memory",
+    "title": "HP ZBook Ultra G3a brings 192 GB unified memory to a mobile workstation",
+    "value": 192,
+    "unit": "GB",
+    "source": "PCQuest",
+    "url": "https://www.pcquest.com/news-launches/amd-ryzen-ai-max-pro-400-brings-192gb-memory-to-local-ai-pcs-12593980",
+    "date": "2026-10-01",
+    "geolocation": {
+      "lat": 37.4419,
+      "lon": -122.143
+    },
+    "location_confidence": "institution",
+    "summary": "Ryzen AI Max PRO 400 series launch: HP takes the 495 to 192 GB (up to 160 GB as graphics memory, up to 8 TB NVMe) in a 16-inch mobile workstation.",
+    "first_seen": "2026-10-04",
+    "last_seen": "2026-10-04"
   },
   {
     "id": "ms-2a45f74dd818",
@@ -44,7 +120,45 @@
       "lon": 118.7969
     },
     "first_seen": "2026-10-01",
-    "last_seen": "2026-10-02"
+    "last_seen": "2026-10-04"
+  },
+  {
+    "id": "his-2026-09-30-framework-desktop-chassis-volume",
+    "category": "Computing & AGI",
+    "subcategory": "chassis_volume",
+    "title": "Framework Desktop chassis volume",
+    "value": 4.5,
+    "unit": "L",
+    "source": "Framework",
+    "url": "https://frame.work/desktop?slug=desktop-amd-aimax400&tab=specs",
+    "date": "2026-09-30",
+    "geolocation": {
+      "lat": 37.7749,
+      "lon": -122.4194
+    },
+    "location_confidence": "institution",
+    "summary": "The 4.5 L Mini-ITX mainboard reference: the same 192 GB silicon as the 2.9 L UniBox, with PCIe x4 slot and 5GbE, and a Noctua fan in the box.",
+    "first_seen": "2026-10-04",
+    "last_seen": "2026-10-04"
+  },
+  {
+    "id": "his-2026-09-30-framework-desktop-192gb-price-per-gb",
+    "category": "Computing & AGI",
+    "subcategory": "price_per_gb",
+    "title": "Framework Desktop 192 GB, price per GB",
+    "value": 35.41,
+    "unit": "USD/GB",
+    "source": "Framework",
+    "url": "https://frame.work/desktop?slug=desktop-amd-aimax400&tab=specs",
+    "date": "2026-09-30",
+    "geolocation": {
+      "lat": 37.7749,
+      "lon": -122.4194
+    },
+    "location_confidence": "institution",
+    "summary": "$6,799 DIY ($7,449 pre-built) for 192 GB of LPDDR5X-8533, one memory batch only, shipping November 2026. Framework expects memory pricing to keep rising for six months, which is the honest reason to buy now rather than wait.",
+    "first_seen": "2026-10-04",
+    "last_seen": "2026-10-04"
   },
   {
     "id": "ms-8644b2a34d60",
@@ -61,7 +175,7 @@
       "lon": 118.7969
     },
     "first_seen": "2026-09-29",
-    "last_seen": "2026-10-02"
+    "last_seen": "2026-10-04"
   },
   {
     "id": "ms-e0d7fb1f057f",
@@ -78,7 +192,7 @@
       "lon": 118.7969
     },
     "first_seen": "2026-09-29",
-    "last_seen": "2026-10-02"
+    "last_seen": "2026-10-04"
   },
   {
     "id": "ms-bc2c513b6177",
@@ -95,7 +209,7 @@
       "lon": 118.7969
     },
     "first_seen": "2026-09-30",
-    "last_seen": "2026-10-02"
+    "last_seen": "2026-10-04"
   },
   {
     "id": "ms-f725a993460b",
@@ -112,7 +226,7 @@
       "lon": 118.7969
     },
     "first_seen": "2026-10-02",
-    "last_seen": "2026-10-02"
+    "last_seen": "2026-10-04"
   },
   {
     "id": "ms-84669fafeb66",
@@ -129,7 +243,7 @@
       "lon": 34.7818
     },
     "first_seen": "2026-09-26",
-    "last_seen": "2026-10-02"
+    "last_seen": "2026-10-04"
   },
   {
     "id": "ms-76a6862f54e8",
@@ -146,7 +260,7 @@
       "lon": 118.7969
     },
     "first_seen": "2026-09-30",
-    "last_seen": "2026-10-02"
+    "last_seen": "2026-10-04"
   },
   {
     "id": "ms-f9883157aeba",
@@ -159,7 +273,7 @@
     "url": "https://www.quantamagazine.org/gravity-seems-holographic-what-does-that-mean-for-reality-20260925/",
     "date": "2026-09-25",
     "first_seen": "2026-09-26",
-    "last_seen": "2026-10-02",
+    "last_seen": "2026-10-04",
     "located": false,
     "location_confidence": "unlocated"
   },
@@ -174,7 +288,7 @@
     "url": "https://arxiv.org/abs/2609.28876",
     "date": "2026-09-25",
     "first_seen": "2026-09-25",
-    "last_seen": "2026-10-02",
+    "last_seen": "2026-10-04",
     "located": false,
     "location_confidence": "unlocated"
   },
@@ -189,7 +303,7 @@
     "url": "https://arxiv.org/abs/2609.25166",
     "date": "2026-09-23",
     "first_seen": "2026-09-23",
-    "last_seen": "2026-10-02",
+    "last_seen": "2026-10-04",
     "located": false,
     "location_confidence": "unlocated"
   },
@@ -208,7 +322,7 @@
       "lon": -71.2356
     },
     "first_seen": "2026-09-22",
-    "last_seen": "2026-10-02"
+    "last_seen": "2026-10-04"
   },
   {
     "id": "ms-2457b1872a8c",
@@ -225,7 +339,102 @@
       "lon": -106.3
     },
     "first_seen": "2026-09-26",
-    "last_seen": "2026-10-02"
+    "last_seen": "2026-10-04"
+  },
+  {
+    "id": "his-2026-09-17-minisforum-ms-s1-max-price-per-gb",
+    "category": "Computing & AGI",
+    "subcategory": "price_per_gb",
+    "title": "Minisforum MS-S1 Max 128 GB, price per GB",
+    "value": 29.68,
+    "unit": "USD/GB",
+    "source": "DataHardware",
+    "url": "https://datahardware.ai/blog/192gb-vs-128gb-unified-memory-local-llm-2026",
+    "date": "2026-09-17",
+    "geolocation": {
+      "lat": 22.5431,
+      "lon": 114.0579
+    },
+    "location_confidence": "institution",
+    "summary": "$3,799 for 128 GB. Its MS-S1 Max P495 sibling reached 192 GB with a placeholder price pointing at roughly double this.",
+    "first_seen": "2026-10-04",
+    "last_seen": "2026-10-04"
+  },
+  {
+    "id": "his-2026-09-17-hp-z2-mini-g1a-price-per-gb",
+    "category": "Computing & AGI",
+    "subcategory": "price_per_gb",
+    "title": "HP Z2 Mini G1a 128 GB, price per GB",
+    "value": 25.78,
+    "unit": "USD/GB",
+    "source": "DataHardware",
+    "url": "https://datahardware.ai/blog/192gb-vs-128gb-unified-memory-local-llm-2026",
+    "date": "2026-09-17",
+    "geolocation": {
+      "lat": 37.4419,
+      "lon": -122.143
+    },
+    "location_confidence": "institution",
+    "summary": "$3,300 at the low end of the 128 GB workstation range - the cheapest 128 GB entry in the September 2026 price survey.",
+    "first_seen": "2026-10-04",
+    "last_seen": "2026-10-04"
+  },
+  {
+    "id": "his-2026-09-17-gmktec-evo-x2-price-per-gb",
+    "category": "Computing & AGI",
+    "subcategory": "price_per_gb",
+    "title": "GMKtec EVO-X2 128 GB, price per GB",
+    "value": 28.51,
+    "unit": "USD/GB",
+    "source": "DataHardware",
+    "url": "https://datahardware.ai/blog/192gb-vs-128gb-unified-memory-local-llm-2026",
+    "date": "2026-09-17",
+    "geolocation": {
+      "lat": 22.5431,
+      "lon": 114.0579
+    },
+    "location_confidence": "institution",
+    "summary": "$3,649 for the 128 GB Strix Halo mini PC. Its ~215 GB/s of measured bandwidth is why a 70B model fits but decodes in single-digit tokens per second.",
+    "first_seen": "2026-10-04",
+    "last_seen": "2026-10-04"
+  },
+  {
+    "id": "his-2026-09-17-framework-desktop-128gb-price-per-gb",
+    "category": "Computing & AGI",
+    "subcategory": "price_per_gb",
+    "title": "Framework Desktop 128 GB, price per GB",
+    "value": 26.95,
+    "unit": "USD/GB",
+    "source": "DataHardware",
+    "url": "https://datahardware.ai/blog/192gb-vs-128gb-unified-memory-local-llm-2026",
+    "date": "2026-09-17",
+    "geolocation": {
+      "lat": 37.7749,
+      "lon": -122.4194
+    },
+    "location_confidence": "institution",
+    "summary": "$3,449 for the original 128 GB Ryzen AI Max+ 395 desktop, a step up from the $1,269 entry price the DIY mainboard launched at - memory cost inflation, not silicon.",
+    "first_seen": "2026-10-04",
+    "last_seen": "2026-10-04"
+  },
+  {
+    "id": "his-2026-09-17-beelink-gtr9-pro-price-per-gb",
+    "category": "Computing & AGI",
+    "subcategory": "price_per_gb",
+    "title": "Beelink GTR9 Pro 128 GB, price per GB",
+    "value": 33.98,
+    "unit": "USD/GB",
+    "source": "DataHardware",
+    "url": "https://datahardware.ai/blog/192gb-vs-128gb-unified-memory-local-llm-2026",
+    "date": "2026-09-17",
+    "geolocation": {
+      "lat": 22.5431,
+      "lon": 114.0579
+    },
+    "location_confidence": "institution",
+    "summary": "$4,349 for 128 GB: the expensive end of the same silicon, which is the spread a homelab buyer is choosing between.",
+    "first_seen": "2026-10-04",
+    "last_seen": "2026-10-04"
   },
   {
     "id": "ms-e5275443e851",
@@ -238,7 +447,7 @@
     "url": "https://www.nature.com/articles/s41587-026-03322-x",
     "date": "2026-09-15",
     "first_seen": "2026-09-22",
-    "last_seen": "2026-10-02",
+    "last_seen": "2026-10-04",
     "located": false,
     "location_confidence": "unlocated"
   },
@@ -257,7 +466,7 @@
       "lon": 118.7969
     },
     "first_seen": "2026-09-25",
-    "last_seen": "2026-10-02"
+    "last_seen": "2026-10-04"
   },
   {
     "id": "ms-a5c98baae9a8",
@@ -274,7 +483,7 @@
       "lon": -77.038
     },
     "first_seen": "2026-09-22",
-    "last_seen": "2026-10-02"
+    "last_seen": "2026-10-04"
   },
   {
     "id": "ms-0a279b32fda4",
@@ -291,7 +500,161 @@
       "lon": 118.7969
     },
     "first_seen": "2026-09-27",
-    "last_seen": "2026-10-02"
+    "last_seen": "2026-10-04"
+  },
+  {
+    "id": "his-2026-09-07-chuwi-unibox-ai495-pro-local-llm-params",
+    "category": "Computing & AGI",
+    "subcategory": "local_llm_params",
+    "title": "Largest local LLM claimed for the CHUWI UniBox AI495 Pro",
+    "value": 300,
+    "unit": "billion parameters",
+    "source": "PCCentral",
+    "url": "https://pccentral.net/chuwi-unibox-ai495-pro-192gb-ram-300b-llms/",
+    "date": "2026-09-07",
+    "geolocation": {
+      "lat": 22.5431,
+      "lon": 114.0579
+    },
+    "location_confidence": "institution",
+    "summary": "CHUWI states 131 TOPS overall AI compute (55 TOPS from the XDNA 2 NPU) lets the 192 GB box run 300B-parameter models locally at 4-bit. Still a vendor figure: no independent benchmark existed at announcement.",
+    "first_seen": "2026-10-04",
+    "last_seen": "2026-10-04",
+    "is_record": true
+  },
+  {
+    "id": "his-2026-09-07-chuwi-unibox-ai395-local-llm-params",
+    "category": "Computing & AGI",
+    "subcategory": "local_llm_params",
+    "title": "Largest local LLM claimed for the CHUWI UniBox AI395",
+    "value": 235,
+    "unit": "billion parameters",
+    "source": "iGeekphone",
+    "url": "https://www.igeekphone.com/chuwi-unibox-ai495-pro-unveiled-with-ryzen-ai-max-pro-495-and-192gb-memory/",
+    "date": "2026-09-07",
+    "geolocation": {
+      "lat": 22.5431,
+      "lon": 114.0579
+    },
+    "location_confidence": "institution",
+    "summary": "The 128 GB SKU is advertised against a 235B-parameter ceiling at 4-bit; a Qwen3 235B-A22B model needs roughly 118 GB of weights, which fits the 96 GB allocatable share only just.",
+    "first_seen": "2026-10-04",
+    "last_seen": "2026-10-04"
+  },
+  {
+    "id": "his-2026-09-07-chuwi-unibox-ai495-pro-memory-bandwidth",
+    "category": "Computing & AGI",
+    "subcategory": "memory_bandwidth",
+    "title": "CHUWI UniBox AI495 Pro unified memory bandwidth",
+    "value": 273,
+    "unit": "GB/s",
+    "source": "CHUWI",
+    "url": "https://store.chuwi.com/pages/unibox-ai495-pro",
+    "date": "2026-09-07",
+    "geolocation": {
+      "lat": 22.5431,
+      "lon": 114.0579
+    },
+    "location_confidence": "institution",
+    "summary": "192 GB of LPDDR5x-8533 on a 256-bit bus: 273 GB/s, about 7% above Strix Halo. The capacity went up 50% while the bandwidth barely moved, so a 192 GB box loads bigger models rather than decoding them faster.",
+    "first_seen": "2026-10-04",
+    "last_seen": "2026-10-04"
+  },
+  {
+    "id": "his-2026-09-07-chuwi-unibox-ai495-pro-unified-memory",
+    "category": "Computing & AGI",
+    "subcategory": "unified_memory",
+    "title": "CHUWI UniBox AI495 Pro puts 192 GB unified memory in a 2.9-litre chassis",
+    "value": 192,
+    "unit": "GB",
+    "source": "CHUWI",
+    "url": "https://store.chuwi.com/pages/unibox-ai495-pro",
+    "date": "2026-09-07",
+    "geolocation": {
+      "lat": 22.5431,
+      "lon": 114.0579
+    },
+    "location_confidence": "institution",
+    "summary": "Unveiled at IFA Berlin 2026: the Ryzen AI Max+ PRO 495 (Gorgon Halo) with up to 192 GB LPDDR5x-8533 on a 256-bit bus, 273 GB/s, of which up to 160 GB can be handed to the Radeon 8065S. At 2.9 L it is the smallest 192 GB desktop announced so far - Framework's 192 GB Desktop needs 4.5 L - and it carries OCuLink, dual 10GbE and three M.2 slots, which is the homelab feature set. Pricing not announced.",
+    "first_seen": "2026-10-04",
+    "last_seen": "2026-10-04",
+    "is_breakthrough": true
+  },
+  {
+    "id": "his-2026-09-07-chuwi-unibox-ai495-pro-allocatable-vram",
+    "category": "Computing & AGI",
+    "subcategory": "allocatable_vram",
+    "title": "CHUWI UniBox AI495 Pro graphics-allocatable unified memory",
+    "value": 160,
+    "unit": "GB",
+    "source": "PCCentral",
+    "url": "https://pccentral.net/chuwi-unibox-ai495-pro-192gb-ram-300b-llms/",
+    "date": "2026-09-07",
+    "geolocation": {
+      "lat": 22.5431,
+      "lon": 114.0579
+    },
+    "location_confidence": "institution",
+    "summary": "160 GB of the 192 GB pool allocatable as VRAM on the Radeon 8065S - four times the 32 GB a consumer discrete card carries.",
+    "first_seen": "2026-10-04",
+    "last_seen": "2026-10-04"
+  },
+  {
+    "id": "his-2026-09-07-chuwi-unibox-ai495-pro-chassis-volume",
+    "category": "Computing & AGI",
+    "subcategory": "chassis_volume",
+    "title": "CHUWI UniBox AI495 Pro chassis volume",
+    "value": 2.9,
+    "unit": "L",
+    "source": "Notebookcheck",
+    "url": "https://www.notebookcheck.net/Chuwi-launches-new-mini-PC-globally-with-OCuLink-10-GbE-Ethernet-and-192-GB-RAM.1391948.0.html",
+    "date": "2026-09-07",
+    "geolocation": {
+      "lat": 22.5431,
+      "lon": 114.0579
+    },
+    "location_confidence": "institution",
+    "summary": "209.6 x 209.6 x 67 mm on a 240 W adapter. 66 GB of unified memory per litre, and the smallest 192 GB desktop announced to date.",
+    "first_seen": "2026-10-04",
+    "last_seen": "2026-10-04"
+  },
+  {
+    "id": "his-2026-09-07-chuwi-unibox-ai395-unified-memory",
+    "category": "Computing & AGI",
+    "subcategory": "unified_memory",
+    "title": "CHUWI UniBox AI395 offers the same 2.9-litre chassis with 128 GB unified memory",
+    "value": 128,
+    "unit": "GB",
+    "source": "CHUWI",
+    "url": "https://store.chuwi.com/pages/unibox-ai495-pro",
+    "date": "2026-09-07",
+    "geolocation": {
+      "lat": 22.5431,
+      "lon": 114.0579
+    },
+    "location_confidence": "institution",
+    "summary": "The Strix Halo sibling of the AI495 Pro in an identical 2.9 L case: 128 GB LPDDR5x-8000 at 256 GB/s with up to 96 GB assignable as VRAM. The price differential between the two SKUs is what decides whether 192 GB is worth it.",
+    "first_seen": "2026-10-04",
+    "last_seen": "2026-10-04"
+  },
+  {
+    "id": "his-2026-09-07-chuwi-unibox-ai395-allocatable-vram",
+    "category": "Computing & AGI",
+    "subcategory": "allocatable_vram",
+    "title": "CHUWI UniBox AI395 graphics-allocatable unified memory",
+    "value": 96,
+    "unit": "GB",
+    "source": "iGeekphone",
+    "url": "https://www.igeekphone.com/chuwi-unibox-ai495-pro-unveiled-with-ryzen-ai-max-pro-495-and-192gb-memory/",
+    "date": "2026-09-07",
+    "geolocation": {
+      "lat": 22.5431,
+      "lon": 114.0579
+    },
+    "location_confidence": "institution",
+    "summary": "96 GB assignable on the 128 GB Strix Halo SKU - the practical gap between the 128 GB and 192 GB tiers is nearer 64 GB than the headline suggests.",
+    "first_seen": "2026-10-04",
+    "last_seen": "2026-10-04"
   },
   {
     "id": "ms-a5b1f04cd153",
@@ -304,7 +667,7 @@
     "url": "https://arxiv.org/abs/2609.38490",
     "date": "2026-09-01",
     "first_seen": "2026-10-02",
-    "last_seen": "2026-10-02",
+    "last_seen": "2026-10-04",
     "located": false,
     "location_confidence": "unlocated"
   },
@@ -323,7 +686,46 @@
       "lon": -71.1061
     },
     "first_seen": "2026-09-22",
-    "last_seen": "2026-10-02"
+    "last_seen": "2026-10-04"
+  },
+  {
+    "id": "his-2026-08-25-apple-m5-ultra-memory-bandwidth",
+    "category": "Computing & AGI",
+    "subcategory": "memory_bandwidth",
+    "title": "Apple M5 Ultra unified memory bandwidth",
+    "value": 1200,
+    "unit": "GB/s",
+    "source": "Apple",
+    "url": "https://www.apple.com/newsroom/2026/08/apple-introduces-new-mac-studio-with-m5-max-and-m5-ultra/",
+    "date": "2026-08-25",
+    "geolocation": {
+      "lat": 37.3327,
+      "lon": -122.0312
+    },
+    "location_confidence": "institution",
+    "summary": "Apple's first quad-die M-series SoC: 1.2 TB/s, 50% above M3 Ultra. Nothing else sold to a consumer is within 4x of it.",
+    "first_seen": "2026-10-04",
+    "last_seen": "2026-10-04",
+    "is_record": true
+  },
+  {
+    "id": "his-2026-08-25-apple-m5-ultra-unified-memory",
+    "category": "Computing & AGI",
+    "subcategory": "unified_memory",
+    "title": "Apple M5 Ultra holds the consumer unified-memory ceiling at 512 GB",
+    "value": 512,
+    "unit": "GB",
+    "source": "Apple",
+    "url": "https://www.apple.com/newsroom/2026/08/apple-introduces-new-mac-studio-with-m5-max-and-m5-ultra/",
+    "date": "2026-08-25",
+    "geolocation": {
+      "lat": 37.3327,
+      "lon": -122.0312
+    },
+    "location_confidence": "institution",
+    "summary": "Capacity is unchanged from M3 Ultra; the quad-die M5 Ultra raises bandwidth to 1.2 TB/s instead. Availability begins 22 September 2026, with the 512 GB configuration in late October.",
+    "first_seen": "2026-10-04",
+    "last_seen": "2026-10-04"
   },
   {
     "id": "cyber-001",
@@ -340,7 +742,7 @@
       "lon": -77.0364
     },
     "first_seen": "2026-09-22",
-    "last_seen": "2026-10-02"
+    "last_seen": "2026-10-04"
   },
   {
     "id": "space-001",
@@ -357,7 +759,7 @@
       "lon": -80.649
     },
     "first_seen": "2026-09-22",
-    "last_seen": "2026-10-02"
+    "last_seen": "2026-10-04"
   },
   {
     "id": "q-001",
@@ -374,7 +776,7 @@
       "lon": -73.5543
     },
     "first_seen": "2026-09-22",
-    "last_seen": "2026-10-02"
+    "last_seen": "2026-10-04"
   },
   {
     "id": "en-002",
@@ -391,7 +793,7 @@
       "lon": 139.6503
     },
     "first_seen": "2026-09-22",
-    "last_seen": "2026-10-02"
+    "last_seen": "2026-10-04"
   },
   {
     "id": "bio-002",
@@ -408,7 +810,7 @@
       "lon": -122.1519
     },
     "first_seen": "2026-09-22",
-    "last_seen": "2026-10-02"
+    "last_seen": "2026-10-04"
   },
   {
     "id": "en-001",
@@ -425,7 +827,7 @@
       "lon": -121.7045
     },
     "first_seen": "2026-09-22",
-    "last_seen": "2026-10-02"
+    "last_seen": "2026-10-04"
   },
   {
     "id": "en-005",
@@ -442,7 +844,7 @@
       "lon": 13.4725
     },
     "first_seen": "2026-09-22",
-    "last_seen": "2026-10-02"
+    "last_seen": "2026-10-04"
   },
   {
     "id": "ai-001",
@@ -459,7 +861,7 @@
       "lon": -122.4194
     },
     "first_seen": "2026-09-22",
-    "last_seen": "2026-10-02"
+    "last_seen": "2026-10-04"
   },
   {
     "id": "en-003",
@@ -476,7 +878,7 @@
       "lon": 13.683
     },
     "first_seen": "2026-09-22",
-    "last_seen": "2026-10-02"
+    "last_seen": "2026-10-04"
   },
   {
     "id": "q-002",
@@ -493,7 +895,7 @@
       "lon": -122.084
     },
     "first_seen": "2026-09-22",
-    "last_seen": "2026-10-02"
+    "last_seen": "2026-10-04"
   },
   {
     "id": "bio-003",
@@ -510,7 +912,7 @@
       "lon": -123.0764
     },
     "first_seen": "2026-09-22",
-    "last_seen": "2026-10-02"
+    "last_seen": "2026-10-04"
   },
   {
     "id": "cyber-002",
@@ -527,7 +929,7 @@
       "lon": -122.084
     },
     "first_seen": "2026-09-22",
-    "last_seen": "2026-10-02"
+    "last_seen": "2026-10-04"
   },
   {
     "id": "def-005",
@@ -544,7 +946,7 @@
       "lon": 4.3676
     },
     "first_seen": "2026-09-22",
-    "last_seen": "2026-10-02"
+    "last_seen": "2026-10-04"
   },
   {
     "id": "ai-002",
@@ -561,7 +963,7 @@
       "lon": -122.4194
     },
     "first_seen": "2026-09-22",
-    "last_seen": "2026-10-02"
+    "last_seen": "2026-10-04"
   },
   {
     "id": "q-003",
@@ -578,7 +980,7 @@
       "lon": -122.2727
     },
     "first_seen": "2026-09-22",
-    "last_seen": "2026-10-02"
+    "last_seen": "2026-10-04"
   },
   {
     "id": "space-003",
@@ -595,7 +997,7 @@
       "lon": -80.681
     },
     "first_seen": "2026-09-22",
-    "last_seen": "2026-10-02"
+    "last_seen": "2026-10-04"
   },
   {
     "id": "space-004",
@@ -612,7 +1014,7 @@
       "lon": -118.2437
     },
     "first_seen": "2026-09-22",
-    "last_seen": "2026-10-02"
+    "last_seen": "2026-10-04"
   },
   {
     "id": "ai-003",
@@ -629,7 +1031,7 @@
       "lon": -122.084
     },
     "first_seen": "2026-09-22",
-    "last_seen": "2026-10-02"
+    "last_seen": "2026-10-04"
   },
   {
     "id": "bio-009",
@@ -646,7 +1048,7 @@
       "lon": 121.4737
     },
     "first_seen": "2026-09-22",
-    "last_seen": "2026-10-02"
+    "last_seen": "2026-10-04"
   },
   {
     "id": "q-004",
@@ -663,7 +1065,7 @@
       "lon": -0.1278
     },
     "first_seen": "2026-09-22",
-    "last_seen": "2026-10-02"
+    "last_seen": "2026-10-04"
   },
   {
     "id": "ai-004",
@@ -680,7 +1082,7 @@
       "lon": -122.0363
     },
     "first_seen": "2026-09-22",
-    "last_seen": "2026-10-02"
+    "last_seen": "2026-10-04"
   },
   {
     "id": "en-004",
@@ -697,7 +1099,7 @@
       "lon": -122.0591
     },
     "first_seen": "2026-09-22",
-    "last_seen": "2026-10-02"
+    "last_seen": "2026-10-04"
   },
   {
     "id": "bio-010",
@@ -714,7 +1116,7 @@
       "lon": -117.234
     },
     "first_seen": "2026-09-22",
-    "last_seen": "2026-10-02"
+    "last_seen": "2026-10-04"
   },
   {
     "id": "ai-005",
@@ -731,7 +1133,7 @@
       "lon": -122.4194
     },
     "first_seen": "2026-09-22",
-    "last_seen": "2026-10-02"
+    "last_seen": "2026-10-04"
   },
   {
     "id": "bio-004",
@@ -748,7 +1150,7 @@
       "lon": -71.1061
     },
     "first_seen": "2026-09-22",
-    "last_seen": "2026-10-02"
+    "last_seen": "2026-10-04"
   },
   {
     "id": "space-002",
@@ -765,7 +1167,7 @@
       "lon": -80.649
     },
     "first_seen": "2026-09-22",
-    "last_seen": "2026-10-02"
+    "last_seen": "2026-10-04"
   },
   {
     "id": "q-005",
@@ -782,7 +1184,7 @@
       "lon": 4.3555
     },
     "first_seen": "2026-09-22",
-    "last_seen": "2026-10-02"
+    "last_seen": "2026-10-04"
   },
   {
     "id": "bio-007",
@@ -799,7 +1201,7 @@
       "lon": 13.7373
     },
     "first_seen": "2026-09-22",
-    "last_seen": "2026-10-02"
+    "last_seen": "2026-10-04"
   },
   {
     "id": "def-001",
@@ -816,7 +1218,7 @@
       "lon": -77.0364
     },
     "first_seen": "2026-09-22",
-    "last_seen": "2026-10-02"
+    "last_seen": "2026-10-04"
   },
   {
     "id": "ms-cede87aeb630",
@@ -833,7 +1235,7 @@
       "lon": 116.4074
     },
     "first_seen": "2026-09-27",
-    "last_seen": "2026-10-02"
+    "last_seen": "2026-10-04"
   },
   {
     "id": "ms-fc6083e0cc69",
@@ -850,7 +1252,7 @@
       "lon": -118.1253
     },
     "first_seen": "2026-09-27",
-    "last_seen": "2026-10-02"
+    "last_seen": "2026-10-04"
   },
   {
     "id": "ms-46a7d8543058",
@@ -863,7 +1265,7 @@
     "url": "http://arxiv.org/abs/2607.00269v3",
     "date": "2026-06-30",
     "first_seen": "2026-09-27",
-    "last_seen": "2026-10-02",
+    "last_seen": "2026-10-04",
     "located": false,
     "location_confidence": "unlocated"
   },
@@ -878,7 +1280,7 @@
     "url": "http://arxiv.org/abs/2607.00185v1",
     "date": "2026-06-30",
     "first_seen": "2026-09-29",
-    "last_seen": "2026-10-02",
+    "last_seen": "2026-10-04",
     "located": false,
     "location_confidence": "unlocated"
   },
@@ -908,7 +1310,7 @@
     "url": "http://arxiv.org/abs/2608.20391v1",
     "date": "2026-06-30",
     "first_seen": "2026-09-30",
-    "last_seen": "2026-10-02",
+    "last_seen": "2026-10-04",
     "located": false,
     "location_confidence": "unlocated"
   },
@@ -923,7 +1325,7 @@
     "url": "http://arxiv.org/abs/2607.00266v1",
     "date": "2026-06-30",
     "first_seen": "2026-09-27",
-    "last_seen": "2026-10-02",
+    "last_seen": "2026-10-04",
     "located": false,
     "location_confidence": "unlocated"
   },
@@ -938,7 +1340,7 @@
     "url": "http://arxiv.org/abs/2608.20392v1",
     "date": "2026-06-30",
     "first_seen": "2026-09-29",
-    "last_seen": "2026-10-02",
+    "last_seen": "2026-10-04",
     "located": false,
     "location_confidence": "unlocated"
   },
@@ -953,7 +1355,7 @@
     "url": "http://arxiv.org/abs/2607.00218v1",
     "date": "2026-06-30",
     "first_seen": "2026-09-27",
-    "last_seen": "2026-10-02",
+    "last_seen": "2026-10-04",
     "located": false,
     "location_confidence": "unlocated"
   },
@@ -968,7 +1370,7 @@
     "url": "http://arxiv.org/abs/2607.00272v1",
     "date": "2026-06-30",
     "first_seen": "2026-09-30",
-    "last_seen": "2026-10-02",
+    "last_seen": "2026-10-04",
     "located": false,
     "location_confidence": "unlocated"
   },
@@ -987,7 +1389,7 @@
       "lon": 37.6173
     },
     "first_seen": "2026-09-22",
-    "last_seen": "2026-10-02"
+    "last_seen": "2026-10-04"
   },
   {
     "id": "bio-008",
@@ -1004,7 +1406,7 @@
       "lon": -75.1652
     },
     "first_seen": "2026-09-22",
-    "last_seen": "2026-10-02"
+    "last_seen": "2026-10-04"
   },
   {
     "id": "cyber-003",
@@ -1021,7 +1423,7 @@
       "lon": -77.0364
     },
     "first_seen": "2026-09-22",
-    "last_seen": "2026-10-02"
+    "last_seen": "2026-10-04"
   },
   {
     "id": "bio-005",
@@ -1038,7 +1440,7 @@
       "lon": -117.1611
     },
     "first_seen": "2026-09-22",
-    "last_seen": "2026-10-02"
+    "last_seen": "2026-10-04"
   },
   {
     "id": "bio-006",
@@ -1055,7 +1457,7 @@
       "lon": 8.5417
     },
     "first_seen": "2026-09-22",
-    "last_seen": "2026-10-02"
+    "last_seen": "2026-10-04"
   },
   {
     "id": "def-003",
@@ -1072,7 +1474,7 @@
       "lon": -76.2995
     },
     "first_seen": "2026-09-22",
-    "last_seen": "2026-10-02"
+    "last_seen": "2026-10-04"
   },
   {
     "id": "def-004",
@@ -1089,7 +1491,7 @@
       "lon": 34.7818
     },
     "first_seen": "2026-09-22",
-    "last_seen": "2026-10-02"
+    "last_seen": "2026-10-04"
   },
   {
     "id": "ms-6a684b1bc5a3",
@@ -1106,7 +1508,315 @@
       "lon": 14.4
     },
     "first_seen": "2026-09-30",
-    "last_seen": "2026-10-02"
+    "last_seen": "2026-10-04"
+  },
+  {
+    "id": "his-2025-10-15-nvidia-dgx-spark-memory-bandwidth",
+    "category": "Computing & AGI",
+    "subcategory": "memory_bandwidth",
+    "title": "NVIDIA DGX Spark unified memory bandwidth",
+    "value": 273,
+    "unit": "GB/s",
+    "source": "NVIDIA",
+    "url": "https://www.nvidia.com/en-us/products/workstations/dgx-spark/",
+    "date": "2025-10-15",
+    "geolocation": {
+      "lat": 37.337,
+      "lon": -121.964
+    },
+    "location_confidence": "institution",
+    "summary": "273 GB/s on coherent CPU-GPU memory. Enough to load a 70B model at 8-bit, not enough to decode it quickly - the LPDDR5X tax versus dedicated HBM.",
+    "first_seen": "2026-10-04",
+    "last_seen": "2026-10-04"
+  },
+  {
+    "id": "his-2025-10-15-nvidia-dgx-spark-unified-memory",
+    "category": "Computing & AGI",
+    "subcategory": "unified_memory",
+    "title": "NVIDIA DGX Spark ships with 128 GB of coherent CPU-GPU unified memory",
+    "value": 128,
+    "unit": "GB",
+    "source": "NVIDIA",
+    "url": "https://www.nvidia.com/en-us/products/workstations/dgx-spark/",
+    "date": "2025-10-15",
+    "geolocation": {
+      "lat": 37.337,
+      "lon": -121.964
+    },
+    "location_confidence": "institution",
+    "summary": "Grace Blackwell GB10 with 128 GB LPDDR5X that both the CPU and the GPU address, at 273 GB/s in a 1.14 L, 240 W box. Inference up to 200B parameters; fine-tuning up to 70B.",
+    "first_seen": "2026-10-04",
+    "last_seen": "2026-10-04"
+  },
+  {
+    "id": "his-2025-10-15-nvidia-dgx-spark-chassis-volume",
+    "category": "Computing & AGI",
+    "subcategory": "chassis_volume",
+    "title": "NVIDIA DGX Spark chassis volume",
+    "value": 1.14,
+    "unit": "L",
+    "source": "NVIDIA",
+    "url": "https://www.nvidia.com/en-us/products/workstations/dgx-spark/",
+    "date": "2025-10-15",
+    "geolocation": {
+      "lat": 37.337,
+      "lon": -121.964
+    },
+    "location_confidence": "institution",
+    "summary": "150 x 150 x 50.5 mm at 240 W. Smaller than the mini PCs it outperforms on memory capacity, and it needs no assembly.",
+    "first_seen": "2026-10-04",
+    "last_seen": "2026-10-04"
+  },
+  {
+    "id": "his-2025-10-15-nvidia-dgx-spark-price-per-gb",
+    "category": "Computing & AGI",
+    "subcategory": "price_per_gb",
+    "title": "NVIDIA DGX Spark 128 GB, price per GB",
+    "value": 31.24,
+    "unit": "USD/GB",
+    "source": "StorageReview",
+    "url": "https://www.storagereview.com/review/nvidia-dgx-spark-review-the-ai-appliance-bringing-datacenter-capabilities-to-desktops",
+    "date": "2025-10-15",
+    "geolocation": {
+      "lat": 37.337,
+      "lon": -121.964
+    },
+    "location_confidence": "institution",
+    "summary": "$3,999 for 128 GB with 4 TB, up from the $3,000 NVIDIA promised in January 2025. You are buying the CUDA stack and the 200 Gb/s fabric as much as the memory.",
+    "first_seen": "2026-10-04",
+    "last_seen": "2026-10-04"
+  },
+  {
+    "id": "his-2025-10-15-nvidia-dgx-spark-local-llm-params",
+    "category": "Computing & AGI",
+    "subcategory": "local_llm_params",
+    "title": "Largest local LLM NVIDIA claims for DGX Spark",
+    "value": 200,
+    "unit": "billion parameters",
+    "source": "NVIDIA",
+    "url": "https://www.nvidia.com/en-us/products/workstations/dgx-spark/",
+    "date": "2025-10-15",
+    "geolocation": {
+      "lat": 37.337,
+      "lon": -121.964
+    },
+    "location_confidence": "institution",
+    "summary": "Inference on models up to 200B parameters, full fine-tuning up to 70B. Two units linked over the 200 Gb/s ConnectX-7 fabric extend that to roughly 400B.",
+    "first_seen": "2026-10-04",
+    "last_seen": "2026-10-04"
+  },
+  {
+    "id": "his-2025-06-03-amd-ryzen-ai-max-395-memory-bandwidth",
+    "category": "Computing & AGI",
+    "subcategory": "memory_bandwidth",
+    "title": "AMD Ryzen AI Max+ 395 unified memory bandwidth",
+    "value": 256,
+    "unit": "GB/s",
+    "source": "AMD",
+    "url": "https://www.amd.com/en/developer/resources/technical-articles/2025/amd-ryzen-ai-max-395--a-leap-forward-in-generative-ai-performanc.html",
+    "date": "2025-06-03",
+    "geolocation": {
+      "lat": 37.3541,
+      "lon": -121.9552
+    },
+    "location_confidence": "institution",
+    "summary": "256 GB/s theoretical on 256-bit LPDDR5X-8000; real-world throughput measures at roughly 80-85% of that. The ceiling for every Strix Halo and Gorgon Halo box.",
+    "first_seen": "2026-10-04",
+    "last_seen": "2026-10-04"
+  },
+  {
+    "id": "his-2025-06-03-amd-ryzen-ai-max-395-allocatable-vram",
+    "category": "Computing & AGI",
+    "subcategory": "allocatable_vram",
+    "title": "AMD Ryzen AI Max+ 395 graphics-allocatable unified memory",
+    "value": 112,
+    "unit": "GB",
+    "source": "AMD",
+    "url": "https://www.amd.com/en/developer/resources/technical-articles/2025/amd-ryzen-ai-max-395--a-leap-forward-in-generative-ai-performanc.html",
+    "date": "2025-06-03",
+    "geolocation": {
+      "lat": 37.3541,
+      "lon": -121.9552
+    },
+    "location_confidence": "institution",
+    "summary": "Up to 112 GB of the 128 GB pool can be assigned to the Radeon 8060S. Board partners more often quote the 96 GB figure they enable by default, which is the number that decides whether a 235B model fits.",
+    "first_seen": "2026-10-04",
+    "last_seen": "2026-10-04"
+  },
+  {
+    "id": "his-2025-06-03-amd-ryzen-ai-max-395-unified-memory",
+    "category": "Computing & AGI",
+    "subcategory": "unified_memory",
+    "title": "AMD Ryzen AI Max+ 395 (Strix Halo) brings 128 GB unified memory to x86 desktops",
+    "value": 128,
+    "unit": "GB",
+    "source": "AMD",
+    "url": "https://www.amd.com/en/developer/resources/technical-articles/2025/amd-ryzen-ai-max-395--a-leap-forward-in-generative-ai-performanc.html",
+    "date": "2025-06-03",
+    "geolocation": {
+      "lat": 37.3541,
+      "lon": -121.9552
+    },
+    "location_confidence": "institution",
+    "summary": "The first x86 part with a 128 GB shared pool and up to 112 GB assignable to the Radeon 8060S iGPU, at 256 GB/s. Sold as a board and as mini PCs from spring 2025, which is what put 128 GB unified memory on the homelab market.",
+    "first_seen": "2026-10-04",
+    "last_seen": "2026-10-04"
+  },
+  {
+    "id": "his-2025-03-05-apple-m3-ultra-price-per-gb",
+    "category": "Computing & AGI",
+    "subcategory": "price_per_gb",
+    "title": "Mac Studio M3 Ultra with 512 GB unified memory, price per GB",
+    "value": 18.55,
+    "unit": "USD/GB",
+    "source": "MacRumors",
+    "url": "https://www.macrumors.com/2025/03/05/maxed-out-m3-ultra-mac-studio-14099/",
+    "date": "2025-03-05",
+    "geolocation": {
+      "lat": 37.3327,
+      "lon": -122.0312
+    },
+    "location_confidence": "institution",
+    "summary": "$9,499 for 512 GB with the 32-core CPU / 80-core GPU: +$1,500 for the chip, +$4,000 for the memory. Capacity made cheap, bandwidth not.",
+    "first_seen": "2026-10-04",
+    "last_seen": "2026-10-04"
+  },
+  {
+    "id": "his-2025-03-05-apple-m3-ultra-local-llm-params",
+    "category": "Computing & AGI",
+    "subcategory": "local_llm_params",
+    "title": "Largest local LLM Apple claims for M3 Ultra memory capacity",
+    "value": 600,
+    "unit": "billion parameters",
+    "source": "The Register",
+    "url": "https://www.theregister.com/on-prem/2025/03/05/apple-m3-ultra-mac-studio-arrives-with-32-cpu-80-gpu-cores/545537",
+    "date": "2025-03-05",
+    "geolocation": {
+      "lat": 37.3327,
+      "lon": -122.0312
+    },
+    "location_confidence": "institution",
+    "summary": "Apple positions the 512 GB Mac Studio as able to host LLMs with over 600 billion parameters. A vendor ceiling, not a measured tokens-per-second figure.",
+    "first_seen": "2026-10-04",
+    "last_seen": "2026-10-04",
+    "is_record": true
+  },
+  {
+    "id": "his-2025-03-05-apple-m3-ultra-memory-bandwidth",
+    "category": "Computing & AGI",
+    "subcategory": "memory_bandwidth",
+    "title": "Apple M3 Ultra unified memory bandwidth",
+    "value": 819.3,
+    "unit": "GB/s",
+    "source": "Wikipedia",
+    "url": "https://en.wikipedia.org/wiki/Apple_M3",
+    "date": "2025-03-05",
+    "geolocation": {
+      "lat": 37.3327,
+      "lon": -122.0312
+    },
+    "location_confidence": "institution",
+    "summary": "UltraFusion-fused dual die at 819.3 GB/s, and the reason a 512 GB Mac Studio decodes a 70B model in single-digit rather than crawl speeds.",
+    "first_seen": "2026-10-04",
+    "last_seen": "2026-10-04",
+    "is_record": true
+  },
+  {
+    "id": "his-2025-03-05-apple-m3-ultra-unified-memory",
+    "category": "Computing & AGI",
+    "subcategory": "unified_memory",
+    "title": "Apple M3 Ultra takes consumer unified memory to 512 GB",
+    "value": 512,
+    "unit": "GB",
+    "source": "Apple",
+    "url": "https://www.apple.com/newsroom/2025/03/apple-reveals-m3-ultra-taking-apple-silicon-to-a-new-extreme/",
+    "date": "2025-03-05",
+    "geolocation": {
+      "lat": 37.3327,
+      "lon": -122.0312
+    },
+    "location_confidence": "institution",
+    "summary": "Over half a terabyte of shared memory on a desktop, at 819.3 GB/s. Apple says it covers LLMs above 600 billion parameters. The high-water mark every PC-side unified-memory box is measured against.",
+    "first_seen": "2026-10-04",
+    "last_seen": "2026-10-04",
+    "is_record": true,
+    "is_breakthrough": true
+  },
+  {
+    "id": "his-2024-10-28-apple-m4-pro-mini-price-per-gb",
+    "category": "Computing & AGI",
+    "subcategory": "price_per_gb",
+    "title": "Mac mini M4 Pro with 64 GB unified memory, price per GB",
+    "value": 28.11,
+    "unit": "USD/GB",
+    "source": "CanItRun",
+    "url": "https://canitrun.net/hardware/macs/mac-mini-m4-pro-64gb",
+    "date": "2024-10-28",
+    "geolocation": {
+      "lat": 37.3327,
+      "lon": -122.0312
+    },
+    "location_confidence": "institution",
+    "summary": "$1,799 for the 64 GB M4 Pro Mac mini, which is the cheapest way to buy 64 GB of unified memory with 273 GB/s behind it.",
+    "first_seen": "2026-10-04",
+    "last_seen": "2026-10-04"
+  },
+  {
+    "id": "his-2024-10-28-apple-m4-pro-mini-chassis-volume",
+    "category": "Computing & AGI",
+    "subcategory": "chassis_volume",
+    "title": "Mac mini M4 Pro chassis volume",
+    "value": 0.81,
+    "unit": "L",
+    "source": "Apple",
+    "url": "https://support.apple.com/en-us/121555",
+    "date": "2024-10-28",
+    "geolocation": {
+      "lat": 37.3327,
+      "lon": -122.0312
+    },
+    "location_confidence": "institution",
+    "summary": "12.7 x 12.7 x 5.0 cm. The reference point for 'how small can a 64 GB unified-memory machine be' - and it fits on a shelf.",
+    "first_seen": "2026-10-04",
+    "last_seen": "2026-10-04"
+  },
+  {
+    "id": "his-2024-10-28-apple-m4-pro-memory-bandwidth",
+    "category": "Computing & AGI",
+    "subcategory": "memory_bandwidth",
+    "title": "Apple M4 Pro unified memory bandwidth",
+    "value": 273,
+    "unit": "GB/s",
+    "source": "Apple",
+    "url": "https://support.apple.com/en-us/121555",
+    "date": "2024-10-28",
+    "geolocation": {
+      "lat": 37.3327,
+      "lon": -122.0312
+    },
+    "location_confidence": "institution",
+    "summary": "The bandwidth to watch in the mini PC class: identical to the 273 GB/s in DGX Spark and the Gorgon Halo boxes, at a quarter of the price.",
+    "first_seen": "2026-10-04",
+    "last_seen": "2026-10-04"
+  },
+  {
+    "id": "his-2024-10-28-apple-m4-pro-unified-memory",
+    "category": "Computing & AGI",
+    "subcategory": "unified_memory",
+    "title": "Apple M4 Pro Mac mini fits 64 GB unified memory into a 0.8-litre cube",
+    "value": 64,
+    "unit": "GB",
+    "source": "Apple",
+    "url": "https://support.apple.com/en-us/121555",
+    "date": "2024-10-28",
+    "geolocation": {
+      "lat": 37.3327,
+      "lon": -122.0312
+    },
+    "location_confidence": "institution",
+    "summary": "64 GB at 273 GB/s in 0.81 L - the cheapest way to buy a 64 GB unified pool at launch, and still the reference point for a single quiet homelab inference node.",
+    "first_seen": "2026-10-04",
+    "last_seen": "2026-10-04"
   },
   {
     "id": "his-2023-12-04-ibm-condor",
@@ -1123,7 +1833,7 @@
       "lon": -73.8532
     },
     "first_seen": "2026-09-30",
-    "last_seen": "2026-10-02"
+    "last_seen": "2026-10-04"
   },
   {
     "id": "his-2023-10-12-vesuvius-challenge",
@@ -1140,7 +1850,66 @@
       "lon": 14.2681
     },
     "first_seen": "2026-09-30",
-    "last_seen": "2026-10-02"
+    "last_seen": "2026-10-04"
+  },
+  {
+    "id": "his-2023-06-05-apple-m2-ultra-price-per-gb",
+    "category": "Computing & AGI",
+    "subcategory": "price_per_gb",
+    "title": "Mac Studio M2 Ultra with 192 GB unified memory, price per GB",
+    "value": 29.16,
+    "unit": "USD/GB",
+    "source": "AppleToolbox",
+    "url": "https://appletoolbox.com/2023-mac-studio-everything-you-need-to-know/",
+    "date": "2023-06-05",
+    "geolocation": {
+      "lat": 37.3327,
+      "lon": -122.0312
+    },
+    "location_confidence": "institution",
+    "summary": "$5,599 for the 24-core/60-GPU Mac Studio with 192 GB and 1 TB. The first 192 GB machine, and for two years the only one.",
+    "first_seen": "2026-10-04",
+    "last_seen": "2026-10-04"
+  },
+  {
+    "id": "his-2023-06-05-apple-m2-ultra-memory-bandwidth",
+    "category": "Computing & AGI",
+    "subcategory": "memory_bandwidth",
+    "title": "Apple M2 Ultra unified memory bandwidth",
+    "value": 800,
+    "unit": "GB/s",
+    "source": "Wikipedia",
+    "url": "https://en.wikipedia.org/wiki/Apple_M2",
+    "date": "2023-06-05",
+    "geolocation": {
+      "lat": 37.3327,
+      "lon": -122.0312
+    },
+    "location_confidence": "institution",
+    "summary": "800 GB/s across a 512-bit bus. Still roughly 3x any x86 unified-memory box.",
+    "first_seen": "2026-10-04",
+    "last_seen": "2026-10-04",
+    "is_record": true
+  },
+  {
+    "id": "his-2023-06-05-apple-m2-ultra-unified-memory",
+    "category": "Computing & AGI",
+    "subcategory": "unified_memory",
+    "title": "Apple M2 Ultra ships 192 GB unified memory",
+    "value": 192,
+    "unit": "GB",
+    "source": "Wikipedia",
+    "url": "https://en.wikipedia.org/wiki/Apple_M2",
+    "date": "2023-06-05",
+    "geolocation": {
+      "lat": 37.3327,
+      "lon": -122.0312
+    },
+    "location_confidence": "institution",
+    "summary": "First 192 GB consumer machine, and still the capacity Apple sells in 2026 for a workstation. Bandwidth 800 GB/s; the 192 GB tier is what the PC-side boxes now chase.",
+    "first_seen": "2026-10-04",
+    "last_seen": "2026-10-04",
+    "is_record": true
   },
   {
     "id": "his-2023-03-14-gpt4",
@@ -1157,7 +1926,7 @@
       "lon": -122.4194
     },
     "first_seen": "2026-09-30",
-    "last_seen": "2026-10-02"
+    "last_seen": "2026-10-04"
   },
   {
     "id": "his-2022-12-05-nif-ignition",
@@ -1174,7 +1943,7 @@
       "lon": -121.7045
     },
     "first_seen": "2026-09-29",
-    "last_seen": "2026-10-02"
+    "last_seen": "2026-10-04"
   },
   {
     "id": "his-2022-11-30-chatgpt",
@@ -1191,7 +1960,7 @@
       "lon": -122.4194
     },
     "first_seen": "2026-09-29",
-    "last_seen": "2026-10-02"
+    "last_seen": "2026-10-04"
   },
   {
     "id": "his-2021-12-25-jwst",
@@ -1208,7 +1977,7 @@
       "lon": -52.7608
     },
     "first_seen": "2026-09-29",
-    "last_seen": "2026-10-02"
+    "last_seen": "2026-10-04"
   },
   {
     "id": "his-2021-11-16-ibm-eagle",
@@ -1225,7 +1994,47 @@
       "lon": -73.8532
     },
     "first_seen": "2026-09-29",
-    "last_seen": "2026-10-02"
+    "last_seen": "2026-10-04"
+  },
+  {
+    "id": "his-2021-10-18-apple-m1-max-memory-bandwidth",
+    "category": "Computing & AGI",
+    "subcategory": "memory_bandwidth",
+    "title": "Apple M1 Max unified memory bandwidth",
+    "value": 400,
+    "unit": "GB/s",
+    "source": "Wikipedia",
+    "url": "https://en.wikipedia.org/wiki/Apple_M1",
+    "date": "2021-10-18",
+    "geolocation": {
+      "lat": 37.3327,
+      "lon": -122.0312
+    },
+    "location_confidence": "institution",
+    "summary": "A 5.9x bandwidth step over M1 at 4x the capacity, which is why an M1 Max Mac has been the reference local-LLM machine for years.",
+    "first_seen": "2026-10-04",
+    "last_seen": "2026-10-04",
+    "is_record": true
+  },
+  {
+    "id": "his-2021-10-18-apple-m1-max-unified-memory",
+    "category": "Computing & AGI",
+    "subcategory": "unified_memory",
+    "title": "Apple M1 Max raises consumer unified memory to 64 GB",
+    "value": 64,
+    "unit": "GB",
+    "source": "Wikipedia",
+    "url": "https://en.wikipedia.org/wiki/Apple_M1",
+    "date": "2021-10-18",
+    "geolocation": {
+      "lat": 37.3327,
+      "lon": -122.0312
+    },
+    "location_confidence": "institution",
+    "summary": "The first consumer machine whose shared memory pool could hold a 70B-class model at 4-bit, at 400 GB/s. Unchanged as the ceiling until 2023.",
+    "first_seen": "2026-10-04",
+    "last_seen": "2026-10-04",
+    "is_record": true
   },
   {
     "id": "his-2020-12-13-solarwinds",
@@ -1242,7 +2051,7 @@
       "lon": -97.7431
     },
     "first_seen": "2026-09-29",
-    "last_seen": "2026-10-02"
+    "last_seen": "2026-10-04"
   },
   {
     "id": "his-2020-12-11-mrna-vaccine",
@@ -1259,7 +2068,47 @@
       "lon": -73.9626
     },
     "first_seen": "2026-09-29",
-    "last_seen": "2026-10-02"
+    "last_seen": "2026-10-04"
+  },
+  {
+    "id": "his-2020-11-10-apple-m1-memory-bandwidth",
+    "category": "Computing & AGI",
+    "subcategory": "memory_bandwidth",
+    "title": "Apple M1 unified memory bandwidth",
+    "value": 68.25,
+    "unit": "GB/s",
+    "source": "Wikipedia",
+    "url": "https://en.wikipedia.org/wiki/Apple_M1",
+    "date": "2020-11-10",
+    "geolocation": {
+      "lat": 37.3327,
+      "lon": -122.0312
+    },
+    "location_confidence": "institution",
+    "summary": "Bandwidth, not capacity, is what sets tokens per second for local inference. The M1's 68.25 GB/s is the floor the metric starts from.",
+    "first_seen": "2026-10-04",
+    "last_seen": "2026-10-04",
+    "is_record": true
+  },
+  {
+    "id": "his-2020-11-10-apple-m1-unified-memory",
+    "category": "Computing & AGI",
+    "subcategory": "unified_memory",
+    "title": "Apple M1 makes unified memory standard on consumer Macs with a 16 GB ceiling",
+    "value": 16,
+    "unit": "GB",
+    "source": "Wikipedia",
+    "url": "https://en.wikipedia.org/wiki/Apple_M1",
+    "date": "2020-11-10",
+    "geolocation": {
+      "lat": 37.3327,
+      "lon": -122.0312
+    },
+    "location_confidence": "institution",
+    "summary": "First Apple silicon Mac: CPU and GPU address one LPDDR5 pool of up to 16 GB at 68.25 GB/s. The baseline for every consumer unified-memory box that followed.",
+    "first_seen": "2026-10-04",
+    "last_seen": "2026-10-04",
+    "is_record": true
   },
   {
     "id": "his-2020-06-11-gpt3",
@@ -1276,7 +2125,7 @@
       "lon": -122.4194
     },
     "first_seen": "2026-09-29",
-    "last_seen": "2026-10-02"
+    "last_seen": "2026-10-04"
   },
   {
     "id": "his-2019-10-23-quantum-supremacy",
@@ -1293,7 +2142,7 @@
       "lon": -119.695
     },
     "first_seen": "2026-09-29",
-    "last_seen": "2026-10-02"
+    "last_seen": "2026-10-04"
   },
   {
     "id": "his-2017-06-12-transformer",
@@ -1310,7 +2159,7 @@
       "lon": -79.3832
     },
     "first_seen": "2026-09-29",
-    "last_seen": "2026-10-02"
+    "last_seen": "2026-10-04"
   },
   {
     "id": "his-2016-03-15-alphago",
@@ -1327,7 +2176,7 @@
       "lon": 126.978
     },
     "first_seen": "2026-09-29",
-    "last_seen": "2026-10-02"
+    "last_seen": "2026-10-04"
   },
   {
     "id": "his-2015-12-21-falcon9-landing",
@@ -1344,7 +2193,7 @@
       "lon": -80.5774
     },
     "first_seen": "2026-09-29",
-    "last_seen": "2026-10-02"
+    "last_seen": "2026-10-04"
   },
   {
     "id": "his-2014-04-07-heartbleed",
@@ -1361,7 +2210,7 @@
       "lon": 8.5417
     },
     "first_seen": "2026-09-29",
-    "last_seen": "2026-10-02"
+    "last_seen": "2026-10-04"
   },
   {
     "id": "his-2012-09-30-alexnet",
@@ -1378,7 +2227,7 @@
       "lon": -79.3832
     },
     "first_seen": "2026-09-29",
-    "last_seen": "2026-10-02"
+    "last_seen": "2026-10-04"
   },
   {
     "id": "his-2012-06-28-crispr",
@@ -1395,7 +2244,7 @@
       "lon": -122.2585
     },
     "first_seen": "2026-09-29",
-    "last_seen": "2026-10-02"
+    "last_seen": "2026-10-04"
   },
   {
     "id": "his-2012-05-25-dragon-iss",
@@ -1412,7 +2261,7 @@
       "lon": -118.3279
     },
     "first_seen": "2026-09-29",
-    "last_seen": "2026-10-02"
+    "last_seen": "2026-10-04"
   },
   {
     "id": "his-2011-04-05-iron-dome",
@@ -1429,7 +2278,7 @@
       "lon": 34.7818
     },
     "first_seen": "2026-09-29",
-    "last_seen": "2026-10-02"
+    "last_seen": "2026-10-04"
   },
   {
     "id": "his-2010-06-17-stuxnet",
@@ -1446,7 +2295,7 @@
       "lon": 51.9163
     },
     "first_seen": "2026-09-29",
-    "last_seen": "2026-10-02"
+    "last_seen": "2026-10-04"
   },
   {
     "id": "his-2007-04-27-estonia-cyber",
@@ -1463,7 +2312,7 @@
       "lon": 24.7536
     },
     "first_seen": "2026-09-29",
-    "last_seen": "2026-10-02"
+    "last_seen": "2026-10-04"
   },
   {
     "id": "his-2003-04-14-human-genome",
@@ -1480,7 +2329,7 @@
       "lon": -77.0947
     },
     "first_seen": "2026-09-29",
-    "last_seen": "2026-10-02"
+    "last_seen": "2026-10-04"
   },
   {
     "id": "his-1997-12-01-ads-cft",
@@ -1497,7 +2346,7 @@
       "lon": -74.6564
     },
     "first_seen": "2026-09-29",
-    "last_seen": "2026-10-02"
+    "last_seen": "2026-10-04"
   },
   {
     "id": "his-1997-05-11-deep-blue",
@@ -1514,7 +2363,7 @@
       "lon": -73.9683
     },
     "first_seen": "2026-09-28",
-    "last_seen": "2026-10-02"
+    "last_seen": "2026-10-04"
   },
   {
     "id": "his-1996-07-05-dolly",
@@ -1531,7 +2380,7 @@
       "lon": -3.1883
     },
     "first_seen": "2026-09-28",
-    "last_seen": "2026-10-02"
+    "last_seen": "2026-10-04"
   },
   {
     "id": "his-1994-10-01-shor-algorithm",
@@ -1548,7 +2397,7 @@
       "lon": -74.401
     },
     "first_seen": "2026-09-28",
-    "last_seen": "2026-10-02"
+    "last_seen": "2026-10-04"
   },
   {
     "id": "his-1991-01-18-patriot-scud",
@@ -1565,7 +2414,7 @@
       "lon": 46.6753
     },
     "first_seen": "2026-09-28",
-    "last_seen": "2026-10-02"
+    "last_seen": "2026-10-04"
   },
   {
     "id": "his-1988-11-02-morris-worm",
@@ -1582,7 +2431,7 @@
       "lon": -71.0942
     },
     "first_seen": "2026-09-28",
-    "last_seen": "2026-10-02"
+    "last_seen": "2026-10-04"
   },
   {
     "id": "his-1983-04-01-pcr",
@@ -1599,7 +2448,7 @@
       "lon": -122.2853
     },
     "first_seen": "2026-09-28",
-    "last_seen": "2026-10-02"
+    "last_seen": "2026-10-04"
   },
   {
     "id": "his-1983-03-23-sdi-announced",
@@ -1616,7 +2465,7 @@
       "lon": -77.0369
     },
     "first_seen": "2026-09-28",
-    "last_seen": "2026-10-02"
+    "last_seen": "2026-10-04"
   },
   {
     "id": "his-1981-05-06-feynman-quantum",
@@ -1633,7 +2482,7 @@
       "lon": -118.1253
     },
     "first_seen": "2026-09-28",
-    "last_seen": "2026-10-02"
+    "last_seen": "2026-10-04"
   },
   {
     "id": "his-1981-04-12-sts-1",
@@ -1650,7 +2499,7 @@
       "lon": -80.649
     },
     "first_seen": "2026-09-28",
-    "last_seen": "2026-10-02"
+    "last_seen": "2026-10-04"
   },
   {
     "id": "his-1976-07-01-four-color-theorem",
@@ -1667,7 +2516,7 @@
       "lon": -88.2272
     },
     "first_seen": "2026-09-28",
-    "last_seen": "2026-10-02"
+    "last_seen": "2026-10-04"
   },
   {
     "id": "his-1973-01-01-recombinant-dna",
@@ -1684,7 +2533,7 @@
       "lon": -122.1697
     },
     "first_seen": "2026-09-29",
-    "last_seen": "2026-10-02"
+    "last_seen": "2026-10-04"
   },
   {
     "id": "his-1971-11-15-intel-4004",
@@ -1701,7 +2550,7 @@
       "lon": -121.9552
     },
     "first_seen": "2026-09-29",
-    "last_seen": "2026-10-02"
+    "last_seen": "2026-10-04"
   },
   {
     "id": "his-1969-10-29-arpanet",
@@ -1718,7 +2567,7 @@
       "lon": -118.4452
     },
     "first_seen": "2026-09-29",
-    "last_seen": "2026-10-02"
+    "last_seen": "2026-10-04"
   },
   {
     "id": "his-1969-07-20-apollo-11",
@@ -1735,7 +2584,7 @@
       "lon": 23.473
     },
     "first_seen": "2026-09-29",
-    "last_seen": "2026-10-02"
+    "last_seen": "2026-10-04"
   },
   {
     "id": "his-1961-04-12-vostok-1",
@@ -1752,7 +2601,7 @@
       "lon": 63.305
     },
     "first_seen": "2026-09-29",
-    "last_seen": "2026-10-02"
+    "last_seen": "2026-10-04"
   },
   {
     "id": "his-1957-10-04-sputnik-1",
@@ -1769,7 +2618,7 @@
       "lon": 63.305
     },
     "first_seen": "2026-09-29",
-    "last_seen": "2026-10-02"
+    "last_seen": "2026-10-04"
   },
   {
     "id": "his-1954-04-25-silicon-solar-cell",
@@ -1786,7 +2635,7 @@
       "lon": -74.401
     },
     "first_seen": "2026-09-29",
-    "last_seen": "2026-10-02"
+    "last_seen": "2026-10-04"
   },
   {
     "id": "his-1953-04-25-dna-double-helix",
@@ -1803,7 +2652,7 @@
       "lon": 0.1218
     },
     "first_seen": "2026-09-29",
-    "last_seen": "2026-10-02"
+    "last_seen": "2026-10-04"
   },
   {
     "id": "his-1945-11-15-eniac",
@@ -1820,7 +2669,7 @@
       "lon": -75.1652
     },
     "first_seen": "2026-09-29",
-    "last_seen": "2026-10-02"
+    "last_seen": "2026-10-04"
   },
   {
     "id": "his-1945-07-16-trinity-test",
@@ -1837,6 +2686,6 @@
       "lon": -106.4754
     },
     "first_seen": "2026-09-29",
-    "last_seen": "2026-10-02"
+    "last_seen": "2026-10-04"
   }
 ]

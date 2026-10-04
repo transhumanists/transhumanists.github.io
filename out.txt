@@ -1,0 +1,516 @@
+bun test v1.4.2 (744846f84)
+
+test\worldmap.test.mjs:
+(pass) worldmap > loads events and renders stat tiles with canonical category mapping [0.12ms]
+439 |     expect(legendValue('Military & Defense')).toBe('2');   // aliased 'Defense' + canonical
+440 |     // Military layers now show simple labels with actual counts. The deployments
+441 |     // row counts the datalayer, which is arrows PLUS seals - the sublayer row
+442 |     // beside it breaks that total down.
+443 |     expect(legendValue('Conflict Zones')).toBe('3');
+444 |     expect(legendValue(api.LAYER_LABELS.deployments)).toBe('13');   // 9 arrows + 4 seals
+                             ^
+ReferenceError: api is not defined
+      at <anonymous> (C:\Users\Wout\Documents\Default Project\transhumanists.github.io\test\worldmap.test.mjs:444:24)
+(fail) worldmap > renders legend rows for all 9 categories plus layers [2.69ms]
+(pass) worldmap > the dot sublayer row sits under its parent and is marked as a sublayer [0.25ms]
+(pass) worldmap > conflict and fleet layer rows toggle their stats and redraw [8.97ms]
+(pass) worldmap > current-week helpers bound an ISO week and gate dates [0.35ms]
+(pass) worldmap > renders tooltip with canonical category, value and clickable source link [3.36ms]
+(pass) worldmap > tooltip canonicalizes legacy category names [0.83ms]
+(pass) worldmap > tooltip omits the source link when the event has no url [1.28ms]
+(pass) worldmap > tooltip hides a value that merely repeats the title (metric-less) [2.63ms]
+(pass) worldmap > terminator toggle flips aria-pressed state [5.48ms]
+(pass) worldmap > zoom controls, keyboard and double-click do not throw [9.68ms]
+(pass) worldmap > tooltip clamps to the map edges using its measured size [1.20ms]
+(pass) worldmap > zoom dismisses a stale tooltip and hover re-opens it [2.91ms]
+(pass) worldmap > drag clears hover state so a re-hover after drag re-opens [5.68ms]
+(pass) worldmap > clicking a dot pins the popup so the source link stays reachable [2.91ms]
+(pass) worldmap > clicking the pinned dot again unpins it [2.62ms]
+(pass) worldmap > Escape clears a pinned popup selection [2.60ms]
+(pass) worldmap > a click that drags does not pin the dot [1.78ms]
+(pass) worldmap > internal invariants: every legend/stat key has a color [0.14ms]
+(pass) worldmap > no "Other" legend row: every plottable event lands in a legend category [0.59ms]
+(pass) worldmap > stats window on the same day the map does, not the wall clock [0.22ms]
+(pass) worldmap > a corrupt geocode cache entry cannot take the whole map down [0.36ms]
+(pass) worldmap > recency tiers: only active-and-recent layers get the neon treatment [3.64ms]
+(pass) worldmap > a zone sourced only from the Wikipedia conflict list never reads as neon [2.01ms]
+(pass) worldmap > a failed milestone feed never substitutes fabricated data in production [3.54ms]
+(pass) worldmap > fleet endpoints are derived once and reused by draw and hit-test [0.26ms]
+(pass) worldmap > normalizeEvent drops any cached stack key from the payload [0.08ms]
+(pass) worldmap > normalizeEvent fills defaults and isPlottable filters unusable events [0.37ms]
+(pass) worldmap > a redraw renders the full scene (background, terminator, dots) [0.95ms]
+(pass) worldmap > terminator draws both boundaries as layered translucent bands [0.98ms]
+(pass) worldmap > night band shading: sun overhead stays bright, the antipode is dark [2.99ms]
+(pass) worldmap > night band is painted from 3 longitude-shifted copies, never screen corners [2.47ms]
+(pass) worldmap > legend no longer carries the lifecycle note row [0.44ms]
+(pass) worldmap > zoom clamps to [0.5, 8] and keyboard 0 resets the view [13.47ms]
+(pass) worldmap > canonicalCategory maps legacy short names to data names [0.11ms]
+(pass) worldmap > normalizeZone clamps degenerate radiusDeg and isZonePlottable rejects bad coordinates [0.17ms]
+(pass) worldmap > isFleetPlottable requires two valid endpoints [0.16ms]
+(pass) worldmap > isFleetPlottable accepts infantry deployments with lat/lon [0.10ms]
+(pass) worldmap > new visitors see ALL milestones by default (breakthrough filter off) [1.69ms]
+(pass) worldmap > crisis filter button lights up bright when toggled active [3.05ms]
+(pass) worldmap > layer lifecycle helpers: status, duration label and date parsing [1.04ms]
+(pass) worldmap > year clustering: active layers persist, concluded ones stay in their window [6.21ms]
+(pass) worldmap > timeline clustering normalizes non-ISO event dates before grouping by year [2.75ms]
+(pass) worldmap > stats split active vs concluded layers and labels reflect it [0.90ms]
+(pass) worldmap > co-located milestones share one count badge and one hit target [13.98ms]
+(pass) worldmap > the stack pager walks the co-located milestones from the one clicked [8.63ms]
+(pass) worldmap > a release over the popup does not dismiss it, so the pager stays clickable [7.45ms]
+(pass) worldmap > the upper-left tiles dim when every layer under them is switched off [12.56ms]
+1458 |     const mid = pt(midLon, 40);
+1459 |     expect(() => canvas.fire('mousemove', { clientX: mid.x, clientY: mid.y, movementX: 0, movementY: 0 })).not.toThrow();
+1460 |     expect(tooltip.classList.contains('visible')).toBe(true);
+1461 |     const wrapper = tooltip.children[0];
+1462 |     const text = wrapper.children.map((c) => c.textContent).join(' | ');
+1463 |     expect(text).toContain('Ground Deployment');
+                        ^
+error: expect(received).toContain(expected)
+
+Expected to contain: "Ground Deployment"
+Received: " | Brigade move |  |  |  |  |  |  | Exercise | ● Active since 2026-02-01"
+
+      at <anonymous> (C:\Users\Wout\Documents\Default Project\transhumanists.github.io\test\worldmap.test.mjs:1463:18)
+(fail) worldmap > an infantry arrow is hoverable and does not break hover for other layers [13.43ms]
+(pass) worldmap > a concluded zone and arrow read dimmer than an active one [6.01ms]
+(pass) worldmap > pager arrows are real buttons so the disabled state and keyboard reach work [4.14ms]
+(pass) worldmap > the year slider re-sizes a stack to the milestones still on the map [5.75ms]
+(pass) worldmap > hiding a category drops its milestone out of a shared stack [8.34ms]
+(pass) worldmap > a pinned popup is dropped when the slider hides its milestone [4.50ms]
+(pass) worldmap > the stack re-groups by itself when the rolling week moves on [4.82ms]
+(pass) worldmap > a popup pinned to a milestone that ages out is dropped without any interaction [9.74ms]
+(pass) worldmap > the default view shows the polar caps but keeps the terminator out of them [4.54ms]
+(pass) worldmap > co-located grouping tolerates ~3 m coordinate noise but splits ~300 km [3.67ms]
+(pass) worldmap > Biohacking is one category with two colours, not two categories [0.30ms]
+(pass) worldmap > the Biotechnology legend row draws both colours side by side [0.79ms]
+(pass) worldmap > legacy Biotechnology and Biohacking labels fold into the one category [0.46ms]
+(pass) worldmap > Robotics & Drones and Mobility sit in the requested legend positions [0.31ms]
+(pass) worldmap > Human Rights Violations is a layer, not a category [0.26ms]
+(pass) worldmap > Human Rights layer drops unplottable entries and starts empty [1.01ms]
+(pass) worldmap > the Human Rights legend row is present and off by default [0.66ms]
+(pass) worldmap > the Human Rights landmark is drawn where it is hit-tested [0.82ms]
+(pass) worldmap > a Human Rights landmark is hoverable at its projected position [3.84ms]
+(pass) worldmap > the Human Rights layer renders when enabled, glow included [12.87ms]
+(pass) worldmap > the landmark pulse has a sane period [0.07ms]
+(pass) worldmap > the landmark hit radius covers the widest painted landmark [0.03ms]
+(pass) worldmap > a pointer just outside the glow still does not hit the landmark [2.03ms]
+(pass) worldmap > SOURCE_URL_RE admits only http(s), never a script scheme [0.21ms]
+(pass) worldmap > a javascript: source url never becomes a link href [2.98ms]
+(pass) worldmap > a ground deployment arrow points the way its heading says [0.40ms]
+(pass) worldmap > the committed India-China LAC deployment arrow points north [0.12ms]
+2025 |     expect(ends.from.lon).toBe(ends.to.lon);
+2026 |   });
+2027 | 
+2028 |   test('Deployments legend row explains both components', () => {
+2029 |     registeredEls['reset-view'].fire('click', {});
+2030 |       expect(legendValue(api.LAYER_LABELS.deployments)).toBeDefined();
+                                ^
+ReferenceError: api is not defined
+      at <anonymous> (C:\Users\Wout\Documents\Default Project\transhumanists.github.io\test\worldmap.test.mjs:2030:26)
+(fail) worldmap > Deployments legend row explains both components [1.24ms]
+(pass) worldmap > pointer drift off a milestone keeps its tooltip open [3.53ms]
+(pass) worldmap > travelling well away closes the tooltip [3.27ms]
+(pass) worldmap > a nearby different milestone leaves the current tooltip untouched [6.77ms]
+(pass) worldmap > travelling to a distant milestone still retargets the tooltip [11.34ms]
+(pass) worldmap > sameLocationCluster separates a cluster from merely-near dots [0.24ms]
+(pass) worldmap > bulk milestone visibility eye > the eye sits in the legend header beside CATEGORIES [0.76ms]
+(pass) worldmap > bulk milestone visibility eye > it is last in the header row, i.e. on the right [0.31ms]
+(pass) worldmap > bulk milestone visibility eye > it is a real button, so it is reachable by keyboard [0.71ms]
+(pass) worldmap > bulk milestone visibility eye > it is a drawn eye that takes the caption colour, not an icon glyph [1.10ms]
+(pass) worldmap > bulk milestone visibility eye > the glyph is smaller than the caption it labels [0.89ms]
+(pass) worldmap > bulk milestone visibility eye > it has both a lid and an iris, which is what lets it close [0.82ms]
+(pass) worldmap > bulk milestone visibility eye > it starts open, because everything is visible by default [0.47ms]
+(pass) worldmap > bulk milestone visibility eye > clicking it hides every milestone category [2.64ms]
+(pass) worldmap > bulk milestone visibility eye > clicking it again restores every milestone category [2.09ms]
+(pass) worldmap > bulk milestone visibility eye > hiding categories one at a time eventually closes the eye [6.77ms]
+(pass) worldmap > bulk milestone visibility eye > re-selecting one category by hand reopens the eye [11.03ms]
+(pass) worldmap > bulk milestone visibility eye > with the eye closed, clicking it shows all again [6.45ms]
+(pass) worldmap > bulk milestone visibility eye > a partially hidden set leaves the eye open [0.83ms]
+(pass) worldmap > bulk milestone visibility eye > it never touches the operational layers below the categories [2.14ms]
+(pass) worldmap > bulk milestone visibility eye > the layer rows are not counted as milestone categories [0.87ms]
+(pass) worldmap > bulk milestone visibility eye > the label says what the click will do [0.77ms]
+(pass) worldmap > bulk milestone visibility eye > bulk hiding survives a reload through localStorage [0.81ms]
+(pass) worldmap > bulk milestone visibility eye > the eye is excluded from the category count [0.36ms]
+(pass) worldmap > select dropdowns are readable > no select is styled inline any more [1.92ms]
+(pass) worldmap > select dropdowns are readable > every select on the page carries the shared class [3.23ms]
+(pass) worldmap > select dropdowns are readable > options get an explicit opaque background and foreground [0.56ms]
+(pass) worldmap > select dropdowns are readable > optgroup is covered too, or a grouped list reverts to transparent [0.35ms]
+(pass) worldmap > select dropdowns are readable > color-scheme is declared so the UA popup follows the theme [6.20ms]
+(pass) worldmap > select dropdowns are readable > the native arrow is replaced so every theme looks the same [1.18ms]
+(pass) worldmap > select dropdowns are readable > the expanding category panel cannot be translucent [0.56ms]
+(pass) worldmap > the Robotics rename keeps old payloads working > the canonical label is Robotics & Drones everywhere it is displayed [0.19ms]
+(pass) worldmap > the Robotics rename keeps old payloads working > every historical spelling folds into the renamed category [0.09ms]
+(pass) worldmap > the Robotics rename keeps old payloads working > the schema agrees with the legend [0.47ms]
+(pass) worldmap > the Robotics rename keeps old payloads working > every legend vertical has a milestone card on the page [0.71ms]
+(pass) worldmap > the alias table can only fold into real categories > no alias points at a category that does not exist [0.29ms]
+(pass) worldmap > the alias table can only fold into real categories > every legend category resolves to itself [0.08ms]
+(pass) worldmap > robustness: degenerate canvas and untrusted storage > a zero-area canvas keeps the last good size [1.08ms]
+(pass) worldmap > robustness: degenerate canvas and untrusted storage > a zero-area canvas does not throw [0.64ms]
+(pass) worldmap > robustness: degenerate canvas and untrusted storage > a zero-width canvas is refused too, not just zero-height [0.93ms]
+(pass) worldmap > robustness: degenerate canvas and untrusted storage > the map recovers once a real size arrives [0.73ms]
+(pass) worldmap > robustness: degenerate canvas and untrusted storage > an oversized hidden-category value is refused before it is parsed [4.15ms]
+(pass) worldmap > robustness: degenerate canvas and untrusted storage > a normal hidden-category list is honoured [0.37ms]
+(pass) worldmap > robustness: degenerate canvas and untrusted storage > unknown names are dropped rather than pushed into the legend [0.20ms]
+(pass) worldmap > robustness: degenerate canvas and untrusted storage > malformed and wrong-shaped values are refused, not thrown on [0.58ms]
+(pass) worldmap > robustness: degenerate canvas and untrusted storage > a missing value is null, so the caller keeps what it had [0.42ms]
+(pass) worldmap > robustness: degenerate canvas and untrusted storage > a real payload is comfortably inside the cap [0.33ms]
+(pass) worldmap > README documents the map accurately > every legend category is named in the README [0.47ms]
+(pass) worldmap > README documents the map accurately > the README vertical count matches the legend [0.33ms]
+(pass) worldmap > README documents the map accurately > no vertical was dropped when one was folded into another [0.23ms]
+(pass) worldmap > README documents the map accurately > the four operational layers are documented as layers, not categories [0.24ms]
+(pass) worldmap > README documents the map accurately > the stale legend header is gone [0.23ms]
+(pass) worldmap > README documents the map accurately > the projection is described as fitted rather than stretched [0.40ms]
+(pass) worldmap > browser fixture matches the real page > the fixture carries every id the page gives the map widget [0.78ms]
+(pass) worldmap > browser fixture matches the real page > the fixture loads the real stylesheet and script, not copies [0.17ms]
+(pass) worldmap > browser fixture matches the real page > the browser config runs both a desktop and a phone viewport [0.22ms]
+(pass) worldmap > browser fixture matches the real page > the Playwright specs live outside the bun unit suite [0.37ms]
+(pass) worldmap > browser fixture matches the real page > nothing under test/ can be a Playwright spec [0.58ms]
+(pass) worldmap > geography is clipped to the map plate > the canvas is asked to clip once per frame [0.78ms]
+(pass) worldmap > geography is clipped to the map plate > the clip is exactly the map plate [0.44ms]
+(pass) worldmap > geography is clipped to the map plate > the clip does not cover the whole canvas [0.45ms]
+(pass) worldmap > geography is clipped to the map plate > the clip follows zoom [3.35ms]
+(pass) worldmap > geography is clipped to the map plate > mapScreenRect agrees with where project() puts the plate corners [0.83ms]
+(pass) worldmap > geography is clipped to the map plate > reset view returns the plate to the fitted box [0.93ms]
+(pass) worldmap > normalizeEvent is idempotent > re-normalising a normalised event keeps it [2.36ms]
+(pass) worldmap > normalizeEvent is idempotent > round-tripping three times is still stable [2.98ms]
+(pass) worldmap > normalizeEvent is idempotent > the stack key survives a round trip [1.99ms]
+(pass) worldmap > normalizeEvent is idempotent > a record the pipeline could not place is dropped, not guessed [1.39ms]
+(pass) worldmap > normalizeEvent is idempotent > the flat form does not resurrect an out-of-range coordinate [3.17ms]
+(pass) worldmap > normalizeEvent is idempotent > restore-then-assert leaves the event list intact for later tests [9.70ms]
+(pass) worldmap > mobile map projection > the world keeps its aspect ratio on a phone-shaped canvas [0.85ms]
+(pass) worldmap > mobile map projection > degrees-per-pixel stay square, so circles are not ovals [0.43ms]
+(pass) worldmap > mobile map projection > the whole longitude range is inside the canvas [0.46ms]
+(pass) worldmap > mobile map projection > a wide desktop canvas is letterboxed rather than stretched [0.52ms]
+(pass) worldmap > mobile map projection > the background still paints the whole canvas, so the margin is not a bar [1.00ms]
+(pass) worldmap > mobile map projection > the map never exceeds the canvas in either orientation [1.38ms]
+(pass) worldmap > mobile map projection > CSS gives the canvas the shape the projection wants [0.96ms]
+(pass) worldmap > mobile map projection > no rule pins a height that would re-letterbox the frame [1.28ms]
+(pass) worldmap > mobile map projection > a frame at the map ratio has no dead band at all [2.05ms]
+(pass) worldmap > mobile map projection > the horizontal scale is unchanged by the framing fix [0.98ms]
+(pass) worldmap > mobile map projection > the legend is capped to the map instead of overflowing it [1.20ms]
+(pass) worldmap > mobile map projection > legend rows meet a touch-sized minimum [1.26ms]
+(pass) worldmap > mobile map projection > filter rows wrap on a phone instead of running off-screen [2.05ms]
+(pass) worldmap > mobile map projection > the map still draws markers at a phone size without throwing [11.13ms]
+(pass) worldmap > human rights click-to-pin docking > clicking a landmark pins it [2.88ms]
+(pass) worldmap > human rights click-to-pin docking > a pinned landmark is not dismissed by the pointer leaving [2.56ms]
+(pass) worldmap > human rights click-to-pin docking > the popup is docked at the landmark, not left under the cursor [2.35ms]
+(pass) worldmap > human rights click-to-pin docking > clicking the pinned landmark again unpins it [13.16ms]
+(pass) worldmap > human rights click-to-pin docking > clicking empty canvas unpins it [4.52ms]
+(pass) worldmap > human rights click-to-pin docking > the source link stays reachable while docked [2.59ms]
+(pass) worldmap > human rights click-to-pin docking > pinning a landmark clears a pinned milestone, and vice versa [6.45ms]
+(pass) worldmap > human rights click-to-pin docking > an off layer cannot be docked [2.29ms]
+(pass) worldmap > human rights click-to-pin docking > toggling the layer off releases the pinned landmark [2.64ms]
+(pass) worldmap > human rights click-to-pin docking > the selected landmark is drawn with a ring [3.62ms]
+(pass) worldmap > layer tooltips pin > clicking a zone pins it [2.77ms]
+(pass) worldmap > layer tooltips pin > a pinned zone popup survives the pointer leaving [1.73ms]
+(pass) worldmap > layer tooltips pin > the zone source link is reachable [8.23ms]
+(pass) worldmap > layer tooltips pin > clicking it again unpins [14.73ms]
+(pass) worldmap > layer tooltips pin > clicking empty canvas unpins [4.77ms]
+(pass) worldmap > layer tooltips pin > pinning a zone clears a pinned milestone [3.57ms]
+(pass) worldmap > layer tooltips pin > Escape clears a pinned zone [4.13ms]
+(pass) worldmap > human rights orb painting > it paints three passes in order: halo, shell, core [0.11ms]
+(pass) worldmap > human rights orb painting > the shell runs on its own phase, out of step with the core [0.10ms]
+(pass) worldmap > human rights orb painting > nothing is painted outside the derived hit radius [0.14ms]
+(pass) worldmap > human rights orb painting > the hit radius still equals the envelope the orb is drawn in [0.05ms]
+(pass) worldmap > human rights landmark clustering > two reports at one location become a single fanned cluster [7.54ms]
+(pass) worldmap > human rights landmark clustering > the first member is the lead, and it is what gets hit [2.52ms]
+(pass) worldmap > human rights landmark clustering > distinct locations stay separate [2.01ms]
+(pass) worldmap > human rights landmark clustering > float noise in a shared country centroid still clusters [1.50ms]
+(pass) worldmap > human rights landmark clustering > the hit test returns the lead and reports how many reports it stands for [1.38ms]
+(pass) worldmap > human rights landmark clustering > a lone report is not labelled as a cluster [1.53ms]
+(pass) worldmap > human rights landmark clustering > the cluster size is derived, not cached on the entry [1.25ms]
+(pass) worldmap > human rights landmark clustering > a report hidden by the timeline is not counted [3.75ms]
+(pass) worldmap > human rights landmark clustering > the year slider reaches the landmark layer at all [1.39ms]
+(pass) worldmap > human rights landmark clustering > an active landmark stays visible across years, like every other layer [1.69ms]
+(pass) worldmap > human rights landmark clustering > no report is lost: the cluster still holds every entry [1.46ms]
+(pass) worldmap > human rights landmark clustering > clusters are rebuilt when the data is replaced [1.54ms]
+(pass) worldmap > human rights landmark clustering > layer recency reaches the renderer > normalizeZone keeps last_news_year instead of falling back to start_date [0.36ms]
+(pass) worldmap > human rights landmark clustering > layer recency reaches the renderer > a zone with no recency signal at all is still dimmed, not guessed at [0.41ms]
+(pass) worldmap > human rights landmark clustering > layer recency reaches the renderer > the published payload gives every active conflict zone a recency year [1.53ms]
+(pass) worldmap > human rights landmark clustering > layer recency reaches the renderer > the crisis layer carries recency too, so an ongoing crisis is not dimmed [1.01ms]
+(pass) worldmap > human rights landmark clustering > layer recency reaches the renderer > the older tiers are dimmer than before, so a recent change stands out [0.14ms]
+(pass) worldmap > human rights landmark clustering > responsible-actor flags > a two-letter code becomes a real flag glyph [0.25ms]
+3682 | 
+3683 |   test('anything that is not a two-letter nation code yields no glyph', () => {
+3684 |     // Alliances get a monogram chip instead. Borrowing a member state's flag
+3685 |     // would misattribute the action, which is the failure mode here.
+3686 |     for (const bad of ['NATO', 'EU', 'UN', 'ZZZ', 'usa', '', null, undefined, 42]) {
+3687 |       expect(api().flagGlyph(bad)).toBe('');
+                                          ^
+error: expect(received).toBe(expected)
+
+Expected: ""
+Received: "🇪🇺"
+
+      at <anonymous> (C:\Users\Wout\Documents\Default Project\transhumanists.github.io\test\worldmap.test.mjs:3687:36)
+(fail) worldmap > human rights landmark clustering > responsible-actor flags > anything that is not a two-letter nation code yields no glyph [0.73ms]
+(pass) worldmap > human rights landmark clustering > responsible-actor flags > an explicit actor wins, then country, then the record own prose [0.30ms]
+(pass) worldmap > human rights landmark clustering > responsible-actor flags > a publisher is not an actor [0.15ms]
+(pass) worldmap > human rights landmark clustering > responsible-actor flags > short keys match on word boundaries, not as bare substrings [0.22ms]
+(pass) worldmap > human rights landmark clustering > responsible-actor flags > an alliance is typed as an alliance, the UN as the UN [0.08ms]
+(pass) worldmap > human rights landmark clustering > responsible-actor flags > a record with no actor at all resolves to null rather than guessing [0.07ms]
+3752 |       api.setFilterMilitary(true);
+3753 |       const fleets = api.getLayers().fleets;
+3754 |       const p = api.project(fleets[0].lon, fleets[0].lat);
+3755 |       // The arrowhead (the destination) is what the badge docks to.
+3756 |       hoverAt(p.x, p.y);
+3757 |       expect(tooltip.classList.contains('visible')).toBe(true);
+                                                           ^
+error: expect(received).toBe(expected)
+
+Expected: true
+Received: false
+
+      at <anonymous> (C:\Users\Wout\Documents\Default Project\transhumanists.github.io\test\worldmap.test.mjs:3757:53)
+      at withFreshHover (C:\Users\Wout\Documents\Default Project\transhumanists.github.io\test\worldmap.test.mjs:2124:7)
+      at <anonymous> (C:\Users\Wout\Documents\Default Project\transhumanists.github.io\test\worldmap.test.mjs:3745:5)
+(fail) worldmap > human rights landmark clustering > responsible-actor flags > the badge is one element for both a flag and an org chip [8.58ms]
+3772 |   const api = () => windowObj.__WORLDMAP_TEST__;
+3773 | 
+3774 |   test('it normalises, plots, and is a dot sublayer rather than a category', () => {
+3775 |     const a = api();
+3776 |     const dots = a.allianceDots;
+3777 |     expect(dots.length).toBeGreaterThan(0);
+                               ^
+error: expect(received).toBeGreaterThan(expected)
+
+Expected: > 0
+Received: 0
+
+      at <anonymous> (C:\Users\Wout\Documents\Default Project\transhumanists.github.io\test\worldmap.test.mjs:3777:25)
+(fail) worldmap > human rights landmark clustering > the alliance & defence-policy dot sublayer > it normalises, plots, and is a dot sublayer rather than a category [0.79ms]
+(pass) worldmap > human rights landmark clustering > the alliance & defence-policy dot sublayer > the two NATO accessions are present as seals with the right dates [0.67ms]
+(pass) worldmap > human rights landmark clustering > the alliance & defence-policy dot sublayer > a seal whose id matches a movement suppresses that arrow [1.24ms]
+3833 |   test('a seal is hittable and opens its own tooltip', () => {
+3834 |     withFreshHover((api) => {
+3835 |       api.setTimelineYear(2026);
+3836 |       api.setFilterMilitary(true);
+3837 |       const dot = api.allianceDots.find((d) => /Finland/.test(d.name));
+3838 |       const p = api.project(dot.lon, dot.lat);
+                                   ^
+TypeError: undefined is not an object (evaluating 'dot.lon')
+      at <anonymous> (C:\Users\Wout\Documents\Default Project\transhumanists.github.io\test\worldmap.test.mjs:3838:29)
+      at withFreshHover (C:\Users\Wout\Documents\Default Project\transhumanists.github.io\test\worldmap.test.mjs:2124:7)
+      at <anonymous> (C:\Users\Wout\Documents\Default Project\transhumanists.github.io\test\worldmap.test.mjs:3834:5)
+(fail) worldmap > human rights landmark clustering > the alliance & defence-policy dot sublayer > a seal is hittable and opens its own tooltip [3.89ms]
+(pass) worldmap > human rights landmark clustering > the alliance & defence-policy dot sublayer > the seal is a dot: no route and no extent [0.15ms]
+3867 |   test('the timeline reaches the sublayer', () => {
+3868 |     withFreshHover((api) => {
+3869 |       api.setFilterMilitary(true);
+3870 |       const dot = api.allianceDots.find((d) => /Sweden/.test(d.name));
+3871 |       api.setTimelineYear(2026);
+3872 |       expect(dot._hiddenByTimeline).toBe(false);
+                    ^
+TypeError: undefined is not an object (evaluating 'dot._hiddenByTimeline')
+      at <anonymous> (C:\Users\Wout\Documents\Default Project\transhumanists.github.io\test\worldmap.test.mjs:3872:14)
+      at withFreshHover (C:\Users\Wout\Documents\Default Project\transhumanists.github.io\test\worldmap.test.mjs:2124:7)
+      at <anonymous> (C:\Users\Wout\Documents\Default Project\transhumanists.github.io\test\worldmap.test.mjs:3868:5)
+(fail) worldmap > human rights landmark clustering > the alliance & defence-policy dot sublayer > the timeline reaches the sublayer [3.62ms]
+(pass) worldmap > human rights landmark clustering > the alliance & defence-policy dot sublayer > the sublayer cannot appear without its parent [2.10ms]
+3894 |     const a = api();
+3895 |     const bad = a.normalizeAllianceDot({ id: 'b', name: 'B', lat: 0, lon: 0 });
+3896 |     expect(a.isAllianceDotPlottable(bad)).toBe(false);
+3897 |     expect(a.isAllianceDotPlottable(a.normalizeAllianceDot({ id: 'b', name: 'B', lat: 'x', lon: 5 }))).toBe(false);
+3898 |     expect(a.isAllianceDotPlottable(a.normalizeAllianceDot({ id: 'b', name: 'B', lat: 95, lon: 5 }))).toBe(false);
+3899 |     expect(a.isAllianceDotPlottable(a.normalizeAllianceDot({ id: 'b', lat: 10, lon: 10 }))).toBe(false);
+                                                                                                   ^
+error: expect(received).toBe(expected)
+
+Expected: false
+Received: true
+
+      at <anonymous> (C:\Users\Wout\Documents\Default Project\transhumanists.github.io\test\worldmap.test.mjs:3899:93)
+(fail) worldmap > human rights landmark clustering > the alliance & defence-policy dot sublayer > an unplottable or malformed seal is dropped, not drawn at (0,0) [1.09ms]
+(pass) worldmap > human rights landmark clustering > the hover / stick / unstick contract > leaving the popup does not dismiss it, so its links are clickable unpinned [7.58ms]
+3923 |   test('a pinned popup survives travelling far away over empty ocean', () => {
+3924 |     withFreshHover((api) => {
+3925 |       registeredEls['reset-view'].fire('click', {});
+3926 |       api.setFilterMilitary(true);
+3927 |       const zone = api.getLayers().zones[0];
+3928 |       const p = api.project(zone.lon, zone.lat);
+                                   ^
+TypeError: undefined is not an object (evaluating 'zone.lon')
+      at <anonymous> (C:\Users\Wout\Documents\Default Project\transhumanists.github.io\test\worldmap.test.mjs:3928:29)
+      at withFreshHover (C:\Users\Wout\Documents\Default Project\transhumanists.github.io\test\worldmap.test.mjs:2124:7)
+      at <anonymous> (C:\Users\Wout\Documents\Default Project\transhumanists.github.io\test\worldmap.test.mjs:3924:5)
+(fail) worldmap > human rights landmark clustering > the hover / stick / unstick contract > a pinned popup survives travelling far away over empty ocean [3.38ms]
+3945 |       api.setFilterMilitary(true);
+3946 |       api.setTimelineYear(2026);
+3947 |       const zones = api.getLayers().zones;
+3948 |       const from = zones[0];
+3949 |       const to = zones[zones.length - 1];
+3950 |       const a = api.project(from.lon, from.lat);
+                                   ^
+TypeError: undefined is not an object (evaluating 'from.lon')
+      at <anonymous> (C:\Users\Wout\Documents\Default Project\transhumanists.github.io\test\worldmap.test.mjs:3950:29)
+      at withFreshHover (C:\Users\Wout\Documents\Default Project\transhumanists.github.io\test\worldmap.test.mjs:2124:7)
+      at <anonymous> (C:\Users\Wout\Documents\Default Project\transhumanists.github.io\test\worldmap.test.mjs:3943:5)
+(fail) worldmap > human rights landmark clustering > the hover / stick / unstick contract > a pinned popup hands over to another landmark, and stays pinned doing so [4.59ms]
+3977 |       const b = api.project(second.lon, second.lat);
+3978 |       expect(Math.hypot(b.x - a.x, b.y - a.y)).toBeLessThan(api.PROXIMITY_RADIUS);
+3979 |       hoverAt(a.x, a.y);
+3980 |       canvas.fire('mousedown', { clientX: a.x, clientY: a.y });
+3981 |       windowObj.fire('mouseup', { target: canvas, clientX: a.x, clientY: a.y });
+3982 |       expect(api.pinnedAnchor().entry).toBe(first);
+                                              ^
+error: expect(received).toBe(expected)
+
+Expected: {
+  id: "n1",
+  name: "Near A",
+  region: "",
+  lat: 48,
+  lon: 37.8,
+  radiusDeg: 3,
+  status: "active",
+  start_date: "2026-01-01",
+  end_date: "",
+  source: "",
+  url: "",
+  note: "",
+  actor: "",
+  last_news_year: undefined,
+}
+Received: {
+  id: "n2",
+  name: "Near B",
+  region: "",
+  lat: 48,
+  lon: 38.1,
+  radiusDeg: 3,
+  status: "active",
+  start_date: "2026-01-01",
+  end_date: "",
+  source: "",
+  url: "",
+  note: "",
+  actor: "",
+  last_news_year: undefined,
+}
+
+      at <anonymous> (C:\Users\Wout\Documents\Default Project\transhumanists.github.io\test\worldmap.test.mjs:3982:40)
+      at withFreshHover (C:\Users\Wout\Documents\Default Project\transhumanists.github.io\test\worldmap.test.mjs:2124:7)
+      at <anonymous> (C:\Users\Wout\Documents\Default Project\transhumanists.github.io\test\worldmap.test.mjs:3967:5)
+(fail) worldmap > human rights landmark clustering > the hover / stick / unstick contract > a nearby landmark never steals a pinned popup [5.56ms]
+3989 |   test('clicking a pinned landmark again unpins it and clears the sticky marker', () => {
+3990 |     withFreshHover((api) => {
+3991 |       registeredEls['reset-view'].fire('click', {});
+3992 |       api.setFilterMilitary(true);
+3993 |       const zone = api.getLayers().zones[0];
+3994 |       const p = api.project(zone.lon, zone.lat);
+                                   ^
+TypeError: undefined is not an object (evaluating 'zone.lon')
+      at <anonymous> (C:\Users\Wout\Documents\Default Project\transhumanists.github.io\test\worldmap.test.mjs:3994:29)
+      at withFreshHover (C:\Users\Wout\Documents\Default Project\transhumanists.github.io\test\worldmap.test.mjs:2124:7)
+      at <anonymous> (C:\Users\Wout\Documents\Default Project\transhumanists.github.io\test\worldmap.test.mjs:3990:5)
+(fail) worldmap > human rights landmark clustering > the hover / stick / unstick contract > clicking a pinned landmark again unpins it and clears the sticky marker [7.40ms]
+4006 |   test('clicking empty canvas closes a pinned popup', () => {
+4007 |     withFreshHover((api) => {
+4008 |       registeredEls['reset-view'].fire('click', {});
+4009 |       api.setFilterMilitary(true);
+4010 |       const zone = api.getLayers().zones[0];
+4011 |       const p = api.project(zone.lon, zone.lat);
+                                   ^
+TypeError: undefined is not an object (evaluating 'zone.lon')
+      at <anonymous> (C:\Users\Wout\Documents\Default Project\transhumanists.github.io\test\worldmap.test.mjs:4011:29)
+      at withFreshHover (C:\Users\Wout\Documents\Default Project\transhumanists.github.io\test\worldmap.test.mjs:2124:7)
+      at <anonymous> (C:\Users\Wout\Documents\Default Project\transhumanists.github.io\test\worldmap.test.mjs:4007:5)
+(fail) worldmap > human rights landmark clustering > the hover / stick / unstick contract > clicking empty canvas closes a pinned popup [3.63ms]
+4034 |       // reason landmarkAnchorPoint exists.
+4035 |       expect(fleet.lat).toBeUndefined();
+4036 |       expect(fleet.lon).toBeUndefined();
+4037 |       const tip = api.project(30, 30);
+4038 |       hoverAt(tip.x, tip.y);
+4039 |       expect(tooltip.classList.contains('visible')).toBe(true);
+                                                           ^
+error: expect(received).toBe(expected)
+
+Expected: true
+Received: false
+
+      at <anonymous> (C:\Users\Wout\Documents\Default Project\transhumanists.github.io\test\worldmap.test.mjs:4039:53)
+      at withFreshHover (C:\Users\Wout\Documents\Default Project\transhumanists.github.io\test\worldmap.test.mjs:2124:7)
+      at <anonymous> (C:\Users\Wout\Documents\Default Project\transhumanists.github.io\test\worldmap.test.mjs:4024:5)
+(fail) worldmap > human rights landmark clustering > the hover / stick / unstick contract > a movement arrow docks at its destination, which it has no lat/lon for [4.09ms]
+4046 |       expect(tooltip.classList.contains('visible')).toBe(true);
+4047 |     });
+4048 |   });
+4049 | 
+4050 |   test('the anchor point of a movement is its destination, not undefined', () => {
+4051 |     const a = api();
+                     ^
+ReferenceError: api is not defined
+      at <anonymous> (C:\Users\Wout\Documents\Default Project\transhumanists.github.io\test\worldmap.test.mjs:4051:15)
+(fail) worldmap > human rights landmark clustering > the hover / stick / unstick contract > the anchor point of a movement is its destination, not undefined [0.56ms]
+(pass) worldmap > human rights landmark clustering > the hover / stick / unstick contract > a landmark taken off the map releases its popup [3.41ms]
+4087 |       expect(tooltip.classList.contains('visible')).toBe(false);
+4088 |     });
+4089 |   });
+4090 | 
+4091 |   test('findLandmarkAt covers every type, in one precedence order', () => {
+4092 |     const a = api();
+                     ^
+ReferenceError: api is not defined
+      at <anonymous> (C:\Users\Wout\Documents\Default Project\transhumanists.github.io\test\worldmap.test.mjs:4092:15)
+(fail) worldmap > human rights landmark clustering > the hover / stick / unstick contract > findLandmarkAt covers every type, in one precedence order [0.67ms]
+(pass) worldmap > human rights landmark clustering > the milestone sub-metric reaches the tooltip > normalizeEvent keeps subcategory [0.12ms]
+(pass) worldmap > human rights landmark clustering > the milestone sub-metric reaches the tooltip > a record without one normalises to an empty string, not undefined [0.05ms]
+(pass) worldmap > human rights landmark clustering > the milestone sub-metric reaches the tooltip > the published feed carries a sub-metric on every located record [0.89ms]
+4160 |       })]);
+4161 |       hoverAt(8.5417, 47.3769);
+4162 |       expect(tooltip.classList.contains('visible')).toBe(true);
+4163 |       const text = tooltipText();
+4164 |       // snake_case becomes words: the label is for a reader, not for grep.
+4165 |       expect(text).toContain('Low Resource Speech');
+                          ^
+error: expect(received).toContain(expected)
+
+Expected to contain: "Low Resource Speech"
+Received: "Quantum PhysicsSub-metric milestoneSrc · 2026-09-01MetricLow resource speech1View source ↗"
+
+      at <anonymous> (C:\Users\Wout\Documents\Default Project\transhumanists.github.io\test\worldmap.test.mjs:4165:20)
+      at withFreshHover (C:\Users\Wout\Documents\Default Project\transhumanists.github.io\test\worldmap.test.mjs:2124:7)
+      at <anonymous> (C:\Users\Wout\Documents\Default Project\transhumanists.github.io\test\worldmap.test.mjs:4156:5)
+(fail) worldmap > human rights landmark clustering > the milestone sub-metric reaches the tooltip > the popup shows the humanised sub-metric below the source line [13.46ms]
+(pass) worldmap > human rights landmark clustering > the milestone sub-metric reaches the tooltip > a record with no sub-metric shows no metric row at all [3.39ms]
+(pass) worldmap > human rights landmark clustering > the tracking reticle is reserved for fresh zones > it is drawn only for the hot tier [0.17ms]
+4201 |       { id: 'hot', name: 'Fresh zone', lat: 0, lon: 0, radiusDeg: 4,
+4202 |         status: 'active', start_date: '2026-06-01', last_news_year: 2026, source: 'ISW' },
+4203 |       { id: 'old', name: 'Stale zone', lat: 30, lon: 30, radiusDeg: 4,
+4204 |         status: 'active', start_date: '1999-01-01', last_news_year: 1999, source: 'ISW' },
+4205 |     ], [], [], [], []);
+4206 |     expect(a.layerPaintTier(a.getLayers().zones[0])).toBe('hot');
+                                                            ^
+error: expect(received).toBe(expected)
+
+Expected: "hot"
+Received: "cold"
+
+      at <anonymous> (C:\Users\Wout\Documents\Default Project\transhumanists.github.io\test\worldmap.test.mjs:4206:54)
+(fail) worldmap > human rights landmark clustering > the tracking reticle is reserved for fresh zones > a hot zone actually paints reticle arcs on the canvas [2.11ms]
+
+19 tests failed:
+(fail) worldmap > renders legend rows for all 9 categories plus layers [2.69ms]
+(fail) worldmap > an infantry arrow is hoverable and does not break hover for other layers [13.43ms]
+(fail) worldmap > Deployments legend row explains both components [1.24ms]
+(fail) worldmap > human rights landmark clustering > responsible-actor flags > anything that is not a two-letter nation code yields no glyph [0.73ms]
+(fail) worldmap > human rights landmark clustering > responsible-actor flags > the badge is one element for both a flag and an org chip [8.58ms]
+(fail) worldmap > human rights landmark clustering > the alliance & defence-policy dot sublayer > it normalises, plots, and is a dot sublayer rather than a category [0.79ms]
+(fail) worldmap > human rights landmark clustering > the alliance & defence-policy dot sublayer > a seal is hittable and opens its own tooltip [3.89ms]
+(fail) worldmap > human rights landmark clustering > the alliance & defence-policy dot sublayer > the timeline reaches the sublayer [3.62ms]
+(fail) worldmap > human rights landmark clustering > the alliance & defence-policy dot sublayer > an unplottable or malformed seal is dropped, not drawn at (0,0) [1.09ms]
+(fail) worldmap > human rights landmark clustering > the hover / stick / unstick contract > a pinned popup survives travelling far away over empty ocean [3.38ms]
+(fail) worldmap > human rights landmark clustering > the hover / stick / unstick contract > a pinned popup hands over to another landmark, and stays pinned doing so [4.59ms]
+(fail) worldmap > human rights landmark clustering > the hover / stick / unstick contract > a nearby landmark never steals a pinned popup [5.56ms]
+(fail) worldmap > human rights landmark clustering > the hover / stick / unstick contract > clicking a pinned landmark again unpins it and clears the sticky marker [7.40ms]
+(fail) worldmap > human rights landmark clustering > the hover / stick / unstick contract > clicking empty canvas closes a pinned popup [3.63ms]
+(fail) worldmap > human rights landmark clustering > the hover / stick / unstick contract > a movement arrow docks at its destination, which it has no lat/lon for [4.09ms]
+(fail) worldmap > human rights landmark clustering > the hover / stick / unstick contract > the anchor point of a movement is its destination, not undefined [0.56ms]
+(fail) worldmap > human rights landmark clustering > the hover / stick / unstick contract > findLandmarkAt covers every type, in one precedence order [0.67ms]
+(fail) worldmap > human rights landmark clustering > the milestone sub-metric reaches the tooltip > the popup shows the humanised sub-metric below the source line [13.46ms]
+(fail) worldmap > human rights landmark clustering > the tracking reticle is reserved for fresh zones > a hot zone actually paints reticle arcs on the canvas [2.11ms]
+
+ 211 pass
+ 19 fail
+ 4470 expect() calls
+Ran 230 tests across 1 file. [680.00ms]

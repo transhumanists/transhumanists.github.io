@@ -2998,9 +2998,19 @@ function findLandmarkAt(x, y) {
 function submetricLabel(raw) {
   const s = String(raw || '').trim();
   if (!s) return '';
-  const words = s.replace(/[_-]+/g, ' ').replace(/\s+/g, ' ').trim();
-  if (!words) return '';
-  return words.charAt(0).toUpperCase() + words.slice(1);
+  // Per word, not just the first letter: the slugs are snake_case
+  // ("low_resource_speech"), so capitalising only the head gives "Low resource
+  // speech", which reads as a sentence fragment rather than a label. Acronyms
+  // inside a slug come through lowercased and are not restored - a label that
+  // says "Low Resource Speech" is right and one that says "Low ResouRce Speech"
+  // because it guessed at acronyms would not be.
+  return s
+    .replace(/[_-]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .split(' ')
+    .map((w) => (w ? w.charAt(0).toUpperCase() + w.slice(1) : w))
+    .join(' ');
 }
 
 function appendSubmetricLine(wrapper, raw) {
@@ -4871,6 +4881,7 @@ function initTimelineSlider() {
       pinnedAnchor,
       hoverAnchor,
       anchorIsVisible,
+      landmarkAnchorPoint,
       get allianceDots() { return state.allianceDots; },
       weekBoundsISO,
       isInCurrentWeek,
@@ -4910,12 +4921,19 @@ function initTimelineSlider() {
       get GEOCODE_CACHE_MAX_BYTES() { return GEOCODE_CACHE_MAX_BYTES; },
       // Replace the loaded layer data (used to exercise fluo/dim + timeline
       // clustering deterministically without mutating the shared fixtures).
+      // `allianceDots` is the odd one out: OMITTING it leaves the current seals in
+      // place, and only an explicit array replaces them. The four positional
+      // params above are all required, so "not passed" would otherwise silently
+      // mean "empty" - and the first thing that does is a test that never heard
+      // of the sublayer wiping it before asserting it exists.
       setLayers: (zones, fleets, crises, humanRights, allianceDots) => {
         state.zones = (zones || []).map(normalizeZone).filter(isZonePlottable);
         state.fleets = (fleets || []).map(normalizeFleet).filter(isFleetPlottable);
         state.crises = (crises || []).map(normalizeZone).filter(isZonePlottable);
         state.humanRights = (humanRights || []).map(normalizeHumanRight).filter(isHumanRightPlottable);
-        state.allianceDots = (allianceDots || []).map(normalizeAllianceDot).filter(isAllianceDotPlottable);
+        if (allianceDots !== undefined) {
+          state.allianceDots = allianceDots.map(normalizeAllianceDot).filter(isAllianceDotPlottable);
+        }
         rebuildAllianceDotIds();
         rebuildHumanRightStackMap();
         // A docked landmark may not exist in the replacement data.

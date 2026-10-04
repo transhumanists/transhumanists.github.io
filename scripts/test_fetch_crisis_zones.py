@@ -5,6 +5,7 @@ The build/inference functions are pure (no network); this suite focuses on the
 geo-location guards that protect the map from "Null Island" (0,0) entries, the
 dedupe/cap contract shared by the sourced and static paths, and the RSS parser.
 """
+
 from __future__ import annotations
 
 import json
@@ -59,13 +60,20 @@ class TestInferLocation(unittest.TestCase):
 
 class TestBuildCrisisZones(unittest.TestCase):
     def _item(self, title: str, country: str = "", desc: str = ""):
-        return {"title": title, "link": "https://example.org", "description": desc, "country": country}
+        return {
+            "title": title,
+            "link": "https://example.org",
+            "description": desc,
+            "country": country,
+        }
 
     def test_null_island_items_are_dropped(self):
         # Un-locatable items never become zones; a fully-empty sourcing result
         # triggers the curated static fallback instead (see next test).
-        items = [self._item("Some unknown emergency without a location"),
-                 self._item("Sudan famine emergency")]
+        items = [
+            self._item("Some unknown emergency without a location"),
+            self._item("Sudan famine emergency"),
+        ]
         zones = fz.build_crisis_zones_from_sources(items, [], [], [], [], [], [])
         self.assertEqual([z["id"] for z in zones], ["crisis-sudan-darfur-famine"])
 
@@ -104,12 +112,31 @@ class TestBuildCrisisZones(unittest.TestCase):
     def test_respects_fifteen_zone_cap(self):
         # Distinct places, so keyword-dedupe does not collapse them; the
         # 15-zone cap must still apply across the merged source lists.
-        places = ["cabo delgado", "afghanistan", "syria", "ukraine", "mozambique",
-                  "nigeria", "niger", "somalia", "sudan", "darfur", "yemen",
-                  "myanmar", "rohingya", "ethiopia", "tigray", "palestine",
-                  "gaza", "haiti", "chad", "mali"]
-        items = [self._item(f"Situation report {i} for {p}", country=p)
-                 for i, p in enumerate(places)]
+        places = [
+            "cabo delgado",
+            "afghanistan",
+            "syria",
+            "ukraine",
+            "mozambique",
+            "nigeria",
+            "niger",
+            "somalia",
+            "sudan",
+            "darfur",
+            "yemen",
+            "myanmar",
+            "rohingya",
+            "ethiopia",
+            "tigray",
+            "palestine",
+            "gaza",
+            "haiti",
+            "chad",
+            "mali",
+        ]
+        items = [
+            self._item(f"Situation report {i} for {p}", country=p) for i, p in enumerate(places)
+        ]
         zones = fz.build_crisis_zones_from_sources(items, [], [], [], [], [], [])
         self.assertEqual(len(zones), 15)
 
@@ -123,7 +150,12 @@ class TestBuildCrisisZones(unittest.TestCase):
     def test_curated_labels_replace_dataset_titles(self):
         # A raw HDX-style title must not leak onto the map; the place resolves
         # to its curated, specific-name crisis instead.
-        items = [self._item("Chad: Humanitarian Needs", desc="This dataset was compiled by the United Nations...")]
+        items = [
+            self._item(
+                "Chad: Humanitarian Needs",
+                desc="This dataset was compiled by the United Nations...",
+            )
+        ]
         zones = fz.build_crisis_zones_from_sources(items, [], [], [], [], [], [])
         self.assertEqual(len(zones), 1)
         self.assertEqual(zones[0]["name"], "Chad · Displacement crisis")
@@ -148,8 +180,9 @@ class TestBuildCrisisZones(unittest.TestCase):
         reversed_src = fz.build_crisis_zones_from_sources([], [], [], [], [], [], red_sea + chad)
         self.assertEqual(len(direct), 2)
         self.assertEqual([z["id"] for z in direct], [z["id"] for z in reversed_src])
-        self.assertEqual([z["id"] for z in direct],
-                         sorted(z["id"] for z in direct))  # id-sorted contract
+        self.assertEqual(
+            [z["id"] for z in direct], sorted(z["id"] for z in direct)
+        )  # id-sorted contract
 
     def test_keyword_without_label_falls_back_to_cleaned_title(self):
         # "suez" is a known place but has no curated label: the raw dataset
@@ -168,8 +201,7 @@ class TestBuildCrisisZones(unittest.TestCase):
             ("Suez \u2013 Humanitarian Snapshot", "Suez · Humanitarian crisis"),
             ("Suez \u2014 Humanitarian Assessment", "Suez · Humanitarian crisis"),
         ):
-            zones = fz.build_crisis_zones_from_sources(
-                [self._item(title)], [], [], [], [], [], [])
+            zones = fz.build_crisis_zones_from_sources([self._item(title)], [], [], [], [], [], [])
             self.assertEqual(zones[0]["name"], expected, f"title {title!r}")
 
     def test_curated_label_zone_carries_start_date(self):
@@ -250,7 +282,9 @@ class TestFinalizeCrisisZones(unittest.TestCase):
         self.assertLessEqual(len(out), 15)
 
     def test_skips_malformed_entries(self):
-        out = fz._finalize_crisis_zones([{"lat": 1}, "junk", {"id": "", "lat": 1}, {"id": "crisis-ok", "lat": 2, "lon": 2}])
+        out = fz._finalize_crisis_zones(
+            [{"lat": 1}, "junk", {"id": "", "lat": 1}, {"id": "crisis-ok", "lat": 2, "lon": 2}]
+        )
         self.assertEqual([z["id"] for z in out], ["crisis-ok"])
 
 
@@ -260,7 +294,9 @@ class TestStaticFallback(unittest.TestCase):
         self.assertEqual(len(ids), len(set(ids)))
         for z in fz.STATIC_CRISIS_ZONES:
             self.assertFalse(z["lat"] == 0.0 and z["lon"] == 0.0, z["id"])
-            self.assertIn(z["status"], {"active", "ongoing", "concluded", "inactive", "ended", "resolved"})
+            self.assertIn(
+                z["status"], {"active", "ongoing", "concluded", "inactive", "ended", "resolved"}
+            )
 
     def test_static_caps_at_fifteen(self):
         out = fz._finalize_crisis_zones(fz.STATIC_CRISIS_ZONES)
@@ -349,8 +385,11 @@ class TestCrisisRadius(unittest.TestCase):
         self.assertEqual(fz.crisisRadiusDeg("Sahel · Conflict & hunger"), fz.CRISIS_MAX_RADIUS_DEG)
 
     def test_unknown_names_fall_back_to_default(self):
-        expected = round(fz.CRISIS_MAX_RADIUS_DEG
-                         * (fz.CRISIS_DEFAULT_RADIUS_BASE / fz.CRISIS_MAX_RADIUS_DEG) ** fz.CRISIS_RADIUS_EXP, 1)
+        expected = round(
+            fz.CRISIS_MAX_RADIUS_DEG
+            * (fz.CRISIS_DEFAULT_RADIUS_BASE / fz.CRISIS_MAX_RADIUS_DEG) ** fz.CRISIS_RADIUS_EXP,
+            1,
+        )
         self.assertEqual(fz.crisisRadiusDeg("Suez · Humanitarian crisis"), expected)
 
     def test_static_radii_match_amplified_bases(self):
@@ -362,8 +401,10 @@ class TestCrisisRadius(unittest.TestCase):
 
 class TestParseOchaRss(unittest.TestCase):
     def _rss(self, *titles: str) -> str:
-        items = "".join(f"<item><title><![CDATA[{t}]]></title><link>https://e.example/{i}</link></item>"
-                        for i, t in enumerate(titles))
+        items = "".join(
+            f"<item><title><![CDATA[{t}]]></title><link>https://e.example/{i}</link></item>"
+            for i, t in enumerate(titles)
+        )
         return f"<rss><channel>{items}</channel></rss>"
 
     def test_parses_crisis_mentions(self):
@@ -410,7 +451,9 @@ class TestFetchUrl(unittest.TestCase):
         def fake_open(req, timeout, context):
             ctx_modes.append(context.verify_mode)
             if len(ctx_modes) < 2:
-                raise urllib.error.URLError(ssl.SSLCertVerificationError("certificate verify failed"))
+                raise urllib.error.URLError(
+                    ssl.SSLCertVerificationError("certificate verify failed")
+                )
             return _FakeResp(b"<ok/>\n")
 
         orig = fz.urllib.request.urlopen
@@ -468,16 +511,19 @@ class TestFetchUrl(unittest.TestCase):
 
     def test_decode_gzip(self):
         import gzip
-        body = gzip.compress("Sudan emergency".encode())
+
+        body = gzip.compress(b"Sudan emergency")
         self.assertEqual(fz._decode_body(_FakeResp(body, "gzip")), "Sudan emergency")
 
     def test_decode_zlib_deflate(self):
         import zlib
-        body = zlib.compress("Yemen cholera".encode())
+
+        body = zlib.compress(b"Yemen cholera")
         self.assertEqual(fz._decode_body(_FakeResp(body, "deflate")), "Yemen cholera")
 
     def test_decode_raw_deflate(self):
         import zlib
+
         co = zlib.compressobj(wbits=-zlib.MAX_WBITS)
         body = co.compress(b"raw deflate") + co.flush()
         self.assertEqual(fz._decode_body(_FakeResp(body, "deflate")), "raw deflate")
@@ -491,6 +537,7 @@ class TestFetchUrl(unittest.TestCase):
     def test_decode_decompression_bomb_rejected(self):
         # A tiny compressed stream that inflates past the cap is bounded too.
         import zlib
+
         bomb = zlib.compress(b"\x00" * (fz._MAX_HTTP_BODY + 1))
         with self.assertRaises(ValueError):
             fz._decode_body(_FakeResp(bomb, "deflate"))
@@ -515,15 +562,21 @@ class TestLoadWorldLayers(unittest.TestCase):
     def test_missing_conflict_zones_returns_none(self):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "world_layers.json"
-            path.write_text(json.dumps({"version": "1.1.0", "last_update": "2026-09-25T00:00:00+00:00"}),
-                            encoding="utf-8")
+            path.write_text(
+                json.dumps({"version": "1.1.0", "last_update": "2026-09-25T00:00:00+00:00"}),
+                encoding="utf-8",
+            )
             self.assertIsNone(fz.load_world_layers(path))
 
     def test_valid_file_is_returned(self):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "world_layers.json"
-            payload = {"version": "1.1.0", "last_update": "x",
-                       "conflict_zones": [{"id": "a"}], "crisis_zones": []}
+            payload = {
+                "version": "1.1.0",
+                "last_update": "x",
+                "conflict_zones": [{"id": "a"}],
+                "crisis_zones": [],
+            }
             path.write_text(json.dumps(payload), encoding="utf-8")
             self.assertEqual(fz.load_world_layers(path), payload)
 

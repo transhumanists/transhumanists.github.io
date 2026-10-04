@@ -27,9 +27,10 @@ plate. The map provides:
   hides or restores every category at once. It follows the per-row switches in both directions —
   hiding categories one at a time closes it, re-selecting a single one reopens it — and
   deliberately leaves the operational layers below it alone
-- **Operational layers**, each with its own switch and count: Conflict Zones, Ground Deployments &
-  Fleet Movements, Crisis Zones, and Human Rights Violations. These are map layers rather than
-  categories, and all four are off by default
+- **Operational layers**, each with its own switch and count: Conflict Zones, Crisis Zones,
+  Alliance & Defence Policy, Ground & Fleet Deployments, and Human Rights Violations. These are
+  map layers rather than categories, and all of them are off by default. Alliance & Defence
+  Policy nests inside Ground & Fleet Deployments and switches with its parent
 - **Interaction** — drag to pan, wheel/double-click/`+`/`-` to zoom, `0` to reset, and `+` / `−` / `⟲` buttons in the overlay
 - **Keyboard accessible** (arrow keys pan, `+`/`-` zoom, `0` reset)
 
@@ -110,6 +111,46 @@ and in the cron before it is allowed to commit.
 `--snapshot` appends to `data/coverage_history.json`, but only when the findings
 actually change, so that file is a changelog of progress toward filling the year gaps
 rather than a timestamp every six hours.
+
+**Auditing metric comparability.** `python scripts/check_data.py` validates the
+*shape* of a metric - present, right types, right ranges. It cannot tell whether the
+metric is comparable to its neighbours, and that is the thing that silently broke
+when the scrapers widened their source list: the record count went up, so the run
+looked like progress, while the share of records carrying a number *and* a unit fell.
+A record whose `value` is its own title renders as a number-shaped blank - it
+counts, it appears, and it can never be ranked against anything.
+
+`python scripts/metric_coverage.py` answers that, per `(category, subcategory)`:
+
+```
+$ python scripts/metric_coverage.py
+  category                     subcategory             recs    cmp coherence  units
+  Quantum Physics              quantum_supremacy          2      2     0.50  qubitsx1, qvx1  <-- mixed units
+  Spaceflight & Aeronautics    launch                     6      1     1.00  tonnesx1  <-- mostly prose
+
+  total 110 records · 57 comparable (51.8%) · 0 unitless · 53 prose
+```
+
+`cmp` counts records with a number and a unit. `coherence` is the largest share of
+any one unit in the subcategory: below 1.00 means the numbers there cannot be ranked
+against each other at all, however many of them there are. That is the subtler half of
+"comparable", and it is the half that broke - `qubits` against `qv`, `MJ` against
+`minutes`. Cosmetic spelling (`%` vs `percent`) is normalised away first, but
+qualifiers are not: `physical qubits` and `logical qubits` are different quantities
+and stay flagged.
+
+`--gate` is the part CI runs. It fails when a subcategory becomes *less* comparable
+than the recorded baseline, when a new subcategory mixes units, or when a metric that
+was extractable is republished as prose. Adding records never fails it, and the debt
+already on the baseline is reported rather than enforced - a gate that is red from day
+one is a gate nobody reads. `data/metric_coverage_baseline.json` is therefore a
+ratchet: when comparability genuinely improves, re-record it with
+`--update-baseline` so the bar moves up rather than drifting downward silently.
+
+The upstream extractor carries the matching instruction, including a per-category
+contract naming the one quantity each subcategory tracks; see
+`llm/score_milestone.py` in `transhumanists/apis`, which pins it with
+`tests/test_metric_prompt.py`.
 
 GitHub Actions runs six jobs on every push/PR to `main`: the JS suite and a static parse
 check, the Python suites, data validation, a determinism gate over two regenerations,

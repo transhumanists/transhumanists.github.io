@@ -5,6 +5,7 @@ straight from upstream for months, because check_events rejected it and
 check_milestones did not. These tests pin both halves - the validator and the
 report - so the two cannot drift apart again.
 """
+
 from __future__ import annotations
 
 import json
@@ -70,14 +71,22 @@ class TestNullIslandEnforcement(unittest.TestCase):
     def test_zero_lat_with_real_lon_is_not_null_island(self):
         """Only the exact pair is the sentinel. A point on the equator is real."""
         self.assertEqual(
-            cd.check_milestones(_payload([_milestone(geolocation={"lat": 0, "lon": 121.5})])), [])
+            cd.check_milestones(_payload([_milestone(geolocation={"lat": 0, "lon": 121.5})])), []
+        )
 
     def test_events_and_milestones_agree_on_the_rule(self):
         """The two validators must not drift: same input, same verdict."""
         geo = {"lat": 0, "lon": 0}
-        ev_issues = cd.check_events([{
-            "title": "T", "category": "Computing & AGI", "date": "2024-05-01",
-            "geolocation": geo}])
+        ev_issues = cd.check_events(
+            [
+                {
+                    "title": "T",
+                    "category": "Computing & AGI",
+                    "date": "2024-05-01",
+                    "geolocation": geo,
+                }
+            ]
+        )
         ms_issues = cd.check_milestones(_payload([_milestone(geolocation=geo)]))
         self.assertTrue(any("no-location marker" in i for i in ev_issues), ev_issues)
         self.assertTrue(any("no-location marker" in i for i in ms_issues), ms_issues)
@@ -104,7 +113,9 @@ class TestGeocodeState(unittest.TestCase):
         self.assertEqual(cr.geocode_state({"geolocation": "51.5,-0.1"}), "malformed")
 
     def test_absent_key_and_explicit_none_agree(self):
-        self.assertEqual(cr.geocode_state({"title": "x"}), cr.geocode_state({"title": "x", "geolocation": None}))
+        self.assertEqual(
+            cr.geocode_state({"title": "x"}), cr.geocode_state({"title": "x", "geolocation": None})
+        )
 
 
 class TestCoverageReport(unittest.TestCase):
@@ -112,7 +123,8 @@ class TestCoverageReport(unittest.TestCase):
         r = cr.build(1945, 2026, cr.DEFAULT_FILES)
         t = r["totals"]
         self.assertEqual(
-            t["located"] + t["unlocated"] + t["null_island"] + t["malformed"], t["unique"])
+            t["located"] + t["unlocated"] + t["null_island"] + t["malformed"], t["unique"]
+        )
 
     def test_year_range_is_exact(self):
         r = cr.build(1945, 2026, cr.DEFAULT_FILES)
@@ -122,7 +134,8 @@ class TestCoverageReport(unittest.TestCase):
     def test_empty_and_populated_years_are_disjoint(self):
         r = cr.build(1945, 2026, cr.DEFAULT_FILES)
         self.assertEqual(
-            set(r["years"]["empty_years"]) & set(int(y) for y in r["years"]["by_year"]), set())
+            set(r["years"]["empty_years"]) & set(int(y) for y in r["years"]["by_year"]), set()
+        )
 
     def test_deduplicates_across_overlapping_files(self):
         # milestones.json and milestones_history.json intentionally overlap, so the
@@ -148,6 +161,7 @@ class TestCoverageReport(unittest.TestCase):
 class TestArchiveDropsUpstreamSentinel(unittest.TestCase):
     def test_archive_record_omits_null_island(self):
         import sync_milestones as sm
+
         rec = sm.archive_record(_milestone(geolocation={"lat": 0, "lon": 0}), "2026-01-01")
         self.assertNotIn("geolocation", rec)
         self.assertIs(rec["located"], False)
@@ -155,11 +169,13 @@ class TestArchiveDropsUpstreamSentinel(unittest.TestCase):
 
     def test_archive_record_keeps_real_coordinates(self):
         import sync_milestones as sm
+
         rec = sm.archive_record(_milestone(), "2026-01-01")
         self.assertEqual(rec["geolocation"]["lat"], 51.5)
 
     def test_archive_record_handles_absent_key(self):
         import sync_milestones as sm
+
         m = _milestone()
         del m["geolocation"]
         rec = sm.archive_record(m, "2026-01-01")
@@ -167,22 +183,32 @@ class TestArchiveDropsUpstreamSentinel(unittest.TestCase):
 
     def test_archive_record_rejects_non_finite(self):
         import sync_milestones as sm
+
         rec = sm.archive_record(
-            _milestone(geolocation={"lat": float("nan"), "lon": 1.0}), "2026-01-01")
+            _milestone(geolocation={"lat": float("nan"), "lon": 1.0}), "2026-01-01"
+        )
         self.assertNotIn("geolocation", rec)
 
 
 if __name__ == "__main__":
     unittest.main()
 
+
 class TestDataDirIsOverridable(unittest.TestCase):
     """The gate's whole value is its failure path, so it has to be reachable."""
 
     def _tree(self, root: pathlib.Path, records):
         (root / "data").mkdir(exist_ok=True)
-        (root / "data" / "milestones.json").write_text(json.dumps(
-            {"version": "1.0.0", "last_update": "2026-01-01T00:00:00+00:00",
-             "categories": {"computing_agi": {"milestones": records}}}), encoding="utf-8")
+        (root / "data" / "milestones.json").write_text(
+            json.dumps(
+                {
+                    "version": "1.0.0",
+                    "last_update": "2026-01-01T00:00:00+00:00",
+                    "categories": {"computing_agi": {"milestones": records}},
+                }
+            ),
+            encoding="utf-8",
+        )
         for name in ("milestones_history.json", "historical_milestones.json"):
             (root / "data" / name).write_text(json.dumps(records), encoding="utf-8")
 
@@ -190,15 +216,30 @@ class TestDataDirIsOverridable(unittest.TestCase):
         env = dict(os.environ, WORLDMAP_DATA_DIR=str(root / "data"))
         return subprocess.run(
             [sys.executable, str(ROOT / "scripts" / "coverage_report.py"), *args],
-            capture_output=True, text=True, env=env, cwd=str(root))
+            capture_output=True,
+            text=True,
+            env=env,
+            cwd=str(root),
+        )
 
     def test_clean_tree_exits_zero_and_prints_nothing_when_quiet(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = pathlib.Path(tmp)
-            self._tree(root, [{"id": "ms-1", "category": "Computing & AGI",
-                               "subcategory": "x", "title": "T", "date": "2024-05-01",
-                               "source": "S", "url": "https://e.org/a",
-                               "geolocation": {"lat": 51.5, "lon": -0.12}}])
+            self._tree(
+                root,
+                [
+                    {
+                        "id": "ms-1",
+                        "category": "Computing & AGI",
+                        "subcategory": "x",
+                        "title": "T",
+                        "date": "2024-05-01",
+                        "source": "S",
+                        "url": "https://e.org/a",
+                        "geolocation": {"lat": 51.5, "lon": -0.12},
+                    }
+                ],
+            )
             r = self._run(root, "--fail-on-null-island", "--quiet")
             self.assertEqual(r.returncode, 0, r.stderr)
             self.assertEqual(r.stdout, "")
@@ -208,11 +249,21 @@ class TestDataDirIsOverridable(unittest.TestCase):
         # crash, and nobody debugs a silent non-zero exit.
         with tempfile.TemporaryDirectory() as tmp:
             root = pathlib.Path(tmp)
-            self._tree(root, [{"id": "ms-1", "category": "Computing & AGI",
-                               "subcategory": "x", "title": "Badly geocoded",
-                               "date": "2024-05-01", "source": "S",
-                               "url": "https://e.org/a",
-                               "geolocation": {"lat": 0, "lon": 0}}])
+            self._tree(
+                root,
+                [
+                    {
+                        "id": "ms-1",
+                        "category": "Computing & AGI",
+                        "subcategory": "x",
+                        "title": "Badly geocoded",
+                        "date": "2024-05-01",
+                        "source": "S",
+                        "url": "https://e.org/a",
+                        "geolocation": {"lat": 0, "lon": 0},
+                    }
+                ],
+            )
             r = self._run(root, "--fail-on-null-island", "--quiet")
             self.assertEqual(r.returncode, 1)
             self.assertEqual(r.stdout, "")
@@ -222,10 +273,21 @@ class TestDataDirIsOverridable(unittest.TestCase):
     def test_json_mode_still_emits_a_document_on_failure(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = pathlib.Path(tmp)
-            self._tree(root, [{"id": "ms-1", "category": "Computing & AGI",
-                               "subcategory": "x", "title": "Bad", "date": "2024-05-01",
-                               "source": "S", "url": "https://e.org/a",
-                               "geolocation": {"lat": 0, "lon": 0}}])
+            self._tree(
+                root,
+                [
+                    {
+                        "id": "ms-1",
+                        "category": "Computing & AGI",
+                        "subcategory": "x",
+                        "title": "Bad",
+                        "date": "2024-05-01",
+                        "source": "S",
+                        "url": "https://e.org/a",
+                        "geolocation": {"lat": 0, "lon": 0},
+                    }
+                ],
+            )
             r = self._run(root, "--fail-on-null-island", "--json")
             self.assertEqual(r.returncode, 1)
             payload = json.loads(r.stdout)
@@ -239,8 +301,11 @@ class TestDataDirIsOverridable(unittest.TestCase):
         # must still be found, not silently zero records.
         r = subprocess.run(
             [sys.executable, str(ROOT / "scripts" / "coverage_report.py"), "--json"],
-            capture_output=True, text=True, cwd=str(ROOT),
-            env={k: v for k, v in os.environ.items() if k != "WORLDMAP_DATA_DIR"})
+            capture_output=True,
+            text=True,
+            cwd=str(ROOT),
+            env={k: v for k, v in os.environ.items() if k != "WORLDMAP_DATA_DIR"},
+        )
         self.assertEqual(r.returncode, 0, r.stderr)
         self.assertGreater(json.loads(r.stdout)["totals"]["unique"], 50)
 
@@ -254,7 +319,8 @@ class TestDedupKeyKeepsDistinctRecords(unittest.TestCase):
             (root / "data").mkdir()
             for name in ("milestones.json", "milestones_history.json"):
                 (root / "data" / name).write_text(
-                    json.dumps([dict(r) for r in records]), encoding="utf-8")
+                    json.dumps([dict(r) for r in records]), encoding="utf-8"
+                )
             (root / "data" / "historical_milestones.json").write_text("[]", encoding="utf-8")
             old = cr.DATA_DIR
             try:
@@ -264,10 +330,12 @@ class TestDedupKeyKeepsDistinctRecords(unittest.TestCase):
                 cr.DATA_DIR = old
 
     def test_same_title_same_day_different_url_stay_separate(self):
-        r = self._report_for([
-            {"title": "Consortium result", "date": "2024-05-01", "url": "https://a.org/1"},
-            {"title": "Consortium result", "date": "2024-05-01", "url": "https://b.org/2"},
-        ])
+        r = self._report_for(
+            [
+                {"title": "Consortium result", "date": "2024-05-01", "url": "https://a.org/1"},
+                {"title": "Consortium result", "date": "2024-05-01", "url": "https://b.org/2"},
+            ]
+        )
         self.assertEqual(r["totals"]["unique"], 2)
         self.assertEqual(r["totals"]["records_read"], 4)
         self.assertEqual(r["totals"]["duplicate_across_files"], 2)
@@ -284,6 +352,5 @@ class TestDedupKeyKeepsDistinctRecords(unittest.TestCase):
         self.assertEqual(r["totals"]["duplicate_across_files"], 3)
 
 
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

@@ -12,6 +12,7 @@ validators rather than duplicated into them, so a change to what counts as
 No imports beyond the standard library: `check_data.py` is loaded by CI with no
 third-party packages available.
 """
+
 from __future__ import annotations
 
 import math
@@ -38,8 +39,15 @@ ORIGIN_EPSILON = 1e-6
 # "source" is the one worth distrusting: it places a Stanford paper at Nature's
 # London office. Surfacing the level lets a consumer weight or filter on it instead
 # of treating every dot as equally authoritative.
-CONFIDENCE_LEVELS = ("stated", "institution", "place", "article",
-                   "subcategory", "source", "unlocated")
+CONFIDENCE_LEVELS = (
+    "stated",
+    "institution",
+    "place",
+    "article",
+    "subcategory",
+    "source",
+    "unlocated",
+)
 
 UNLOCATED = "unlocated"
 

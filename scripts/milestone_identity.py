@@ -27,10 +27,48 @@ from urllib.parse import urlsplit
 
 # Content words carrying no discriminating power. Excluded so that a generic
 # phrase like "new milestone reported" cannot corroborate two unrelated records.
-DEDUPE_STOPWORDS = frozenset("""
-a an the of for and in on to new via using with at by from is are was were be been
-that this its as into over under more most less least than then which we our
-""".split())
+DEDUPE_STOPWORDS = frozenset(
+    [
+        "a",
+        "an",
+        "the",
+        "of",
+        "for",
+        "and",
+        "in",
+        "on",
+        "to",
+        "new",
+        "via",
+        "using",
+        "with",
+        "at",
+        "by",
+        "from",
+        "is",
+        "are",
+        "was",
+        "were",
+        "be",
+        "been",
+        "that",
+        "this",
+        "its",
+        "as",
+        "into",
+        "over",
+        "under",
+        "more",
+        "most",
+        "less",
+        "least",
+        "than",
+        "then",
+        "which",
+        "we",
+        "our",
+    ]
+)
 
 
 def content_tokens(title: object) -> set:

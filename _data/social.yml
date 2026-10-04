@@ -1,0 +1,18 @@
+# social.yml — "find us on" data for _includes/social-links.html.
+#
+# This file is the reason every footer Bluesky link on this site was silently
+# absent: social-links.html reads site.data.social.<key>, and no social.yml
+# existed in any of the four sites. With it present the existing include renders
+# the links with no template change at all.
+#
+# Keys consumed by the include: github, sponsors, youtube, mastodon, bluesky,
+# twitter, discord, website. Any key left out is simply not rendered.
+#
+# bluesky here is deliberately NOT hardcoded to the blocked
+# transhumanists.bsky.social handle (see TASK-BSKY-REASSIGN-TH). Until a handle
+# you own exists, this site renders no Bluesky link rather than sending visitors
+# to a third party's profile. Add it at the same time as the handle change.
+github: transhumanists
+sponsors: transhumanists
+bluesky: ""
+website: https://transhumanists.github.io
