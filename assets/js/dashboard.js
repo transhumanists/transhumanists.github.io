@@ -310,165 +310,21 @@
     return num.toLocaleString();
   }
 
-  // ---- Milestone detail modal ----
-  let modalElements = null;
-  let modalKeyHandler = null;
-  let modalClickHandler = null;
-
-  function getModalElements() {
-    if (modalElements) return modalElements;
-    modalElements = {
-      modal: document.getElementById('milestone-modal'),
-      title: document.getElementById('milestone-modal-title'),
-      icon: document.getElementById('milestone-modal-icon'),
-      value: document.getElementById('milestone-modal-value'),
-      unit: document.getElementById('milestone-modal-unit'),
-      source: document.getElementById('milestone-modal-source'),
-      date: document.getElementById('milestone-modal-date'),
-      geoSection: document.getElementById('milestone-modal-geo-section'),
-      geo: document.getElementById('milestone-modal-geo'),
-      descSection: document.getElementById('milestone-modal-desc-section'),
-      desc: document.getElementById('milestone-modal-description'),
-      close: document.getElementById('milestone-modal-close'),
-    };
-    return modalElements;
-  }
-
-  function setupModalEventListeners() {
-    const { modal, close } = getModalElements();
-    if (!modal) return;
-
-    modalKeyHandler = e => {
-      if (e.key === 'Escape' && modal.classList.contains('open')) closeMilestoneModal();
-    };
-    document.addEventListener('keydown', modalKeyHandler);
-
-    modalClickHandler = e => {
-      if (e.target === modal) closeMilestoneModal();
-    };
-    modal.addEventListener('click', modalClickHandler);
-
-    if (close) {
-      close.addEventListener('click', closeMilestoneModal);
+  // ---- Milestone detail card -----------------------------------------------
+  // The card itself - the overlay, its animation, its focus trap and the whole
+  // reaction surface - belongs to assets/js/milestone-detail.js. This is only the
+  // one call site every renderer shares: the category grid, the top-milestones
+  // list and the catalog all hand their record over here so there is a single
+  // entry point, and therefore one place that decides what `sourceEl` is.
+  //
+  // It used to be a modal rendered by filling in fields on a `#milestone-modal`
+  // element - except no page ever contained that element, so every click on
+  // every milestone silently did nothing. That dead code is gone rather than
+  // left as a second, unreachable implementation of the same view.
+  function openMilestoneModal(milestone, sourceEl) {
+    if (window.MilestoneDetail && typeof window.MilestoneDetail.open === 'function') {
+      window.MilestoneDetail.open(milestone, sourceEl);
     }
-  }
-
-  function removeModalEventListeners() {
-    const { modal, close } = getModalElements();
-    if (modalKeyHandler) document.removeEventListener('keydown', modalKeyHandler);
-    if (modalClickHandler && modal) modal.removeEventListener('click', modalClickHandler);
-    if (close) close.removeEventListener('click', closeMilestoneModal);
-    modalKeyHandler = null;
-    modalClickHandler = null;
-  }
-
-  function getCategoryConfig(milestone) {
-    const rawKey = milestone.category_key || milestone.category;
-    const key = String(rawKey).toLowerCase().replace(/\s+/g, '_').replace(/&/g, '');
-    return CATEGORY_CONFIG[key] || { icon: '📌', color: '#00d4ff' };
-  }
-
-  function openMilestoneModal(milestone) {
-    const { modal, title, icon, value, unit, source, date, geoSection, geo, descSection, desc, close } = getModalElements();
-    if (!modal) return;
-
-    const config = getCategoryConfig(milestone);
-
-    title.textContent = milestone.title || 'Untitled';
-    icon.textContent = milestone.icon || config.icon;
-    icon.style.background = config.color + '22';
-    value.textContent = milestoneValueText(milestone);
-    unit.textContent = milestone.unit || '';
-    date.textContent = milestone.date || '—';
-
-    source.replaceChildren();
-    if (milestone.source) {
-      const sourceLabel = createEl('span', '', milestone.source);
-      source.appendChild(sourceLabel);
-    }
-    if (milestone.url && /^https?:\/\//i.test(milestone.url)) {
-      const link = createEl('a', '', 'Open source ↗');
-      link.href = milestone.url;
-      link.target = '_blank';
-      link.rel = 'noopener noreferrer';
-      link.referrerPolicy = 'no-referrer';
-      source.appendChild(link);
-    }
-
-    if (milestone.geolocation && typeof milestone.geolocation.lat === 'number' && typeof milestone.geolocation.lon === 'number') {
-      geoSection.style.display = 'block';
-      geo.textContent = `📍 ${milestone.geolocation.lat.toFixed(2)}, ${milestone.geolocation.lon.toFixed(2)}`;
-    } else {
-      geoSection.style.display = 'none';
-    }
-
-    if (milestone.description) {
-      descSection.style.display = 'block';
-      desc.textContent = milestone.description;
-    } else {
-      descSection.style.display = 'none';
-    }
-
-    const wasOpen = modal.classList.contains('open');
-    modal.classList.add('open');
-    modal.setAttribute('aria-hidden', 'false');
-    document.body.style.overflow = 'hidden';
-
-    // Focus management
-    const focusable = modal.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
-    if (focusable.length) focusable[0].focus();
-
-    // Trap focus (only add listener if modal wasn't already open)
-    modal._focusable = focusable;
-    modal._firstFocusable = focusable[0];
-    modal._lastFocusable = focusable[focusable.length - 1];
-    if (!wasOpen) {
-      modal.addEventListener('keydown', trapFocus);
-    }
-  }
-
-  function trapFocus(e) {
-    if (e.key !== 'Tab') return;
-    const { modal } = getModalElements();
-    if (!modal || !modal.classList.contains('open')) return;
-
-    const { _firstFocusable, _lastFocusable } = modal;
-    if (e.shiftKey) {
-      if (document.activeElement === _firstFocusable) {
-        e.preventDefault();
-        _lastFocusable?.focus();
-      }
-    } else {
-      if (document.activeElement === _lastFocusable) {
-        e.preventDefault();
-        _firstFocusable?.focus();
-      }
-    }
-  }
-
-  function closeMilestoneModal() {
-    const { modal } = getModalElements();
-    if (!modal) return;
-
-    modal.classList.remove('open');
-    modal.setAttribute('aria-hidden', 'true');
-    document.body.style.overflow = '';
-    modal.removeEventListener('keydown', trapFocus);
-    delete modal._focusable;
-    delete modal._firstFocusable;
-    delete modal._lastFocusable;
-  }
-
-  // Initialize modal event listeners when DOM is ready (idempotent)
-  function initModal() {
-    removeModalEventListeners();
-    setupModalEventListeners();
-  }
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initModal, { once: true });
-  } else {
-    initModal();
   }
 
   // ---- Shared milestone data cache ----
@@ -1121,7 +977,7 @@ function nextChartBucket(key, size) {
         card.appendChild(badge);
       }
 
-      card.addEventListener('click', () => openMilestoneModal(m));
+      card.addEventListener('click', () => openMilestoneModal(m, card));
       card.addEventListener('keydown', e => {
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
@@ -1442,13 +1298,27 @@ function nextChartBucket(key, size) {
           card.appendChild(badge);
         }
 
-        card.addEventListener('click', () => openMilestoneModal(m));
+        card.addEventListener('click', e => {
+          // The "superseded by" line is a real link. Following it is a more
+          // specific intent than opening this record, so it must not also open
+          // the card underneath - and a reaction chip inside the card posts, which
+          // the same guard covers.
+          if (e.target && e.target.closest && e.target.closest('a, .catalog-card__reaction')) return;
+          openMilestoneModal(m, card);
+        });
         card.addEventListener('keydown', e => {
           if (e.key === 'Enter' || e.key === ' ') {
             e.preventDefault();
-            openMilestoneModal(m);
+            openMilestoneModal(m, card);
           }
         });
+        // Hand the record behind this card to the detail module, which owns the
+        // overlay and the reaction strip. Done through its public hook rather
+        // than by reaching into it, and skipped when it is not on the page - the
+        // catalog renderer is also loaded by pages without an overlay.
+        if (window.MilestoneDetail && typeof window.MilestoneDetail.register === 'function') {
+          window.MilestoneDetail.register(card, m);
+        }
         card.addEventListener('mouseenter', () => {
           card.style.transform = 'translateY(-2px)';
           card.style.boxShadow = 'var(--shadow), 0 0 20px ' + catConfig.color + '33';
@@ -1462,6 +1332,9 @@ function nextChartBucket(key, size) {
         card.style.cursor = 'pointer';
         card.setAttribute('role', 'button');
         card.setAttribute('tabindex', '0');
+        // Announced as a button that opens something, not as a generic button:
+        // the whole point of the card is that it has a detail view behind it.
+        card.setAttribute('aria-label', 'Open milestone details: ' + m.title);
 
         frag.appendChild(card);
 
@@ -1755,7 +1628,7 @@ function nextChartBucket(key, size) {
           if (e.key === 'Enter' || e.key === ' ') {
             e.preventDefault();
             pause();
-            openMilestoneModal(m);
+            openMilestoneModal(m, card);
           }
         });
         frag.appendChild(card);

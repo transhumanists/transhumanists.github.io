@@ -1,0 +1,115 @@
+{%- comment -%}
+Milestone detail card - the overlay every milestone in "All Milestones Cataloged"
+opens into.
+
+This is a SHELL, not a template for one milestone: every field is filled in by
+assets/js/milestone-detail.js from the record that was clicked, because the
+catalog is rendered client-side from /data/milestones.json and Jekyll has never
+seen the record it is describing.
+
+Two deliberate choices:
+
+  * It lives in its own include rather than inline in index.md so the markup and
+    the stylesheet that targets it can be reviewed - and replaced - as a pair.
+
+  * The reaction strip and the posting thread are INSIDE the card, not beside it.
+    A reader who has not opened a milestone has no opinion about it yet, so the
+    only thing worth showing them in the grid is the top three reactions as a
+    passive read-out. Everything else - the full emoji set, the thread, the
+    composer - is reachable only by opening the card.
+
+`hidden` on the root is load-bearing, not belt-and-braces: without it the panel
+paints during the first frame and then jumps, which reads as a flash rather than
+an entrance. milestone-detail.js removes it inside the opening frame.
+{%- endcomment -%}
+
+<div class="ms-detail" id="milestone-detail" role="dialog" aria-modal="true"
+     aria-labelledby="ms-detail-title" aria-describedby="ms-detail-category"
+     aria-hidden="true" hidden>
+  <div class="ms-detail__scrim" id="ms-detail-scrim"></div>
+
+  <article class="ms-detail__panel" id="ms-detail-panel" tabindex="-1">
+
+    <header class="ms-detail__head">
+      <span class="ms-detail__icon" id="ms-detail-icon" aria-hidden="true"></span>
+      <div class="ms-detail__head-text">
+        <p class="ms-detail__cat" id="ms-detail-category"></p>
+        <h2 class="ms-detail__title" id="ms-detail-title"></h2>
+      </div>
+      <button type="button" class="ms-detail__close" id="ms-detail-close" aria-label="Close milestone details">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
+             stroke-width="2" stroke-linecap="round" aria-hidden="true" focusable="false">
+          <path d="M18 6 6 18M6 6l12 12"/>
+        </svg>
+      </button>
+    </header>
+
+    <div class="ms-detail__metric" id="ms-detail-metric">
+      <div class="ms-detail__metric-main">
+        <span class="ms-detail__value" id="ms-detail-value"></span>
+        <span class="ms-detail__unit" id="ms-detail-unit"></span>
+      </div>
+      <div class="ms-detail__metric-meta">
+        <span class="ms-detail__date" id="ms-detail-date"></span>
+        <span class="ms-detail__record" id="ms-detail-record" hidden></span>
+      </div>
+    </div>
+
+    <div class="ms-detail__badges" id="ms-detail-badges"></div>
+
+    <div class="ms-detail__body" id="ms-detail-body">
+
+      <section class="ms-detail__section" id="ms-detail-summary-section" hidden>
+        <h3 class="ms-detail__section-title">Summary</h3>
+        <p class="ms-detail__summary" id="ms-detail-summary"></p>
+      </section>
+
+      <section class="ms-detail__section" id="ms-detail-location-section" hidden>
+        <h3 class="ms-detail__section-title">Location</h3>
+        <p class="ms-detail__location" id="ms-detail-location"></p>
+        <p class="ms-detail__location-note" id="ms-detail-location-note"></p>
+      </section>
+
+      <section class="ms-detail__section" id="ms-detail-superseded-section" hidden>
+        <h3 class="ms-detail__section-title">Progression</h3>
+        <div class="ms-detail__superseded" id="ms-detail-superseded"></div>
+      </section>
+
+      <section class="ms-detail__section">
+        <h3 class="ms-detail__section-title">References &amp; sources</h3>
+        <ul class="ms-detail__refs" id="ms-detail-refs"></ul>
+      </section>
+
+    </div>
+
+    {%- comment -%}
+    Reaction block. Only reachable with a milestone card open: the whole thing is
+    inside the dialog, and the dialog only exists in the open state.
+    {%- endcomment -%}
+    <section class="ms-detail__reactions" id="ms-detail-reactions"
+             aria-labelledby="ms-detail-reactions-title">
+      <div class="ms-detail__reactions-head">
+        <h3 class="ms-detail__section-title" id="ms-detail-reactions-title">Reactions</h3>
+        <span class="ms-detail__identity" id="ms-detail-identity"></span>
+      </div>
+
+      <div class="ms-detail__reaction-bar" id="ms-detail-reaction-bar" role="group"
+           aria-label="React to this milestone"></div>
+
+      <form class="ms-detail__composer" id="ms-detail-composer" novalidate>
+        <label class="ms-detail__composer-label" for="ms-detail-comment">Add to the thread</label>
+        <textarea class="ms-detail__composer-input" id="ms-detail-comment" rows="2"
+                  maxlength="280" placeholder="What is missing from this record? Cite a better source."></textarea>
+        <div class="ms-detail__composer-foot">
+          <span class="ms-detail__composer-count" id="ms-detail-comment-count">0 / 280</span>
+          <button type="submit" class="ms-detail__composer-submit" id="ms-detail-comment-submit">Post</button>
+        </div>
+        <p class="ms-detail__composer-note" id="ms-detail-composer-note" role="status"></p>
+      </form>
+
+      <ol class="ms-detail__thread" id="ms-detail-thread" aria-live="polite"
+          aria-label="Reactions and comments on this milestone"></ol>
+    </section>
+
+  </article>
+</div>

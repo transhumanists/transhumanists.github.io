@@ -1,0 +1,924 @@
+/* Milestone detail card + reactions.
+ *
+ * Loaded only by index.md, the one page that renders the catalog grid. Keeping it
+ * out of main.css means the overlay's rules - which include a z-index, a scroll
+ * lock and a full-viewport scrim - cannot collide with a component on a page that
+ * has no milestone card, and a restyle of either file stays a single-file diff.
+ *
+ * The palette is entirely inherited from main.css's custom properties, so light
+ * mode needs no second set of rules here: if --bg-elevated inverts, this card
+ * inverts with it.
+ */
+
+/* The catalog card is the FLIP origin and the tap target, so it needs the two
+ * things a touch target needs. `manipulation` removes the 300ms double-tap-zoom
+ * delay without disabling panning, and the highlight kill means a tap does not
+ * leave a blue flash behind the card that is about to grow into the panel. */
+.catalog-card {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ------------------------------------------------------------------ shell -- */
+
+.ms-detail {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  /* The dialog is inert until it opens, and `hidden` already removes it from the
+   * a11y tree and from hit testing. This is belt-and-braces for the frame between
+   * script start and the first open, during which the panel would otherwise be a
+   * transparent box sitting over the catalog and eating taps. */
+  pointer-events: none;
+}
+
+.ms-detail[hidden] {
+  display: none;
+}
+
+.ms-detail__scrim {
+  position: absolute;
+  inset: 0;
+  background: rgba(2, 6, 14, 0.72);
+  -webkit-backdrop-filter: blur(6px) saturate(120%);
+  backdrop-filter: blur(6px) saturate(120%);
+  opacity: 0;
+  transition: opacity 320ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.ms-detail.is-open {
+  pointer-events: auto;
+}
+
+.ms-detail.is-open .ms-detail__scrim {
+  opacity: 1;
+}
+
+/* ------------------------------------------------------------------ panel -- */
+
+.ms-detail__panel {
+  position: relative;
+  width: min(880px, 100%);
+  max-height: min(86vh, 900px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--bg-elevated);
+  color: var(--fg);
+  border: 1px solid var(--border-hover);
+  border-radius: calc(var(--radius) * 1.5);
+  box-shadow:
+    0 0 0 1px rgba(0, 212, 255, 0.06),
+    0 24px 80px rgba(0, 0, 0, 0.62),
+    0 4px 18px rgba(0, 0, 0, 0.4);
+  /* transform-origin is what makes the FLIP scale land on the panel's own centre
+   * instead of its top-left corner; the JS translates and scales from here. */
+  transform-origin: 50% 50%;
+  will-change: transform, opacity;
+  /* Starts fully collapsed. JS flips it to `transform: none` on the next frame;
+   * see open() in milestone-detail.js for why the first state is set inline. */
+  transform: scale(0.86);
+  opacity: 0;
+  transition:
+    transform 520ms cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 260ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.ms-detail.is-open .ms-detail__panel {
+  transform: scale(1);
+  opacity: 1;
+}
+
+.ms-detail.is-closing .ms-detail__panel {
+  /* Closing is quicker than opening on purpose: a dismissal the reader has
+   * already committed to should not make them wait for the full entrance. */
+  transition:
+    transform 260ms cubic-bezier(0.4, 0, 1, 1),
+    opacity 200ms cubic-bezier(0.4, 0, 1, 1);
+}
+
+.ms-detail.is-closing .ms-detail__scrim {
+  opacity: 0;
+  transition-duration: 240ms;
+}
+
+/* Glow keyed to the milestone's category, injected as --ms-detail-accent by JS.
+ * Defaults to the site accent so a record with an unknown category still renders
+ * a coherent card rather than an unstyled transparent edge. */
+.ms-detail__panel::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 3px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--ms-detail-accent, var(--accent)) 18%,
+    var(--ms-detail-accent, var(--accent)) 82%,
+    transparent
+  );
+  opacity: 0.85;
+  pointer-events: none;
+}
+
+/* ------------------------------------------------------------------- head -- */
+
+.ms-detail__head {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 22px 22px 16px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.ms-detail__icon {
+  flex-shrink: 0;
+  width: 52px;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.6rem;
+  border-radius: var(--radius);
+  background: var(--ms-detail-accent-soft, var(--accent-dim));
+  border: 1px solid var(--ms-detail-accent-line, var(--border));
+  line-height: 1;
+}
+
+.ms-detail__head-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.ms-detail__cat {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ms-detail-accent, var(--accent));
+  margin-bottom: 4px;
+}
+
+.ms-detail__title {
+  font-size: 1.35rem;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--fg);
+  overflow-wrap: anywhere;
+}
+
+.ms-detail__close {
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  color: var(--fg-muted);
+  cursor: pointer;
+  transition: background var(--transition), color var(--transition),
+    border-color var(--transition), transform var(--transition);
+}
+
+.ms-detail__close:hover {
+  background: var(--accent-dim);
+  border-color: var(--accent);
+  color: var(--accent);
+  transform: rotate(90deg);
+}
+
+/* ----------------------------------------------------------------- metric -- */
+
+.ms-detail__metric {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 16px 22px;
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.ms-detail__metric[hidden] {
+  display: none;
+}
+
+.ms-detail__metric-main {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+}
+
+.ms-detail__value {
+  font-family: var(--font-mono);
+  font-size: 2.4rem;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--ms-detail-accent, var(--accent));
+}
+
+.ms-detail__unit {
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  color: var(--fg-muted);
+}
+
+.ms-detail__metric-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--fg-subtle);
+  flex-wrap: wrap;
+}
+
+.ms-detail__record {
+  padding: 2px 7px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+}
+
+/* ---------------------------------------------------------------- badges --- */
+
+.ms-detail__badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 0 22px;
+  flex-shrink: 0;
+}
+
+.ms-detail__badges:not(:empty) {
+  padding-top: 14px;
+}
+
+.ms-detail__badge {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  padding: 4px 9px;
+  border-radius: 999px;
+  border: 1px solid currentColor;
+  color: var(--fg-muted);
+}
+
+.ms-detail__badge--new { color: var(--green); background: rgba(0, 230, 118, 0.09); }
+.ms-detail__badge--record { color: var(--accent); background: var(--accent-dim); }
+.ms-detail__badge--breakthrough { color: var(--purple); background: rgba(179, 136, 255, 0.1); }
+.ms-detail__badge--beaten { color: var(--orange); background: rgba(255, 145, 0, 0.1); }
+
+/* ------------------------------------------------------------------ body --- */
+
+.ms-detail__body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 18px 22px 4px;
+}
+
+.ms-detail__section {
+  margin-bottom: 20px;
+}
+
+.ms-detail__section[hidden] {
+  display: none;
+}
+
+.ms-detail__section-title {
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--fg-subtle);
+  margin-bottom: 8px;
+}
+
+.ms-detail__summary {
+  font-size: 0.95rem;
+  line-height: 1.65;
+  color: var(--fg);
+}
+
+.ms-detail__location,
+.ms-detail__location-note {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  color: var(--fg-muted);
+}
+
+.ms-detail__location-note {
+  margin-top: 4px;
+  color: var(--fg-subtle);
+  font-family: var(--font-ui);
+  font-size: 0.72rem;
+}
+
+.ms-detail__superseded {
+  padding: 12px 14px;
+  border: 1px solid rgba(255, 145, 0, 0.28);
+  background: rgba(255, 145, 0, 0.07);
+  border-radius: var(--radius-sm);
+  font-size: 0.82rem;
+  color: var(--fg-muted);
+  line-height: 1.5;
+}
+
+.ms-detail__superseded a {
+  color: var(--orange);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.ms-detail__superseded a:hover {
+  text-decoration: underline;
+}
+
+/* Staggered entrance for the sections. The delay is written inline by JS as a
+ * `--ms-detail-delay`, so the cadence lives with the code that renders the list
+ * rather than as a hardcoded nth-child ladder that breaks when a section is
+ * hidden. */
+.ms-detail.is-open .ms-detail__section,
+.ms-detail.is-open .ms-detail__references-wrap {
+  animation: ms-detail-rise 460ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
+  animation-delay: var(--ms-detail-delay, 0ms);
+}
+
+@keyframes ms-detail-rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* --------------------------------------------------------------- refs ----- */
+
+.ms-detail__refs {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ms-detail__ref {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 11px 13px;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--ms-detail-accent, var(--accent));
+  border-radius: var(--radius-sm);
+  background: var(--bg-card);
+}
+
+.ms-detail__ref-index {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  color: var(--fg-subtle);
+  padding-top: 2px;
+}
+
+.ms-detail__ref-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.ms-detail__ref-name {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--fg);
+  overflow-wrap: anywhere;
+}
+
+.ms-detail__ref-name a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.ms-detail__ref-name a:hover {
+  color: var(--accent);
+  text-decoration: underline;
+}
+
+.ms-detail__ref-url {
+  display: block;
+  margin-top: 3px;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  color: var(--fg-subtle);
+  overflow-wrap: anywhere;
+}
+
+.ms-detail__ref-host {
+  flex-shrink: 0;
+  align-self: center;
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  padding: 3px 8px;
+  border-radius: 999px;
+  color: var(--fg-muted);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+}
+
+.ms-detail__ref--plain {
+  border-left-color: var(--border);
+  opacity: 0.85;
+}
+
+.ms-detail__empty {
+  font-size: 0.8rem;
+  color: var(--fg-subtle);
+  font-style: italic;
+}
+
+/* ----------------------------------------------------------- reactions ---- */
+
+.ms-detail__reactions {
+  flex-shrink: 0;
+  border-top: 1px solid var(--border);
+  background: var(--bg-card);
+  padding: 16px 22px 18px;
+  max-height: 46vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.ms-detail__reactions-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.ms-detail__reactions-head .ms-detail__section-title {
+  margin-bottom: 0;
+}
+
+.ms-detail__identity {
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  color: var(--fg-subtle);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ms-detail__identity::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--fg-subtle);
+}
+
+.ms-detail__identity[data-kind='github']::before {
+  background: var(--green);
+  box-shadow: 0 0 8px rgba(0, 230, 118, 0.7);
+}
+
+.ms-detail__reaction-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.ms-detail__react {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 11px;
+  min-height: 36px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--fg-muted);
+  font-family: var(--font-mono);
+  font-size: 0.76rem;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 140ms cubic-bezier(0.16, 1, 0.3, 1),
+    border-color var(--transition), background var(--transition), color var(--transition);
+}
+
+.ms-detail__react:hover {
+  border-color: var(--accent);
+  color: var(--fg);
+  transform: translateY(-2px);
+}
+
+.ms-detail__react[aria-pressed='true'] {
+  background: var(--accent-dim);
+  border-color: var(--accent);
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.ms-detail__react-count {
+  font-variant-numeric: tabular-nums;
+}
+
+.ms-detail__react-label {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%) translateY(4px);
+  padding: 4px 9px;
+  white-space: nowrap;
+  font-size: 0.64rem;
+  letter-spacing: 0.04em;
+  color: var(--fg);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-hover);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 140ms ease, transform 140ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.ms-detail__react:hover .ms-detail__react-label,
+.ms-detail__react:focus-visible .ms-detail__react-label {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* The pop a reaction button makes when it is pressed. Driven by a class swap
+ * rather than a Web Animations call so `prefers-reduced-motion` can switch it
+ * off from one block at the bottom of this file. */
+.ms-detail__react.is-popping {
+  animation: ms-detail-pop 420ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes ms-detail-pop {
+  0% { transform: scale(1); }
+  35% { transform: scale(1.18); }
+  100% { transform: scale(1); }
+}
+
+.ms-detail__react-more {
+  background: transparent;
+  border-style: dashed;
+}
+
+.ms-detail__reaction-summary {
+  margin-top: 8px;
+  font-size: 0.68rem;
+  color: var(--fg-subtle);
+  font-family: var(--font-mono);
+}
+
+/* ------------------------------------------------------------- composer --- */
+
+.ms-detail__composer {
+  margin-top: 14px;
+}
+
+.ms-detail__composer-label {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 0.64rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--fg-subtle);
+  margin-bottom: 6px;
+}
+
+.ms-detail__composer-input {
+  display: block;
+  width: 100%;
+  resize: vertical;
+  min-height: 52px;
+  padding: 10px 12px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--fg);
+  font-family: var(--font-ui);
+  font-size: 0.85rem;
+  line-height: 1.5;
+  transition: border-color var(--transition), box-shadow var(--transition);
+}
+
+.ms-detail__composer-input::placeholder {
+  color: var(--fg-subtle);
+}
+
+.ms-detail__composer-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-dim);
+}
+
+.ms-detail__composer-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.ms-detail__composer-count {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  color: var(--fg-subtle);
+  font-variant-numeric: tabular-nums;
+}
+
+.ms-detail__composer-submit {
+  padding: 8px 20px;
+  background: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-sm);
+  color: var(--bg);
+  font-family: var(--font-ui);
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: filter var(--transition), transform var(--transition);
+}
+
+.ms-detail__composer-submit:hover:not(:disabled) {
+  filter: brightness(1.12);
+  transform: translateY(-1px);
+}
+
+.ms-detail__composer-submit:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.ms-detail__composer-note {
+  margin-top: 8px;
+  font-size: 0.7rem;
+  line-height: 1.45;
+  color: var(--fg-subtle);
+  min-height: 1em;
+}
+
+.ms-detail__composer-note[data-tone='warn'] { color: var(--orange); }
+.ms-detail__composer-note[data-tone='error'] { color: var(--red); }
+.ms-detail__composer-note[data-tone='ok'] { color: var(--green); }
+
+/* ---------------------------------------------------------------- thread -- */
+
+.ms-detail__thread {
+  list-style: none;
+  margin-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ms-detail__thread:empty {
+  margin-top: 0;
+}
+
+.ms-detail__entry {
+  display: flex;
+  gap: 10px;
+  padding: 10px 12px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  animation: ms-detail-rise 320ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
+}
+
+.ms-detail__entry[data-mine='true'] {
+  border-color: var(--accent);
+}
+
+.ms-detail__entry-avatar {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.72rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+}
+
+.ms-detail__entry-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.ms-detail__entry-head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  color: var(--fg-subtle);
+  margin-bottom: 3px;
+}
+
+.ms-detail__entry-author {
+  color: var(--fg-muted);
+  font-weight: 700;
+}
+
+.ms-detail__entry-text {
+  font-size: 0.83rem;
+  line-height: 1.5;
+  color: var(--fg);
+  overflow-wrap: anywhere;
+}
+
+.ms-detail__entry-empty {
+  padding: 14px 0 4px;
+  font-size: 0.78rem;
+  color: var(--fg-subtle);
+  font-style: italic;
+}
+
+/* -------------------------------------------------- inline catalog strip --- */
+
+/* The read-out shown on every catalog card in "All Milestones Cataloged": the top
+ * three reactions only. Tapping one is a deliberate act with a visible count, so
+ * it posts - which is why it stops the click from opening the card underneath. */
+.catalog-card__reactions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+
+.catalog-card__reaction {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  min-height: 26px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  color: var(--fg-muted);
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 140ms cubic-bezier(0.16, 1, 0.3, 1),
+    border-color var(--transition), color var(--transition);
+}
+
+.catalog-card__reaction:hover {
+  border-color: var(--accent);
+  color: var(--fg);
+  transform: translateY(-1px);
+}
+
+.catalog-card__reaction[aria-pressed='true'] {
+  border-color: var(--accent);
+  background: var(--accent-dim);
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.catalog-card__reaction-count {
+  font-variant-numeric: tabular-nums;
+}
+
+.catalog-card__reactions-empty {
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  color: var(--fg-subtle);
+  opacity: 0.7;
+}
+
+/* ------------------------------------------------------------- focus ring -- */
+
+.ms-detail__panel:focus {
+  outline: none;
+}
+
+.ms-detail :focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* ------------------------------------------------------------ responsive -- */
+
+@media (max-width: 640px) {
+  .ms-detail {
+    padding: 0;
+    align-items: flex-end;
+  }
+
+  .ms-detail__panel {
+    width: 100%;
+    max-height: 92vh;
+    border-radius: calc(var(--radius) * 1.5) calc(var(--radius) * 1.5) 0 0;
+    border-bottom: none;
+  }
+
+  .ms-detail__head {
+    padding: 18px 16px 14px;
+  }
+
+  .ms-detail__icon {
+    width: 44px;
+    height: 44px;
+    font-size: 1.35rem;
+  }
+
+  .ms-detail__title {
+    font-size: 1.1rem;
+  }
+
+  .ms-detail__metric,
+  .ms-detail__reactions {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .ms-detail__body {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .ms-detail__badges {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .ms-detail__value {
+    font-size: 1.9rem;
+  }
+
+  .ms-detail__reactions {
+    max-height: 42vh;
+  }
+
+  /* On a phone the composer sits above the keyboard; a 44px minimum keeps the
+   * Post button tappable without zooming. */
+  .ms-detail__composer-submit {
+    min-height: 44px;
+  }
+}
+
+/* -------------------------------------------------------- reduced motion -- */
+
+/* One block, matching the convention in main.css: no animation is added below
+ * without being listed here. The overlay still opens and closes - a dialog that
+ * does not open is a broken feature, not an accessible one - it just arrives. */
+@media (prefers-reduced-motion: reduce) {
+  .ms-detail__scrim,
+  .ms-detail__panel,
+  .ms-detail.is-closing .ms-detail__scrim {
+    transition: opacity 1ms linear !important;
+  }
+
+  .ms-detail__panel {
+    transform: none !important;
+  }
+
+  .ms-detail.is-open .ms-detail__section,
+  .ms-detail.is-open .ms-detail__references-wrap,
+  .ms-detail__entry {
+    animation: none !important;
+  }
+
+  .ms-detail__react,
+  .ms-detail__react:hover,
+  .catalog-card__reaction,
+  .catalog-card__reaction:hover,
+  .ms-detail__composer-submit,
+  .ms-detail__close,
+  .ms-detail__close:hover {
+    animation: none !important;
+    transform: none !important;
+    transition-duration: 1ms !important;
+  }
+}

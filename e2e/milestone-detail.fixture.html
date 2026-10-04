@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<!-- Matches index.md: the responsive rules are viewport-width driven, so a desktop
+     meta viewport would make the "phone" project test desktop widths. -->
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>milestone detail card fixture</title>
+<!-- Stops Chrome requesting /favicon.ico. The static server has no favicon, and the
+     404 it logs is indistinguishable from a real broken request once a spec asserts
+     "the page logged no errors" - which would then be asserting nothing useful. -->
+<link rel="icon" href="data:,">
+<!-- The real stylesheets, not copies. These checks exist to catch layout regressions
+     in the shipped CSS, so styling a fixture differently would defeat the point. -->
+<link rel="stylesheet" href="../assets/css/main.css">
+<link rel="stylesheet" href="../assets/css/milestone-detail.css">
+<style>
+  body { margin: 0; }
+  .container { max-width: 1200px; margin: 0 auto; padding: 16px; }
+</style>
+</head>
+<body>
+<div class="container">
+
+<!-- Catalog grid under test.
+
+     dashboard.js is deliberately NOT loaded here: it would fetch the real milestones
+     feed and re-render the grid over the top of this. The records are registered
+     through the same public hook the renderer uses (MilestoneDetail.register), and
+     the click handler below is the one dashboard.js installs, so the code path being
+     exercised is the shipped one rather than a fixture-only shortcut.
+
+     Three cards, because the point of the checks is that each is independently
+     selectable - two would not distinguish "opens the right one" from "always opens
+     the first", and the middle column of three is centred on the viewport, which is
+     why the FLIP checks use the leftmost. -->
+<div class="catalog-grid" id="catalog-grid">
+  <div class="catalog-card" role="button" tabindex="0" data-milestone-id="ms-fixture-a"></div>
+  <div class="catalog-card" role="button" tabindex="0" data-milestone-id="ms-fixture-b"></div>
+  <div class="catalog-card" role="button" tabindex="0" data-milestone-id="ms-fixture-c"></div>
+</div>
+
+</div>
+
+<!-- The milestone detail overlay, copied verbatim from _includes/milestone-detail.html.
+     Jekyll cannot run in this static-server fixture, so the copy cannot be an
+     {% include %}. e2e/milestone-detail.spec.mjs asserts that this file and that
+     include carry every id milestone-detail.js looks up, so the copy cannot silently
+     rot the way a hand-maintained duplicate normally does. -->
+<div class="ms-detail" id="milestone-detail" role="dialog" aria-modal="true"
+     aria-labelledby="ms-detail-title" aria-describedby="ms-detail-category"
+     aria-hidden="true" hidden>
+  <div class="ms-detail__scrim" id="ms-detail-scrim"></div>
+  <article class="ms-detail__panel" id="ms-detail-panel" tabindex="-1">
+    <header class="ms-detail__head">
+      <span class="ms-detail__icon" id="ms-detail-icon" aria-hidden="true"></span>
+      <div class="ms-detail__head-text">
+        <p class="ms-detail__cat" id="ms-detail-category"></p>
+        <h2 class="ms-detail__title" id="ms-detail-title"></h2>
+      </div>
+      <button type="button" class="ms-detail__close" id="ms-detail-close" aria-label="Close milestone details">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
+             stroke-width="2" stroke-linecap="round" aria-hidden="true" focusable="false">
+          <path d="M18 6 6 18M6 6l12 12"/>
+        </svg>
+      </button>
+    </header>
+    <div class="ms-detail__metric" id="ms-detail-metric">
+      <div class="ms-detail__metric-main">
+        <span class="ms-detail__value" id="ms-detail-value"></span>
+        <span class="ms-detail__unit" id="ms-detail-unit"></span>
+      </div>
+      <div class="ms-detail__metric-meta">
+        <span class="ms-detail__date" id="ms-detail-date"></span>
+        <span class="ms-detail__record" id="ms-detail-record" hidden></span>
+      </div>
+    </div>
+    <div class="ms-detail__badges" id="ms-detail-badges"></div>
+    <div class="ms-detail__body" id="ms-detail-body">
+      <section class="ms-detail__section" id="ms-detail-summary-section" hidden>
+        <h3 class="ms-detail__section-title">Summary</h3>
+        <p class="ms-detail__summary" id="ms-detail-summary"></p>
+      </section>
+      <section class="ms-detail__section" id="ms-detail-location-section" hidden>
+        <h3 class="ms-detail__section-title">Location</h3>
+        <p class="ms-detail__location" id="ms-detail-location"></p>
+        <p class="ms-detail__location-note" id="ms-detail-location-note"></p>
+      </section>
+      <section class="ms-detail__section" id="ms-detail-superseded-section" hidden>
+        <h3 class="ms-detail__section-title">Progression</h3>
+        <div class="ms-detail__superseded" id="ms-detail-superseded"></div>
+      </section>
+      <section class="ms-detail__section">
+        <h3 class="ms-detail__section-title">References &amp; sources</h3>
+        <ul class="ms-detail__refs" id="ms-detail-refs"></ul>
+      </section>
+    </div>
+    <section class="ms-detail__reactions" id="ms-detail-reactions"
+             aria-labelledby="ms-detail-reactions-title">
+      <div class="ms-detail__reactions-head">
+        <h3 class="ms-detail__section-title" id="ms-detail-reactions-title">Reactions</h3>
+        <span class="ms-detail__identity" id="ms-detail-identity"></span>
+      </div>
+      <div class="ms-detail__reaction-bar" id="ms-detail-reaction-bar" role="group"
+           aria-label="React to this milestone"></div>
+      <form class="ms-detail__composer" id="ms-detail-composer" novalidate>
+        <label class="ms-detail__composer-label" for="ms-detail-comment">Add to the thread</label>
+        <textarea class="ms-detail__composer-input" id="ms-detail-comment" rows="2"
+                  maxlength="280" placeholder="What is missing from this record? Cite a better source."></textarea>
+        <div class="ms-detail__composer-foot">
+          <span class="ms-detail__composer-count" id="ms-detail-comment-count">0 / 280</span>
+          <button type="submit" class="ms-detail__composer-submit" id="ms-detail-comment-submit">Post</button>
+        </div>
+        <p class="ms-detail__composer-note" id="ms-detail-composer-note" role="status"></p>
+      </form>
+      <ol class="ms-detail__thread" id="ms-detail-thread" aria-live="polite"
+          aria-label="Reactions and comments on this milestone"></ol>
+    </section>
+  </article>
+</div>
+
+<script src="../assets/js/milestone-detail.js"></script>
+<script>
+/* Milestone records for the detail-card checks, shaped like the entries the real feed
+ * carries: a value and unit, a source with a URL, a summary, a geolocation, flags,
+ * and - on one of them - the extra `sources` array the reference list must render.
+ * One record deliberately has a hostile URL and one with no metric at all, because
+ * "what does the card do with a record that is missing something" is the branch that
+ * a happy-path fixture never reaches. */
+const FIXTURE_MILESTONES = {
+  'ms-fixture-a': {
+    id: 'ms-fixture-a',
+    title: 'Fixture milestone A: first crowdsourced speech corpus',
+    category: 'Computing & AGI',
+    category_key: 'computing_agi',
+    category_name: 'Computing & AGI',
+    category_icon: '\u{1F9E0}',
+    category_color: '#448aff',
+    subcategory: 'low_resource_speech',
+    summary: 'First publicly available corpus with transcriptions and regional accent labels.',
+    value: '137',
+    unit: 'hours of audio',
+    source: 'arXiv',
+    url: 'https://arxiv.org/abs/2609.38219',
+    date: '2026-10-02',
+    is_record: true,
+    is_new: true,
+    geolocation: { lat: 31.7917, lon: -7.0926 },
+    location_confidence: 'approximate',
+  },
+  'ms-fixture-b': {
+    id: 'ms-fixture-b',
+    title: 'Fixture milestone B: no metric, no location, and a hostile URL',
+    category: 'Quantum Physics',
+    category_key: 'quantum',
+    category_name: 'Quantum Physics',
+    category_icon: '⚛️',
+    category_color: '#b388ff',
+    subcategory: 'error_correction',
+    summary: '',
+    value: null,
+    unit: null,
+    source: 'ETH Zurich',
+    url: '',
+    date: '2026-06-30',
+    sources: ['https://ethz.ch/press-release', 'javascript:alert(1)'],
+  },
+  'ms-fixture-c': {
+    id: 'ms-fixture-c',
+    title: 'Fixture milestone C: cited by several sources at once',
+    category: 'Energy',
+    category_key: 'energy',
+    category_name: 'Renewable Energy',
+    category_icon: '⚡',
+    category_color: '#ffd740',
+    subcategory: 'fusion',
+    summary: 'Sustained yield record.',
+    value: '100',
+    unit: 'MJ',
+    source: 'Open Khipu Repository',
+    url: 'http://arxiv.org/abs/2607.00185v1',
+    date: '2026-05-11',
+    sources: ['Open Khipu Repository', 'Academic researchers (Open Khipu Repository)'],
+  },
+};
+
+function paintFixtureCards() {
+  for (const [id, milestone] of Object.entries(FIXTURE_MILESTONES)) {
+    const card = document.querySelector(`.catalog-card[data-milestone-id="${id}"]`);
+    if (!card) continue;
+    const title = document.createElement('h4');
+    title.className = 'catalog-card__title';
+    title.textContent = milestone.title;
+    const meta = document.createElement('div');
+    meta.className = 'catalog-card__meta';
+    meta.textContent = milestone.source + ' · ' + milestone.date;
+    card.append(title, meta);
+    card.setAttribute('aria-label', 'Open milestone details: ' + milestone.title);
+    card.addEventListener('click', (e) => {
+      if (e.target && e.target.closest && e.target.closest('a, .catalog-card__reaction')) return;
+      window.MilestoneDetail.open(milestone, card);
+    });
+    card.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        window.MilestoneDetail.open(milestone, card);
+      }
+    });
+    window.MilestoneDetail.register(card, milestone);
+  }
+}
+
+window.__FIXTURE_MILESTONES__ = FIXTURE_MILESTONES;
+document.addEventListener('DOMContentLoaded', paintFixtureCards);
+if (document.readyState !== 'loading') paintFixtureCards();
+</script>
+</body>
+</html>

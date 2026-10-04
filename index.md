@@ -382,7 +382,20 @@ description: "Tracking milestones across biotech, AGI, quantum, energy, cyber, s
   </div>
 </section>
 
-<!-- SCRIPTS -->
+<!-- MILESTONE DETAIL CARD -->
+{%- comment -%}
+Loaded here rather than from _layouts/default.html because this is the only page
+that renders the catalog grid. The stylesheet goes in the body with the markup it
+styles, next to the script tags that already live here for the same reason.
+
+milestone-detail.js is loaded BEFORE dashboard.js on purpose: dashboard.js hands
+each catalog card to it via window.MilestoneDetail.register() as it renders, and
+loading the consumer first would mean the first paint of the grid has no reaction
+strips on it.
+{%- endcomment -%}
+<link rel="stylesheet" href="{{ '/assets/css/milestone-detail.css' | relative_url }}">
+{% include milestone-detail.html %}
+<script src="{{ '/assets/js/milestone-detail.js' | relative_url }}"></script>
 <script src="{{ '/assets/js/worldmap.js' | relative_url }}"></script>
 <script src="{{ '/assets/js/dashboard.js' | relative_url }}"></script>
 
