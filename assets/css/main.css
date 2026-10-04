@@ -657,7 +657,16 @@ body {
   font-size: 0.62rem;
   line-height: 1.22;
   font-family: var(--font-mono);
-  z-index: 5;
+  /* Above .map-tooltip (z-index 20), and this is a fix rather than a preference.
+     The popup becomes pointer-events: auto when it opens - deliberately, so a visitor
+     can travel onto it and click a source link - which means that while it is open it
+     also swallows anything underneath it. At 5 the legend was underneath it, so
+     sweeping the pointer across the map toward the legend left a hover popup sitting
+     over the rows, the fold control and the zoom buttons, and every one of those
+     clicks went to the popup instead. The legend is a persistent control surface and
+     a transient popup must never intercept it; the popup can always be summoned again
+     by hovering, so nothing is lost by putting the controls on top. */
+  z-index: 30;
   min-width: 168px;
   user-select: none;
  }

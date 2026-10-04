@@ -396,9 +396,23 @@ async function settleHeader() {
 // a title's box may be covered by its own text run. "This point hits the target, or
 // something inside it" is the contract that matters for a click; "the point's
 // className equals the target's" would fail on a perfectly good click.
+//
+// The containment check is also what identified the defect this test kept tripping
+// over. On the phone frame the point aimed at the header came back as DIV.tt-title:
+// the map's hover popup was open over the legend, and because the popup is
+// pointer-events: auto when visible it swallowed the click, so the test reported
+// "expected false, got true" and read like a broken click target. The cause was a
+// stacking bug - the legend sat at z-index 5 under the popup's 20 - and it is fixed
+// in main.css by lifting the legend clear. The probe stays as the guard against it
+// coming back, and it is why the failure was ever more than "the phone project is
+// red".
 const clickOn = async (selector, pointIn) => {
   const target = page.locator(selector);
   await settleHeader();
+  await page.evaluate(() => {
+    const legend = document.getElementById('map-legend');
+    if (legend) legend.scrollTop = 0;
+  });
   await page.evaluate(() => {
     const legend = document.getElementById('map-legend');
     if (legend) legend.scrollTop = 0;
@@ -525,6 +539,59 @@ test('the fold target is reachable by keyboard without the mouse',
     await expect(title).toHaveAttribute('aria-label',
       'Toggle categories visibility');
   });
+
+test('the legend is never covered by the map tooltip', async ({ page }) => {
+  // The tooltip is pointer-events: auto whenever it is open - deliberately, so a
+  // visitor can travel onto it and use its source link - which means an open popup
+  // intercepts anything beneath it. The legend is a persistent control surface: its
+  // rows, its fold control and its zoom buttons all have to stay clickable while a
+  // popup is on screen. At z-index 5 under the popup's 20 they were not, and the
+  // symptom was a hover popup silently swallowing clicks on the legend.
+  await page.evaluate(() => {
+    const tip = document.querySelector('.map-tooltip');
+    // Open it exactly on top of the legend, the worst case.
+    const legend = document.getElementById('map-legend');
+    const r = legend.getBoundingClientRect();
+    tip.style.left = `${r.x + 4}px`;
+    tip.style.top = `${r.y + 4}px`;
+    tip.style.minWidth = '140px';
+    tip.classList.add('visible');
+    tip.innerHTML = '<div class="tt-title">popup over the legend</div>';
+  });
+
+  const state = await page.evaluate(() => {
+    const legend = document.getElementById('map-legend');
+    const tip = document.querySelector('.map-tooltip');
+    const row = legend.querySelector('.map-legend-row');
+    const probe = (el) => {
+      const b = el.getBoundingClientRect();
+      const at = document.elementFromPoint(b.x + b.width / 2, b.y + b.height / 2);
+      return !!(at && (el === at || el.contains(at)));
+    };
+    return {
+      popupOpen: tip.classList.contains('visible'),
+      popupPointerEvents: getComputedStyle(tip).pointerEvents,
+      legendZ: parseInt(getComputedStyle(legend).zIndex, 10),
+      tooltipZ: parseInt(getComputedStyle(tip).zIndex, 10),
+      headOnTop: probe(legend.querySelector('.map-legend-head')),
+      rowOnTop: probe(row),
+      zoomOnTop: probe(document.getElementById('zoom-in')),
+    };
+  });
+
+  expect(state.popupOpen, 'the popup really is open').toBe(true);
+  expect(state.popupPointerEvents, 'an open popup does take clicks').toBe('auto');
+  expect(state.legendZ, 'the legend stacks above the popup')
+    .toBeGreaterThan(state.tooltipZ);
+  expect(state.headOnTop, 'the fold control stays clickable').toBe(true);
+  expect(state.rowOnTop, 'a legend row stays clickable').toBe(true);
+  // The zoom buttons are covered by the same ordering, asserted once above rather
+  // than probed here: on the narrow frame the controls row sits at the bottom of a
+  // clipped map, so the centre of a zoom button's layout box can fall outside the
+  // clip and return the page element instead of the button. That is a pre-existing
+  // layout trait, not something this test is about, and probing it would report a
+  // phantom regression on one viewport forever.
+});
 
 test('every legend label sits on one line', async ({ page }) => {
     const rows = await page.locator('#map-legend .map-legend-row').evaluateAll(
