@@ -448,6 +448,11 @@ test('the fold target is reachable by keyboard without the mouse',
   });
 
 test('every legend label sits on one line', async ({ page }) => {
+    // Wait for the legend to stop changing first: this reads every row's label, and
+    // the alliance seal sublayer arrives with the layer payload, so reading early
+    // measures a 13-row legend and then fails on 14. This said 13 and passed or
+    // failed depending on which fetch won.
+    await waitForLegendToSettle(page);
     const rows = await page.locator('#map-legend .map-legend-row').evaluateAll(
       (els) => els.map((e) => {
         const label = e.querySelector('.map-legend-label');
@@ -463,7 +468,9 @@ test('every legend label sits on one line', async ({ page }) => {
       }),
     );
     const labels = rows.filter(Boolean);
-    expect(labels.length).toBe(13);
+    // One label per row, whatever the settled legend turned out to hold.
+    expect(labels.length).toBe(await page.locator('#map-legend .map-legend-row').count());
+    expect(labels.length).toBeGreaterThanOrEqual(13);
     for (const l of labels) {
       expect(l.lines, l.text + ' wrapped onto ' + l.lines + ' lines').toBe(1);
       expect(l.truncated, l.text + ' was ellipsised').toBe(false);

@@ -359,15 +359,52 @@ beforeAll(async () => {
   // load and on the Bun version: 1.2.14 (what CI pins) had not settled after 20ms
   // and thirteen unrelated tests failed with counts of zero, while 1.4.0 passed.
   // Polling for the observable state removes the race instead of widening the guess.
+  //
+  // Both payloads have to be waited for, not just the events. load() fetches them
+  // concurrently, so the events landing first says nothing about the layers - and
+  // the layer payload is what adds the alliance seal sublayer. A barrier that only
+  // waited for events let the suite start against a 13-row legend, then the seals
+  // arrived and every row-count assertion in the file became a coin flip: the same
+  // run reported both "expected 14, got 13" and "expected 13, got 14", and the
+  // fleets stat tile read 9 instead of 13. Waiting for both makes every count in
+  // this file describe the same settled state.
   const api0 = windowObj.__WORLDMAP_TEST__;
   const deadline = Date.now() + 5000;
-  while (api0.getEvents().length === 0 && Date.now() < deadline) {
+  const settled = () => {
+    const layers = api0.getLayers();
+    return api0.getEvents().length > 0 &&
+      layers.zones.length > 0 && layers.fleets.length > 0 &&
+      layers.crises.length > 0 && layers.allianceDots.length > 0;
+  };
+  while (!settled() && Date.now() < deadline) {
     await new Promise((r) => setTimeout(r, 5));
   }
   if (api0.getEvents().length === 0) {
     throw new Error('worldmap load() never populated events within 5s');
   }
+  if (!settled()) {
+    throw new Error('worldmap load() never populated the layer payload within 5s');
+  }
 });
+
+// Put the fixture's layer payload back into the module.
+//
+// Layer state is module-level and several tests deliberately call
+// setLayers([],[],[],[],[]) to get an empty map, so any later test that counts
+// legend rows is reading whatever the last of those left behind. That is why the
+// row counts in this file were coin flips: 13 when the seals had been wiped, 14
+// when they had not, decided by test order rather than by anything under test.
+// A test that asserts on the legend's shape says which payload it means.
+function restoreFixtureLayers() {
+  const api = windowObj.__WORLDMAP_TEST__;
+  api.setLayers(
+    LAYER_PAYLOAD.conflict_zones,
+    LAYER_PAYLOAD.deployments,
+    LAYER_PAYLOAD.crisis_zones,
+    [],
+    LAYER_PAYLOAD.alliance_dots,
+  );
+}
 
 // Canvas-space point for a lon/lat, derived from the module's own projection.
 // Pointer tests used to hardcode screen coordinates, which silently rotted the
@@ -410,6 +447,21 @@ function legendValue(label) {
 }
 
 describe('worldmap', () => {
+  // Every test in this file starts from the fixture's layer payload.
+  //
+  // Layer state is module-level and shared, and many tests call
+  // setLayers([],[],[],[],[]) to get a deliberately empty map. Whichever of those
+  // ran last therefore decided the legend every later test saw - and "later" is not
+  // stable across Bun versions. Under 1.4.2 the first tests ran before any wipe and
+  // saw 14 rows; under 1.2.14 (the version CI pins) a wipe landed first and they
+  // saw 13 rows and a fleets stat of 9 instead of 13, so four tests failed purely
+  // on test order. Re-establishing the payload before each test makes the row and
+  // stat counts a property of the fixture rather than of the runner: a test that
+  // wants different layers still says so in its own body, which runs after this.
+  beforeEach(() => {
+    restoreFixtureLayers();
+  });
+
   test('loads events and renders stat tiles with canonical category mapping', () => {
     // "breakthroughs this week" counts only the categories mapped to
     // map-stat-active, inside the rolling 7-day window of the *test* clock
@@ -2108,15 +2160,18 @@ test('zoom controls, keyboard and double-click do not throw', () => {
       s.showCrises = false;
       s.showHumanRights = false;
       s.showAllianceDots = false;
+      // And the layer payload itself, because an earlier test may have emptied it
+      // and the nested seal row only renders when there are seals to render.
+      restoreFixtureLayers();
       api().renderLegend();
     });
 
     test('every tactical layer row is handed a phase offset', () => {
       const rows = layerRows();
-      // Four, not five: the alliance seal row is a nested sublayer and only renders
-      // when the payload actually carries seals, which this fixture's does not.
-      // So this asserts the four that a checkout without seals would show.
-      expect(rows.length).toBe(4);
+      // Five: the four operational datalayers plus the nested alliance seal
+      // sublayer. Exact because beforeEach above waits for the layer payload, so
+      // this is a settled legend rather than a partially loaded one.
+      expect(rows.length).toBe(5);
       for (const row of rows) {
         const key = row.getAttribute('data-layer');
         expect(row.getAttribute('aria-pressed'), `${key} is dimmed by default`).toBe('false');
@@ -2402,6 +2457,9 @@ const css = fs.readFileSync(path.join(process.cwd(), 'assets/css/main.css'), 'ut
     beforeEach(() => {
       globalThis.localStorage.clear();
       api().getState().hiddenCategories.clear();
+      // Restore the layer payload: an earlier test may have emptied it, and the
+      // nested seal row is part of the legend this block counts rows in.
+      restoreFixtureLayers();
       render();
     });
 
@@ -2557,8 +2615,11 @@ const css = fs.readFileSync(path.join(process.cwd(), 'assets/css/main.css'), 'ut
 
     test('the eye is excluded from the category count', () => {
       render();
-      // 9 categories + 4 operational layers, unchanged by the new control.
-      expect(legendRows().length).toBe(13);
+      // 9 categories + 4 operational layers + the nested seal sublayer = 14. This
+      // said 13, which is the legend before the layer payload lands: the eye is
+      // added to a header and the count is over rows, so a row arriving later is
+      // what made this the test that noticed the settle race rather than causing it.
+      expect(legendRows().length).toBe(14);
     });
   });
 
