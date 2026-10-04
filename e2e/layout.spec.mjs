@@ -43,6 +43,20 @@ test.beforeEach(async ({ page }) => {
   }
 
   page.__errors = errors;
+
+  // Then wait for the legend to stop changing, before the test starts.
+  //
+  // Waiting for the first row is not enough. load() fetches events and layers
+  // concurrently, so rows appear from the events payload and the legend is
+  // re-rendered again when the layers land - which adds the alliance seal sublayer
+  // and moves the header. A test that clicks in the header measures coordinates,
+  // clicks, and then has the frame rebuilt underneath it: the click lands where the
+  // element used to be, which on a phone is now the eye, whose handler stops
+  // propagation, and the assertion reports a click target that works fine by hand.
+  // That is not hypothetical - it is how the fold-target test failed only on the
+  // phone project, only on CI, with the layer fetch visible in the log seconds
+  // earlier.
+  await waitForLegendToSettle(page);
 });
 
 // The legend is rebuilt as each payload lands: the events arrive, then the layer
@@ -161,13 +175,9 @@ test('the pinned legend header is opaque, so rows do not ghost through it',
   });
 
 test('the legend reaches every row without being clipped away', async ({ page }) => {
-  // Wait for the legend to stop changing before counting. The fixture loads the
-  // real data/world_layers.json, so the alliance seal sublayer arrives with the
-  // layer payload and takes the legend from 13 rows to 14. Asserting 13 straight
-  // after the first render passed only when the events fetch happened to win that
-  // race - the count was never actually 13 for a settled legend, so this was a
-  // flake dressed as an assertion.
-  await waitForLegendToSettle(page);
+  // The beforeEach has already waited for the legend to settle, so the counts below
+  // describe a finished frame: 13 rows is not a thing this legend ever is, because
+  // the alliance seal sublayer arrives with the layer payload and takes it to 14.
   const shape = await page.evaluate(() => {
     const rows = Array.from(document.querySelectorAll('#map-legend .map-legend-row'));
     return {
@@ -197,7 +207,6 @@ test('the dimmed datalayer titles carry the silver sweep, and nothing else does'
     // the moment rows first appear: the alliance seal sublayer only renders once a
     // payload actually carries seals. Wait for it to settle rather than asserting a
     // count that depends on which payload won the race.
-    await waitForLegendToSettle(page);
 
     // Resolved computed style, not a scan of the stylesheet: what matters is
     // whether a browser actually applies the paint to these labels, which is a
@@ -257,7 +266,6 @@ test('the dimmed datalayer titles carry the silver sweep, and nothing else does'
   });
 
 test('hover lifts a dimmed datalayer row to a legible opacity', async ({ page }) => {
-  await waitForLegendToSettle(page);
   // The resting state clamps the row to 0.4, which is the right hint and the
   // wrong thing to read the title of the row you are about to click.
   const row = page.locator('#map-legend .map-legend-row[data-layer="zones"]');
@@ -275,7 +283,6 @@ test('reduced motion parks the silver glint instead of sweeping it',
     // The sweep is the only motion these rows add, so this is the whole
     // reduced-motion contract for them. Parked at 50% the glint still sits across
     // the word, so the row reads as live and nothing on the page moves.
-    await waitForLegendToSettle(page);
     await page.emulateMedia({ reducedMotion: 'reduce' });
     const state = await page.evaluate(() => {
       const row = document.querySelector('#map-legend .map-legend-row[data-layer]');
@@ -293,7 +300,6 @@ test('reduced motion parks the silver glint instead of sweeping it',
 
 test('forced colours drop the sweep rather than half-repainting the text',
   async ({ page }) => {
-    await waitForLegendToSettle(page);
     await page.emulateMedia({ forcedColors: 'active' });
     const state = await page.evaluate(() => {
       const row = document.querySelector('#map-legend .map-legend-row[data-layer]');
@@ -460,11 +466,6 @@ test('the fold target is reachable by keyboard without the mouse',
   });
 
 test('every legend label sits on one line', async ({ page }) => {
-    // Wait for the legend to stop changing first: this reads every row's label, and
-    // the alliance seal sublayer arrives with the layer payload, so reading early
-    // measures a 13-row legend and then fails on 14. This said 13 and passed or
-    // failed depending on which fetch won.
-    await waitForLegendToSettle(page);
     const rows = await page.locator('#map-legend .map-legend-row').evaluateAll(
       (els) => els.map((e) => {
         const label = e.querySelector('.map-legend-label');
@@ -511,7 +512,6 @@ test('the widened frame still clears South America', async ({ page }, testInfo) 
   });
 
 test('the eye opens and closes the whole category set, and nothing else', async ({ page }) => {
-  await waitForLegendToSettle(page);
   const eye = page.locator('#map-legend-bulk-visibility');
   await expect(eye).toHaveAttribute('aria-pressed', 'false');
 
