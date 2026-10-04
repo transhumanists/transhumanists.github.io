@@ -220,10 +220,22 @@ test('CATEGORIES is bigger than the eye and folds from the whole header row',
       await page.mouse.click(b.x + 6, b.y + b.height - 1);
     };
     const clickInFrontOfWord = async () => {
-      const h = await inView();
+      await inView();
+      const h = await box(head);
       const t = await box(title);
-      const x = t.x + t.width + 4;
-      expect(x, 'there is whitespace between the word and the eye')
+      const e = await box(eye);
+      // Aim at the middle of the gap between the word and the eye, not at a
+      // fixed offset past the word. At 390px the word is set at 0.5rem and the
+      // gap is only a few pixels wide, so "4px past the word" can land on the
+      // eye instead - and clicking the eye does its own job, so the fold never
+      // toggles and the failure looks like a dead control rather than a bad
+      // coordinate. The midpoint is inside the gap at every width.
+      expect(t.x + t.width, 'the word ends before the eye begins')
+        .toBeLessThan(e.x);
+      const x = (t.x + t.width + e.x) / 2;
+      expect(x, 'the click lands inside the header row')
+        .toBeGreaterThan(h.x);
+      expect(x, 'the click lands inside the header row')
         .toBeLessThan(h.x + h.width);
       await page.mouse.click(x, t.y + t.height / 2);
     };
