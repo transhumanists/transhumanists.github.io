@@ -20,7 +20,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 import zlib
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 
 sys.path.insert(0, str(__import__("pathlib").Path(__file__).resolve().parent))
 import location_contract as lc  # noqa: E402 - sibling import needs the path above
@@ -536,14 +536,25 @@ def build_crisis_zones_from_sources(ocha_data: list, who_data: list, reliefweb_d
 
 def _finalize_crisis_zones(zones: list[dict]) -> list[dict]:
     """Deduplicate by id (first occurrence wins), clamp to the 15-zone cap,
-    then sort by id.
+    stamp a recency signal, then sort by id.
 
     The sort is what makes the committed order deterministic: feeds may reorder
     their item lists between runs, and without it the same 15 zones would flip
     around day to day, churning the daily auto-commit with content-free diffs.
+
+    The recency stamp is what lets the map tell a live crisis from a historical
+    one. worldmap.js judges a layer's brightness by `last_news_year`, falling back
+    to `start_date`. Crisis zones carried neither: every entry dated itself from
+    when the crisis began - 2003 for Darfur, 2009 for Nigeria - so a crisis the
+    fetcher had just re-reported this morning rendered as permanently dimmed.
+    Reaching this function at all means a feed or the curated list still
+    asserts the zone is live, so that assertion is the recency signal: stamp the
+    current year on anything still active and leave concluded zones alone, which
+    is what the "Concluded" tier is for.
     """
     out: list[dict] = []
     seen: set[str] = set()
+    this_year = date.today().year
     for z in zones:
         if not isinstance(z, dict):
             continue
@@ -551,6 +562,9 @@ def _finalize_crisis_zones(zones: list[dict]) -> list[dict]:
         if not isinstance(ident, str) or not ident or ident in seen:
             continue
         seen.add(ident)
+        if (z.get("status") or "active") == "active":
+            z = dict(z)
+            z["last_news_year"] = this_year
         out.append(z)
         if len(out) >= 15:
             break
@@ -742,14 +756,37 @@ def fetch_hdx_crises() -> list[dict]:
     return hdx_data
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.strip().splitlines()[0] if __doc__ else None)
     ap.add_argument("--dry-run", action="store_true",
                     help="fetch, build and compare only - never write (live probe mode)")
     ap.add_argument("--output", default=None,
                     help="write to this world_layers.json path instead of the repo data dir")
-    args = ap.parse_args()
+    ap.add_argument("--normalize-only", action="store_true",
+                    help="apply _finalize_crisis_zones to the existing crisis_zones "
+                         "and stop - no network. Idempotent: it only ever stamps "
+                         "the recency signal and enforces the 15-zone cap, so it is "
+                         "the safe way to backfill last_news_year onto a file that "
+                         "predates the field.")
+    args = ap.parse_args(argv)
     out_file: Path | None = Path(args.output) if args.output else None
+
+    if args.normalize_only:
+        data = load_world_layers(out_file)
+        if data is None:
+            return 1
+        before = json.dumps(data.get(CRISIS_ZONES_KEY), sort_keys=True)
+        data[CRISIS_ZONES_KEY] = _finalize_crisis_zones(list(data.get(CRISIS_ZONES_KEY) or []))
+        after = json.dumps(data[CRISIS_ZONES_KEY], sort_keys=True)
+        if before == after:
+            print(f"No changes to crisis zones in {(out_file or WORLD_LAYERS_FILE)}")
+            return 0
+        if not save_world_layers(data, out_file):
+            print("Error saving world_layers.json")
+            return 1
+        print(f"Normalized {len(data[CRISIS_ZONES_KEY])} crisis zones in "
+              f"{out_file or WORLD_LAYERS_FILE}")
+        return 0
 
     print("Fetching crisis zone data...")
     

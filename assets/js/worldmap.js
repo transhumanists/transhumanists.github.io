@@ -78,9 +78,158 @@
 // Human Rights Violations landmark. Deliberately outside the category palette so
 // the layer can never be mistaken for a milestone category in the legend.
 const HUMAN_RIGHTS_COLOR = '#ff7043';
+// Alliance / defence-policy dots. A third, quieter step away from the amber of a
+// ground arrow and the blue of a fleet arrow: this sublayer is about *who is
+// aligned with whom*, not about a movement, so it borrows the mint that reads as
+// "political/institutional" rather than another operational hue.
+const ALLIANCE_DOT_COLOR = '#7de2d1';
+// Tooltip headings per policy-change kind. An accession reads very differently
+// from a mandate or an industrial decision, so the popup says which it is rather
+// than labelling every one of them the same vague thing.
+const ALLIANCE_DOT_HEADINGS = {
+  accession: 'Alliance Accession',
+  posture: 'Defence Posture',
+  mandate: 'Mandate / Treaty',
+  industrial: 'Defence Industrial',
+  capability: 'Capability Build-up',
+};
+// Tracking reticle: the slowly rotating bracket that says "this zone is live
+// right now". Declared with the other constants rather than next to its caller
+// because ALLIANCE_DOT_HIT_RADIUS below is derived from it at module scope, and
+// a `const` cannot be read before its own declaration runs.
+const RETICLE_PERIOD_MS = 11000;
+const RETICLE_SCALE = 1.34;
 // One full swell-and-fade cycle for a landmark. Long enough to read as a
 // breath rather than a flicker, short enough that the layer feels live.
 const HUMAN_RIGHTS_PULSE_MS = 2400;
+
+// ---- Responsible actor (nation / alliance / UN) ---------------------------
+// Every operational entry answers "who is behind this?". That answer was buried
+// in a `country` field that only infantry entries carry and in a `source` field
+// that names a *publisher* (USNI, IISS, ISW) rather than an actor - so a fleet
+// arrow could not say it was the US Navy, and a UN peacekeeping movement had no
+// way to show it was the UN rather than whoever reported it.
+//
+// Resolution order, most trustworthy first:
+//   1. an explicit `actor` on the record (the pipeline may assert one),
+//   2. the record's `country`,
+//   3. the record's own label/note text (ships and units name their navy),
+//   4. `source`, which is a publisher - used only where it *is* an actor
+//      (NATO, UN DPKO), never where it is an analyst.
+//
+// Country codes become real flags by turning the two-letter code into the
+// regional-indicator pair, which is what a flag glyph is: 🇺🇸 for "US". Alliances
+// and the UN have no flag, so they get a monogram chip instead of a glyph that
+// would lie about who they are. Both forms are one element so the tooltip header
+// only ever has to lay out one thing.
+const ACTOR_KIND_NATION = 'nation';
+const ACTOR_KIND_ALLIANCE = 'alliance';
+const ACTOR_KIND_UN = 'un';
+
+// flag: the emoji pair (nations) or the chip label (everything else).
+// match: lowercase substrings tested against label + note + source, longest-first
+// at lookup time so "royal navy" wins over "navy".
+const ACTOR_TABLE = {
+  // --- nations ---
+  // `demonym` is optional and is matched alongside the name. It exists because
+  // the payloads name actors adjectivally far more often than nominally:
+  // "Russian Baltic Fleet" contains no standalone word "Russia", so a
+  // name-only table resolves the Russian navy to nobody - which is precisely the
+  // record where naming the actor matters most.
+  'united states': { label: 'United States', flag: 'US', kind: ACTOR_KIND_NATION, demonym: 'american' },
+  'usa': { label: 'United States', flag: 'US', kind: ACTOR_KIND_NATION },
+  'usn': { label: 'United States', flag: 'US', kind: ACTOR_KIND_NATION },
+  'us army': { label: 'United States', flag: 'US', kind: ACTOR_KIND_NATION },
+  'usaf': { label: 'United States', flag: 'US', kind: ACTOR_KIND_NATION },
+  'united kingdom': { label: 'United Kingdom', flag: 'GB', kind: ACTOR_KIND_NATION, demonym: 'british' },
+  'royal navy': { label: 'United Kingdom', flag: 'GB', kind: ACTOR_KIND_NATION },
+  'russia': { label: 'Russia', flag: 'RU', kind: ACTOR_KIND_NATION, demonym: 'russian' },
+  'russian navy': { label: 'Russia', flag: 'RU', kind: ACTOR_KIND_NATION },
+  'china': { label: 'China', flag: 'CN', kind: ACTOR_KIND_NATION, demonym: 'chinese' },
+  'plan': { label: 'China', flag: 'CN', kind: ACTOR_KIND_NATION },
+  'india': { label: 'India', flag: 'IN', kind: ACTOR_KIND_NATION, demonym: 'indian' },
+  'indian navy': { label: 'India', flag: 'IN', kind: ACTOR_KIND_NATION },
+  'ukraine': { label: 'Ukraine', flag: 'UA', kind: ACTOR_KIND_NATION, demonym: 'ukrainian' },
+  'poland': { label: 'Poland', flag: 'PL', kind: ACTOR_KIND_NATION, demonym: 'polish' },
+  'finland': { label: 'Finland', flag: 'FI', kind: ACTOR_KIND_NATION, demonym: 'finnish' },
+  'sweden': { label: 'Sweden', flag: 'SE', kind: ACTOR_KIND_NATION, demonym: 'swedish' },
+  'germany': { label: 'Germany', flag: 'DE', kind: ACTOR_KIND_NATION, demonym: 'german' },
+  'france': { label: 'France', flag: 'FR', kind: ACTOR_KIND_NATION, demonym: 'french' },
+  'turkey': { label: 'Türkiye', flag: 'TR', kind: ACTOR_KIND_NATION, demonym: 'turkish' },
+  'south korea': { label: 'South Korea', flag: 'KR', kind: ACTOR_KIND_NATION, demonym: 'korean' },
+  'japan': { label: 'Japan', flag: 'JP', kind: ACTOR_KIND_NATION, demonym: 'japanese' },
+  'australia': { label: 'Australia', flag: 'AU', kind: ACTOR_KIND_NATION, demonym: 'australian' },
+  'canada': { label: 'Canada', flag: 'CA', kind: ACTOR_KIND_NATION, demonym: 'canadian' },
+  'netherlands': { label: 'Netherlands', flag: 'NL', kind: ACTOR_KIND_NATION, demonym: 'dutch' },
+  'belgium': { label: 'Belgium', flag: 'BE', kind: ACTOR_KIND_NATION, demonym: 'belgian' },
+  'norway': { label: 'Norway', flag: 'NO', kind: ACTOR_KIND_NATION, demonym: 'norwegian' },
+  'denmark': { label: 'Denmark', flag: 'DK', kind: ACTOR_KIND_NATION, demonym: 'danish' },
+  'estonia': { label: 'Estonia', flag: 'EE', kind: ACTOR_KIND_NATION, demonym: 'estonian' },
+  'latvia': { label: 'Latvia', flag: 'LV', kind: ACTOR_KIND_NATION, demonym: 'latvian' },
+  'lithuania': { label: 'Lithuania', flag: 'LT', kind: ACTOR_KIND_NATION, demonym: 'lithuanian' },
+  'spain': { label: 'Spain', flag: 'ES', kind: ACTOR_KIND_NATION, demonym: 'spanish' },
+  'italy': { label: 'Italy', flag: 'IT', kind: ACTOR_KIND_NATION, demonym: 'italian' },
+  'brazil': { label: 'Brazil', flag: 'BR', kind: ACTOR_KIND_NATION, demonym: 'brazilian' },
+  'egypt': { label: 'Egypt', flag: 'EG', kind: ACTOR_KIND_NATION, demonym: 'egyptian' },
+  'israel': { label: 'Israel', flag: 'IL', kind: ACTOR_KIND_NATION, demonym: 'israeli' },
+  'iran': { label: 'Iran', flag: 'IR', kind: ACTOR_KIND_NATION, demonym: 'iranian' },
+  'pakistan': { label: 'Pakistan', flag: 'PK', kind: ACTOR_KIND_NATION, demonym: 'pakistani' },
+  'saudi arabia': { label: 'Saudi Arabia', flag: 'SA', kind: ACTOR_KIND_NATION, demonym: 'saudi' },
+  'greece': { label: 'Greece', flag: 'GR', kind: ACTOR_KIND_NATION, demonym: 'greek' },
+  'portugal': { label: 'Portugal', flag: 'PT', kind: ACTOR_KIND_NATION, demonym: 'portuguese' },
+  'switzerland': { label: 'Switzerland', flag: 'CH', kind: ACTOR_KIND_NATION, demonym: 'swiss' },
+  'montenegro': { label: 'Montenegro', flag: 'ME', kind: ACTOR_KIND_NATION, demonym: 'montenegrin' },
+  'north macedonia': { label: 'North Macedonia', flag: 'MK', kind: ACTOR_KIND_NATION, demonym: 'macedonian' },
+  // --- alliances / intergovernmental ---
+  'nato': { label: 'NATO', flag: 'NATO', kind: ACTOR_KIND_ALLIANCE },
+  'north atlantic treaty organization': { label: 'NATO', flag: 'NATO', kind: ACTOR_KIND_ALLIANCE },
+  'european union': { label: 'European Union', flag: 'EU', kind: ACTOR_KIND_ALLIANCE },
+  'eu': { label: 'European Union', flag: 'EU', kind: ACTOR_KIND_ALLIANCE },
+  'aukus': { label: 'AUKUS', flag: 'AUKUS', kind: ACTOR_KIND_ALLIANCE },
+  'five eyes': { label: 'Five Eyes', flag: 'FVEY', kind: ACTOR_KIND_ALLIANCE },
+  'un': { label: 'United Nations', flag: 'UN', kind: ACTOR_KIND_UN },
+  'un dpko': { label: 'UN Peacekeeping', flag: 'UN', kind: ACTOR_KIND_UN },
+  'un peacekeeping': { label: 'UN Peacekeeping', flag: 'UN', kind: ACTOR_KIND_UN },
+  'united nations': { label: 'United Nations', flag: 'UN', kind: ACTOR_KIND_UN },
+};
+
+// Publishers. Listed explicitly so the text fallback can name an analyst's
+// report as *not* being an actor: an entry sourced only from ISW must not be
+// painted with a flag implying ISW did the thing.
+const ACTOR_PUBLISHERS = new Set([
+  'isw', 'iiss', 'usni', 'nyt', 'bbc', 'reuters', 'ap', 'afp',
+  'understandingwar', 'front line defenders', 'human rights watch',
+  'amnesty international', 'wikipedia', 'ocha', 'wfp', 'who', 'unhcr', 'fao',
+]);
+
+// Every term that can name an actor: the table key (which is often a shorthand
+// alias like "usn" or "plan"), the display label, and the demonym. All three are
+// matched, longest first, so "united kingdom" beats "un" and "russian navy"
+// beats "russia".
+//
+// Word boundaries are load-bearing, not decoration. The table includes two-letter
+// terms - "un", "eu" - and a bare `includes` test resolves "UN Peacekeeping"
+// correctly while ALSO resolving it for "June", "Munich", "Function" and
+// "Unnamed": every prose field in the layer payloads is free text written by hand,
+// and a table that guesses the UN out of the word "June" is worse than no table
+// at all because it is confidently wrong. `[^a-z0-9]` on both sides is the same
+// guard INSTITUTION_PATTERNS uses a few hundred lines down, for the same reason.
+const ACTOR_PATTERNS = (() => {
+  const byTerm = new Map();
+  for (const [key, entry] of Object.entries(ACTOR_TABLE)) {
+    for (const term of [key, entry.label.toLowerCase(), entry.demonym]) {
+      if (typeof term === 'string' && term && !byTerm.has(term)) byTerm.set(term, entry);
+    }
+  }
+  const escapeRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return [...byTerm.entries()]
+    .sort((a, b) => b[0].length - a[0].length)
+    .map(([term, entry]) => ({
+      term,
+      entry,
+      re: new RegExp(`(^|[^a-z0-9])${escapeRe(term)}([^a-z0-9]|$)`),
+    }));
+})();
 
   // Landmark geometry, in screen pixels, shared by the renderer and the hit test.
   //
@@ -101,8 +250,30 @@ const HUMAN_RIGHTS_PULSE_MS = 2400;
     HUMAN_RIGHTS_CORE_MAX * (HUMAN_RIGHTS_GLOW_INNER + HUMAN_RIGHTS_GLOW_PULSE);
   // Very transparent arrow tail line (barely visible) — 8% opacity
   const ARROW_TAIL_OPACITY = 0.08;
+  // Widest an alliance seal ever paints itself (glow + reticle), and therefore the
+  // widest the pointer may be from its centre and still count as "on" it. Same
+  // derivation rule as the human-rights landmark radius: the hit test is a
+  // consequence of the renderer, never a second number that can disagree.
+  const ALLIANCE_DOT_BASE_DEG = 0.9;
+  const ALLIANCE_DOT_HIT_RADIUS =
+    ALLIANCE_DOT_BASE_DEG * 2 * RETICLE_SCALE + 6;
 
-  // ---- Layer lifecycle (active/concluded + duration) ----
+  // Operational layer row labels, in one place.
+//
+// The old name - "Ground Deployments & Fleet Movements" - described the mark
+// rather than the layer and was long enough that it wrapped out of the legend
+// frame on a phone. It is also declared a second time in
+// schema/worldmap-data.schema.json and a third in the README, so this constant
+// plus the schema entry are the only two the label lives in.
+const LAYER_LABELS = {
+  zones: 'Conflict Zones',
+  deployments: 'Ground & Fleet Deployments',
+  alliance_dots: 'Alliance & Defence Policy',
+  crises: 'Crisis Zones',
+  human_rights: 'Human Rights Violations',
+};
+
+// ---- Layer lifecycle (active/concluded + duration) ----
   // Operational layers now carry an optional lifecycle: still-active zones,
   // crises and deployments are drawn with a distinct "fluo" glow, while
   // concluded ones render dim and expose their full duration in the tooltip.
@@ -132,36 +303,186 @@ const HUMAN_RIGHTS_PULSE_MS = 2400;
   // renderers share one palette.
   const LAYER_TIER_PAINT = {
     // Active and recent: the only tier allowed to glow.
-    hot: { fill: 0.30, stroke: 1.0, halo: 0.16, line: 3, desat: 0, glow: true, pulse: true },
+    hot: { fill: 0.34, stroke: 1.0, halo: 0.20, line: 3.2, desat: 0, glow: true, pulse: true },
     // Active but not current (or single-list sourced, or no recency signal).
-    quiet: { fill: 0.14, stroke: 0.42, halo: 0, line: 1.5, desat: 0.55, glow: false, pulse: false },
+    quiet: { fill: 0.10, stroke: 0.34, halo: 0, line: 1.4, desat: 0.62, glow: false, pulse: false },
     // Active and long-running background.
-    cold: { fill: 0.07, stroke: 0.22, halo: 0, line: 1, desat: 0.75, glow: false, pulse: false },
+    cold: { fill: 0.05, stroke: 0.16, halo: 0, line: 1, desat: 0.82, glow: false, pulse: false },
     // Concluded: ghost only.
-    done: { fill: 0.05, stroke: 0.20, halo: 0, line: 1, desat: 0.80, glow: false, pulse: false },
+    done: { fill: 0.035, stroke: 0.13, halo: 0, line: 1, desat: 0.86, glow: false, pulse: false },
   };
   // Centre-marker alpha per tier, so a "hot" dot still reads as a live point
   // rather than a hole in the ring.
-  const LAYER_TIER_CENTER_ALPHA = { hot: 1, quiet: 0.55, cold: 0.32, done: 0.26 };
+  const LAYER_TIER_CENTER_ALPHA = { hot: 1, quiet: 0.5, cold: 0.28, done: 0.22 };
   // Deployment arrows use their own alpha table rather than being derived from the
   // area-ring fill above. An arrow is a thin 1px line, not a filled disc, so it
   // needs a much higher alpha to read at all - deriving it from the ring's fill
   // (dividing by the hot value) meant retuning a ring silently retuned every
   // arrow on the map.
   const LAYER_TIER_ARROW = {
-    hot: { tail: 1.0, head: 1.0, line: 2.2 },
-    quiet: { tail: 0.45, head: 0.55, line: 1.5 },
-    cold: { tail: 0.28, head: 0.34, line: 1.2 },
-    done: { tail: 0.18, head: 0.22, line: 1.2 },
+    hot: { tail: 1.0, head: 1.0, line: 2.4 },
+    quiet: { tail: 0.38, head: 0.46, line: 1.4 },
+    cold: { tail: 0.22, head: 0.26, line: 1.1 },
+    done: { tail: 0.14, head: 0.17, line: 1.1 },
   };
   /**
    * Decimal places for coordinate rounding when clustering events into stacks.
    * 4 dp ≈ 11 m at the equator — tight enough to merge only truly co-located events.
    * @type {number}
    */
-  const STACK_ROUND_DIGITS = 4;
-  const STACK_FAN_DX = 3;
-  const STACK_FAN_DY = -3;
+const STACK_ROUND_DIGITS = 4;
+const STACK_FAN_DX = 3;
+const STACK_FAN_DY = -3;
+
+// Two-letter country code -> flag glyph. A regional-indicator pair IS a flag in
+// Unicode ("US" -> 🇺🇸), so the emoji is computed rather than stored: the table
+// stays two characters per nation instead of a four-byte pictograph per row, and
+// a nation added later needs one line, not one glyph to copy.
+function flagGlyph(code) {
+  if (typeof code !== 'string' || !/^[A-Z]{2}$/.test(code)) return '';
+  const base = 0x1F1E6; // REGIONAL INDICATOR SYMBOL LETTER A
+  const hi = base + (code.charCodeAt(0) - 65);
+  const lo = base + (code.charCodeAt(1) - 65);
+  if (hi < base || hi > base + 25 || lo < base || lo > base + 25) return '';
+  return String.fromCodePoint(hi) + String.fromCodePoint(lo);
+}
+
+// The actor behind a record, or null when the data genuinely does not say.
+// Never throws on a missing field: every caller is a tooltip builder.
+function resolveActor(item) {
+  if (!item) return null;
+  const lookup = (raw) => {
+    const s = String(raw || '').trim().toLowerCase();
+    if (!s) return null;
+    for (const { entry, re } of ACTOR_PATTERNS) {
+      if (re.test(s)) return entry;
+    }
+    return null;
+  };
+  // 1. An explicit assertion from the pipeline always wins.
+  const explicit = lookup(item.actor);
+  if (explicit) return explicit;
+  // 2. The country the record names.
+  const byCountry = lookup(item.country);
+  if (byCountry) return byCountry;
+  // 3. The record's own prose: units and ships name their navy, and an alliance
+  //    posture names its bloc. Checked before `source` because it is the record's
+  //    own claim rather than a publisher's.
+  const prose = [item.label, item.name, item.note].filter(Boolean).join(' ');
+  const byProse = lookup(prose);
+  if (byProse) return byProse;
+  // 4. `source` last, and only when it names an institution that acts rather
+  //    than one that reports. Without this an ISW-sourced Russian fleet would be
+  //    filed under ISW, which is exactly the confusion this table exists to stop.
+  const src = String(item.source || '').trim().toLowerCase();
+  if (src && !ACTOR_PUBLISHERS.has(src)) return lookup(src);
+  return null;
+}
+
+// The tooltip's top-right corner: who is responsible for this movement.
+// Returns the element so the caller owns placement, and null when no actor is
+// known - a blank corner is more honest than a guessed flag.
+function createActorBadge(item) {
+  const actor = resolveActor(item);
+  if (!actor) return null;
+  const badge = document.createElement('div');
+  badge.className = 'tt-actor tt-actor--' + actor.kind;
+  const glyph = actor.kind === ACTOR_KIND_NATION ? flagGlyph(actor.flag) : '';
+  if (glyph) {
+    const flag = document.createElement('span');
+    flag.className = 'tt-flag';
+    flag.textContent = glyph;
+    flag.setAttribute('aria-hidden', 'true');
+    badge.appendChild(flag);
+  } else {
+    // Alliances and the UN have no flag. A monogram chip says who it is instead
+    // of borrowing a member state's flag, which would misattribute the action.
+    const chip = document.createElement('span');
+    chip.className = 'tt-flag tt-flag--org';
+    chip.textContent = actor.flag;
+    chip.setAttribute('aria-hidden', 'true');
+    badge.appendChild(chip);
+  }
+  const role = actor.kind === ACTOR_KIND_NATION ? 'Responsible nation'
+    : actor.kind === ACTOR_KIND_UN ? 'Responsible body' : 'Responsible alliance';
+  badge.title = role + ': ' + actor.label;
+  badge.setAttribute('aria-label', role + ': ' + actor.label);
+  return badge;
+}
+
+// The popup's root element. Named so a popup can be found and reasoned about by
+// class rather than by "the element the tooltip happens to contain", which is how
+// the header row and the flags ended up unaddressable from a test.
+function createTooltipCard() {
+    const el = document.createElement('div');
+    el.className = 'tt-card';
+    return el;
+  }
+
+  // Tooltip header: category label on the left, actor flags hard right on the same
+  // baseline. One row so the flags can never drift onto the title line above or
+  // below it, whatever the category label wraps to.
+  function appendTooltipHeader(wrapper, categoryText, color, item) {
+    const head = document.createElement('div');
+    head.className = 'tt-head';
+    const cat = document.createElement('div');
+    cat.className = 'tt-category';
+    cat.style.color = color;
+    cat.textContent = categoryText;
+    head.appendChild(cat);
+    const badge = createActorBadge(item);
+    if (badge) head.appendChild(badge);
+    wrapper.appendChild(head);
+    return wrapper;
+  }
+
+  // The shared "who reported this" line, linked when the payload carries a usable
+  // URL. Three identical copies of this used to exist (zone / deployment / crisis
+  // / landmark), and they had already drifted on the empty-source case.
+  function appendSourceLine(wrapper, item) {
+    const meta = document.createElement('div');
+    meta.className = 'tt-meta';
+    if (item.source && item.url && SOURCE_URL_RE.test(item.url)) {
+      const link = document.createElement('a');
+      link.href = item.url;
+      link.target = '_blank';
+      link.rel = 'noopener noreferrer';
+      link.style.color = 'var(--accent)';
+      link.textContent = item.source;
+      meta.appendChild(link);
+    } else {
+      meta.textContent = item.source || 'Unknown source';
+    }
+    wrapper.appendChild(meta);
+    return meta;
+  }
+
+  function appendNoteLine(wrapper, text) {
+    if (!text) return null;
+    const note = document.createElement('div');
+    note.className = 'tt-note';
+    note.textContent = text;
+    wrapper.appendChild(note);
+    return note;
+  }
+
+  // A short "Nation: X / Region: Y" style fact line, used by the movement and
+  // policy popups. Omitted entirely when the record says nothing, so the popup
+  // never shows a label with an em-dash where a value should be.
+  function appendFactLine(wrapper, label, value) {
+    if (value === undefined || value === null || value === '') return null;
+    const line = document.createElement('div');
+    line.className = 'tt-fact';
+    const key = document.createElement('span');
+    key.className = 'tt-fact-key';
+    key.textContent = label;
+    const val = document.createElement('span');
+    val.className = 'tt-fact-val';
+    val.textContent = String(value);
+    line.append(key, val);
+    wrapper.appendChild(line);
+    return line;
+  }
 
   function withOpacity(hexColor, opacity) {
     const r = parseInt(hexColor.slice(1, 3), 16);
@@ -569,6 +890,7 @@ const HUMAN_RIGHTS_PULSE_MS = 2400;
   const STORAGE_KEY_SHOW_FLEETS = 'worldmap_show_fleets';
   const STORAGE_KEY_SHOW_CRISES = 'worldmap_show_crises';
 const STORAGE_KEY_SHOW_HUMAN_RIGHTS = 'worldmap_show_human_rights';
+  const STORAGE_KEY_SHOW_ALLIANCE_DOTS = 'worldmap_show_alliance_dots';
 const STORAGE_KEY_HIDDEN_CATEGORIES = 'worldmap_hidden_categories';
 
   // Load persisted preferences. Defaults are deliberately "show everything":
@@ -582,6 +904,10 @@ const STORAGE_KEY_HIDDEN_CATEGORIES = 'worldmap_hidden_categories';
   let showFleetsDefault = false;
   let showCrisesDefault = false;
   let showHumanRightsDefault = false;
+  // The dot sublayer follows the parent datalayer: if the visitor has never
+  // touched the key, it is visible whenever Ground & Fleet Deployments is on.
+  // Anything else would hide dots the visitor never asked to hide.
+  let showAllianceDotsDefault = true;
   try {
     const fr = localStorage.getItem(STORAGE_KEY_FILTER_RECENT);
     const fm = localStorage.getItem(STORAGE_KEY_FILTER_MILITARY);
@@ -590,6 +916,7 @@ const STORAGE_KEY_HIDDEN_CATEGORIES = 'worldmap_hidden_categories';
     const sf = localStorage.getItem(STORAGE_KEY_SHOW_FLEETS);
     const sc = localStorage.getItem(STORAGE_KEY_SHOW_CRISES);
     const sh = localStorage.getItem(STORAGE_KEY_SHOW_HUMAN_RIGHTS);
+    const sa = localStorage.getItem(STORAGE_KEY_SHOW_ALLIANCE_DOTS);
     if (fr !== null) filterRecentDefault = fr === 'true';
     if (fm !== null) filterMilitaryDefault = fm === 'true';
     if (fc !== null) filterCrisisDefault = fc === 'true';
@@ -597,6 +924,7 @@ const STORAGE_KEY_HIDDEN_CATEGORIES = 'worldmap_hidden_categories';
     if (sf !== null) showFleetsDefault = sf === 'true';
     if (sc !== null) showCrisesDefault = sc === 'true';
     if (sh !== null) showHumanRightsDefault = sh === 'true';
+    if (sa !== null) showAllianceDotsDefault = sa === 'true';
   } catch (_) {}
 
   const state = {
@@ -606,9 +934,25 @@ height: 0,
       transform: { scale: 1, tx: 0, ty: 0 },
       isDragging: false,
       hoveredEvent: null,
-      hoveredType: null, // 'zone', 'deployment', 'event', 'crisis'
+      hoveredType: null, // 'zone', 'deployment', 'event', 'crisis', 'alliance', 'human_rights'
       selectedEvent: null,
       tooltipHover: false,
+      // The landmark a hover-anchored popup belongs to, and whether the popup has
+      // been "taken over" by the pointer (i.e. the pointer travelled onto the
+      // popup itself rather than away from the map).
+      //
+      // This is what makes a popup's links clickable without pinning it first:
+      // pointer leaves the landmark -> travels onto the popup -> the popup is
+      // still anchored to that landmark, so it must not be dismissed for being
+      // "no longer hovered". Released again on the way out, so moving on to the
+      // next landmark still hands over cleanly.
+      hoverAnchor: null,
+      hoverAnchorType: null,
+      // Last pointer position in canvas space. A popup that changes subject while
+      // the pointer is stationary still has to be placed, and the only place that
+      // knows where the pointer is is the last mousemove.
+      lastPointerX: 0,
+      lastPointerY: 0,
       stackIndex: 0,
       pressX: null,
       pressY: null,
@@ -628,6 +972,7 @@ height: 0,
       foldedCategories: false,  // whether the entire categories section is folded
       zones: [],
       fleets: [],
+      allianceDots: [],
       crises: [],
       humanRights: [],
       // Filter states
@@ -639,6 +984,7 @@ height: 0,
       showFleets: showFleetsDefault,
       showCrises: showCrisesDefault,
       showHumanRights: showHumanRightsDefault,
+      showAllianceDots: showAllianceDotsDefault,
       // Cached terminator data (geo-space: sun angle barely moves, but the
       // screen projection must be recomputed for every draw since pan/zoom
       // changes the transform).
@@ -1320,6 +1666,9 @@ function mapScreenRect() {
         visibleZones.forEach(z => drawZone(z, zoneAutoScale));
       }
       if (state.showFleets) state.fleets.forEach(f => drawFleet(f));
+      // Alliance & defence-policy dots: a sublayer of the same datalayer, so they
+      // ride on the military filter exactly like the arrows do.
+      if (state.showAllianceDots) state.allianceDots.forEach(d => drawAllianceDot(d));
     }
 
     // Only draw crisis zones if filterCrisis is active
@@ -1481,6 +1830,41 @@ function mapScreenRect() {
     }
   }
 
+  // A slowly rotating target reticle, drawn only around a `hot` zone (active and
+  // recent). Four corner brackets plus a radial tick at each bracket's midpoint,
+  // turning once every RETICLE_PERIOD_MS.
+  //
+  // Two decisions worth stating. It is drawn OUTSIDE the area ring, so it reads
+  // as an instrument tracking the zone rather than as part of the zone's extent -
+  // inside, a reticle would imply a radius the conflict does not have. And its
+  // phase is offset by the zone's own longitude, so a map full of fresh zones
+  // does not look like one machine sweeping in lockstep.
+  function drawZoneReticle(p, radius, color, phaseOffset) {
+    const r = Math.max(6, radius * RETICLE_SCALE);
+    const angle = (Date.now() / RETICLE_PERIOD_MS) * Math.PI * 2 + phaseOffset;
+    const bracket = Math.PI / 5;          // angular half-width of one bracket
+    const inner = r * 0.82;               // bracket radial extent
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.strokeStyle = withOpacity(color, 0.55);
+    ctx.lineWidth = 1.1;
+    ctx.lineCap = 'round';
+    ctx.shadowColor = color;
+    ctx.shadowBlur = 4;
+    for (let i = 0; i < 4; i++) {
+      const centre = angle + (i * Math.PI) / 2;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, r, centre - bracket, centre + bracket);
+      ctx.stroke();
+      // Radial tick at each bracket's midpoint, running back toward the ring.
+      ctx.beginPath();
+      ctx.moveTo(p.x + Math.cos(centre) * inner, p.y + Math.sin(centre) * inner);
+      ctx.lineTo(p.x + Math.cos(centre) * r, p.y + Math.sin(centre) * r);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
   // Area ring shared by conflict zones and crisis zones. Both were near-identical
   // ~90-line copies that had already drifted from each other (drawCrisis painted
   // its centre dot twice, and the two disagreed on the "stale" treatment), so the
@@ -1538,6 +1922,13 @@ function mapScreenRect() {
     ctx.arc(p.x, p.y, centerR, 0, Math.PI * 2);
     ctx.fillStyle = tier === TIER_HOT ? color : withOpacity(color, LAYER_TIER_CENTER_ALPHA[tier]);
     ctx.fill();
+
+    // Tracking reticle, last so it sits over the ring, and only for `hot`: the
+    // reticle IS the "this is live right now" signal, so giving it to the dimmed
+    // tiers would destroy the ladder it is supposed to reinforce.
+    if (tier === TIER_HOT) {
+      drawZoneReticle(p, baseRadius, baseColor, (item.lon || 0) * 0.21);
+    }
   }
 
   // Conflict zone: area ring in the conflict palette (red/pink). Only zones
@@ -1833,6 +2224,8 @@ function mapScreenRect() {
   function drawFleet(fleet) {
     if (!state.showFleets) return;
     if (fleet._hiddenByTimeline) return;
+    // Superseded by a policy seal of the same id - see findAllianceDot.
+    if (state.allianceDotIds && state.allianceDotIds.has(fleet.id)) return;
 
     const isInfantry = isInfantryKind(fleet);
     const isGround = fleet.kind === 'ground';
@@ -1891,6 +2284,59 @@ function mapScreenRect() {
     ctx.restore();
   }
 
+  // Alliance / defence-policy dot. A point event with an organisation attached,
+  // so it renders as a small square-in-ring "seal" rather than an arrow or an
+  // area: there is no route and no extent. Same tier ladder as everything else,
+  // so a 2023 accession has visibly faded while a 2024 one is still lit.
+  function drawAllianceDot(dot) {
+    if (!state.showAllianceDots) return;
+    if (dot._hiddenByTimeline) return;
+
+    const p = project(dot.lon, dot.lat);
+    const tier = layerPaintTier(dot);
+    const spec = LAYER_TIER_PAINT[tier];
+    const color = spec.desat ? desaturateHex(ALLIANCE_DOT_COLOR, spec.desat) : ALLIANCE_DOT_COLOR;
+    const r = Math.max(4, (dot.radiusDeg || 0.9) * latDegToPx() * state.transform.scale);
+
+    if (spec.glow) {
+      const pulse = 0.5 + 0.5 * Math.sin(Date.now() / 900 + (dot.lon || 0));
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.shadowColor = ALLIANCE_DOT_COLOR;
+      ctx.shadowBlur = FLUO_GLOW_BLUR + FLUO_PULSE_RADIUS * pulse;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, r * 1.5, 0, Math.PI * 2);
+      ctx.fillStyle = withOpacity(ALLIANCE_DOT_COLOR, spec.halo);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+    ctx.fillStyle = withOpacity(color, spec.fill);
+    ctx.fill();
+
+    ctx.save();
+    if (spec.glow) {
+      ctx.shadowColor = color;
+      ctx.shadowBlur = FLUO_LINE_GLOW_BLUR;
+    }
+    ctx.lineWidth = spec.line * 0.8;
+    ctx.strokeStyle = withOpacity(color, spec.stroke);
+    ctx.stroke();
+    ctx.restore();
+
+    // A square core reads as a seal/marker and is what distinguishes a dot from
+    // the milestone dots, which are circles. Hot only: a dimmed policy change
+    // should not compete with the landmark next to it.
+    if (tier === TIER_HOT) {
+      const s = Math.max(2, r * 0.42);
+      ctx.fillStyle = color;
+      ctx.fillRect(p.x - s, p.y - s, s * 2, s * 2);
+      drawZoneReticle(p, r, ALLIANCE_DOT_COLOR, (dot.lon || 0) * 0.21);
+    }
+  }
+
   // Coalesce high-frequency redraws (wheel zoom, drag pan) into a single draw
   // per animation frame instead of one full synchronous draw per input event.
   let drawRequested = false;
@@ -1924,19 +2370,41 @@ function mapScreenRect() {
     return null;
   }
 
-  // Radius within which a nearby-but-different milestone is treated as visually
+  // Radius within which a nearby-but-different landmark is treated as visually
   // confusable with the anchor rather than as a move to a new subject. Scaled with
   // zoom so it stays a constant apparent distance on screen. Roughly twice the hit
   // radius: enough to bridge the gap between a small dot and the tooltip, too small
   // to swallow an adjacent landmark.
   const PROXIMITY_RADIUS = 56;
 
-  function isNearAnchor(px, py) {
-    const anchor = state.selectedEvent || state.hoveredEvent;
-    if (!anchor || anchor.lon == null || anchor.lat == null) return false;
-    if (anchor._hiddenByTimeline) return false;
-    if (!isCategoryVisible(anchor.category)) return false;
-    const p = project(anchor.lon, anchor.lat);
+  // Is a landmark still drawable? One predicate for every layer type, so the
+  // proximity guard and the popup-dismissal guard can never disagree about
+  // whether an anchor is real. Milestones answer with the milestone filters,
+  // operational layers with their own switch, landmarks with their own.
+  function anchorIsVisible(anchor) {
+    if (!anchor || !anchor.entry) return false;
+    const type = anchor.type;
+    if (type === 'event') return !eventIsHidden(anchor.entry);
+    if (type === 'human_rights') return !humanRightIsHidden(anchor.entry);
+    if (type === 'zone' || type === 'deployment' || type === 'crisis' || type === 'alliance') {
+      return !layerIsHidden(anchor.entry, type);
+    }
+    return false;
+  }
+
+  function isNearAnchor(px, py, anchor) {
+    // No anchor supplied: fall back to whatever the popup is currently describing,
+    // pinned first. Every caller passes one explicitly, but the fallback keeps the
+    // single-argument form - used by the test suite - meaningful.
+    const a = anchor || pinnedAnchor() || hoverAnchor();
+    if (!a || !anchorIsVisible(a)) return false;
+    // The anchor point, not the entry: a movement arrow's own lat/lon are
+    // undefined, so reading them here made every arrow "unreachable" to the
+    // proximity guard - which is why hovering a second arrow while one was open
+    // snapped the popup shut.
+    const point = landmarkAnchorPoint(a.entry);
+    if (!point) return false;
+    const p = project(point.lon, point.lat);
     if (!p) return false;
     const r = PROXIMITY_RADIUS / state.transform.scale;
     const dx = p.x - px;
@@ -1977,6 +2445,8 @@ function mapScreenRect() {
     for (let i = state.fleets.length - 1; i >= 0; i--) {
       const fleet = state.fleets[i];
       if (fleet._hiddenByTimeline) continue;
+      // Superseded by a policy seal of the same id - see drawFleet.
+      if (state.allianceDotIds && state.allianceDotIds.has(fleet.id)) continue;
       // Same endpoint derivation the renderer uses, so infantry arrows (which
       // carry lat/lon + direction, not from/to) are hittable and the hit target
       // lines up with the pixels that were actually drawn.
@@ -2040,19 +2510,62 @@ function mapScreenRect() {
     return best;
   }
 
+  // Alliance-dot hit test. Derived from the same numbers drawAllianceDot uses, so
+  // the clickable area is the painted mark and not a separate guess.
+  //
+  // A movement that has been promoted to a policy seal (Finland and Sweden's
+  // NATO accessions) is deliberately invisible here: the seal replaces the arrow
+  // rather than sitting on top of it, so the map never shows the same fact twice
+  // and the hover target is not split in half between two marks at one pixel.
+  function findAllianceDot(px, py) {
+    if (!state.showAllianceDots) return null;
+    const hitRadius = ALLIANCE_DOT_HIT_RADIUS / state.transform.scale;
+    const hitRadiusSq = hitRadius * hitRadius;
+    for (let i = state.allianceDots.length - 1; i >= 0; i--) {
+      const dot = state.allianceDots[i];
+      if (dot._hiddenByTimeline) continue;
+      const p = project(dot.lon, dot.lat);
+      const dx = p.x - px;
+      const dy = p.y - py;
+      if (dx * dx + dy * dy < hitRadiusSq) return dot;
+    }
+    return null;
+  }
+
   // Landmarks are the one layer that pins; zones, deployments and crisis rings were
   // hover-only, so their tooltips vanished the moment the pointer moved and the source
   // link inside them could never be clicked. Same treatment as a milestone now.
   //
-  // One finder for all three so the pin/unpin path does not have to know which
+  // One finder for all four so the pin/unpin path does not have to know which
   // layer it was, and so the precedence matches the hover order above it.
   function findLayerAt(x, y) {
+    const dot = findAllianceDot(x, y);
+    if (dot) return { entry: dot, type: 'alliance' };
     const zone = findZone(x, y);
     if (zone) return { entry: zone, type: 'zone' };
     const deploy = findDeployment(x, y);
     if (deploy) return { entry: deploy, type: 'deployment' };
     const crisis = findCrisis(x, y);
     if (crisis) return { entry: crisis, type: 'crisis' };
+    return null;
+  }
+
+  // The point a landmark is *about* - where its popup docks and how far the
+// proximity guard reaches.
+//
+// This exists because a movement arrow has no single coordinate. A fleet entry
+// carries `from`/`to` and a ground entry lat/lon + a heading; neither has a
+// top-level `lat`/`lon` for a fleet. Reading one anyway produced undefined,
+// which is what made "click an arrow to pin it" silently do nothing: the popup
+// opened on hover and could never be pinned, so its source link was as
+// unreachable as the hover-only layers were before they were fixed. The
+// destination is the anchor because that is where the arrowhead - the end the
+// reader is aiming at - is drawn.
+function landmarkAnchorPoint(entry) {
+    if (!entry) return null;
+    if (hasPlottableCoords(entry.lat, entry.lon)) return entry;
+    const ends = fleetEndpoints(entry);
+    if (ends && hasPlottableCoords(ends.to.lat, ends.to.lon)) return ends.to;
     return null;
   }
 
@@ -2064,12 +2577,14 @@ function mapScreenRect() {
     // else - the one path that invents the coordinate is the path that must not
     // have it. A layer entry missing a coordinate is also unpinnable, so refusing
     // matches what the hit test would already have done.
-    if (!hasPlottableCoords(entry.lat, entry.lon)) return;
-    const p = project(entry.lon, entry.lat);
+    const anchor = landmarkAnchorPoint(entry);
+    if (!anchor) return;
+    const p = project(anchor.lon, anchor.lat);
     if (!p) return;
     if (type === 'zone') showZoneTooltip(entry, p.x, p.y);
     else if (type === 'deployment') showDeploymentTooltip(entry, p.x, p.y);
     else if (type === 'crisis') showCrisisTooltip(entry, p.x, p.y);
+    else if (type === 'alliance') showAllianceDotTooltip(entry, p.x, p.y);
   }
 
   // Is the pinned layer still drawable? Switching its layer off, or filtering it
@@ -2077,19 +2592,164 @@ function mapScreenRect() {
   // longer describes.
   function layerIsHidden(entry, type) {
     if (!entry) return true;
+    // The timeline counts. Without this the popup's anchor test could call a
+    // 2024 accession "visible" while the slider sat in 2015 and the seal was not
+    // being drawn - the milestone path always checked _hiddenByTimeline and the
+    // layer path did not, so moving the slider left a popup describing a mark
+    // that was no longer on screen.
+    if (entry._hiddenByTimeline) return true;
     if (type === 'zone') return !state.showZones || !state.filterMilitary;
     if (type === 'deployment') return !state.showFleets || !state.filterMilitary;
     if (type === 'crisis') return !state.showCrises || !state.filterCrisis;
+    if (type === 'alliance') return !state.showAllianceDots || !state.filterMilitary;
     return true;
   }
 
+// ---- Tooltip anchor model -------------------------------------------------
+  // One anchor concept for every landmark type, because the previous three
+  // near-identical branches (pinned milestone / pinned layer / pinned landmark)
+  // disagreed in three ways a user notices immediately:
+  //
+  //   * a pinned layer could not be handed over by a milestone, and a pinned
+  //     landmark could not be handed over by anything at all;
+  //   * a hover-anchored popup died the moment the pointer left the landmark,
+  //     so travelling onto the popup to click "View source" was impossible
+  //     without first clicking to pin;
+  //   * "sticky" meant two different things for milestones and for layers.
+  //
+  // Now: `pinnedAnchor()` is what a click committed to, `hoverAnchor()` is what
+  // the pointer is currently resting on (or has just travelled onto the popup
+  // of), and a handover from a pinned popup stays pinned. That single rule is
+  // what makes "only disappears when hovering another active landmark" true for
+  // every layer instead of just milestones.
+  function pinnedAnchor() {
+    if (state.selectedEvent) return { entry: state.selectedEvent, type: 'event' };
+    if (state.selectedLayer) return { entry: state.selectedLayer, type: state.selectedLayerType };
+    if (state.selectedHumanRight) return { entry: state.selectedHumanRight, type: 'human_rights' };
+    return null;
+  }
+
+  function hoverAnchor() {
+    if (state.hoverAnchor) return { entry: state.hoverAnchor, type: state.hoverAnchorType };
+    return null;
+  }
+
+  // Record what the popup currently describes. Milestones are mirrored into
+  // hoveredEvent/hoveredType because the renderer and the dismissal checks read
+  // those directly; every other type lives only in the generic pair, so the two
+  // can never disagree about which dot is lit.
+  function setHoverAnchor(entry, type) {
+    state.hoverAnchor = entry || null;
+    state.hoverAnchorType = entry ? type : null;
+    if (type === 'event') {
+      state.hoveredEvent = entry;
+      state.hoveredType = type;
+    } else {
+      state.hoveredEvent = null;
+      state.hoveredType = type || null;
+    }
+  }
+
+// Everything hoverable, in one precedence order.
+//
+// Alliance seals are tested FIRST, which is a deliberate exception to the
+// milestone-first rule below. A seal is placed at a capital city, and capital
+// cities are exactly where milestones cluster: Helsinki already carries the
+// "Estonia suffers a coordinated cyberattack" landmark within 70 km, so a
+// milestone-first test made the Finland accession unpinnable at its own pixel.
+// The seal is also the physically larger mark (ring plus reticle against a
+// filled dot), so giving it its own pixels is consistent with "the mark you are
+// pointing at wins". The exemption is narrow: only inside the seal's own hit
+// radius, so a milestone one dot-width away is still perfectly hittable.
+//
+// Milestones then win over the area layers, so a milestone sitting on a conflict
+// ring stays reachable.
+function findLandmarkAt(x, y) {
+    const seal = findAllianceDot(x, y);
+    if (seal) return { entry: seal, type: 'alliance' };
+    const ev = findEvent(x, y);
+    if (ev) return { entry: ev, type: 'event' };
+    const layer = findLayerAt(x, y);
+    if (layer) return layer;
+    const rights = findHumanRight(x, y);
+    if (rights) return { entry: rights, type: 'human_rights' };
+    return null;
+  }
+
+  // Show the popup for one landmark. `pinned` docks it at the marker's own
+  // projected position so it stops chasing the cursor; otherwise it follows the
+  // pointer, which is what a hover popup should do.
+  function dockTooltipTo(entry, type, x, y, pinned) {
+    if (!tooltip || !entry) return;
+    const at = () => {
+      if (pinned) {
+        const p = project(entry.lon, entry.lat);
+        if (p) { x = p.x; y = p.y; }
+      }
+      switch (type) {
+        case 'zone': return moveZoneTooltip(x, y);
+        case 'deployment': return moveDeploymentTooltip(x, y);
+        case 'crisis': return moveCrisisTooltip(x, y);
+        case 'alliance': return moveAllianceDotTooltip(x, y);
+        case 'human_rights': return moveHumanRightsTooltip(x, y);
+        default: return moveTooltip(x, y);
+      }
+    };
+    switch (type) {
+      case 'zone': return showZoneTooltip(entry, x, y);
+      case 'deployment': return showDeploymentTooltip(entry, x, y);
+      case 'crisis': return showCrisisTooltip(entry, x, y);
+      case 'alliance': return showAllianceDotTooltip(entry, x, y);
+      case 'human_rights': return showHumanRightsTooltip(entry, x, y);
+      default: return showTooltip(entry, x, y);
+    }
+  }
+
+  // Move the popup to a different landmark. `keepPinned` decides whether the new
+  // landmark inherits stickiness: a handover from a pinned popup keeps it (the
+  // pointer is about to travel to the new popup and must find it still open),
+  // while a handover from a plain hover does not.
+  function handOverTo(hit, keepPinned) {
+    state.selectedEvent = null;
+    state.selectedHumanRight = null;
+    state.selectedLayer = null;
+    state.selectedLayerType = null;
+    if (keepPinned) {
+      if (hit.type === 'event') state.selectedEvent = hit.entry;
+      else if (hit.type === 'human_rights') state.selectedHumanRight = hit.entry;
+      else { state.selectedLayer = hit.entry; state.selectedLayerType = hit.type; }
+      markTooltipSticky(true);
+    }
+    setHoverAnchor(hit.entry, hit.type);
+    if (hit.type === 'event') {
+      pinTooltipToEvent(hit.entry);
+    } else if (hit.type === 'human_rights') {
+      pinTooltipToHumanRight(hit.entry);
+    } else {
+      pinTooltipToLayer(hit.entry, hit.type);
+    }
+    if (!keepPinned) {
+      // Not pinned: the popup still tracks the pointer. Re-anchor it to the
+      // marker's projection so the first move after the handover does not snap.
+      dockTooltipTo(hit.entry, hit.type, state.lastPointerX, state.lastPointerY, false);
+    }
+  }
+
   // ---- Tooltip hover handlers ----
-  function handleTooltipMouseEnter() { state.tooltipHover = true; }
+  // Pointer entered the popup. The popup stays anchored to its landmark, which is
+  // the whole point: from here the visitor can read it and click its links
+  // without ever having pinned anything.
+  function handleTooltipMouseEnter() {
+    state.tooltipHover = true;
+  }
+
   function handleTooltipMouseLeave() {
     state.tooltipHover = false;
-    state.hoveredEvent = null;
-    if (state.selectedEvent) return;
-    hideTooltip();
+    // Leaving the popup is not leaving the subject. A hover-anchored popup keeps
+    // its content while the pointer is away, and the next canvas mousemove
+    // re-arbitrates it: staying put if the pointer is still near the landmark,
+    // handing over or closing if it has genuinely travelled on.
+    if (pinnedAnchor()) return;
     draw();
   }
 
@@ -2099,6 +2759,8 @@ function mapScreenRect() {
     const rect = canvas.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
+    state.lastPointerX = x;
+    state.lastPointerY = y;
 
     if (state.isDragging) {
       state.transform.tx += e.movementX;
@@ -2115,165 +2777,72 @@ function mapScreenRect() {
       return;
     }
 
-    // A pinned (selected) event keeps its popup persistent so the pointer can
-    // travel to it and click the "View source" link; hovering a different dot
-    // re-pins it in place instead of letting the popup chase the cursor.
-    // Same for a docked zone, deployment or crisis ring.
-    if (state.selectedLayer && !state.selectedEvent && !state.selectedHumanRight) {
-      const layer = findLayerAt(x, y);
-      if (layer) {
-        canvas.style.cursor = 'pointer';
-        state.hoveredType = layer.type;
-        if (layer.entry !== state.selectedLayer) {
-          state.selectedLayer = layer.entry;
-          state.selectedLayerType = layer.type;
-          pinTooltipToLayer(layer.entry, layer.type);
+    const hit = findLandmarkAt(x, y);
+    canvas.style.cursor = hit ? 'pointer' : 'grab';
+
+    // --- A landmark is pinned -------------------------------------------------
+    // The popup is persistent: moving away over empty ocean, or across the map,
+    // never closes it. It only moves when the pointer arrives at a *different*
+    // landmark, and even then only once the pointer is unambiguously elsewhere -
+    // inside the proximity radius the two marks are visually confusable, and
+    // swapping on the way past makes both unreadable.
+    const pinned = pinnedAnchor();
+    if (pinned) {
+      if (!hit) return;                                   // travelling away: hold
+      if (hit.entry === pinned.entry && hit.type === pinned.type) {
+        state.hoveredEvent = hit.type === 'event' ? hit.entry : null;
+        state.hoveredType = hit.type;
+        // A popup can be hidden while still pinned (a filter took the landmark
+        // off, the popup was re-rendered under the cursor). Put it back.
+        if (tooltip && !tooltip.classList.contains('visible')) {
+          handOverTo(hit, true);
           draw();
         }
         return;
       }
-      canvas.style.cursor = 'grab';
+      if (isNearAnchor(x, y, pinned)) return;             // nearby: hold
+      handOverTo(hit, true);                              // far: hand over, still pinned
+      draw();
       return;
     }
 
-    // A docked landmark behaves like a docked milestone: the popup stays put, the
-    // cursor keeps its pointer feedback over the target, and only a click on the
-    // landmark itself or empty canvas closes it.
-    if (state.selectedHumanRight && !state.selectedEvent) {
-      const hit = findHumanRight(x, y);
-      if (hit) {
-        canvas.style.cursor = 'pointer';
-        state.hoveredType = 'human_rights';
-        if (hit !== state.selectedHumanRight) {
-          // Re-dock in place on a different landmark, same as milestones.
-          state.selectedHumanRight = hit;
-          pinTooltipToHumanRight(hit);
-          draw();
-        }
-        return;
-      }
-      canvas.style.cursor = 'grab';
-      return;
-    }
-
-    if (state.selectedEvent) {
-      const hit = findEvent(x, y);
-      if (hit && hit !== state.selectedEvent) {
-        state.selectedEvent = hit;
-        state.hoveredEvent = hit;
-        canvas.style.cursor = 'pointer';
-        pinTooltipToEvent(hit);
-        draw();
-      } else if (hit === state.selectedEvent) {
-        canvas.style.cursor = 'pointer';
-        if (state.hoveredEvent !== hit) { state.hoveredEvent = hit; draw(); }
-        if (!tooltip || !tooltip.classList.contains('visible')) pinTooltipToEvent(hit);
-      } else {
-        canvas.style.cursor = 'grab';
-        state.hoveredEvent = null;
-      }
-      return;
-    }
-
-    // Check for hovered event (primary), zone, deployment, or crisis
-    let hit = null;
-    let hitType = null; // 'zone', 'deployment', 'event', 'crisis'
-    
-    const eventHit = findEvent(x, y);
-    if (eventHit) {
-      hit = eventHit;
-      hitType = 'event';
-    } else {
-      const zoneHit = findZone(x, y);
-      if (zoneHit) {
-        hit = zoneHit;
-        hitType = 'zone';
-      } else {
-        const deployHit = findDeployment(x, y);
-        if (deployHit) {
-          hit = deployHit;
-          hitType = 'deployment';
-        } else {
-          const crisisHit = findCrisis(x, y);
-          if (crisisHit) {
-            hit = crisisHit;
-            hitType = 'crisis';
-          }
-          else {
-            const rightsHit = findHumanRight(x, y);
-            if (rightsHit) {
-              hit = rightsHit;
-              hitType = 'human_rights';
-            }
-          }
-        }
-      }
-    }
-
-canvas.style.cursor = hit ? 'pointer' : 'grab';
-    // --- Hover arbitration -----------------------------------------------------
-    // "Whatever is under the cursor wins" was wrong in three distinct ways, so
-    // they are separated here rather than left to the hit test:
-    //
-    // 1. Drift. A milestone dot is a handful of pixels across, so a pointer moving
-    //    toward the tooltip drifts off it long before reaching anything else.
-    //    Hiding on a miss made the tooltip's own source link unreachable.
-    //
-    // 2. Nearby, and NOT the same location. Two dots a few pixels apart are
-    //    visually ambiguous, and swapping the tooltip as the pointer crossed the
-    //    gap made it impossible to read either one. The current tooltip is left
-    //    completely untouched - the anchor does not even move.
-    //
+    // --- No pin: hover arbitration --------------------------------------------
+    // 1. Drift. A landmark mark is a handful of pixels across, so a pointer moving
+    //    toward the popup drifts off it long before reaching anything else.
+    // 2. Nearby, and NOT the same location. Two marks a few pixels apart are
+    //    visually ambiguous, and swapping the popup as the pointer crossed the
+    //    gap made it impossible to read either one. The popup is left completely
+    //    untouched - the anchor does not even move.
     // 3. Same-location cluster. Stepping through co-located milestones is the
     //    point of a cluster, so each member DOES take over.
-    //
-    // Past the proximity radius the pointer has clearly travelled somewhere else,
-    // so switching is expected and stays easy. A click pins the milestone
-    // (state.selectedEvent); while pinned the tooltip is persistent and nearby
-    // hovers of any kind leave it alone, including cluster members.
-    const anchor = state.selectedEvent || state.hoveredEvent;
-    if (anchor && hit !== anchor && isNearAnchor(x, y)) {
-      if (state.selectedEvent) return;                  // pinned: persist
-      if (hit && hitType === 'event' && sameLocationCluster(hit, anchor)) {
-        // Same location: fall through so this member opens its own tooltip.
-      } else {
-        return;                                          // nearby: leave alone
+    const anchor = hoverAnchor();
+    if (anchor && hit && !(hit.entry === anchor.entry && hit.type === anchor.type)) {
+      if (isNearAnchor(x, y, anchor)) {
+        // Same location: let a cluster member open its own popup.
+        const sameSpot = hit.type === 'event' && anchor.type === 'event'
+          && sameLocationCluster(hit.entry, anchor.entry);
+        if (!sameSpot) return;
       }
     }
-    if (!hit && isNearAnchor(x, y)) return;              // drift: keep it
+    if (!hit && anchor && isNearAnchor(x, y, anchor)) return;   // drift: keep it
 
-    if (hit !== state.hoveredEvent || hitType !== state.hoveredType) {
-      state.hoveredEvent = hit;
-      state.hoveredType = hitType;
-      if (hit) {
-        if (hitType === 'zone') {
-          showZoneTooltip(hit, e.clientX - rect.left, e.clientY - rect.top);
-        } else if (hitType === 'deployment') {
-          showDeploymentTooltip(hit, e.clientX - rect.left, e.clientY - rect.top);
-        } else if (hitType === 'crisis') {
-          showCrisisTooltip(hit, e.clientX - rect.left, e.clientY - rect.top);
-        } else if (hitType === 'human_rights') {
-          showHumanRightsTooltip(hit, e.clientX - rect.left, e.clientY - rect.top);
-        } else {
-          showTooltip(hit, e.clientX - rect.left, e.clientY - rect.top);
-        }
-      } else if (!state.tooltipHover) {
-        hideTooltip();
-      }
-      draw();
-    } else if (hit) {
-      if (hitType === 'zone') {
-        moveZoneTooltip(e.clientX - rect.left, e.clientY - rect.top);
-      } else if (hitType === 'deployment') {
-        moveDeploymentTooltip(e.clientX - rect.left, e.clientY - rect.top);
-      } else if (hitType === 'crisis') {
-        moveCrisisTooltip(e.clientX - rect.left, e.clientY - rect.top);
-      } else if (hitType === 'human_rights') {
-        moveHumanRightsTooltip(e.clientX - rect.left, e.clientY - rect.top);
-      } else {
-        moveTooltip(e.clientX - rect.left, e.clientY - rect.top);
-      }
+    if (!hit) {
+      // Past the proximity radius with nothing under the pointer, and the pointer
+      // is not on the popup: this is a real departure.
+      if (state.tooltipHover) return;
+      if (anchor) { setHoverAnchor(null, null); hideTooltip(); draw(); }
+      return;
     }
+
+    const sameAnchor = anchor && hit.entry === anchor.entry && hit.type === anchor.type;
+    if (!sameAnchor) {
+      handOverTo(hit, false);
+      setHoverAnchor(hit.entry, hit.type);
+      draw();
+      return;
+    }
+    // Same landmark, pointer still on it: just let the popup follow.
+    dockTooltipTo(hit.entry, hit.type, x, y, false);
   }
 
   canvas.addEventListener('mousedown', handleMouseDown);
@@ -2326,55 +2895,25 @@ canvas.style.cursor = hit ? 'pointer' : 'grab';
       // The dots moved out from under the pointer, so any popup is now stale.
       dismissTooltip();
     } else {
-      const hit = findEvent(x, y);
+      // One hit test for every landmark type, so a click can only ever pin or
+      // unpin through a single path. Before this there were three, each with its
+      // own idea of what "already pinned" meant, and the layers were the odd ones
+      // out: they could be hovered but the branch that made them sticky was
+      // unreachable for the two layers that have no from/to endpoints.
+      const hit = findLandmarkAt(x, y);
+      const pinned = pinnedAnchor();
       if (!hit) {
-        // Landmarks are not milestones, so findEvent cannot see them. Without this
-        // branch a click on a Human Rights landmark found nothing and dismissed
-        // the popup - the layer had hover but no docking at all.
-        const rightsHit = findHumanRight(x, y);
-        if (rightsHit) {
-          // Identity, not id: two reports at one country centroid are distinct
-          // entries, and clicking either should pin that one.
-          if (rightsHit === state.selectedHumanRight) {
-            dismissTooltip();
-          } else {
-            state.selectedHumanRight = rightsHit;
-            // A milestone may already be docked. Leaving it selected would keep two
-            // popups claiming to be pinned and let the milestone hover branch fight
-            // the landmark one for the same pointer.
-            state.selectedEvent = null;
-            state.hoveredEvent = null;
-            pinTooltipToHumanRight(rightsHit);
-          }
-        } else {
-          // Zones, deployments and crisis rings. They were hover-only, so their
-          // tooltips could never be pinned and the source link inside them was
-          // unreachable - the same defect the landmark branch above had.
-          const layer = findLayerAt(x, y);
-          if (layer) {
-            if (layer.entry === state.selectedLayer &&
-                layer.type === state.selectedLayerType) {
-              dismissTooltip();
-            } else {
-              state.selectedLayer = layer.entry;
-              state.selectedLayerType = layer.type;
-              state.selectedEvent = null;
-              state.selectedHumanRight = null;
-              pinTooltipToLayer(layer.entry, layer.type);
-            }
-          } else {
-            // Empty canvas closes a pinned popup.
-            dismissTooltip();
-          }
-        }
-      } else if (hit === state.selectedEvent) {
-        // Clicking the pinned dot again unpins it (identity, not id: two
-        // milestones at one location can share a generated id).
+        // Empty canvas closes a pinned popup.
+        dismissTooltip();
+      } else if (pinned && hit.entry === pinned.entry && hit.type === pinned.type) {
+        // Clicking the pinned landmark again unpins it. Identity, not id: two
+        // milestones at one location can share a generated id, and two reports at
+        // one country centroid are distinct entries.
         dismissTooltip();
       } else {
-        state.selectedEvent = hit;
-        state.selectedHumanRight = null;
-        pinTooltipToEvent(hit);
+        // Pin it. Note the popup is already showing this landmark in the common
+        // case (the pointer is on it), so this is a re-dock rather than a retarget.
+        handOverTo(hit, true);
       }
     }
     state.pressX = null;
@@ -2452,9 +2991,37 @@ canvas.style.cursor = hit ? 'pointer' : 'grab';
   canvas.setAttribute('aria-label', 'Interactive world map with transhumanist milestones');
 
   // ---- Tooltip ----
+  // The metric's own name under the title. `synthetic_biology` -> "Synthetic
+  // Biology", `low_resource_speech` -> "Low Resource Speech". The raw slug is
+  // only shown when the record carries nothing more specific, so the label is
+  // never a worse answer than before.
+function submetricLabel(raw) {
+  const s = String(raw || '').trim();
+  if (!s) return '';
+  const words = s.replace(/[_-]+/g, ' ').replace(/\s+/g, ' ').trim();
+  if (!words) return '';
+  return words.charAt(0).toUpperCase() + words.slice(1);
+}
+
+function appendSubmetricLine(wrapper, raw) {
+  const label = submetricLabel(raw);
+  if (!label) return null;
+  const line = document.createElement('div');
+  line.className = 'tt-submetric';
+  const key = document.createElement('span');
+  key.className = 'tt-submetric-key';
+  key.textContent = 'Metric';
+  const val = document.createElement('span');
+  val.className = 'tt-submetric-val';
+  val.textContent = label;
+  line.append(key, val);
+  wrapper.appendChild(line);
+  return line;
+}
+
   function createTooltipElement(ev) {
     const color = landmarkColorFor(ev.category, ev.tone) || '#00d4ff';
-    const wrapper = document.createElement('div');
+    const wrapper = createTooltipCard();
     const cat = document.createElement('div');
     cat.className = 'tt-category';
     cat.style.color = color;
@@ -2468,6 +3035,11 @@ canvas.style.cursor = hit ? 'pointer' : 'grab';
     meta.style.cssText = 'color: var(--fg-subtle); font-size: 0.7rem; margin-top: 4px;';
     meta.textContent = `${ev.source} · ${ev.date}`;
     wrapper.append(cat, title, meta);
+
+    // Below the article/metric/value block, so the tooltip reads in the order a
+    // reader asks for it: which vertical, what specifically, what happened,
+    // how big, where to read more.
+    appendSubmetricLine(wrapper, ev.subcategory);
 
     // Metric-less events publish their title as the value; skip the row when it
     // would only repeat the title heading above it.
@@ -2520,19 +3092,31 @@ canvas.style.cursor = hit ? 'pointer' : 'grab';
     return wrapper;
   }
 
-  function moveTooltip(x, y) {
-    if (!tooltip) return;
+  // Place the popup beside a point, flipping to the other side rather than hanging
+  // off the frame. One implementation for every landmark type: there were four
+  // byte-identical copies that had to be kept in step by hand, and the pinned
+  // variant in pinTooltipToEvent had already drifted (it ignored TOOLTIP_OFFSET
+  // for the fallback branch).
+  function placeTooltipBeside(el, x, y) {
+    if (!el) return;
     const offset = TOOLTIP_OFFSET;
-    // Clamp against the tooltip's real size when measurable (works even for
-    // taller tooltips that include a value or source link).
-    const tw = tooltip.offsetWidth || TOOLTIP_WIDTH;
-    const th = tooltip.offsetHeight || TOOLTIP_HEIGHT;
+    const tw = el.offsetWidth || TOOLTIP_WIDTH;
+    const th = el.offsetHeight || TOOLTIP_HEIGHT;
     let tx = x + offset;
     let ty = y + offset;
     if (tx + tw > state.width) tx = x - tw - offset;
     if (ty + th > state.height) ty = y - th - offset;
-    tooltip.style.left = tx + 'px';
-    tooltip.style.top = ty + 'px';
+    // Clamp rather than trust: a popup wider than the frame, or one measured
+    // before it was laid out, would otherwise start off-screen and be unreachable.
+    tx = Math.max(0, Math.min(tx, Math.max(0, state.width - tw)));
+    ty = Math.max(0, Math.min(ty, Math.max(0, state.height - th)));
+    el.style.left = tx + 'px';
+    el.style.top = ty + 'px';
+  }
+
+  function moveTooltip(x, y) {
+    if (!tooltip) return;
+    placeTooltipBeside(tooltip, x, y);
   }
 
 function showTooltip(ev, x, y) {
@@ -2594,19 +3178,24 @@ function showTooltip(ev, x, y) {
     if (tooltip) tooltip.classList.remove('visible');
   }
 
+  // Visual marker for "this popup is anchored, not chasing the pointer". Driven
+  // from one place so a popup can never claim to be sticky while the state says
+  // otherwise (or the reverse), which is what would make the two feel different.
+  function markTooltipSticky(on) {
+    if (!tooltip) return;
+    // add/remove rather than classList.toggle: toggle is standard, but this
+    // codebase's test fakes implement only add/remove/contains, and using the
+    // wider API here would throw inside the click path rather than merely skip a
+    // class.
+    if (on) tooltip.classList.add('is-sticky');
+    else tooltip.classList.remove('is-sticky');
+  }
+
   // Pin the popup for a selected event: place it beside the dot once and keep
   // it from chasing the cursor, so the "View source" link stays reachable.
   function pinTooltipToEvent(ev) {
     if (!tooltip) return;
     const p = project(ev.lon, ev.lat);
-    const tw = tooltip.offsetWidth || TOOLTIP_WIDTH;
-    const th = tooltip.offsetHeight || TOOLTIP_HEIGHT;
-    let tx = p.x + TOOLTIP_OFFSET;
-    let ty = p.y + TOOLTIP_OFFSET;
-    if (tx + tw > state.width) tx = p.x - tw - TOOLTIP_OFFSET;
-    if (ty + th > state.height) ty = p.y - th - TOOLTIP_OFFSET;
-    tooltip.style.left = tx + 'px';
-    tooltip.style.top = ty + 'px';
 
     // Clean up previous pager if any (defensive: tooltip may be a mock without querySelector)
     if (typeof tooltip.querySelector === 'function') {
@@ -2616,6 +3205,10 @@ function showTooltip(ev, x, y) {
 
     tooltip.replaceChildren(createTooltipElement(ev));
     tooltip.classList.add('visible');
+    // Placed AFTER the content is in the DOM: offsetWidth/offsetHeight are read
+    // there, and measuring the previous popup's box is what used to let a taller
+    // pinned popup hang off the bottom of the frame.
+    if (p) placeTooltipBeside(tooltip, p.x, p.y);
 
     // Track which member of the stack is on screen so prev/next move from here
     // (the pager used to snap back to 1/N on every re-pin and never advanced),
@@ -2650,7 +3243,10 @@ function showTooltip(ev, x, y) {
     state.selectedLayerType = null;
     state.hoveredEvent = null;
     state.hoveredType = null;
+    state.hoverAnchor = null;
+    state.hoverAnchorType = null;
     state.stackIndex = 0;
+    markTooltipSticky(false);
     hideTooltip();
   }
 
@@ -2674,18 +3270,12 @@ function showTooltip(ev, x, y) {
   }
 
   function dismissTooltipIfTargetHidden() {
-    // Layer popups (zone / crisis / deployment) carry no category and are not
-    // affected by the milestone filters, so only milestones are checked.
-    const targets = [state.selectedEvent, state.hoveredEvent].filter((t) => t && typeof t.category === 'string');
-    if (targets.some(eventIsHidden)) { dismissTooltip(); return; }
-    if (state.selectedHumanRight && humanRightIsHidden(state.selectedHumanRight)) {
-      dismissTooltip();
-      return;
-    }
-    if (state.selectedLayer &&
-        layerIsHidden(state.selectedLayer, state.selectedLayerType)) {
-      dismissTooltip();
-    }
+    // One predicate per anchor kind, and the anchor is whichever of the two the
+    // popup is describing - pinned first, then hover. Previously only milestones
+    // were checked here, so a popup docked to a landmark whose layer had been
+    // switched off kept describing a layer that was no longer drawn.
+    const anchors = [pinnedAnchor(), hoverAnchor()].filter(Boolean);
+    if (anchors.some((a) => !anchorIsVisible(a))) { dismissTooltip(); return; }
   }
 
   // ---- Zone/Deployment Tooltips ----
@@ -2705,68 +3295,55 @@ function showTooltip(ev, x, y) {
   }
 
   function createZoneTooltipElement(zone) {
-    const wrapper = document.createElement('div');
-    const cat = document.createElement('div');
-    cat.className = 'tt-category';
-    cat.style.color = ZONE_COLOR;
-    cat.textContent = 'Conflict Zone';
+    const wrapper = createTooltipCard();
+    appendTooltipHeader(wrapper, 'Conflict Zone', ZONE_COLOR, zone);
     const title = document.createElement('div');
     title.className = 'tt-title';
     title.textContent = zone.name;
-    const meta = document.createElement('div');
-    meta.style.cssText = 'color: var(--fg-subtle); font-size: 0.7rem; margin-top: 4px;';
-    if (zone.source && zone.url && SOURCE_URL_RE.test(zone.url)) {
-      const link = document.createElement('a');
-      link.href = zone.url;
-      link.target = '_blank';
-      link.rel = 'noopener noreferrer';
-      link.style.color = 'var(--accent)';
-      link.textContent = zone.source;
-      meta.appendChild(link);
-    } else {
-      meta.textContent = zone.source || 'Unknown source';
-    }
-    wrapper.append(cat, title, meta);
-    if (zone.note) {
-      const note = document.createElement('div');
-      note.style.cssText = 'margin-top: 6px; font-size: 0.75rem; color: var(--fg-muted);';
-      note.textContent = zone.note;
-      wrapper.appendChild(note);
-    }
+    wrapper.appendChild(title);
+    appendSourceLine(wrapper, zone);
+    appendNoteLine(wrapper, zone.note);
     return appendActivityLine(wrapper, zone);
   }
 
+  // Alliance / defence-policy seal popup. Same shape as a movement popup so the
+  // sublayer reads as part of the Ground & Fleet Deployments datalayer rather
+  // than as a fifth unrelated thing on the map.
+  function createAllianceDotTooltipElement(dot) {
+    const wrapper = createTooltipCard();
+    const heading = ALLIANCE_DOT_HEADINGS[dot.kind] || ALLIANCE_DOT_HEADINGS.posture;
+    appendTooltipHeader(wrapper, heading, ALLIANCE_DOT_COLOR, dot);
+    const title = document.createElement('div');
+    title.className = 'tt-title';
+    title.textContent = dot.name;
+    wrapper.appendChild(title);
+    appendSourceLine(wrapper, dot);
+    appendFactLine(wrapper, 'Nation', dot.country);
+    appendFactLine(wrapper, 'Region', dot.region);
+    appendFactLine(wrapper, 'Effective', dot.start_date);
+    appendNoteLine(wrapper, dot.note);
+    return appendActivityLine(wrapper, dot);
+  }
+
   function createDeploymentTooltipElement(fleet) {
-    const wrapper = document.createElement('div');
-    const cat = document.createElement('div');
-    cat.className = 'tt-category';
+    const wrapper = createTooltipCard();
     const isInfantry = isInfantryKind(fleet);
-    cat.style.color = (isInfantry || fleet.kind === 'ground') ? GROUND_COLOR : FLEET_COLOR;
-    cat.textContent = isInfantry ? 'Ground Deployment' : (fleet.kind === 'ground' ? 'Ground Deployment' : 'Fleet Deployment');
+    const isGround = isInfantry || fleet.kind === 'ground';
+    appendTooltipHeader(
+      wrapper,
+      isGround ? 'Ground Deployment' : 'Fleet Deployment',
+      isGround ? GROUND_COLOR : FLEET_COLOR,
+      fleet
+    );
     const title = document.createElement('div');
     title.className = 'tt-title';
     title.textContent = fleet.label;
-    const meta = document.createElement('div');
-    meta.style.cssText = 'color: var(--fg-subtle); font-size: 0.7rem; margin-top: 4px;';
-    if (fleet.source && fleet.url && SOURCE_URL_RE.test(fleet.url)) {
-      const link = document.createElement('a');
-      link.href = fleet.url;
-      link.target = '_blank';
-      link.rel = 'noopener noreferrer';
-      link.style.color = 'var(--accent)';
-      link.textContent = fleet.source;
-      meta.appendChild(link);
-    } else {
-      meta.textContent = fleet.source || 'Unknown source';
-    }
-    wrapper.append(cat, title, meta);
-
-    // Add country/nation info for infantry deployments
-    if (fleet.country) {
-      const countryEl = document.createElement('div');
-      countryEl.style.cssText = 'font-size: 0.75rem; color: var(--fg-muted); margin-top: 2px;';
-      countryEl.textContent = `Nation: ${fleet.country}`;
-      wrapper.appendChild(countryEl);
+    wrapper.appendChild(title);
+    appendSourceLine(wrapper, fleet);
+    appendFactLine(wrapper, 'Nation', fleet.country);
+    appendFactLine(wrapper, 'Region', fleet.region);
+    if (fleet.troops) {
+      appendFactLine(wrapper, 'Troops', Number(fleet.troops).toLocaleString());
     }
 
     // Route info. Derived from the same endpoints the renderer draws, so an
@@ -2774,63 +3351,26 @@ function showTooltip(ev, x, y) {
     // instead of silently showing nothing.
     const ends = fleetEndpoints(fleet);
     if (ends) {
-      const fromEl = document.createElement('div');
-      fromEl.style.cssText = 'font-size: 0.75rem; color: var(--fg-muted); margin-top: 2px;';
-      fromEl.textContent = `From: ${ends.from.lat.toFixed(1)}°, ${ends.from.lon.toFixed(1)}°`;
-      wrapper.appendChild(fromEl);
-      const toEl = document.createElement('div');
-      toEl.style.cssText = 'font-size: 0.75rem; color: var(--fg-muted); margin-top: 2px;';
-      toEl.textContent = `To: ${ends.to.lat.toFixed(1)}°, ${ends.to.lon.toFixed(1)}°`;
-      wrapper.appendChild(toEl);
+      appendFactLine(wrapper, 'From',
+        `${ends.from.lat.toFixed(1)}°, ${ends.from.lon.toFixed(1)}°`);
+      appendFactLine(wrapper, 'To',
+        `${ends.to.lat.toFixed(1)}°, ${ends.to.lon.toFixed(1)}°`);
     }
     if (fleet.direction) {
-      const dirEl = document.createElement('div');
-      dirEl.style.cssText = 'font-size: 0.75rem; color: var(--fg-muted); margin-top: 2px;';
-      dirEl.textContent = `Heading: ${String(fleet.direction).toLowerCase()}`;
-      wrapper.appendChild(dirEl);
+      appendFactLine(wrapper, 'Heading', String(fleet.direction).toLowerCase());
     }
-
-    // Add troop count if available
-    if (fleet.troops) {
-      const troopsEl = document.createElement('div');
-      troopsEl.style.cssText = 'font-size: 0.75rem; color: var(--fg-muted); margin-top: 2px;';
-      troopsEl.textContent = `Troops: ${fleet.troops.toLocaleString()}`;
-      wrapper.appendChild(troopsEl);
-    }
-
-    if (fleet.note) {
-      const note = document.createElement('div');
-      note.style.cssText = 'margin-top: 6px; font-size: 0.75rem; color: var(--fg-muted);';
-      note.textContent = fleet.note;
-      wrapper.appendChild(note);
-    }
+    appendNoteLine(wrapper, fleet.note);
     return appendActivityLine(wrapper, fleet);
   }
 
   function moveZoneTooltip(x, y) {
     if (!tooltip) return;
-    const offset = TOOLTIP_OFFSET;
-    const tw = tooltip.offsetWidth || TOOLTIP_WIDTH;
-    const th = tooltip.offsetHeight || TOOLTIP_HEIGHT;
-    let tx = x + TOOLTIP_OFFSET;
-    let ty = y + TOOLTIP_OFFSET;
-    if (tx + tw > state.width) tx = x - tw - TOOLTIP_OFFSET;
-    if (ty + th > state.height) ty = y - th - TOOLTIP_OFFSET;
-    tooltip.style.left = tx + 'px';
-    tooltip.style.top = ty + 'px';
+    placeTooltipBeside(tooltip, x, y);
   }
 
   function moveDeploymentTooltip(x, y) {
     if (!tooltip) return;
-    const offset = TOOLTIP_OFFSET;
-    const tw = tooltip.offsetWidth || TOOLTIP_WIDTH;
-    const th = tooltip.offsetHeight || TOOLTIP_HEIGHT;
-    let tx = x + TOOLTIP_OFFSET;
-    let ty = y + TOOLTIP_OFFSET;
-    if (tx + tw > state.width) tx = x - tw - TOOLTIP_OFFSET;
-    if (ty + th > state.height) ty = y - th - TOOLTIP_OFFSET;
-    tooltip.style.left = tx + 'px';
-    tooltip.style.top = ty + 'px';
+    placeTooltipBeside(tooltip, x, y);
   }
 
   function showZoneTooltip(zone, x, y) {
@@ -2848,48 +3388,32 @@ function showTooltip(ev, x, y) {
   }
 
   function createCrisisTooltipElement(crisis) {
-    const wrapper = document.createElement('div');
-    const cat = document.createElement('div');
-    cat.className = 'tt-category';
-    cat.style.color = CRISIS_COLOR;
-    cat.textContent = 'Crisis Zone';
+    const wrapper = createTooltipCard();
+    appendTooltipHeader(wrapper, 'Crisis Zone', CRISIS_COLOR, crisis);
     const title = document.createElement('div');
     title.className = 'tt-title';
     title.textContent = crisis.name;
-    const meta = document.createElement('div');
-    meta.style.cssText = 'color: var(--fg-subtle); font-size: 0.7rem; margin-top: 4px;';
-    if (crisis.source && crisis.url && SOURCE_URL_RE.test(crisis.url)) {
-      const link = document.createElement('a');
-      link.href = crisis.url;
-      link.target = '_blank';
-      link.rel = 'noopener noreferrer';
-      link.style.color = 'var(--accent)';
-      link.textContent = crisis.source;
-      meta.appendChild(link);
-    } else {
-      meta.textContent = crisis.source || 'Unknown source';
-    }
-    wrapper.append(cat, title, meta);
-    if (crisis.note) {
-      const note = document.createElement('div');
-      note.style.cssText = 'margin-top: 6px; font-size: 0.75rem; color: var(--fg-muted);';
-      note.textContent = crisis.note;
-      wrapper.appendChild(note);
-    }
+    wrapper.appendChild(title);
+    appendSourceLine(wrapper, crisis);
+    appendNoteLine(wrapper, crisis.note);
     return appendActivityLine(wrapper, crisis);
+  }
+
+  function showAllianceDotTooltip(dot, x, y) {
+    if (!tooltip) return;
+    tooltip.replaceChildren(createAllianceDotTooltipElement(dot));
+    tooltip.classList.add('visible');
+    moveAllianceDotTooltip(x, y);
+  }
+
+  function moveAllianceDotTooltip(x, y) {
+    if (!tooltip) return;
+    placeTooltipBeside(tooltip, x, y);
   }
 
   function moveCrisisTooltip(x, y) {
     if (!tooltip) return;
-    const offset = TOOLTIP_OFFSET;
-    const tw = tooltip.offsetWidth || TOOLTIP_WIDTH;
-    const th = tooltip.offsetHeight || TOOLTIP_HEIGHT;
-    let tx = x + TOOLTIP_OFFSET;
-    let ty = y + TOOLTIP_OFFSET;
-    if (tx + tw > state.width) tx = x - tw - TOOLTIP_OFFSET;
-    if (ty + th > state.height) ty = y - th - TOOLTIP_OFFSET;
-    tooltip.style.left = tx + 'px';
-    tooltip.style.top = ty + 'px';
+    placeTooltipBeside(tooltip, x, y);
   }
 
   function showCrisisTooltip(crisis, x, y) {
@@ -2911,7 +3435,7 @@ function showTooltip(ev, x, y) {
   const moveHumanRightsTooltip = moveCrisisTooltip;
 
   function createHumanRightsTooltipElement(entry) {
-    const wrapper = document.createElement('div');
+    const wrapper = createTooltipCard();
     const cat = document.createElement('div');
     cat.className = 'tt-category';
     cat.style.color = HUMAN_RIGHTS_COLOR;
@@ -3051,8 +3575,9 @@ function showTooltip(ev, x, y) {
      counts.conflicts = state.zones.length;
      counts.conflictsActive = state.zones.filter(isLayerActive).length;
      counts.conflictsConcluded = counts.conflicts - counts.conflictsActive;
-     counts.fleets = state.fleets.length;
-     counts.fleetsActive = state.fleets.filter(isLayerActive).length;
+     counts.fleets = state.fleets.length + state.allianceDots.length;
+     counts.fleetsActive = state.fleets.filter(isLayerActive).length
+       + state.allianceDots.filter(isLayerActive).length;
      counts.fleetsConcluded = counts.fleets - counts.fleetsActive;
      counts.crises = state.crises.length;
      counts.crisesActive = state.crises.filter(isLayerActive).length;
@@ -3133,6 +3658,13 @@ function showTooltip(ev, x, y) {
     } else if (name === 'fleets' || name === 'deployments') {
       state.showFleets = !state.showFleets;
       try { localStorage.setItem(STORAGE_KEY_SHOW_FLEETS, String(state.showFleets)); } catch (_) {}
+    } else if (name === 'alliance_dots') {
+      state.showAllianceDots = !state.showAllianceDots;
+      try { localStorage.setItem(STORAGE_KEY_SHOW_ALLIANCE_DOTS, String(state.showAllianceDots)); } catch (_) {}
+      // Switching the sublayer off while one of its popups is docked would leave
+      // the panel describing marks that are no longer painted.
+      if (!state.showAllianceDots
+          && state.selectedLayerType === 'alliance') dismissTooltip();
     } else if (name === 'crises') {
       state.showCrises = !state.showCrises;
       try { localStorage.setItem(STORAGE_KEY_SHOW_CRISES, String(state.showCrises)); } catch (_) {}
@@ -3165,9 +3697,41 @@ function showTooltip(ev, x, y) {
     renderLegend();
   }
 
+  /**
+   * Phase offset for the silver sweep on a dimmed datalayer row's title text,
+   * handed to CSS as --shimmer-delay so the rows drift out of phase instead of
+   * pulsing as one block.
+   *
+   * Derived from the layer key rather than from its position in the legend or a
+   * running counter, for the reason the rest of this file keeps its numbers in
+   * one place: renderLegend() rebuilds these rows on every layer toggle, filter
+   * change and timeline move, so a counter would need resetting and an index
+   * would need keeping in step with the list. A key that never changes hands out
+   * the same delay every rebuild, and a layer that is added or removed shifts no
+   * other row's phase.
+   *
+   * FNV-1a over the key, folded into one sweep period. Period 7.5s is the CSS
+   * --shimmer-period default, so the five offsets land at distinct points of the
+   * same loop and no two rows can ever land in step by accident.
+   * @param {string} key layer key, e.g. "zones"
+   * @returns {string} CSS time value
+   */
+  function silverSweepDelay(key) {
+    const PERIOD_MS = 7500;
+    let h = 2166136261 >>> 0;
+    for (let i = 0; i < key.length; i++) {
+      h ^= key.charCodeAt(i);
+      h = Math.imul(h, 16777619) >>> 0;
+    }
+    return ((h % PERIOD_MS) / 1000).toFixed(2) + 's';
+  }
+
   function appendLayerRow(fragment, opts) {
     const row = document.createElement('div');
-    row.className = 'map-legend-row';
+    row.style.setProperty('--shimmer-delay', silverSweepDelay(opts.key));
+    // `nested` marks a sublayer row: indented and visually subordinate to the
+    // datalayer it belongs to, rather than reading as a peer of it.
+    row.className = 'map-legend-row' + (opts.nested ? ' map-legend-row--nested' : '');
     row.setAttribute('role', 'listitem');
     row.setAttribute('aria-label', `${opts.label}, ${opts.count}`);
     row.tabIndex = 0;
@@ -3187,7 +3751,14 @@ function showTooltip(ev, x, y) {
       }
     } else {
       const dot = document.createElement('span');
-      dot.className = 'map-legend-dot' + (opts.ring ? ' map-legend-dot--ring' : '') + (opts.diamond ? ' map-legend-dot--diamond' : '');
+      // One shape class per mark, chosen once, so the legend and the canvas can
+      // never disagree about what a layer looks like: ring = area ring, diamond =
+      // movement arrow, seal = square-in-ring policy dot.
+      const shape = opts.ring ? ' map-legend-dot--ring'
+        : opts.diamond ? ' map-legend-dot--diamond'
+        : opts.seal ? ' map-legend-dot--seal'
+        : '';
+      dot.className = 'map-legend-dot' + shape;
       dot.style.background = opts.color;
       dot.style.borderColor = opts.color;
       dot.setAttribute('aria-hidden', 'true');
@@ -3454,7 +4025,7 @@ const fragment = document.createDocumentFragment();
       const crisesVisible = state.filterCrisis && state.showCrises;
       appendLayerRow(fragment, {
         key: 'zones',
-        label: 'Conflict Zones',
+        label: LAYER_LABELS.zones,
         visible: zonesVisible,
         color: ZONE_COLOR,
         count: String(state.zones.length),
@@ -3463,16 +4034,32 @@ const fragment = document.createDocumentFragment();
       });
       appendLayerRow(fragment, {
         key: 'deployments',
-        label: 'Ground Deployments & Fleet Movements',
+        label: LAYER_LABELS.deployments,
         visible: deploymentsVisible,
         splitColors: [GROUND_COLOR, FLEET_COLOR],
-        count: String(state.fleets.length),
+        count: String(state.fleets.length + state.allianceDots.length),
         diamond: true,
-        title: layerCountTitle(state.fleets)
+        title: layerCountTitle(state.fleets.concat(state.allianceDots))
       });
+      // The dot sublayer, indented under its parent so the legend reads as one
+      // datalayer with two mark types rather than as a fifth unrelated layer.
+      // Only rendered when the payload actually carries seals, so a checkout with
+      // no alliance_dots key does not show an empty row with a zero on it.
+      if (state.allianceDots.length) {
+        appendLayerRow(fragment, {
+          key: 'alliance_dots',
+          label: LAYER_LABELS.alliance_dots,
+          visible: deploymentsVisible && state.showAllianceDots,
+          color: ALLIANCE_DOT_COLOR,
+          count: String(state.allianceDots.length),
+          seal: true,
+          nested: true,
+          title: layerCountTitle(state.allianceDots)
+        });
+      }
       appendLayerRow(fragment, {
         key: 'crises',
-        label: 'Crisis Zones',
+        label: LAYER_LABELS.crises,
         visible: crisesVisible,
         color: CRISIS_COLOR,
         count: String(state.crises.length),
@@ -3484,7 +4071,7 @@ const fragment = document.createDocumentFragment();
       // carries no category colour and never appears in a category filter.
       appendLayerRow(fragment, {
         key: 'human_rights',
-        label: 'Human Rights Violations',
+        label: LAYER_LABELS.human_rights,
         visible: state.showHumanRights,
         color: HUMAN_RIGHTS_COLOR,
         count: String(state.humanRights.length),
@@ -3615,6 +4202,11 @@ const fragment = document.createDocumentFragment();
       lon,
       title: e.title ?? 'Untitled',
       category: e.category ?? 'Unknown',
+      // The sub-metric ("synthetic_biology", "gene_editing"), carried by
+      // events.json. It is what answers "what specifically?" under the vertical,
+      // and it used to live only in milestones.json - so the map, the one place a
+      // reader meets a record without scrolling anywhere else, could not show it.
+      subcategory: typeof e.subcategory === 'string' ? e.subcategory : '',
       value: e.value ?? '',
       source: e.source ?? 'Unknown',
       url: e.url ?? '',
@@ -3730,7 +4322,20 @@ const fragment = document.createDocumentFragment();
       end_date: z.end_date || '',
       source: z.source || '',
       url: z.url || '',
-      note: z.note || ''
+      note: z.note || '',
+      actor: z.actor || '',
+      // last_news_year MUST survive normalisation.
+      //
+      // This single missing field is why the Ukraine conflict zone rendered
+      // dimmed while it was the most-reported active war zone on the map.
+      // layerRecencyYear() reads `last_news_year` first and falls back to the
+      // start year; the published file carries 2026 for Ukraine (ISW), but
+      // normalise built a fresh object and left the field out, so the tier logic
+      // fell through to start_date 2022 -> age 4 -> `quiet` -> no glow. Gaza and
+      // the Red Sea were dimmed by exactly the same line of code. Every field the
+      // renderer, the tier ladder or the tooltip can read has to be listed here,
+      // because this function is the layer's only door into the payload.
+      last_news_year: z.last_news_year
     };
   }
 
@@ -3749,10 +4354,12 @@ const fragment = document.createDocumentFragment();
         end_date: f.end_date || '',
         note: f.note || '',
         source: f.source || '',
-        // url/country were dropped here, so the deployment popup could never
-        // offer a source link or name the nation for a ground movement.
+        // url/country/region were dropped here, so the deployment popup could never
+        // offer a source link or name the nation or region for a ground movement.
         url: f.url || '',
         country: f.country || '',
+        region: f.region || '',
+        actor: f.actor || '',
         troops: f.troops,
         direction: f.direction,
         last_news_year: f.last_news_year,
@@ -3772,6 +4379,7 @@ const fragment = document.createDocumentFragment();
       note: f.note || '',
       source: f.source || '',
       url: f.url || '',
+      actor: f.actor || '',
       last_news_year: f.last_news_year
     };
   }
@@ -3840,6 +4448,14 @@ const fragment = document.createDocumentFragment();
         ? data.deployments
         : (data.fleet_movements && Array.isArray(data.fleet_movements) ? data.fleet_movements : []);
       state.fleets = deployments.map(normalizeFleet).filter(isFleetPlottable);
+      // Alliance & defence-policy dots: a dot sublayer of the Ground & Fleet
+      // Deployments datalayer (accessions, posture changes, mandates). Optional,
+      // so a payload without the key yields an empty sublayer rather than an
+      // error - the same additive contract the other layers have.
+      state.allianceDots = Array.isArray(data.alliance_dots)
+        ? data.alliance_dots.map(normalizeAllianceDot).filter(isAllianceDotPlottable)
+        : [];
+      rebuildAllianceDotIds();
       // Human Rights Violations: an operational layer, not a milestone category.
       // Landmarks, so they get milestone tooltips rather than a ring.
       state.humanRights = Array.isArray(data.human_rights_violations)
@@ -3851,10 +4467,51 @@ const fragment = document.createDocumentFragment();
       console.warn('[worldmap] Failed to load world_layers.json, using empty layers:', err);
       state.zones = [];
       state.fleets = [];
+      state.allianceDots = [];
+      state.allianceDotIds = new Set();
       state.crises = [];
       state.humanRights = [];
       rebuildHumanRightStackMap();
     }
+  }
+
+  // Alliance / defence-policy dots. A point event with a date and an
+  // organisation attached ("Finland joined NATO"), which is why it is a dot and
+  // not a ring or an arrow: there is no area to claim and no route to draw.
+  function normalizeAllianceDot(d) {
+    return {
+      id: d.id || '',
+      name: d.name || 'Unnamed policy change',
+      region: d.region || '',
+      lat: d.lat,
+      lon: d.lon,
+      // Which kind of change this is, used for the tooltip heading and for the
+      // dot's accent: accession / posture / mandate / industrial.
+      kind: d.kind || 'posture',
+      status: d.status || 'active',
+      start_date: d.start_date || '',
+      end_date: d.end_date || '',
+      source: d.source || '',
+      url: d.url || '',
+      note: d.note || '',
+      actor: d.actor || '',
+      country: d.country || '',
+      last_news_year: d.last_news_year
+    };
+  }
+
+  function isAllianceDotPlottable(d) {
+    return typeof d.name === 'string' && hasPlottableCoords(d.lat, d.lon);
+  }
+
+  // Ids of the policy seals that replaced a movement arrow. Kept as a Set and
+  // rebuilt whenever the dot list changes, so drawFleet/findDeployment can ask a
+  // single question ("has this movement been promoted?") instead of rescanning the
+  // dots per arrow per frame.
+  let allianceDotIds = new Set();
+  function rebuildAllianceDotIds() {
+    allianceDotIds = new Set(state.allianceDots.map((d) => d.id).filter(Boolean));
+    state.allianceDotIds = allianceDotIds;
   }
 
   // ---- Animation loop ----
@@ -3917,6 +4574,9 @@ function filterLayersByYear(year) {
   state.zones.forEach(z => { z._hiddenByTimeline = !layerVisibleInYear(z, year); });
   state.fleets.forEach(f => { f._hiddenByTimeline = !layerVisibleInYear(f, year); });
   state.crises.forEach(c => { c._hiddenByTimeline = !layerVisibleInYear(c, year); });
+  // Policy seals carry the same start/end dates as the arrows, so the slider has
+  // to reach them too - a 2023 accession must vanish when the handle moves to 2015.
+  state.allianceDots.forEach(d => { d._hiddenByTimeline = !layerVisibleInYear(d, year); });
   // Landmarks are an operational layer too and carry the same start/end dates and
   // status as the zones above, so the slider has to reach them. It did not: nothing
   // ever set _hiddenByTimeline on these entries, which left every _hiddenByTimeline
@@ -4193,6 +4853,25 @@ function initTimelineSlider() {
       isZonePlottable,
       normalizeFleet,
       isFleetPlottable,
+      // Alliance / defence-policy seal sublayer.
+      normalizeAllianceDot,
+      isAllianceDotPlottable,
+      findAllianceDot,
+      LAYER_LABELS,
+      silverSweepDelay,
+      ALLIANCE_DOT_COLOR,
+      ALLIANCE_DOT_HEADINGS,
+      // Responsible-actor resolution (nation / alliance / UN) + the flag glyph.
+      resolveActor,
+      flagGlyph,
+      ACTOR_TABLE,
+      // Anchor model, exposed so the tests can assert the hover/stick contract
+      // without synthesising pointer events for every landmark type.
+      findLandmarkAt,
+      pinnedAnchor,
+      hoverAnchor,
+      anchorIsVisible,
+      get allianceDots() { return state.allianceDots; },
       weekBoundsISO,
       isInCurrentWeek,
       get getTodayISO() {
@@ -4231,15 +4910,22 @@ function initTimelineSlider() {
       get GEOCODE_CACHE_MAX_BYTES() { return GEOCODE_CACHE_MAX_BYTES; },
       // Replace the loaded layer data (used to exercise fluo/dim + timeline
       // clustering deterministically without mutating the shared fixtures).
-      setLayers: (zones, fleets, crises, humanRights) => {
+      setLayers: (zones, fleets, crises, humanRights, allianceDots) => {
         state.zones = (zones || []).map(normalizeZone).filter(isZonePlottable);
         state.fleets = (fleets || []).map(normalizeFleet).filter(isFleetPlottable);
         state.crises = (crises || []).map(normalizeZone).filter(isZonePlottable);
         state.humanRights = (humanRights || []).map(normalizeHumanRight).filter(isHumanRightPlottable);
+        state.allianceDots = (allianceDots || []).map(normalizeAllianceDot).filter(isAllianceDotPlottable);
+        rebuildAllianceDotIds();
         rebuildHumanRightStackMap();
         // A docked landmark may not exist in the replacement data.
         if (state.selectedHumanRight
             && !state.humanRights.includes(state.selectedHumanRight)) {
+          dismissTooltip();
+        }
+        if (state.selectedLayer
+            && ![state.zones, state.fleets, state.crises, state.allianceDots]
+              .some((list) => list.includes(state.selectedLayer))) {
           dismissTooltip();
         }
         updateStatsDisplay();
@@ -4249,7 +4935,8 @@ function initTimelineSlider() {
         zones: state.zones,
         fleets: state.fleets,
         crises: state.crises,
-        humanRights: state.humanRights
+        humanRights: state.humanRights,
+        allianceDots: state.allianceDots
       }),
       // Same pattern as setLayers but for milestone events (drives timeline
       // clustering tests deterministically).

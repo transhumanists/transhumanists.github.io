@@ -1151,6 +1151,20 @@ def build_events(milestones: list) -> dict:
             "url": m.get("url"),
             "date": m.get("date", ""),
         }
+        # The sub-metric: the specific thing being tracked ("synthetic_biology",
+        # "gene_editing", "low_resource_speech"). This is the finest label the
+        # record carries and it is what makes a tooltip answer "what is this,
+        # specifically?" instead of only "which vertical?". It was already in
+        # milestones.json and the archive; the map's feed simply never carried
+        # it, so the one place a reader lands on a record without scrolling to
+        # the catalog could not show it.
+        #
+        # Absent rather than "general" when the record has none: check_data.py
+        # validates the shape, and an empty string in a field that reads as a
+        # label is worse than the field not being there.
+        subcategory = (m.get("subcategory") or "").strip()
+        if subcategory and subcategory != "general":
+            ev["subcategory"] = subcategory
         ev["location_confidence"] = confidence
         if located:
             ev["geolocation"] = {"lat": lat, "lon": lon}

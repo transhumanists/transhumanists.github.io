@@ -1332,6 +1332,29 @@ def js_category_aliases(source: str) -> dict:
     return dict(re.findall(r"'([^']+)'\s*:\s*'([^']+)'", stripped[brace:i + 1]))
 
 
+def _copy() -> dict:
+    """A throwaway copy of the data dir, for tests that must not write."""
+    import shutil
+    import tempfile
+    tmp = tempfile.mkdtemp(prefix="worldmap-data-")
+    dst = Path(tmp) / "data"
+    shutil.copytree(cd.DATA_DIR, dst)
+    _TMP_DIRS.append(tmp)
+    return dst
+
+
+def js_for_layers() -> str:
+    """The shipped worldmap.js, or "" when it is not checked out.
+
+    Shared by the layer-contract tests so "the JS is missing" is answered once
+    and every caller skips instead of asserting against an empty string.
+    """
+    js_file = cd.ROOT / "assets" / "js" / "worldmap.js"
+    if not js_file.exists():
+        return ""
+    return js_file.read_text(encoding="utf-8")
+
+
 class TestEventCategories(unittest.TestCase):
     """An event must name one of the canonical categories.
 
@@ -1430,7 +1453,24 @@ class TestEventCategories(unittest.TestCase):
                 self.assertTrue(spec.get("legend_label"))
                 # Every operational layer must default OFF; a layer that appears on
                 # unasked was the complaint that motivated the defaults.
+                #
+                # A sublayer is not an exception to this and gets no `default_on:
+                # true` escape hatch: it stays off because its PARENT is off, and
+                # the renderer gates it on the parent's filter, so it physically
+                # cannot appear on its own. `follows_parent` records that the
+                # sublayer's own switch starts on (so enabling the parent is enough
+                # to see it) without weakening the datalayer-level default.
                 self.assertIs(spec.get("default_on"), False)
+                if spec.get("follows_parent"):
+                    self.assertIs(spec.get("nested"), True,
+                                  f"{spec['key']} follows a parent, so it must be nested")
+                if spec.get("nested"):
+                    self.assertTrue(spec.get("follows_parent"),
+                                    f"{spec['key']} is nested, so it must name its parent")
+                # A nested row must actually be indented in the legend, or the
+                # relationship exists only in the schema.
+                if spec.get("nested"):
+                    self.assertIn("nested: true", js_for_layers())
 
     def test_python_and_js_legend_layers_match_the_schema(self):
         # The category legend has a parity test; the layer legend did not, which

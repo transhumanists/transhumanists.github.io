@@ -58,6 +58,35 @@ const LAYER_PAYLOAD = {
     { id: 'f8', label: 'Fleet 8', from: { lat: 26.7, lon: 114.0 }, to: { lat: 31.2, lon: 122.5 }, kind: 'fleet', note: '', source: '' },
     { id: 'f9', label: 'Fleet 9', from: { lat: 19.0, lon: 72.8 }, to: { lat: 12.5, lon: 45.0 }, kind: 'fleet', note: '', source: '' },
   ],
+  // Alliance / defence-policy seals. Deliberately includes an entry whose id
+  // matches a deployment, because that promotion rule is the one thing here
+  // that can regress silently.
+  alliance_dots: [
+    {
+      id: 'alliance-fi-nato-2023', name: 'Finland accedes to NATO', kind: 'accession',
+      country: 'Finland', actor: 'NATO', lat: 60.1699, lon: 24.9384,
+      status: 'active', start_date: '2023-04-04', source: 'NATO',
+      url: 'https://www.nato.int/en/news-and-events/articles/news/2023/04/04/finland-joins-nato-as-31st-ally',
+    },
+    {
+      id: 'alliance-se-nato-2024', name: 'Sweden accedes to NATO', kind: 'accession',
+      country: 'Sweden', actor: 'NATO', lat: 59.3293, lon: 18.0686,
+      status: 'active', start_date: '2024-03-07', source: 'NATO',
+      url: 'https://www.nato.int/en/news-and-events/articles/news/2024/03/07/sweden-officially-joins-nato',
+    },
+    {
+      id: 'alliance-hague-2025', name: 'NATO Hague Declaration commits 5% of GDP',
+      kind: 'mandate', country: 'Netherlands', actor: 'NATO', lat: 52.0705, lon: 4.3007,
+      status: 'active', start_date: '2025-06-25', source: 'NATO',
+      url: 'https://www.nato.int/en/about-us/official-texts-and-resources/official-texts/2025/06/25/the-hague-summit-declaration',
+    },
+    {
+      // Suppresses fleet-09's arrow: the same fact, once, as a seal.
+      id: 'f9', name: 'Fleet 9 promoted to a policy seal', kind: 'posture',
+      country: 'India', lat: 12.5, lon: 45.0, status: 'active', start_date: '2024-01-01',
+      source: 'IISS',
+    },
+  ],
 };
 
 // ---- Minimal fake DOM / canvas ------------------------------------------
@@ -71,9 +100,22 @@ function makeClassList() {
   };
 }
 
+// A style object with just enough CSSStyleDeclaration surface to carry a custom
+// property. `style` cannot stay a bare {}: setting a --custom-property on a real
+// element goes through setProperty() and nowhere else, so a plain object both
+// fails to model the browser and hides the one route the module has.
+function makeStyle() {
+  const custom = {};
+  return {
+    setProperty(name, value) { custom[name] = String(value); },
+    getPropertyValue(name) { return name in custom ? custom[name] : ''; },
+    removeProperty(name) { const v = custom[name]; delete custom[name]; return v; },
+  };
+}
+
 function makeEl() {
   const el = {
-    style: {},
+    style: makeStyle(),
     children: [],
     attrs: {},
     className: '',
@@ -378,7 +420,7 @@ describe('worldmap', () => {
     expect(Number(registeredEls['map-stat-active'].textContent)).toBe(3);
     // Conflicts/fleets now always show actual counts regardless of filterMilitary
     expect(Number(registeredEls['map-stat-conflicts'].textContent)).toBe(3);
-    expect(Number(registeredEls['map-stat-fleets'].textContent)).toBe(9);
+    expect(Number(registeredEls['map-stat-fleets'].textContent)).toBe(13);
   });
 
   test('renders legend rows for all 9 categories plus layers', () => {
@@ -386,7 +428,8 @@ describe('worldmap', () => {
     expect(legend).toBeDefined();
     expect(legend.getAttribute('role')).toBe('list');
     const rows = legendRows();
-    expect(rows.length).toBe(13); // 9 categories + 4 operational layers
+    // 9 categories + 4 operational layers + 1 dot sublayer under the deployments row.
+    expect(rows.length).toBe(14);
     expect(legendValue('Biotechnology & Biohacking')).toBe('1');
     expect(legendValue('Computing & AGI')).toBe('0');
     expect(legendValue('Quantum Physics')).toBe('1');      // aliased 'Quantum'
@@ -394,10 +437,28 @@ describe('worldmap', () => {
     expect(legendValue('Cybersecurity')).toBe('1');
     expect(legendValue('Spaceflight & Aeronautics')).toBe('0');
     expect(legendValue('Military & Defense')).toBe('2');   // aliased 'Defense' + canonical
-    // Military layers now show simple labels with actual counts
+    // Military layers now show simple labels with actual counts. The deployments
+    // row counts the datalayer, which is arrows PLUS seals - the sublayer row
+    // beside it breaks that total down.
     expect(legendValue('Conflict Zones')).toBe('3');
-    expect(legendValue('Ground Deployments & Fleet Movements')).toBe('9');
+    expect(legendValue(api.LAYER_LABELS.deployments)).toBe('13');   // 9 arrows + 4 seals
+    expect(legendValue(api.LAYER_LABELS.alliance_dots)).toBe('4');
     expect(legendValue('Crisis Zones')).toBe('5');
+  });
+
+  test('the dot sublayer row sits under its parent and is marked as a sublayer', () => {
+    const rows = legendRows();
+    const parent = rows.findIndex((r) => (r.attrs['data-layer'] || '') === 'deployments');
+    const sub = rows.findIndex((r) => (r.attrs['data-layer'] || '') === 'alliance_dots');
+    expect(sub).toBeGreaterThan(-1);
+    // Immediately after the parent, so the legend reads as one datalayer with two
+    // mark types rather than as two unrelated layers.
+    expect(sub).toBe(parent + 1);
+    const row = rows[sub];
+    expect(row.className).toContain('map-legend-row--nested');
+    expect(parent).toBeGreaterThan(-1);
+    // The parent row is not marked nested; only one level of sublayering exists.
+    expect(rows[parent].className).not.toContain('map-legend-row--nested');
   });
 
   test('conflict and fleet layer rows toggle their stats and redraw', () => {
@@ -411,8 +472,8 @@ describe('worldmap', () => {
     // After clicking zones row: toggleLayer enables filterMilitary, which enables both zones and fleets
     expect(Number(registeredEls['map-stat-conflicts'].textContent)).toBe(3);
     expect(ctx.counters.arcs).toBeGreaterThan(0);              // redraw happened
-    expect(Number(registeredEls['map-stat-fleets'].textContent)).toBe(9); // fleets also enabled
-    expect(legendValue('Ground Deployments & Fleet Movements')).toBe('9');          // deployments layer present
+    expect(Number(registeredEls['map-stat-fleets'].textContent)).toBe(13); // fleets + seals also enabled
+    expect(legendValue(api.LAYER_LABELS.deployments)).toBe('13');        // deployments datalayer present
 
     rowByLayer('zones').fire('click', {});                     // toggle zones back off
     expect(rowByLayer('zones').getAttribute('aria-pressed')).toBe('false');
@@ -421,17 +482,17 @@ describe('worldmap', () => {
     const fleetsRow = rowByLayer('deployments');
     fleetsRow.fire('click', {});
     expect(rowByLayer('deployments').getAttribute('aria-pressed')).toBe('true');
-    expect(Number(registeredEls['map-stat-fleets'].textContent)).toBe(9);
+    expect(Number(registeredEls['map-stat-fleets'].textContent)).toBe(13);
     // Zones still off from previous toggle, but stats show actual count
     expect(Number(registeredEls['map-stat-conflicts'].textContent)).toBe(3);
     fleetsRow.fire('click', {});                               // toggle fleets back off
     expect(rowByLayer('deployments').getAttribute('aria-pressed')).toBe('false');
-    expect(Number(registeredEls['map-stat-fleets'].textContent)).toBe(9); // stats still show actual count
+    expect(Number(registeredEls['map-stat-fleets'].textContent)).toBe(13); // stats show the whole datalayer, filter-independent
     // Restore both for later tests via test hook (button click not reliable in mock)
     const api = windowObj.__WORLDMAP_TEST__;
     api.setFilterMilitary(true);        // enables both
     expect(Number(registeredEls['map-stat-conflicts'].textContent)).toBe(3);
-    expect(Number(registeredEls['map-stat-fleets'].textContent)).toBe(9);
+    expect(Number(registeredEls['map-stat-fleets'].textContent)).toBe(13);
   });
 
   test('current-week helpers bound an ISO week and gate dates', () => {
@@ -1966,7 +2027,7 @@ test('zoom controls, keyboard and double-click do not throw', () => {
 
   test('Deployments legend row explains both components', () => {
     registeredEls['reset-view'].fire('click', {});
-      expect(legendValue('Ground Deployments & Fleet Movements')).toBeDefined();
+      expect(legendValue(api.LAYER_LABELS.deployments)).toBeDefined();
       // The row draws two dots and the label names two components, so the label's
       // word order has to match the dot order or the legend misreports which
       // colour is which.

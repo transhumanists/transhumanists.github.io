@@ -68,6 +68,30 @@
     return new Date().toISOString().slice(0, 10);
   }
 
+  // Every date string the two pipelines write is normalised to YYYY-MM-DD before
+  // it reaches a chart or a date comparison. The layer payloads use three
+  // precisions - "YYYY-MM-DD", "YYYY-MM" and bare "YYYY" - so a strict
+  // YYYY-MM-DD test alone would silently drop two thirds of the tactical series,
+  // and the chart would be quietly wrong rather than obviously empty.
+  function parseDateToISO(value) {
+    if (value === null || value === undefined) return null;
+    const s = String(value).trim();
+    if (!s) return null;
+    let m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (m) return `${m[1]}-${m[2]}-${m[3]}`;
+    m = s.match(/^(\d{4})-(\d{2})$/);
+    if (m) return `${m[1]}-${m[2]}-01`;
+    m = s.match(/^(\d{4})$/);
+    if (m) return `${m[1]}-01-01`;
+    const parsed = new Date(s);
+    if (!Number.isNaN(parsed.getTime())) return parsed.toISOString().slice(0, 10);
+    return null;
+  }
+
+  // Layer dates arrive as strings only, but going through the same coercion keeps
+  // one definition of "a usable layer date" across the site.
+  function normalizeLayerDate(value) { return parseDateToISO(value); }
+
   function parseDateOrNull(s) {
     if (typeof s !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(s)) return null;
     const d = new Date(s + 'T00:00:00Z');
@@ -223,6 +247,11 @@
   }
 
   // ---- Constants ----
+  // ResizeObservers held so cleanup() can disconnect them. A timeline frame that
+  // re-aggregates on resize must not keep observing a node the page has torn
+  // down, and cleanup() runs on pagehide - which is exactly when that matters.
+  const timelineResizeObservers = [];
+
   const ANIMATION_DURATION = 1200;
   const COUNTER_THRESHOLD = 0.2;
   const AUTO_SLIDE_INTERVAL = 5000;
@@ -493,81 +522,286 @@
     return milestonesCachePromise;
   }
 
-  // Activity chart (full timeline, from the beginning of scraping)
+// ---- Adaptive timeline chart -------------------------------------------------
+  // One renderer, used by both timeline frames (milestones and tactical layers).
+  //
+  // This exists because the chart was out of bounds. activity.json publishes one
+  // bucket per month since 1945 - 976 columns - and the stylesheet lays the bars
+  // out in a flex row with `min-width: 8px` and a 3px gap. That is ~10,700px of
+  // bars in a container under 1,000px wide, so the chart ran off the page and off
+  // the document. The overflow was in the data's favour and the layout's
+  // disfavour, and neither was going to give.
+  //
+  // The fix is to stop publishing a fixed granularity to a fixed-width frame:
+  // pick the coarsest bucket that still fits the measured width, and re-pick when
+  // the width changes. A chart that has to be aggregated to be readable is also
+  // a chart whose zero-bars have to be honest, so buckets are generated
+  // contiguously from the first record to the last - a gap is drawn as a gap
+  // rather than silently closed up.
+  const CHART_MIN_COL_PX = 9;   // bar + gap, the narrowest a column may become
+  const CHART_MAX_COLUMNS = 160; // never more than this many columns, however wide
+  const CHART_MIN_HEIGHT_PX = 4;
+
+  // Ordered coarsest-last, so `find` picks the finest bucket that fits.
+  const CHART_BUCKETS = ['day', 'week', 'month', 'quarter', 'year', 'decade'];
+  const CHART_BUCKET_LABEL = {
+    day: 'per day', week: 'per week', month: 'per month',
+    quarter: 'per quarter', year: 'per year', decade: 'per decade',
+  };
+
+  function pad2(n) { return String(n).padStart(2, '0'); }
+
+  // Bucket key + a human label for one ISO date at a given granularity.
+  function chartBucket(iso, size) {
+    const y = parseInt(iso.slice(0, 4), 10);
+    const m = parseInt(iso.slice(5, 7), 10);
+    const d = parseInt(iso.slice(8, 10), 10);
+    switch (size) {
+      case 'day':
+        return { key: iso, label: iso.slice(5), title: iso };
+      case 'week': {
+        // ISO week, Monday-start, labelled by the Monday of that week.
+        const dt = new Date(Date.UTC(y, m - 1, d));
+        const dow = (dt.getUTCDay() + 6) % 7;
+        dt.setUTCDate(dt.getUTCDate() - dow);
+        const k = dt.toISOString().slice(0, 10);
+        return { key: k, label: k.slice(5), title: 'Week of ' + k };
+      }
+      case 'month':
+        return { key: `${y}-${pad2(m)}`, label: `${pad2(m)}/${String(y).slice(2)}`, title: `${y}-${pad2(m)}` };
+      case 'quarter':
+        return { key: `${y}-Q${Math.floor((m - 1) / 3) + 1}`, label: `Q${Math.floor((m - 1) / 3) + 1} ${String(y).slice(2)}`, title: `Q${Math.floor((m - 1) / 3) + 1} ${y}` };
+      case 'year':
+        return { key: String(y), label: String(y), title: String(y) };
+      case 'decade': {
+        const base = Math.floor(y / 10) * 10;
+        return { key: `${base}s`, label: `${base}s`, title: `${base}-${base + 9}` };
+      }
+      default:
+        return { key: iso, label: iso.slice(5), title: iso };
+    }
+  }
+
+// Step one bucket forward, so a contiguous run can be generated without a
+// scanning every candidate granularity.
+//
+// Each key format is parsed by its OWN scheme rather than by slicing the key at
+// fixed offsets. Quarter keys are "YYYY-Qn" - a slice at 5..7 yields "Q4", which
+// parses as NaN, and the increment then produced keys like "2025-NaN" and spun to
+// the guard without ever reaching the last bucket. Reading the format the same
+// way it is written is the only version that cannot drift from it.
+function nextChartBucket(key, size) {
+  switch (size) {
+    case 'day': {
+      const [y, m, d] = key.split('-').map(Number);
+      const dt = new Date(Date.UTC(y, m - 1, d + 1));
+      return dt.toISOString().slice(0, 10);
+    }
+    case 'week': {
+      const dt = new Date(key + 'T00:00:00Z');
+      dt.setUTCDate(dt.getUTCDate() + 7);
+      return dt.toISOString().slice(0, 10);
+    }
+    case 'month': {
+      const [y, m] = key.split('-').map(Number);
+      return m === 12 ? `${y + 1}-01` : `${y}-${pad2(m + 1)}`;
+    }
+    case 'quarter': {
+      const qm = key.match(/^(\d{4})-Q([1-4])$/);
+      if (!qm) return key;
+      const y = Number(qm[1]);
+      const q = Number(qm[2]);
+      return q === 4 ? `${y + 1}-01` : `${y}-${pad2((q - 1) * 3 + 4)}`;
+    }
+    case 'year': {
+      const y = parseInt(key, 10);
+      return Number.isFinite(y) ? String(y + 1) : key;
+    }
+    case 'decade': {
+      const y = parseInt(key, 10);
+      return Number.isFinite(y) ? `${y + 10}s` : key;
+    }
+    default:
+      return key;
+  }
+}
+
+  // Contiguous buckets from the first record to the last, with counts filled in.
+  // `records` is [{date, count}]; a count may be absent (treat as 1) so the same
+  // function serves a count series and a plain list of dated records.
+  function bucketCounts(records, size) {
+    const counts = new Map();
+    let first = null;
+    let last = null;
+    for (const r of records) {
+      if (!r || typeof r.date !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(r.date)) continue;
+      const { key } = chartBucket(r.date, size);
+      const n = Number.isFinite(r.count) ? r.count : 1;
+      counts.set(key, (counts.get(key) || 0) + n);
+      if (first === null || r.date < first) first = r.date;
+      if (last === null || r.date > last) last = r.date;
+    }
+    if (first === null || last === null) return [];
+
+    const out = [];
+    let key = chartBucket(first, size).key;
+    // Hard cap on the number of columns a single run may generate, so a corrupt
+    // date (year 9999) cannot spin this into a multi-million-iteration loop.
+    for (let guard = 0; guard < CHART_MAX_COLUMNS * 40; guard++) {
+      const meta = chartBucket(key.length === 4 ? `${key}-01-01` : key, size);
+      out.push({ key, label: meta.label, title: meta.title, count: counts.get(key) || 0 });
+      if (key === chartBucket(last, size).key) break;
+      key = nextChartBucket(key, size);
+    }
+    return out;
+  }
+
+  // How many columns fit in `width` px at the chart's own minimum column width.
+  function chartColumnBudget(width) {
+    const usable = Math.max(120, Math.floor(width || 0));
+    return Math.max(6, Math.min(CHART_MAX_COLUMNS, Math.floor(usable / CHART_MIN_COL_PX)));
+  }
+
+  // The finest bucket whose column count fits, coarsening until it does.
+  function chooseChartBucket(records, width) {
+    const budget = chartColumnBudget(width);
+    let chosen = CHART_BUCKETS[CHART_BUCKETS.length - 1];
+    let buckets = [];
+    for (const size of CHART_BUCKETS) {
+      const candidate = bucketCounts(records, size);
+      // A series that collapses to one column conveys nothing; keep looking for a
+      // finer one until there is something to see.
+      if (candidate.length > 1 && candidate.length <= budget) {
+        return { size, buckets: candidate };
+      }
+      if (candidate.length > 1) { chosen = size; buckets = candidate; }
+      if (candidate.length <= budget) break;
+    }
+    return { size: chosen, buckets };
+  }
+
+  /**
+   * Render one timeline frame.
+   *
+   * `opts`: { bars, labels, records, width, unitNoun, onBucketClick }
+   * Returns the chosen bucket size so the caller can label the heading.
+   */
+  function renderTimelineChart(opts) {
+    const { bars, labels, records, width } = opts;
+    if (!bars || !labels) return 'month';
+    const { size, buckets } = chooseChartBucket(records || [], width);
+    const max = Math.max(1, ...buckets.map((b) => b.count));
+    const plural = (n) => `${n} ${opts.unitNoun || 'record'}${n === 1 ? '' : 's'}`;
+
+    const barsFrag = document.createDocumentFragment();
+    const labelsFrag = document.createDocumentFragment();
+    // One label per ~6 columns, plus always the last, so the axis is readable
+    // without the text turning into a smear of overlapping dates.
+    const labelEvery = Math.max(1, Math.ceil(buckets.length / 8));
+
+    buckets.forEach((b, i) => {
+      const bar = document.createElement('div');
+      bar.className = 'chart-bar' + (b.count > 0 ? '' : ' chart-bar--empty');
+      bar.style.height = (CHART_MIN_HEIGHT_PX + (b.count / max) * (CHART_BAR_MAX_PX - CHART_MIN_HEIGHT_PX)) + 'px';
+      bar.title = `${b.title}: ${plural(b.count)}`;
+      bar.dataset.bucket = b.key;
+      if (opts.onBucketClick) bar.addEventListener('click', () => opts.onBucketClick(b));
+      barsFrag.appendChild(bar);
+
+      const lbl = document.createElement('div');
+      lbl.className = 'chart-label';
+      lbl.textContent = (i % labelEvery === 0 || i === buckets.length - 1) ? b.label : '';
+      labelsFrag.appendChild(lbl);
+    });
+
+    bars.replaceChildren(barsFrag);
+    labels.replaceChildren(labelsFrag);
+    // Published so CSS and the resize handler can both see the granularity; the
+    // frame is 1.2.0-shaped without it and the heading would otherwise have to
+    // hardcode a granularity it no longer knows.
+    bars.dataset.bucket = size;
+    bars.dataset.columns = String(buckets.length);
+    return size;
+  }
+
+  const CHART_BAR_MAX_PX = 116;
+
+  // ---- Milestones timeline ---------------------------------------------------
+  // Series is built from the archive's dated records rather than from
+  // activity.json's pre-bucketed months. The archive is the same 110 records the
+  // catalog shows, it carries real dates, and building from it means the chart
+  // can be per-day inside a year instead of inheriting a granularity chosen
+  // months ago by a different process.
   async function loadActivity() {
     const bars = document.getElementById('activity-bars');
     const labels = document.getElementById('activity-labels');
     const yearFilter = document.getElementById('activity-year-filter');
+    const heading = document.getElementById('activity-bucket-note');
     if (!bars || !labels) return;
 
-    // Skeleton while loading
     bars.replaceChildren(...Array.from({ length: 24 }, () => createEl('div', 'chart-bar skeleton', '')));
     labels.replaceChildren(createEl('div', 'chart-label', 'loading…'));
 
-    const [data, history] = await Promise.all([
+    const [activity, history] = await Promise.all([
       fetchJSON('/data/activity.json'),
       getHistoryData(),
     ]);
-    const series = (data && data.days) || generateSampleActivity();
-    const bucket = (data && data.bucket) || 'day';
-    const max = Math.max(1, ...series.map(d => d.count));
-    const step = Math.max(1, Math.ceil(series.length / 12));
 
-    // Populate year filter from data
+    const records = (history || [])
+      .map((r) => ({ date: parseDateToISO(r.date), count: 1 }))
+      .filter((r) => r.date);
+    // No archive is a broken feed, not an empty dataset: say so rather than
+    // drawing a flat zero chart that reads as "no progress".
+    if (records.length === 0) {
+      bars.replaceChildren(createEl('p', 'chart-empty', 'Milestone history is unavailable right now.'));
+      labels.replaceChildren();
+      return;
+    }
+
+    const years = [...new Set(records.map((r) => r.date.slice(0, 4)))]
+      .filter((y) => /^\d{4}$/.test(y))
+      .sort((a, b) => b - a);
     if (yearFilter) {
-      const years = new Set();
-      series.forEach(d => {
-        const year = d.date.slice(0, 4);
-        if (year.match(/^\d{4}$/)) years.add(year);
-      });
-      const sortedYears = Array.from(years).sort((a, b) => b - a);
-      yearFilter.innerHTML = '<option value="all">All years</option>';
-      sortedYears.forEach(y => {
-        const opt = createEl('option', '', y);
-        opt.value = y;
-        yearFilter.appendChild(opt);
+      yearFilter.replaceChildren();
+      const all = createEl('option', '', 'All years');
+      all.value = 'all';
+      yearFilter.appendChild(all);
+      years.forEach((y) => {
+        const o = createEl('option', '', y);
+        o.value = y;
+        yearFilter.appendChild(o);
       });
     }
 
     let currentYearFilter = 'all';
-
-    function renderActivity(year) {
-      currentYearFilter = year;
-      let filteredSeries = series;
-      if (year !== 'all') {
-        filteredSeries = series.filter(d => d.date.startsWith(year));
-      }
-      const filteredMax = Math.max(1, ...filteredSeries.map(d => d.count));
-      const filteredStep = Math.max(1, Math.ceil(filteredSeries.length / 12));
-
-      const barsFrag = document.createDocumentFragment();
-      const labelsFrag = document.createDocumentFragment();
-
-      filteredSeries.forEach((d, i) => {
-        const bar = createEl('div', 'chart-bar');
-        bar.style.height = (4 + (d.count / filteredMax) * 116) + 'px';
-        const prefix = bucket === 'week' ? 'Week of ' : bucket === 'month' ? 'Month of ' : bucket === 'year' ? '' : '';
-        bar.title = `${prefix}${d.date}: ${d.count} milestone${d.count !== 1 ? 's' : ''}`;
-        barsFrag.appendChild(bar);
-
-        const lbl = createEl('div', 'chart-label');
-        lbl.textContent = (i % filteredStep === 0 || i === filteredSeries.length - 1) ? d.date.slice(5) : '';
-        labelsFrag.appendChild(lbl);
+    function series() {
+      return currentYearFilter === 'all'
+        ? records
+        : records.filter((r) => r.date.startsWith(currentYearFilter));
+    }
+    function draw() {
+      const subset = series();
+      const size = renderTimelineChart({
+        bars, labels, records: subset, unitNoun: 'milestone',
+        width: bars.clientWidth || bars.parentElement?.clientWidth || 0,
       });
-
-      bars.replaceChildren(barsFrag);
-      labels.replaceChildren(labelsFrag);
+      if (heading) {
+        heading.textContent = CHART_BUCKET_LABEL[size] || '';
+      }
     }
 
-    if (yearFilter) {
-      yearFilter.addEventListener('change', e => renderActivity(e.target.value));
-    }
-
-    // Initial render
-    renderActivity('all');
+    if (yearFilter) yearFilter.addEventListener('change', (e) => {
+      currentYearFilter = e.target.value;
+      draw();
+    });
+    draw();
 
     const ts = document.getElementById('activity-update-time');
-    if (ts) ts.textContent = data && data.last_update ? ` (updated ${data.last_update})` : ' (seed data)';
+    if (ts) {
+      ts.textContent = activity && activity.last_update
+        ? ` (updated ${activity.last_update})`
+        : ' (archive)';
+    }
 
     // Staleness banner: newest milestone DATE across the archive vs today.
     const stale = computeStaleness(history || [], todayISO());
@@ -583,8 +817,87 @@
         staleEl.hidden = false;
       }
     }
+
+    // Re-aggregate when the frame changes width: the bucket size is chosen from
+    // the measured width, so without this a chart chosen for a desktop frame
+    // would keep its granularity (and its 160 columns) on a phone.
+    if (typeof ResizeObserver === 'function') {
+      const ro = new ResizeObserver(() => draw());
+      ro.observe(bars);
+      timelineResizeObservers.push(ro);
+    } else {
+      window.addEventListener('resize', draw);
+    }
   }
 
+  // ---- Tactical layers timeline ---------------------------------------------
+  // A second frame over the operational layers, built from world_layers.json -
+  // the same payload the map draws. Every layer entry carries a `start_date`, so
+  // "when did this layer change" is answerable without a new pipeline, and
+  // answering it next to the milestone timeline is the point: the milestone chart
+  // says what was achieved, this one says what was deployed, and a reader can see
+  // at a glance whether the two move together.
+  //
+  // End dates count as a change too: a concluded zone is a datapoint on the day it
+  // ended, not only on the day it began. Counting only starts would make the
+  // series fall away exactly when things were resolving.
+  function tacticalRecords(layers) {
+    const out = [];
+    const add = (list) => (list || []).forEach((item) => {
+      const start = parseDateToISO(normalizeLayerDate(item.start_date));
+      if (start) out.push({ date: start, count: 1 });
+      const end = parseDateToISO(normalizeLayerDate(item.end_date));
+      if (end && end !== start) out.push({ date: end, count: 1 });
+    });
+    add(layers.conflict_zones);
+    add(layers.crisis_zones);
+    add(layers.deployments);
+    add(layers.alliance_dots);
+    add(layers.human_rights_violations);
+    return out.sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
+  }
+
+  async function loadTacticalTimeline() {
+    const bars = document.getElementById('tactical-bars');
+    const labels = document.getElementById('tactical-labels');
+    const heading = document.getElementById('tactical-bucket-note');
+    const total = document.getElementById('tactical-total');
+    if (!bars || !labels) return;
+
+    const data = await fetchJSON('/data/world_layers.json');
+    if (!data) {
+      bars.replaceChildren(createEl('p', 'chart-empty', 'Operational layer data is unavailable right now.'));
+      labels.replaceChildren();
+      return;
+    }
+    const records = tacticalRecords(data);
+    if (records.length === 0) {
+      bars.replaceChildren(createEl('p', 'chart-empty', 'No dated operational layer changes published yet.'));
+      labels.replaceChildren();
+      return;
+    }
+    if (total) {
+      const sum = records.length;
+      const span = `${records[0].date} → ${records[records.length - 1].date}`;
+      total.textContent = `${sum} dated layer change${sum === 1 ? '' : 's'} · ${span}`;
+    }
+
+    function draw() {
+      const size = renderTimelineChart({
+        bars, labels, records, unitNoun: 'layer change',
+        width: bars.clientWidth || bars.parentElement?.clientWidth || 0,
+      });
+      if (heading) heading.textContent = CHART_BUCKET_LABEL[size] || '';
+    }
+    draw();
+    if (typeof ResizeObserver === 'function') {
+      const ro = new ResizeObserver(() => draw());
+      ro.observe(bars);
+      timelineResizeObservers.push(ro);
+    } else {
+      window.addEventListener('resize', draw);
+    }
+  }
   // Per-metric timeline: pick one metric and see its full history, so a broken
   // or stale metric is easy to trace back to the beginning of scraping.
   async function loadMetricTimeline() {
@@ -1238,181 +1551,311 @@
     counterObserver.disconnect();
     abortAllFetches();
     removeModalEventListeners();
-    // Cleanup carousel event listeners
+    timelineResizeObservers.forEach((ro) => ro.disconnect());
+    timelineResizeObservers.length = 0;
+    // Stop the highlights rotation and release its timer. The old code replaced
+    // the carousel with a shallow clone to drop its listeners, which also threw
+    // away the rendered cards and the live region - a "cleanup" that damages the
+    // page it is cleaning. Stopping the timer is the whole job: the listeners are
+    // on nodes that are being discarded with the document anyway.
     const carousel = document.getElementById('highlights-carousel');
-    if (carousel) {
-      if (carousel._marqueePauseHandler) {
-        carousel.removeEventListener('mouseenter', carousel._marqueePauseHandler);
-      }
-      if (carousel._marqueeResumeHandler) {
-        carousel.removeEventListener('mouseleave', carousel._marqueeResumeHandler);
-      }
-      carousel.replaceWith(carousel.cloneNode(true));
+    if (carousel && carousel._highlights) {
+      carousel._highlights.stop();
+      carousel._highlights = null;
     }
   }
 
-  // ---- Highlights Carousel (Continuous Marquee) ----
+// ---- Recent Highlights: single-highlight spotlight carousel ----------------
+  // Replaces a continuous marquee.
+  //
+  // The marquee was broken in three ways that all show up immediately on the
+  // page: it duplicated every card and translated -50%, which is only seamless
+  // when the track's content is exactly two identical halves - with a 16px gap
+  // between the last card of each half it jumps 8px every cycle; its duration
+  // was `contentWidth / 30`, so twelve 320px cards took 134 SECONDS to come round
+  // once; and at the mobile breakpoint `flex: 0 0 100%` made every card a full
+  // screen wide, turning a slow drift into an unreadable crawl.
+  //
+  // What is here instead: one highlight at a time, a new one every 2s, an
+  // overshoot-and-settle at the end of each slide, and a wrap straight back to
+  // the first card. Same DOM ids as before, so nothing else has to change.
+  const HIGHLIGHT_INTERVAL_MS = 2000;
+  // Long enough to read a title and a source, short enough that the section feels
+  // live rather than like a slideshow you have to wait out.
+  const HIGHLIGHT_SLIDE_MS = 520;
+
   function initHighlightsCarousel() {
     const carousel = document.getElementById('highlights-carousel');
     const track = document.getElementById('highlights-carousel-track');
-    
-    if (!carousel || !track) return;
-    
-    // Populate carousel with recent milestones
-    async function populateCarousel() {
+    if (!carousel || !track) return null;
+
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let cards = [];
+    let index = 0;
+    let timer = null;
+    let paused = false;
+    // Set while a slide is in flight so a fast click cannot interleave two
+    // transitions on the same pair of cards and leave one stranded off-stage.
+    let animating = false;
+
+    function renderIndicators() {
+      const dots = carousel.querySelector('.highlights-dots');
+      if (!dots) return;
+      const frag = document.createDocumentFragment();
+      cards.forEach((_, i) => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'highlights-dot' + (i === index ? ' is-active' : '');
+        b.setAttribute('aria-label', 'Show highlight ' + (i + 1) + ' of ' + cards.length);
+        b.setAttribute('aria-current', i === index ? 'true' : 'false');
+        b.addEventListener('click', () => { show(i, true); });
+        frag.appendChild(b);
+      });
+      dots.replaceChildren(frag);
+    }
+
+    // Move to `target`. `immediate` skips the transition (first paint, and the
+    // reduced-motion path), so nothing animates on load.
+    function show(target, immediate) {
+      if (cards.length === 0) return;
+      const count = cards.length;
+      // Modulo, so a click on "next" from the last card returns to the first and
+      // the timer wrapping does the same: the loop is one code path, not two.
+      const next = ((target % count) + count) % count;
+      const prevIndex = index;
+      index = next;
+      if (next === prevIndex && !immediate) return;
+
+      const outgoing = cards[prevIndex];
+      const incoming = cards[next];
+
+      // Stage every card. `.is-current` is the only visible one; `.is-out` is the
+      // card on its way off. Using classes rather than inline transforms keeps the
+      // motion in CSS, where prefers-reduced-motion can switch it off in one place.
+      cards.forEach((c, i) => {
+        c.classList.remove('is-current', 'is-out', 'is-enter');
+        c.setAttribute('aria-hidden', i === next ? 'false' : 'true');
+        // Only the visible card is reachable by keyboard; the rest are decoration
+        // while off-stage, and leaving them focusable put tab stops on invisible
+        // cards.
+        c.setAttribute('tabindex', i === next ? '0' : '-1');
+      });
+      incoming.classList.add('is-current');
+      if (!immediate && !prefersReducedMotion && prevIndex !== next) {
+        outgoing.classList.add('is-out');
+        incoming.classList.add('is-enter');
+        animating = true;
+        const settle = () => {
+          animating = false;
+          outgoing.classList.remove('is-out');
+          incoming.classList.remove('is-enter');
+        };
+        // The timeout is a backstop for the transition, not the animation itself:
+        // if `transitionend` never fires (a dropped frame, a hidden tab) the card
+        // must still come back on-stage rather than stay invisible forever.
+        incoming._settleTimer = setTimeout(settle, HIGHLIGHT_SLIDE_MS + 120);
+        incoming.addEventListener('transitionend', function done(ev) {
+          if (ev && ev.propertyName && ev.propertyName !== 'transform'
+              && ev.propertyName !== 'opacity') return;
+          clearTimeout(incoming._settleTimer);
+          incoming.removeEventListener('transitionend', done);
+          settle();
+        });
+      }
+      renderIndicators();
+      const live = carousel.querySelector('.highlights-live');
+      if (live && incoming) {
+        const title = incoming.querySelector('.milestone-card-title');
+        live.textContent = (title && title.textContent) || '';
+      }
+    }
+
+    function tick() {
+      if (paused || animating || cards.length < 2) return;
+      show(index + 1, false);
+    }
+
+    function start() {
+      stop();
+      if (cards.length < 2) return;
+      // setInterval rather than a self-rescheduling timeout: the cadence has to be
+      // exactly HIGHLIGHT_INTERVAL_MS apart, and a chained timeout drifts by the
+      // duration of whatever the last slide did.
+      timer = setInterval(tick, HIGHLIGHT_INTERVAL_MS);
+    }
+    function stop() {
+      if (timer) { clearInterval(timer); timer = null; }
+    }
+
+    function pause() { paused = true; }
+    function resume() { paused = false; }
+
+    function buildCard(m) {
+      const catConfig = CATEGORY_CONFIG[m.category_key]
+        || { name: m.category_name, icon: '📌', color: '#00d4ff' };
+      const card = document.createElement('div');
+      card.className = 'milestone-card highlights-card';
+
+      const header = document.createElement('div');
+      header.className = 'milestone-card-header';
+
+      const icon = document.createElement('span');
+      icon.className = 'milestone-card-icon';
+      icon.textContent = catConfig.icon;
+      icon.setAttribute('aria-hidden', 'true');
+
+      const catInfo = document.createElement('div');
+      catInfo.className = 'milestone-card-cat-info';
+      const catName = document.createElement('div');
+      catName.className = 'milestone-card-cat-name';
+      catName.textContent = catConfig.name;
+      catName.style.color = catConfig.color;
+      const title = document.createElement('h4');
+      title.className = 'milestone-card-title';
+      title.textContent = m.title;
+      catInfo.append(catName, title);
+      header.append(icon, catInfo);
+      card.appendChild(header);
+
+      const meta = document.createElement('div');
+      meta.className = 'milestone-card-meta';
+      const sourceSpan = document.createElement('span');
+      sourceSpan.textContent = m.source;
+      const dateSpan = document.createElement('span');
+      dateSpan.textContent = m.date;
+      meta.append(sourceSpan, document.createTextNode(' · '), dateSpan);
+      card.appendChild(meta);
+
+      if (m.value) {
+        const value = document.createElement('div');
+        value.className = 'milestone-card-value';
+        value.textContent = milestoneValueText(m);
+        card.appendChild(value);
+      }
+      return { card, catConfig };
+    }
+
+    function populate(list) {
+      // One card on stage at a time, so a narrow viewport needs no special case
+      // and there is nothing to scroll.
+      cards = [];
+      const frag = document.createDocumentFragment();
+      list.forEach((m) => {
+        const built = buildCard(m);
+        const card = built.card;
+        card.style.setProperty('--catalog-accent', built.catConfig.color);
+        card.style.setProperty('--catalog-accent-alpha', built.catConfig.color + '33');
+        card.setAttribute('role', 'button');
+        card.setAttribute('tabindex', '-1');
+        card.addEventListener('click', () => {
+          pause();
+          openMilestoneModal(m);
+        });
+        card.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            pause();
+            openMilestoneModal(m);
+          }
+        });
+        frag.appendChild(card);
+        cards.push(card);
+      });
+      track.replaceChildren(frag);
+    }
+
+    // Chrome: dots + prev/next + a live region. Built here rather than in
+    // index.md so the carousel owns its own affordances and they cannot drift
+    // out of step with the card count.
+    function buildChrome() {
+      const dots = document.createElement('div');
+      dots.className = 'highlights-dots';
+      dots.setAttribute('role', 'tablist');
+      dots.setAttribute('aria-label', 'Choose a highlight');
+
+      const prev = document.createElement('button');
+      prev.type = 'button';
+      prev.className = 'highlights-nav highlights-nav--prev';
+      prev.setAttribute('aria-label', 'Previous highlight');
+      prev.textContent = '‹';
+      prev.addEventListener('click', () => { pause(); show(index - 1, false); });
+
+      const next = document.createElement('button');
+      next.type = 'button';
+      next.className = 'highlights-nav highlights-nav--next';
+      next.setAttribute('aria-label', 'Next highlight');
+      next.textContent = '›';
+      next.addEventListener('click', () => { pause(); show(index + 1, false); });
+
+      const live = document.createElement('p');
+      live.className = 'highlights-live';
+      live.setAttribute('role', 'status');
+      live.setAttribute('aria-live', 'polite');
+
+      const controls = document.createElement('div');
+      controls.className = 'highlights-controls';
+      controls.append(prev, dots, next);
+
+      carousel.append(controls, live);
+    }
+
+    async function init() {
+      let list = [];
       try {
         const data = await getMilestonesData();
-        if (!data || !data.categories) return;
-        
-        // Flatten and sort milestones by date (newest first)
-        let allMilestones = [];
-        for (const [catKey, catData] of Object.entries(data.categories)) {
-          (catData.milestones || []).forEach(m => {
-            allMilestones.push({
-              ...m,
-              category_key: catKey,
-              category_name: catData.name,
-              category_icon: catData.icon,
-              category_color: catData.color
-            });
-          });
+        if (data && data.categories) {
+          const all = [];
+          for (const [catKey, catData] of Object.entries(data.categories)) {
+            (catData.milestones || []).forEach(m => all.push({
+              ...m, category_key: catKey, category_name: catData.name,
+              category_icon: catData.icon, category_color: catData.color,
+            }));
+          }
+          all.sort((a, b) => new Date(b.date) - new Date(a.date));
+          list = all.slice(0, 12);
         }
-        
-        allMilestones.sort((a, b) => new Date(b.date) - new Date(a.date));
-        
-        // Take the 12 most recent milestones for a good continuous loop
-        const recentMilestones = allMilestones.slice(0, 12);
-        
-        // Clear track and populate with milestone cards
-        track.innerHTML = '';
-        recentMilestones.forEach(m => {
-          const catConfig = CATEGORY_CONFIG[m.category_key] || { name: m.category_name, icon: '📌', color: '#00d4ff' };
-          
-          const card = document.createElement('div');
-          card.className = 'milestone-card highlights-card';
-          card.style.setProperty('--catalog-accent', catConfig.color);
-          card.style.setProperty('--catalog-accent-alpha', catConfig.color + '33');
-          card.style.flex = '0 0 320px'; // Fixed width for smooth animation
-          
-          const header = document.createElement('div');
-          header.className = 'milestone-card-header';
-          
-          const icon = document.createElement('span');
-          icon.className = 'milestone-card-icon';
-          icon.textContent = catConfig.icon;
-          icon.setAttribute('aria-hidden', 'true');
-          
-          const catInfo = document.createElement('div');
-          catInfo.className = 'milestone-card-cat-info';
-          const catName = document.createElement('div');
-          catName.className = 'milestone-card-cat-name';
-          catName.textContent = catConfig.name;
-          catName.style.color = catConfig.color;
-          const title = document.createElement('h4');
-          title.className = 'milestone-card-title';
-          title.textContent = m.title;
-          catInfo.appendChild(catName);
-          catInfo.appendChild(title);
-          header.appendChild(icon);
-          header.appendChild(catInfo);
-          card.appendChild(header);
-          
-          const meta = document.createElement('div');
-          meta.className = 'milestone-card-meta';
-          const sourceSpan = document.createElement('span');
-          sourceSpan.textContent = m.source;
-          const dotSpan = document.createElement('span');
-          dotSpan.textContent = ' · ';
-          const dateSpan = document.createElement('span');
-          dateSpan.textContent = m.date;
-          meta.appendChild(sourceSpan);
-          meta.appendChild(dotSpan);
-          meta.appendChild(dateSpan);
-          card.appendChild(meta);
-          
-          card.style.cursor = 'pointer';
-          card.setAttribute('role', 'button');
-          card.setAttribute('tabindex', '0');
-          card.addEventListener('click', () => openMilestoneModal(m));
-          card.addEventListener('keydown', e => {
-            if (e.key === 'Enter' || e.key === ' ') {
-              e.preventDefault();
-              openMilestoneModal(m);
-            }
-          });
-          
-          track.appendChild(card);
-        });
-        
-        // Duplicate cards for seamless infinite loop
-        const cards = Array.from(track.children);
-        cards.forEach(card => {
-          const clone = card.cloneNode(true);
-          clone.setAttribute('aria-hidden', 'true');
-          clone.removeAttribute('tabindex');
-          track.appendChild(clone);
-        });
-        
-        // Start the continuous animation
-        startMarqueeAnimation();
-        
-        return true;
       } catch (e) {
-        console.warn('Failed to populate highlights carousel:', e);
+        console.warn('[dashboard] highlights carousel: populate failed', e);
+      }
+      if (list.length === 0) {
+        carousel.style.display = 'none';
         return false;
       }
+      populate(list);
+      buildChrome();
+      index = 0;
+      show(0, true);
+
+      // Hovering or focusing the section pauses the rotation: a visitor reaching
+      // for the dots or the modal should not have the card change under them.
+      carousel.addEventListener('mouseenter', pause);
+      carousel.addEventListener('mouseleave', resume);
+      carousel.addEventListener('focusin', pause);
+      carousel.addEventListener('focusout', (e) => {
+        if (!carousel.contains(e.relatedTarget)) resume();
+      });
+      carousel.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowRight') { e.preventDefault(); pause(); show(index + 1, false); }
+        else if (e.key === 'ArrowLeft') { e.preventDefault(); pause(); show(index - 1, false); }
+      });
+      start();
+      return true;
     }
-    
-    function startMarqueeAnimation() {
-      const cards = Array.from(track.children);
-      if (cards.length === 0) return;
-      
-      // Calculate total width of original cards (not clones)
-      const originalCount = cards.length / 2;
-      let totalWidth = 0;
-      // Read all widths first to avoid layout thrashing
-      const widths = [];
-      for (let i = 0; i < originalCount; i++) {
-        widths.push(cards[i].offsetWidth + 16); // card width + gap
-      }
-      totalWidth = widths.reduce((a, b) => a + b, 0);
-      
-      // Set up CSS animation for continuous marquee
-      // Duration: ~30px per second for comfortable reading speed
-      const durationSeconds = Math.max(10, totalWidth / 30);
-      track.style.display = 'flex';
-      track.style.gap = '16px';
-      track.style.willChange = 'transform';
-      track.style.animation = `marquee ${durationSeconds}s linear infinite`;
-      track.style.animationPlayState = 'running';
-      
-      // Pause on hover
-      const pauseHandler = () => { track.style.animationPlayState = 'paused'; };
-      const resumeHandler = () => { track.style.animationPlayState = 'running'; };
-      carousel.addEventListener('mouseenter', pauseHandler);
-      carousel.addEventListener('mouseleave', resumeHandler);
-      
-      // Store handlers for cleanup
-      carousel._marqueePauseHandler = pauseHandler;
-      carousel._marqueeResumeHandler = resumeHandler;
-      
-      // Respect prefers-reduced-motion
-      const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-      if (prefersReducedMotion) {
-        track.style.animation = 'none';
-      }
-    }
-    
-    // Initialize
-    async function init() {
-      const populated = await populateCarousel();
-      if (!populated) {
-        carousel.style.display = 'none';
-        return;
-      }
-    }
-    
+
+    const api = {
+      show: (i) => show(i, false),
+      next: () => show(index + 1, false),
+      prev: () => show(index - 1, false),
+      pause,
+      resume,
+      start,
+      stop,
+      get index() { return index; },
+      get length() { return cards.length; },
+    };
+    carousel._highlights = api;
     init();
+    return api;
   }
 
   window.addEventListener('beforeunload', cleanup);
@@ -1430,12 +1873,29 @@
       computeStaleness,
       buildMetricOptionList,
       metricCountsByDate,
+      // Adaptive timeline chart: exported because the out-of-bounds bug this
+      // replaces was a pure function of (records, width) and is far cheaper to
+      // pin down here than through the DOM.
+      chartBucket,
+      nextChartBucket,
+      bucketCounts,
+      chartColumnBudget,
+      chooseChartBucket,
+      tacticalRecords,
+      CHART_BUCKETS,
+      CHART_BUCKET_LABEL,
+      CHART_MIN_COL_PX,
+      CHART_MAX_COLUMNS,
+      parseDateToISO,
+      normalizeLayerDate,
+      HIGHLIGHT_INTERVAL_MS: 2000,
     };
   }
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
       loadActivity();
+      loadTacticalTimeline();
       loadTopMilestones();
       loadMilestonesCatalog();
       initCategoryToggles();
@@ -1444,6 +1904,7 @@
     });
   } else {
     loadActivity();
+    loadTacticalTimeline();
     loadTopMilestones();
     loadMilestonesCatalog();
     initCategoryToggles();

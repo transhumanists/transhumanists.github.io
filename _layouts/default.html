@@ -11,6 +11,7 @@
   <link rel="stylesheet" href="{{ '/assets/css/main.css' | relative_url }}">
   <link rel="stylesheet" href="{{ '/assets/css/network-ux.css' | relative_url }}">
   <link rel="stylesheet" href="{{ '/assets/css/auth-bar.css' | relative_url }}">
+  <link rel="stylesheet" href="{{ '/assets/css/ecosystem-network.css' | relative_url }}">
   <link rel="icon" type="image/svg+xml" href="{{ '/assets/favicon.svg' | relative_url }}">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://api.github.com https://raw.githubusercontent.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'">
   {% seo %}
@@ -20,12 +21,34 @@
   <a class="skip-link" href="#main">Skip to main content</a>
 
   <div class="page-wrapper">
-    <header class="site-header" role="banner">
+{% include return-to-site.html current="transhumanists" current_name="transhumanists" %}
+
+  <header class="site-header" role="banner">
       <div class="container">
         <a class="site-brand" href="{{ '/' | relative_url }}" aria-label="transhumanists - Home">
-          <span class="logo-mark" aria-hidden="true">🧬</span>
+          <span class="logo-mark" aria-hidden="true">dY"></span>
           <span class="logo-text">transhumanists</span>
         </a>
+        {%- comment -%}
+        Header right slot. The Facebook link is vertically aligned with the word
+        mark and pushed to the far right of the same bar, so it reads as part of
+        the identity row rather than as a floating share button. One link to the
+        page that publishes the transhumanism and milestone posts; the automated
+        posting pipeline that will eventually feed it is not built yet, so the
+        link is here and points at the real page rather than at a placeholder.
+        {%- endcomment -%}
+        <div class="header-slot">
+          <a class="header-social"
+             href="https://www.facebook.com/transhumanistsBE"
+             target="_blank"
+             rel="noopener noreferrer"
+             aria-label="transhumanists on Facebook (opens in a new tab)">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true">
+              <path d="M22 12.06C22 6.5 17.52 2 12 2S2 6.5 2 12.06c0 5.02 3.66 9.18 8.44 9.94v-7.03H7.9v-2.91h2.54V9.85c0-2.52 1.49-3.91 3.77-3.91 1.09 0 2.24.2 2.24.2v2.46h-1.26c-1.24 0-1.63.78-1.63 1.57v1.89h2.78l-.45 2.91h-2.33V22c4.78-.76 8.44-4.92 8.44-9.94z"/>
+            </svg>
+            <span class="header-social-text">Facebook</span>
+          </a>
+        </div>
       </div>
     </header>
 
@@ -36,11 +59,29 @@
     <footer class="site-footer" role="contentinfo">
       <div class="container">
         <p style="text-align:center;color:var(--fg-muted);font-size:0.85rem;">&copy; {{ site.time | date: '%Y' }} transhumanists — Human Progress Dashboard</p>
+        {%- comment -%}
+        Ecosystem Network frame: the unified cross-site footer block. Included
+        once here so every page on this site carries the same four-card
+        directory of the network, below the copyright note with clear space
+        between them. `current` marks this site's own card.
+        {%- endcomment -%}
+        {% include ecosystem-network.html current="transhumanists" %}
       </div>
     </footer>
   </div>
 
+  {%- comment -%}
+  Persistent bottom dock: AI assistant / contact / account, plus the cross-site
+  directory. It was written for this site and never included, so none of it ever
+  rendered - which is why the "AI bar" read as a rough start. Included here, at
+  the end of the body so it paints above the page, and only when it is actually
+  usable: auth-bar.js is loaded below it.
+  {%- endcomment -%}
+  {% include auth-bar.html current="transhumanists" %}
+
   <script src="{{ '/assets/js/main.js' | relative_url }}"></script>
+  <script src="{{ '/assets/js/return-bar.js' | relative_url }}"></script>
+  <script src="{{ '/assets/js/auth-bar.js' | relative_url }}"></script>
   <script src="{{ '/assets/js/network-ux.js' | relative_url }}"></script>
 </body>
 </html>

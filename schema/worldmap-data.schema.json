@@ -130,14 +130,33 @@
         },
         {
           "key": "deployments",
-          "legend_label": "Ground Deployments & Fleet Movements",
+          "legend_label": "Ground & Fleet Deployments",
           "data_key": "deployments",
           "shape": "diamond",
           "default_on": false,
           "split_colors": [
             "ground",
             "fleet"
-          ]
+          ],
+          "label_note": "Renamed from 'Ground Deployments & Fleet Movements': the old name described the mark rather than the layer and was long enough to wrap the legend frame on a phone."
+        },
+        {
+          "key": "alliance_dots",
+          "legend_label": "Alliance & Defence Policy",
+          "data_key": "alliance_dots",
+          "shape": "seal",
+          "default_on": false,
+          "nested": true,
+          "follows_parent": true,
+          "kinds": [
+            "accession",
+            "posture",
+            "mandate",
+            "industrial",
+            "capability"
+          ],
+          "layer_rule": "A dot SUBLAYER of the deployments row above, indented under it in the legend and gated by the same military filter, so it can never appear on its own. Its own switch defaults to ON because it follows its parent: the parent is off by default, so the effective default is still off, and a visitor who enables Ground & Fleet Deployments without touching this gets the seals rather than an unexplained absence. It is deliberately NOT a Military & Defense milestone category: those carry technical records (drone range, rocket performance, OSINT), while this carries the political decision itself - alliance accessions, posture changes, mandates and defence-industrial instruments.",
+          "shape_rule": "A seal has no route and no extent, so it renders as a square-in-ring mark rather than an arrow or an area ring. A movement whose `id` matches a seal's `id` is suppressed by the renderer, so promoting an entry from deployments to a seal never draws both."
         },
         {
           "key": "crises",
@@ -171,17 +190,20 @@
       ]
     },
     "world_layers.json": {
-      "version": "1.2.0",
-      "shape": "top-level object with conflict_zones, deployments, crisis_zones and human_rights_violations lists; fleet_movements accepted as the legacy alias for deployments. 1.2.0 added human_rights_violations, an optional toggleable landmark layer that is NOT a milestone category.",
+      "version": "1.3.0",
+      "shape": "top-level object with conflict_zones, deployments, alliance_dots, crisis_zones and human_rights_violations lists; fleet_movements accepted as the legacy alias for deployments. 1.2.0 added human_rights_violations, an optional toggleable landmark layer that is NOT a milestone category. 1.3.0 added alliance_dots, a dot sublayer of the deployments layer for alliance accessions, posture changes, mandates and defence-industrial instruments.",
       "rules": [
         "every zone/fleet entry name/label + located pair (not null island)",
         "lifecycle status in status_values and dates per layer_lifecycle.date_pattern",
         "every conflict zone declares a `tier` from layer_lifecycle.zone_tier_radius",
         "a conflict zone's radiusDeg equals the radius its tier maps to",
         "ids unique per list",
+        "every zone, fleet and seal carries `last_news_year` (or a start_date, which the renderer falls back to) - this is the recency signal the map's brightness ladder reads, and dropping it from normalisation is what made the Ukraine conflict zone render dimmed",
         "top-level metadata: version equals this file's version and last_update is a non-empty ISO-8601 UTC timestamp (offset or Z)",
-        "human_rights_violations (1.2.0+): optional; when present each entry is a located pair (not null island), a status from status_values, and a unique id"
-      ]
+        "human_rights_violations (1.2.0+): optional; when present each entry is a located pair (not null island), a status from status_values, and a unique id",
+        "alliance_dots (1.3.0+): optional; when present each entry has a unique id, a non-empty name, a located pair (not null island), a status from status_values, a `kind` from worldmap_layers.layers[alliance_dots].kinds, and an absent-or-http(s) `url`"
+      ],
+      "recency_note": "`last_news_year` is a recency PROXY, not a literal last-reported date. sync_layers.py stamps it for conflict zones; fetch_crisis_zones.py stamps it for any crisis zone still asserted active; curated seals carry no value and fall back to their own start year, which is what makes a 2024 accession glow and a 2017 one fade."
     }
   }
 }

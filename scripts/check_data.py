@@ -686,6 +686,65 @@ def check_human_rights(items: object) -> list[str]:
     return issues
 
 
+# Policy-change kinds accepted by the alliance_dots sublayer. Mirrors
+# ALLIANCE_DOT_HEADINGS in assets/js/worldmap.js: the heading is looked up by
+# kind, so an unlisted value would silently fall back to the generic label and
+# two different facts would read identically. test_check_data.py asserts the two
+# tables hold the same keys.
+ALLIANCE_DOT_KINDS = frozenset({
+    "accession", "posture", "mandate", "industrial", "capability",
+})
+
+
+def check_alliance_dots(items: object) -> list[str]:
+    """Validate the Alliance & Defence Policy dot sublayer.
+
+    A dot sublayer of the Ground & Fleet Deployments datalayer: alliance
+    accessions, posture changes, mandates and defence-industrial decisions. It is
+    deliberately NOT a Military & Defense milestone category - those carry
+    technical records (drone range, rocket performance, OSINT), whereas this
+    carries the political decision itself - so it lives in world_layers.json and
+    gets a layer switch rather than a legend colour.
+
+    Held to the same located-pair and lifecycle rules as the other layers. The
+    `kind` is additionally constrained, because it selects the tooltip heading
+    client-side and an unknown value would silently render as "Defence Posture".
+    """
+    issues: list[str] = []
+    if items is None:
+        # Optional until the first curation writes the key.
+        return issues
+    if not isinstance(items, list):
+        return ["alliance_dots must be a list"]
+    for i, item in enumerate(items):
+        if not isinstance(item, dict):
+            issues.append(f"alliance_dots[{i}]: entry must be an object")
+            continue
+        if not isinstance(item.get("id"), str) or not item["id"].strip():
+            issues.append(f"alliance_dots[{i}].id: must be a non-empty string")
+        if not isinstance(item.get("name"), str) or not item["name"].strip():
+            issues.append(f"alliance_dots[{i}].name: must be a non-empty string")
+        if not _coord_located(item.get("lat"), item.get("lon")):
+            issues.append(
+                f"alliance_dots[{i}]: must carry a located lat/lon pair "
+                f"(not null island), got ({item.get('lat')!r}, {item.get('lon')!r})"
+            )
+        kind = item.get("kind", "posture")
+        if kind not in ALLIANCE_DOT_KINDS:
+            issues.append(
+                f"alliance_dots[{i}].kind: unknown kind {kind!r}; expected one of "
+                f"{sorted(ALLIANCE_DOT_KINDS)}"
+            )
+        issues.extend(_check_lifecycle("alliance_dots", i, item))
+        if not _valid_source_url(item.get("url")):
+            issues.append(
+                f"alliance_dots[{i}].url: must be absent or an http(s) URL, "
+                f"got {item.get('url')!r}"
+            )
+    issues.extend(_check_unique_ids("alliance_dots", items))
+    return issues
+
+
 def check_data(data: dict, filename: str) -> list[str]:
     if not isinstance(data, dict):
         return ["top-level JSON must be an object"]
@@ -706,6 +765,7 @@ def check_data(data: dict, filename: str) -> list[str]:
             + check_crisis_zones(data.get("crisis_zones"))
             + check_fleets(deployments, kind=kind)
             + check_human_rights(data.get("human_rights_violations"))
+            + check_alliance_dots(data.get("alliance_dots"))
         )
     if filename == "milestones.json":
         return check_milestones(data)

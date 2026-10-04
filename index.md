@@ -306,11 +306,23 @@ description: "Tracking milestones across biotech, AGI, quantum, energy, cyber, s
         <select id="activity-year-filter" aria-label="Select year for activity timeline" class="select-field">
           <option value="all">All years</option>
         </select>
+        <span class="activity-update-time" id="activity-update-time">—</span>
       </div>
-      <h3>📈 Milestones recorded per day<span class="activity-update-time" id="activity-update-time">—</span></h3>
+      <h3>📈 Milestones recorded <span class="activity-bucket" id="activity-bucket-note">per year</span><span class="activity-update-time" id="activity-spike-note"></span></h3>
       <div class="chart-bars" id="activity-bars"></div>
       <div class="chart-labels" id="activity-labels"></div>
+      <p class="chart-footnote">Every milestone in the archive, from the 1945 Trinity test onward. The bucket size follows the width of the frame, and empty periods are drawn as gaps rather than closed up — a silent metric means no record surfaced yet, not that none happened.</p>
       <p class="activity-staleness" id="activity-staleness" hidden></p>
+    </div>
+
+    <div class="activity-chart activity-chart--tactical">
+      <div class="activity-controls">
+        <span class="activity-update-time" id="tactical-total">—</span>
+      </div>
+      <h3>🛡️ Tactical layer activity <span class="activity-bucket" id="tactical-bucket-note">per year</span></h3>
+      <div class="chart-bars chart-bars--tactical" id="tactical-bars"></div>
+      <div class="chart-labels" id="tactical-labels"></div>
+      <p class="chart-footnote">Conflict zones, crisis zones, ground &amp; fleet deployments, alliance &amp; defence-policy changes and human-rights landmarks — counted from the same <code>world_layers.json</code> the map draws, one point when a layer starts and one when it concludes. Read it next to the chart above to see whether breakthroughs and deployments move together.</p>
     </div>
 
     <div class="metric-timeline">

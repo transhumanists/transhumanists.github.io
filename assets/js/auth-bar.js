@@ -38,6 +38,24 @@
   const STORAGE_TAB_KEY = 'ai_dock_active_tab_v1';
 const state = { activeTab: null };
 
+  // Panels that take over the rail. The AI conversation panel is the reason:
+  // it is wide enough to need the full width, so the rail slides down out of the
+  // way and the panel takes its place - one control surface at the bottom of the
+  // screen rather than two stacked ones competing for the same 52px.
+  const RAIL_HIDING_TABS = new Set(['ai']);
+
+  function setRailHidden(hidden) {
+    const dock = $('ai-dock');
+    if (!dock) return;
+    dock.classList.toggle('ai-dock--rail-hidden', Boolean(hidden));
+    // The rail is a real navigation landmark. While it is off screen it must not
+    // be reachable, or a keyboard user tabs into buttons they cannot see.
+    qa('.ai-dock__rail').forEach((rail) => {
+      rail.setAttribute('aria-hidden', hidden ? 'true' : 'false');
+      rail.inert = Boolean(hidden);
+    });
+  }
+
 function persistActiveTab() {
   try {
     if (state.activeTab) {
@@ -71,6 +89,7 @@ function persistActiveTab() {
       t.classList.remove('active');
     });
     hide($('ai-dock__backdrop'));
+    setRailHidden(false);
     state.activeTab = null;
     try { sessionStorage.removeItem(STORAGE_TAB_KEY); } catch (_) {}
   }
@@ -90,6 +109,7 @@ function persistActiveTab() {
     show(panel);
     state.activeTab = tabId;
     persistActiveTab();
+    setRailHidden(RAIL_HIDING_TABS.has(tabId));
 
     const backdrop = $('ai-dock__backdrop');
     if (tabId === 'contact' || tabId === 'login' || tabId === 'ai') {
