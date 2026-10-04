@@ -197,18 +197,30 @@ test('CATEGORIES is bigger than the eye and folds from the whole header row',
     // Every click re-measures. Folding rebuilds the legend, which moves the header,
     // so coordinates captured up front go stale after the first toggle - and a stale
     // coordinate silently lands on the frame background and does nothing.
+    // Raw coordinates, deliberately: the point of these clicks is that the whole
+    // header row is the target, including the whitespace above and below the
+    // word, so a locator click on the element centre would not prove it. That
+    // only works while the row is actually on screen - `boundingBox()` returns
+    // viewport-relative coordinates, and on the phone layout the legend sits low
+    // enough in the frame that y + height can fall past the fold, where a click
+    // lands on nothing and the control silently stops responding. Bring it into
+    // view first, then measure.
+    const inView = async () => {
+      await head.scrollIntoViewIfNeeded();
+      return head.boundingBox();
+    };
     const box = async (loc) => loc.boundingBox();
 
     const clickHeadTop = async () => {
-      const b = await box(head);
+      const b = await inView();
       await page.mouse.click(b.x + 6, b.y + 1);
     };
     const clickHeadBottom = async () => {
-      const b = await box(head);
+      const b = await inView();
       await page.mouse.click(b.x + 6, b.y + b.height - 1);
     };
     const clickInFrontOfWord = async () => {
-      const h = await box(head);
+      const h = await inView();
       const t = await box(title);
       const x = t.x + t.width + 4;
       expect(x, 'there is whitespace between the word and the eye')
@@ -220,6 +232,7 @@ test('CATEGORIES is bigger than the eye and folds from the whole header row',
       await page.mouse.click(t.x + 4, t.y + t.height / 2);
     };
     const clickEye = async () => {
+      await inView();
       const e = await box(eye);
       await page.mouse.click(e.x + e.width / 2, e.y + e.height / 2);
     };
