@@ -174,10 +174,29 @@ function makeEl() {
       return walk(this.children);
     },
   };
-  // textContent mirrors the DOM string property setter.
+  // textContent mirrors the DOM string property: reading it returns the
+  // concatenated text of the whole subtree, in tree order, not just whatever
+  // was assigned to this node.
+  //
+  // Returning only the node's own `_text` made every container read as empty -
+  // the tooltip header puts 'Ground Deployment' in a child, the fact lines put
+  // "Nation: Testland" in two. Assertions then had to walk children by hand,
+  // and the ones that read a container silently saw '' instead of the real
+  // text. A fake that under-reports is worse than no fake: it turns a
+  // regression into a green test.
   Object.defineProperty(el, 'textContent', {
-    get() { return this._text === undefined ? '' : this._text; },
-    set(v) { this._text = String(v); },
+    get() {
+      if (this._text !== undefined) return this._text;
+      if (!this.children || this.children.length === 0) return '';
+      return this.children.map((c) => (c && c.textContent !== undefined ? c.textContent : '')).join('');
+    },
+    // Assigning textContent replaces the node's children in the real DOM; the
+    // fake used to keep them, so a stray appendChild after a textContent write
+    // produced markup a browser would have thrown away.
+    set(v) {
+      this._text = String(v);
+      this.children = [];
+    },
   });
   return el;
 }
@@ -424,6 +443,7 @@ describe('worldmap', () => {
   });
 
   test('renders legend rows for all 9 categories plus layers', () => {
+    const api = windowObj.__WORLDMAP_TEST__;
     const legend = registeredEls['map-legend'];
     expect(legend).toBeDefined();
     expect(legend.getAttribute('role')).toBe('list');
@@ -462,6 +482,7 @@ describe('worldmap', () => {
   });
 
   test('conflict and fleet layer rows toggle their stats and redraw', () => {
+    const api = windowObj.__WORLDMAP_TEST__;
     const rowByLayer = (key) => legendRows().find((r) => (r.attrs['data-layer'] || '') === key);
     const zonesRow = rowByLayer('zones');
     // Military layers are off by default (filterMilitary=false), so aria-pressed is false
@@ -489,7 +510,6 @@ describe('worldmap', () => {
     expect(rowByLayer('deployments').getAttribute('aria-pressed')).toBe('false');
     expect(Number(registeredEls['map-stat-fleets'].textContent)).toBe(13); // stats show the whole datalayer, filter-independent
     // Restore both for later tests via test hook (button click not reliable in mock)
-    const api = windowObj.__WORLDMAP_TEST__;
     api.setFilterMilitary(true);        // enables both
     expect(Number(registeredEls['map-stat-conflicts'].textContent)).toBe(3);
     expect(Number(registeredEls['map-stat-fleets'].textContent)).toBe(13);
@@ -939,8 +959,11 @@ test('zoom controls, keyboard and double-click do not throw', () => {
       _stackKey: '999,999',
     });
     expect(ev._stackKey).toBeUndefined();
+    // subcategory is part of the normalised shape: the popup shows it under the
+    // vertical, and it is always present (empty when the feed carries none) so
+    // the renderer never has to distinguish "absent" from "blank".
     expect(Object.keys(ev).sort()).toEqual([
-      'category', 'date', 'id', 'lat', 'lon', 'source', 'title', 'url', 'value',
+      'category', 'date', 'id', 'lat', 'lon', 'source', 'subcategory', 'title', 'url', 'value',
     ]);
   });
 
@@ -952,11 +975,13 @@ test('zoom controls, keyboard and double-click do not throw', () => {
     });
     expect(full).toEqual({
       id: '1,2,T', lat: 1, lon: 2, title: 'T', category: 'X', value: 'v', source: 'S', url: 'https://a.b', date: '2026-01-01',
+      subcategory: '',
     });
     // Missing geolocation and optional fields get safe defaults.
     const bare = api.normalizeEvent({ geolocation: {} });
     expect(bare).toEqual({
       id: 'undefined,undefined,Untitled', lat: undefined, lon: undefined, title: 'Untitled', category: 'Unknown', value: '', source: 'Unknown', url: '', date: '',
+      subcategory: '',
     });
     expect(api.isPlottable(full)).toBe(true);
     expect(api.isPlottable(bare)).toBe(false);                       // no coordinates
@@ -1462,16 +1487,34 @@ test('zoom controls, keyboard and double-click do not throw', () => {
     const text = wrapper.children.map((c) => c.textContent).join(' | ');
     expect(text).toContain('Ground Deployment');
     expect(text).toContain('Brigade move');
-    expect(text).toContain('Nation: Testland');
-    expect(text).toContain('Troops: 5,000');
-    expect(text).toContain('Heading: east');
+    // Fact lines are a key span and a value span in a flex row separated by a
+    // gap - there is no colon anywhere in the markup or the CSS, so matching
+    // "Nation: Testland" against the concatenated text could never pass. Read
+    // the row instead, which is also what actually matters: the key and the
+    // value have to land in the SAME row, or a popup grows a list of orphaned
+    // labels with no values beside them.
+    const facts = new Map(
+      wrapper.children
+        .filter((c) => (c.className || '').split(' ').includes('tt-fact'))
+        .map((c) => {
+          const key = c.children.find((k) => (k.className || '').split(' ').includes('tt-fact-key'));
+          const val = c.children.find((k) => (k.className || '').split(' ').includes('tt-fact-val'));
+          return [key && key.textContent, val && val.textContent];
+        })
+    );
+    expect(facts.get('Nation')).toBe('Testland');
+    expect(facts.get('Troops')).toBe('5,000');
+    expect(facts.get('Heading')).toBe('east');
     // Route is reported from the derived endpoints even though the payload has
     // no from/to at all.
-    expect(text).toMatch(/From: 40\.0/);
-    expect(text).toMatch(/To: 40\.0/);
+    expect(facts.get('From')).toMatch(/^40\.0°/);
+    expect(facts.get('To')).toMatch(/^40\.0°/);
+    // A field the payload omits must not produce a label with no value.
+    expect(facts.has('Region')).toBe(false);
     // The source link is preserved end to end and rendered as a real anchor. It
     // lives inside the meta row, not directly under the wrapper.
-    const metaRow = wrapper.children[2];
+    const metaRow = wrapper.children.find((c) => (c.className || '').split(' ').includes('tt-meta'));
+    expect(metaRow).toBeDefined();
     const anchor = metaRow.children.find((c) => c.tagName === 'A');
     expect(anchor).toBeDefined();
     expect(anchor.textContent).toBe('MoD');
@@ -2026,8 +2069,9 @@ test('zoom controls, keyboard and double-click do not throw', () => {
   });
 
   test('Deployments legend row explains both components', () => {
+    const api = windowObj.__WORLDMAP_TEST__;
     registeredEls['reset-view'].fire('click', {});
-      expect(legendValue(api.LAYER_LABELS.deployments)).toBeDefined();
+    expect(legendValue(api.LAYER_LABELS.deployments)).toBeDefined();
       // The row draws two dots and the label names two components, so the label's
       // word order has to match the dot order or the legend misreports which
       // colour is which.

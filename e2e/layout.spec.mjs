@@ -140,8 +140,11 @@ test('the pinned legend header is opaque, so rows do not ghost through it',
   });
 
 test('the legend reaches every row without being clipped away', async ({ page }) => {
-  // 9 categories + 4 operational layers.
-  await expect(page.locator('#map-legend .map-legend-row')).toHaveCount(13);
+  // 9 categories + 5 operational-layer rows: zones, deployments, crises, human
+  // rights, and the alliance/deal seals nested under deployments. The sublayer
+  // is a row of its own (that is what makes it read as part of the deployments
+  // datalayer rather than as an unrelated layer), so it counts here.
+  await expect(page.locator('#map-legend .map-legend-row')).toHaveCount(14);
   const clipped = await page.evaluate(() => {
     const el = document.getElementById('map-legend');
     // Scrollable is fine; scrolled-out-of-reach is not.
@@ -310,14 +313,25 @@ test('every legend label sits on one line', async ({ page }) => {
         };
       }),
     );
-    const labels = rows.filter(Boolean);
-    expect(labels.length).toBe(13);
+const labels = rows.filter(Boolean);
+  // One label per legend row, so this tracks the row count above (14). Asserted
+  // as an exact number rather than "> 0" because a label that silently stops
+  // rendering is exactly the regression this test exists to catch.
+  expect(labels.length).toBe(14);
     for (const l of labels) {
       expect(l.lines, l.text + ' wrapped onto ' + l.lines + ' lines').toBe(1);
       expect(l.truncated, l.text + ' was ellipsised').toBe(false);
     }
-    // The longest label really is in there, so this is not passing on short rows.
-    expect(labels.some((l) => l.text.includes('Fleet Movements'))).toBe(true);
+    // The longest labels really are in there, so this is not passing on short rows.
+    // Named explicitly rather than derived: if a label is renamed this fails
+    // loudly and gets updated on purpose, instead of the guard quietly
+    // weakening to whatever happens to be rendered.
+    expect(labels.some((l) => l.text.includes('Biotechnology & Biohacking'))).toBe(true);
+    expect(labels.some((l) => l.text.includes('Ground & Fleet Deployments'))).toBe(true);
+    const longest = labels.reduce((a, b) => (b.text.length > a.text.length ? b : a));
+    expect(longest.text.length,
+      'the longest legend label is short enough that wrapping could not happen')
+      .toBeGreaterThanOrEqual(24);
   });
 
 test('the widened frame still clears South America', async ({ page }, testInfo) => {
@@ -348,9 +362,11 @@ test('the eye opens and closes the whole category set, and nothing else', async 
     expect(pressed).toBe('false');
   }
 
-  // Operational layers are untouched.
+  // Operational layers are untouched. Five rows carry data-layer: the four
+  // operational layers plus the nested alliance/seal sublayer under deployments.
+  // The bulk eye must not reach any of them - it owns the nine category rows only.
   const layers = page.locator('#map-legend .map-legend-row[data-layer]');
-  await expect(layers).toHaveCount(4);
+  await expect(layers).toHaveCount(5);
 
   await eye.click();
   await expect(eye).toHaveAttribute('aria-pressed', 'false');
