@@ -15,7 +15,7 @@
   {% feed_meta %}
   <link rel="stylesheet" href="{{ "/assets/css/site-tokens.css" | relative_url }}">
   <link rel="stylesheet" href="{{ "/assets/css/site-forge.css" | relative_url }}">
-{# fonts: managed by template-shared/site_forge.py from sites.yaml #}
+{% comment %} fonts: managed by template-shared/site_forge.py from sites.yaml {% endcomment %}
 {%- if site.font_google %}
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -23,7 +23,7 @@
 {%- endif %}
   <link rel="stylesheet" href="{{ "/assets/css/ai-seal.css" | relative_url }}">
 </head>
-{# decor: managed by template-shared/site_forge.py from sites.yaml #}
+{% comment %} decor: managed by template-shared/site_forge.py from sites.yaml {% endcomment %}
 <body class="{{ page.decor_class | default: site.decor_class | default: 'decor-aurora' }}">
   <a class="skip-link" href="#main">Skip to main content</a>
 
