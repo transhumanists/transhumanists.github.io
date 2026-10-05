@@ -83,6 +83,14 @@
   </div>
 
   {%- comment -%}
+  Persistent curved bottom bar with central AI button.
+  Only rendered on the home page to avoid dead links on subpages.
+  {%- endcomment -%}
+  {%- if page.url == '/' -%}
+  {% include bottom-bar.html %}
+  {%- endif -%}
+
+  {%- comment -%}
   Persistent bottom dock: AI assistant / contact / account, plus the cross-site
   directory. It was written for this site and never included, so none of it ever
   rendered - which is why the "AI bar" read as a rough start. Included here, at

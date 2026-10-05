@@ -92,6 +92,7 @@ body {
   backdrop-filter: blur(16px);
   border-bottom: 1px solid var(--border);
   padding: 0;
+  transition: transform 0.32s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.32s ease;
 }
 .site-header .container {
   display: flex;
@@ -1336,74 +1337,6 @@ body {
   min-width: 0;
   flex: 1;
 }
-.category-milestone-title {
-  font-size: 0.85rem;
-  font-weight: 500;
-  color: var(--fg);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.category-milestone-meta {
-  font-size: 0.65rem;
-  color: var(--fg-subtle);
-  margin-top: 3px;
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-.category-milestone-value {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 2px;
-  flex-shrink: 0;
-}
-.category-milestone-value .value {
-  font-family: var(--font-mono);
-  font-size: 1rem;
-  font-weight: 700;
-  color: var(--green);
-}
-.category-milestone-value .unit {
-  font-size: 0.6rem;
-  color: var(--fg-muted);
-}
-.category-milestone-new-badge {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--orange);
-  animation: pulse 2s infinite;
-  flex-shrink: 0;
-}
-.category-milestone-beaten {
-  opacity: 0.55;
-  border-color: var(--border);
-  background: var(--bg-card);
-}
-.category-milestone-beaten .beaten-title {
-  text-decoration: line-through;
-  color: var(--fg-subtle);
-}
-.category-milestone-beaten-badge {
-  margin-top: 6px;
-  padding: 6px 10px;
-  font-size: 0.65rem;
-  color: var(--fg-muted);
-  background: rgba(255, 145, 0, 0.1);
-  border: 1px solid rgba(255, 145, 0, 0.3);
-  border-radius: var(--radius-sm);
-  line-height: 1.4;
-}
-.category-milestone-beaten-badge a {
-  color: var(--orange);
-  font-weight: 600;
-  text-decoration: none;
-}
-.category-milestone-beaten-badge a:hover {
-  text-decoration: underline;
-}
 
 /* Category card progress indicator */
 .milestone-card.category-toggle .category-progress {
@@ -1911,7 +1844,7 @@ optgroup {
   animation: shimmer 1.5s infinite;
   border-radius: var(--radius-sm);
 }
-@keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+@keyframes skeleton-shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
 
 /* Skeleton cards for loading states */
 .skeleton-card {
@@ -1919,7 +1852,7 @@ optgroup {
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 16px;
-  animation: shimmer 1.5s infinite;
+  animation: skeleton-shimmer 1.5s infinite;
 }
 .skeleton-card .skeleton-line {
   height: 1rem;
@@ -2316,9 +2249,6 @@ optgroup {
 
 /* neohiro-network: top-bar contract */
 /* The header is not sticky: it scrolls away and .header-mini takes over. */
-.site-header {
-  transition: transform 0.32s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.32s ease;
-}
 .site-header--hidden {
   transform: translateY(-100%);
   opacity: 0;

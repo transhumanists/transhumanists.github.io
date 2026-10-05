@@ -39,16 +39,17 @@
     runDiagnostics();
   }
 
-  /* ── Dock → conversation hand-off ──────────────────────────────────────
-     AI and Contact are one surface. The dock's Assistant tab does not open a
-     dock panel: it slides the dock down and lets the screenwide sheet come up in
-     its place. Selecting Assistant twice, or pressing Esc, puts the dock back. */
+  /* ── Bottom-bar AI button → conversation hand-off ────────────────────────
+     The curved bottom bar has a central AI button that opens the screenwide
+     conversation sheet. The old dock rail is hidden; its panels (login/user)
+     remain for top-bar Login button integration. */
   function wireDockToConversation() {
-    var tab = document.getElementById('ai-dock__tab--ai');
-    if (tab && !tab.dataset.convWired) {
-      tab.dataset.convWired = '1';
-      tab.addEventListener('click', function () {
-        // Collapse any dock panel first so the rail is its resting state.
+    // New bottom-bar AI button
+    var aiBtn = document.getElementById('bottom-bar__ai');
+    if (aiBtn && !aiBtn.dataset.convWired) {
+      aiBtn.dataset.convWired = '1';
+      aiBtn.addEventListener('click', function () {
+        // Collapse any auth panel first
         if (window.AuthBar && typeof window.AuthBar.selectTab === 'function') {
           window.AuthBar.selectTab(null);
         }
@@ -56,8 +57,19 @@
         else showConversationModal();
       });
     }
-    // The rail and the ask bar occupy the same bottom slot; let CSS know so it
-    // can stack them instead of overlapping.
+    // Legacy dock tab (for sites that haven't migrated yet)
+    var tab = document.getElementById('ai-dock__tab--ai');
+    if (tab && !tab.dataset.convWired) {
+      tab.dataset.convWired = '1';
+      tab.addEventListener('click', function () {
+        if (window.AuthBar && typeof window.AuthBar.selectTab === 'function') {
+          window.AuthBar.selectTab(null);
+        }
+        if (isConvOpen()) hideConversationModal();
+        else showConversationModal();
+      });
+    }
+    // Flag for CSS stacking (legacy)
     if (document.getElementById('ai-dock')) {
       document.body.classList.add('ai-dock-present');
     }
@@ -522,8 +534,13 @@
     void m.offsetWidth;
     m.classList.add('ai-conv--open');
     m.setAttribute('aria-modal', 'true');
-    // Body-level flag: slides the ask bar down and keeps the dock out of the way.
+    // Body-level flag: slides the bottom bar down and keeps the dock out of the way.
     document.body.classList.add('ai-conv-active');
+    // Update AI button states
+    var aiBtn = document.getElementById('bottom-bar__ai');
+    if (aiBtn) aiBtn.setAttribute('aria-expanded', 'true');
+    var legacyTab = document.getElementById('ai-dock__tab--ai');
+    if (legacyTab) legacyTab.setAttribute('aria-expanded', 'true');
     // Move the reader's focus to the close button rather than the first focusable
     // (which is the heart status pill) so Esc-and-dismiss is discoverable.
     var close = m.querySelector('.ai-conv__close');
@@ -548,6 +565,11 @@
     }, 240);
     m.setAttribute('aria-modal', 'false');
     document.body.classList.remove('ai-conv-active');
+    // Update AI button states
+    var aiBtn = document.getElementById('bottom-bar__ai');
+    if (aiBtn) aiBtn.setAttribute('aria-expanded', 'false');
+    var legacyTab = document.getElementById('ai-dock__tab--ai');
+    if (legacyTab) legacyTab.setAttribute('aria-expanded', 'false');
     // Restore focus to the element that was active before the modal opened.
     // Guard: the original element may have been removed from the DOM
     // (e.g. a card that got re-rendered). Only restore if still focusable.

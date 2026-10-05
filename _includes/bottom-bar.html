@@ -1,0 +1,93 @@
+{%- comment -%}
+bottom-bar.html — persistent curved section menu with central AI button.
+Shared across neohiro / frenzypenguin-media / openstageisland / transhumanists.
+
+Design:
+- Curved bottom bar (border-radius: 2rem 2rem 0 0) with subtle backdrop blur
+- Central circular AI button protruding upward (transform: translateY(-50%))
+- Section chips horizontally scrollable on either side of AI button
+- Right side: persistent "Register free" CTA (openstageisland) or site-specific action
+- Left side: section navigation chips
+- AI button opens full-width conversation sheet above the bar
+{%- endcomment -%}
+
+{%- assign guide_ids = "" -%}
+{%- assign guide_labels = "" -%}
+{%- if site.github_username == 'openstageisland' -%}
+  {%- assign guide_ids = "welcome,music,open-stage,reservations,streaming,hosting,membership,about,features,location,live,faq,estate,links,network" | split: "," -%}
+  {%- assign guide_labels = "Welcome,Music,Open Stage,Reservations,Streaming,Hosting,Membership,About,Features,Visit,Live,FAQ,Estate,Links,Network" | split: "," -%}
+{%- elsif site.github_username == 'neohiro' -%}
+  {%- assign guide_ids = "home,repositories,tools,guides,blog,network" | split: "," -%}
+  {%- assign guide_labels = "Home,Repositories,Tools,Guides,Blog,Network" | split: "," -%}
+{%- elsif site.github_username == 'frenzypenguin-media' -%}
+  {%- assign guide_ids = "home,repositories,projects,blog,network" | split: "," -%}
+  {%- assign guide_labels = "Home,Repositories,Projects,Blog,Network" | split: "," -%}
+{%- elsif site.github_username == 'transhumanists' -%}
+  {%- assign guide_ids = "home,research,tools,blog,network" | split: "," -%}
+  {%- assign guide_labels = "Home,Research,Tools,Blog,Network" | split: "," -%}
+{%- endif -%}
+
+<nav class="bottom-bar" aria-label="Site navigation and assistant" role="navigation">
+  <div class="bottom-bar__canvas" aria-hidden="true"></div>
+
+  {%- if guide_ids.size > 0 -%}
+  <div class="bottom-bar__left" role="group" aria-label="Site sections">
+    <ul class="bottom-bar__list">
+      {%- for guide_id in guide_ids -%}
+        {%- assign guide_label = guide_labels[forloop.index0] | default: guide_id -%}
+        <li class="bottom-bar__item">
+          <a class="bottom-bar__link" href="#{{ guide_id }}" data-section-link="{{ guide_id }}">{{ guide_label }}</a>
+        </li>
+      {%- endfor -%}
+    </ul>
+  </div>
+  {%- endif -%}
+
+  <!-- Central AI Button - protrudes upward from the curved bar -->
+  <button class="bottom-bar__ai" id="bottom-bar__ai"
+          aria-label="Open assistant"
+          aria-expanded="false"
+          aria-controls="ai-conv"
+          title="Talk to the neohiro assistant — questions, bug reports, access requests">
+    <span class="bottom-bar__ai-ring" aria-hidden="true">
+      <svg class="bottom-bar__ai-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20" aria-hidden="true">
+        <path d="M12 2a10 10 0 100 20A10 10 0 0012 2zm0 2a8 8 0 110 16 8 8 0 010-16zm-1 3v4.586l-2.707 2.707-1.414-1.414L11.293 9.88 8.586 7.172A1 1 0 009.586 6.172l3 3A1 1 0 0112 10.586V7a1 1 0 012 0v3a1 1 0 01-1 1h-3z"/>
+      </svg>
+    </span>
+    <span class="bottom-bar__ai-pulse" aria-hidden="true"></span>
+  </button>
+
+  {%- if site.github_username == 'openstageisland' -%}
+  <div class="bottom-bar__right" role="group" aria-label="Primary action">
+    <a class="bottom-bar__cta" href="https://join.secondlife.com/" rel="noopener"
+       title="Create a free Second Life account — it costs nothing to make an avatar">
+      <span class="bottom-bar__cta-icon" aria-hidden="true">🎟️</span>
+      Register free
+    </a>
+  </div>
+  {%- elsif site.github_username == 'neohiro' -%}
+  <div class="bottom-bar__right" role="group" aria-label="Primary action">
+    <a class="bottom-bar__cta" href="https://github.com/neohiro" target="_blank" rel="noopener"
+       title="View neohiro on GitHub">
+      <span class="bottom-bar__cta-icon" aria-hidden="true">⭐</span>
+      GitHub
+    </a>
+  </div>
+  {%- elsif site.github_username == 'frenzypenguin-media' -%}
+  <div class="bottom-bar__right" role="group" aria-label="Primary action">
+    <a class="bottom-bar__cta" href="https://frenzypenguin.media" target="_blank" rel="noopener"
+       title="Visit FrenzyPenguin Media">
+      <span class="bottom-bar__cta-icon" aria-hidden="true">🎬</span>
+      Main Site
+    </a>
+  </div>
+  {%- elsif site.github_username == 'transhumanists' -%}
+  <div class="bottom-bar__right" role="group" aria-label="Primary action">
+    <a class="bottom-bar__cta" href="https://github.com/transhumanists" target="_blank" rel="noopener"
+       title="View Transhumanists on GitHub">
+      <span class="bottom-bar__cta-icon" aria-hidden="true">🧬</span>
+      GitHub
+    </a>
+  </div>
+  {%- endif -%}
+</nav>
