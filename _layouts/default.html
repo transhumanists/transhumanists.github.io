@@ -99,6 +99,13 @@
   {%- endcomment -%}
   {% include auth-bar.html current="transhumanists" %}
 
+  <script>
+    window.AI_CONV_CONFIG = {
+      triggers: '#bottom-bar__ai, #ai-dock__tab--ai',
+      onOpen: function () { document.body.classList.add('ai-conv-active'); },
+      onClose: function () { document.body.classList.remove('ai-conv-active'); }
+    };
+  </script>
   <script src="{{ '/assets/js/main.js' | relative_url }}"></script>
   <script src="{{ '/assets/js/return-bar.js' | relative_url }}"></script>
   <script src="{{ '/assets/js/auth-bar.js' | relative_url }}"></script>

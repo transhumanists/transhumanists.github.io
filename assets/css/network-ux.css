@@ -691,13 +691,14 @@ body.ai-dock-present .ai-bar {
 /* ── Conversation sheet ─────────────────────────────────────────────────────
    Screenwide: full bleed from the bottom edge up, rounded only at the top. It
    deliberately does NOT use a backdrop — the user must still be able to scroll
-   and read the page underneath while a conversation is open. */
+   and read the page underneath while a conversation is open.
+   z-index: 910 (above bottom-bar@900, below skip-link@10000). */
 .ai-conv {
   position: fixed;
   left: 0;
   right: 0;
   bottom: 0;
-  z-index: 89;
+  z-index: 910;
   width: 100%;
   max-width: none;
   pointer-events: none;

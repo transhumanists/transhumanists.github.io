@@ -4,10 +4,10 @@ Shared across neohiro / frenzypenguin-media / openstageisland / transhumanists.
 
 Design:
 - Curved bottom bar (border-radius: 2rem 2rem 0 0) with subtle backdrop blur
-- Central circular AI button protruding upward (transform: translateY(-50%))
+- Central circular AI button protruding upward (transform: translateY(-45%))
 - Section chips horizontally scrollable on either side of AI button
-- Right side: persistent "Register free" CTA (openstageisland) or site-specific action
-- Left side: section navigation chips
+- Right side: persistent CTA (Register free / GitHub / Main Site)
+- Left side: section navigation chips (OSI only - single page guide)
 - AI button opens full-width conversation sheet above the bar
 {%- endcomment -%}
 
@@ -16,15 +16,6 @@ Design:
 {%- if site.github_username == 'openstageisland' -%}
   {%- assign guide_ids = "welcome,music,open-stage,reservations,streaming,hosting,membership,about,features,location,live,faq,estate,links,network" | split: "," -%}
   {%- assign guide_labels = "Welcome,Music,Open Stage,Reservations,Streaming,Hosting,Membership,About,Features,Visit,Live,FAQ,Estate,Links,Network" | split: "," -%}
-{%- elsif site.github_username == 'neohiro' -%}
-  {%- assign guide_ids = "home,repositories,tools,guides,blog,network" | split: "," -%}
-  {%- assign guide_labels = "Home,Repositories,Tools,Guides,Blog,Network" | split: "," -%}
-{%- elsif site.github_username == 'frenzypenguin-media' -%}
-  {%- assign guide_ids = "home,repositories,projects,blog,network" | split: "," -%}
-  {%- assign guide_labels = "Home,Repositories,Projects,Blog,Network" | split: "," -%}
-{%- elsif site.github_username == 'transhumanists' -%}
-  {%- assign guide_ids = "home,research,tools,blog,network" | split: "," -%}
-  {%- assign guide_labels = "Home,Research,Tools,Blog,Network" | split: "," -%}
 {%- endif -%}
 
 <nav class="bottom-bar" aria-label="Site navigation and assistant" role="navigation">
@@ -44,7 +35,7 @@ Design:
   {%- endif -%}
 
   <!-- Central AI Button - protrudes upward from the curved bar -->
-  <button class="bottom-bar__ai" id="bottom-bar__ai"
+  <button type="button" class="bottom-bar__ai" id="bottom-bar__ai" data-ai-trigger
           aria-label="Open assistant"
           aria-expanded="false"
           aria-controls="ai-conv"

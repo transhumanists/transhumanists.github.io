@@ -33,43 +33,72 @@
     mountAssistantBar();
     fillAvatarSlots(document.body); // ai-dock chat avatar (site identity)
     injectNavAuth();
-    wireDockToConversation();
+    wireAITriggers();
     detectStranger();
     wireInteractions();
     runDiagnostics();
   }
 
-  /* ── Bottom-bar AI button → conversation hand-off ────────────────────────
-     The curved bottom bar has a central AI button that opens the screenwide
-     conversation sheet. The old dock rail is hidden; its panels (login/user)
-     remain for top-bar Login button integration. */
-  function wireDockToConversation() {
-    // New bottom-bar AI button
-    var aiBtn = document.getElementById('bottom-bar__ai');
-    if (aiBtn && !aiBtn.dataset.convWired) {
-      aiBtn.dataset.convWired = '1';
-      aiBtn.addEventListener('click', function () {
-        // Collapse any auth panel first
-        if (window.AuthBar && typeof window.AuthBar.selectTab === 'function') {
-          window.AuthBar.selectTab(null);
-        }
-        if (isConvOpen()) hideConversationModal();
-        else showConversationModal();
+  /* ── AI Conversation triggers — unified delegated handler ─────────────────
+     Any element with [data-ai-trigger] opens the conversation sheet.
+     Per-site config via window.AI_CONV_CONFIG (optional):
+       {
+         triggers: 'bottom-bar__ai, ai-dock__tab--ai, header-mini',  // CSS selectors
+         onOpen: () => {},  // called after sheet opens
+         onClose: () => {}, // called after sheet closes
+         closeOnEsc: true,
+         closeOnOverlayClick: true
+       }
+     Falls back to legacy IDs if config absent. */
+  function wireAITriggers() {
+    var cfg = (window.AI_CONV_CONFIG || {});
+    var selector = cfg.triggers || '#bottom-bar__ai, #ai-dock__tab--ai';
+    var onOpen = cfg.onOpen || function () {};
+    var onClose = cfg.onClose || function () {};
+
+    function openConv() {
+      if (window.AuthBar && typeof window.AuthBar.selectTab === 'function') {
+        window.AuthBar.selectTab(null);
+      }
+      if (isConvOpen()) { hideConversationModal(); return; }
+      showConversationModal();
+      onOpen();
+    }
+
+    function closeConv() {
+      hideConversationModal();
+      onClose();
+    }
+
+    // Delegated click handler
+    document.addEventListener('click', function (e) {
+      var trigger = e.target.closest(selector);
+      if (!trigger) return;
+      e.preventDefault();
+      openConv();
+    });
+
+    // Keyboard: Escape to close
+    if (cfg.closeOnEsc !== false) {
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && isConvOpen()) closeConv();
       });
     }
-    // Legacy dock tab (for sites that haven't migrated yet)
-    var tab = document.getElementById('ai-dock__tab--ai');
-    if (tab && !tab.dataset.convWired) {
-      tab.dataset.convWired = '1';
-      tab.addEventListener('click', function () {
-        if (window.AuthBar && typeof window.AuthBar.selectTab === 'function') {
-          window.AuthBar.selectTab(null);
+
+    // Overlay click to close
+    if (cfg.closeOnOverlayClick !== false) {
+      document.addEventListener('click', function (e) {
+        if (!isConvOpen()) return;
+        var modal = document.getElementById('ai-conv');
+        if (!modal) return;
+        var chrome = modal.querySelector('.ai-conv__chrome');
+        if (chrome && !chrome.contains(e.target) && !e.target.closest(selector)) {
+          closeConv();
         }
-        if (isConvOpen()) hideConversationModal();
-        else showConversationModal();
       });
     }
-    // Flag for CSS stacking (legacy)
+
+    // Legacy flag for CSS stacking
     if (document.getElementById('ai-dock')) {
       document.body.classList.add('ai-dock-present');
     }

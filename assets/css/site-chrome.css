@@ -1,4 +1,4 @@
-/* Site chrome — non-persistent top bar + persistent bottom section bar.
+/* Site chrome — non-persistent top bar + persistent curved bottom bar.
  *
  * Reuses the custom properties declared in assets/style.css :root, so both
  * light and dark themes come along automatically.
@@ -6,10 +6,9 @@
  * Layout contract with the rest of the site:
  *   - .site-header is deliberately `position: static` (NOT sticky): it scrolls
  *     away with the document. The bottom bar is the only always-on chrome.
- *   - .bottom-bar is docked directly above the auth dock (--ai-dock-h), so the
- *     two never overlap.
- *   - body reserves padding-bottom for dock + bottom bar so the footer's last
- *     row (sponsor / privacy / ToS) is never hidden underneath them.
+ *   - .bottom-bar is fixed to the viewport bottom with curved corners.
+ *   - body reserves padding-bottom for the bottom bar so the footer's last
+ *     row (sponsor / privacy / ToS) is never hidden underneath it.
  */
 
 :root {
@@ -17,7 +16,7 @@
   --ai-btn-size: 64px;
   --chrome-gap: 12px;
   /* Total always-on chrome at the bottom of the viewport. */
-  --chrome-bottom: calc(var(--ai-dock-h, 0px) + var(--bottom-bar-h));
+  --chrome-bottom: var(--bottom-bar-h);
 
   /* ---------------------------------------------------------------------
    * Shared-widget token bridge.
@@ -65,10 +64,7 @@
 
 /* Reserve room so content can scroll clear of the fixed chrome at the bottom
  * of the viewport. Every page carries the bottom bar, so every page needs its
- * height; the auth dock is now integrated into the bottom bar via the AI button.
- * Only pages that actually render the guide's bottom bar (matched with
- * :has(), already within this stylesheet's feature baseline alongside the
- * color-mix() used in style.css) need the extra space. */
+ * height. The auth dock is now integrated into the bottom bar via the AI button. */
 body {
   padding-bottom: var(--bottom-bar-h);
 }
@@ -82,7 +78,7 @@ body {
 
 /* When conversation is open, the bottom bar slides down, so add extra space */
 body.ai-conv-active .footer-ecosystem {
-  margin-bottom: calc(var(--bottom-bar-h) + 80px);
+  margin-bottom: calc(var(--bottom-bar-h) + var(--conv-extra-space, 80px));
 }
 
 /* The custom scroll animation drives scroll position per-frame; CSS smooth
