@@ -6,8 +6,18 @@
 (function() {
   'use strict';
 
+  /* `.matches`, not the MediaQueryList itself.
+     `window.matchMedia('(prefers-reduced-motion: reduce)')` returns a
+     MediaQueryList, which is ALWAYS truthy. Written as
+     `var reduceMotion = window.matchMedia(...)` this made the guard
+     `!reduceMotion` permanently false, so the whole reveal block below was dead
+     code on every browser. That is why #world-map and .milestones-grid stayed
+     at opacity 0 with nothing to restore them: network-ux.js sets the
+     reveal-ready gate, but only main.js was supposed to clear it, and it never
+     ran. A one-character class of bug -- object used as boolean -- that silently
+     disables a feature on every page and reports nothing. */
   var reduceMotion = window.matchMedia
-    && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    && window.matchMedia('(prefers-reduced-motion: reduce)').matches === true;
 
   // ---- Scroll reveal ------------------------------------------------------
   // Sections fade and lift into place as they come up. Applied to the section
@@ -31,6 +41,26 @@
       });
     }, { rootMargin: '0px 0px -8% 0px', threshold: 0.08 });
     revealTargets.forEach(function(el) { revealObserver.observe(el); });
+    /* Failsafe, and it RE-QUERIES rather than reusing revealTargets.
+       assets/css/main.css hides every element in this list behind
+       `.reveal-ready <selector> { opacity: 0 }` and only restores it via
+       `.reveal-ready .is-revealed`, so anything matching and not revealed is
+       invisible. Three ways that happened here, all silent:
+         - the observer never fires for a fixed/absolute or zero-height element;
+         - reduced motion is on, so the block above is skipped entirely while
+           network-ux.js still sets reveal-ready, leaving nothing to clear it;
+         - the element did not exist when the list was captured. On this site's
+           index dashboard.js loads BEFORE main.js and replaces #world-map, so
+           the node observed here is detached and the live one is never seen.
+       Re-querying at failsafe time catches all three. Anything already
+       revealed is a no-op; anything below the fold just appears. */
+    setTimeout(function () {
+      document.querySelectorAll(
+        '.section > .container > .section-header, ' +
+        '#world-map, .highlights-carousel, .catalog-controls, .catalog-grid, ' +
+        '.milestones-grid, .activity-chart, .metric-timeline, .network-grid, .feed-panel'
+      ).forEach(function (el) { el.classList.add('is-revealed'); });
+    }, 2500);
     // Anything already on screen at load reveals immediately: a section that
     // animates in while the reader is already looking at it is a flicker, not an
     // entrance. The observer fires for these on its first callback anyway, which

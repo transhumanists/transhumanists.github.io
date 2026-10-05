@@ -1,8 +1,8 @@
-{# legal-block.html — single source of truth for the inline legal footer
+<!-- legal-block.html — single source of truth for the inline legal footer
    shown in READMEs and site footers.
 
    Heartbeat refreshes the "last reviewed" date by writing
-   /shared/legal/last_reviewed.txt; the build pulls it in via _data/legal.yml. #}
+   /shared/legal/last_reviewed.txt; the build pulls it in via _data/legal.yml. -->
 
 {%- assign lr = site.data.legal.last_reviewed | default: '2026-01-01' -%}
 {%- assign op = site.data.legal.operator | default: 'FrenzyPenguin Media' -%}

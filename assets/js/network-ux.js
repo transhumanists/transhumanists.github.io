@@ -21,40 +21,93 @@
     init: init
   };
 
+  var _booted = false;
+
   function init() {
-    document.addEventListener('DOMContentLoaded', boot);
-    if (document.readyState !== 'loading') boot();
+    if (_booted) return;
+    _booted = true;
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', boot, { once: true });
+    } else {
+      boot();
+    }
   }
 
+  /* Each step is isolated on purpose. boot() used to be a bare sequence, so a
+     throw in the first step (mountStarfield) silently skipped every step after
+     it -- including mountConversationModal and wireAITriggers, which is how
+     this whole module ended up shipped but dead on all four sites: init() was
+     never called at all, and nothing reported it. Cosmetic decoration must not
+     be able to take the assistant offline, so a failing step is logged and the
+     rest still run. */
   function boot() {
-    mountStarfield();
-    mountPreviousButton();
-    mountConversationModal();
-    mountAssistantBar();
-    fillAvatarSlots(document.body); // ai-dock chat avatar (site identity)
-    injectNavAuth();
-    wireAITriggers();
-    detectStranger();
-    wireInteractions();
-    runDiagnostics();
+    var steps = [
+      ['mountStarfield', mountStarfield],
+      ['mountPreviousButton', mountPreviousButton],
+      ['mountConversationModal', mountConversationModal],
+      ['mountAssistantBar', mountAssistantBar],
+      ['fillAvatarSlots', function () { fillAvatarSlots(document.body); }],
+      ['injectNavAuth', injectNavAuth],
+      ['wireAITriggers', wireAITriggers],
+      ['detectStranger', detectStranger],
+      ['wireInteractions', wireInteractions],
+      ['runDiagnostics', runDiagnostics]
+    ];
+    for (var i = 0; i < steps.length; i++) {
+      try {
+        steps[i][1]();
+      } catch (err) {
+        if (window.console && console.warn) {
+          console.warn('[neohiro-network] boot step "' + steps[i][0] +
+            '" failed; continuing with the remaining steps.', err);
+        }
+      }
+    }
   }
 
   /* ── AI Conversation triggers — unified delegated handler ─────────────────
-     Any element with [data-ai-trigger] opens the conversation sheet.
-     Per-site config via window.AI_CONV_CONFIG (optional):
+     Any element matching AI_TRIGGER_SELECTOR opens the conversation sheet, so
+     adding a trigger is a markup change (`data-ai-trigger`) and not a second
+     listener. Per-site overrides via window.AI_CONV_CONFIG (optional):
        {
-         triggers: 'bottom-bar__ai, ai-dock__tab--ai, header-mini',  // CSS selectors
-         onOpen: () => {},  // called after sheet opens
-         onClose: () => {}, // called after sheet closes
+         triggers:  '[data-ai-trigger], #ai-dock__tab--ai', // CSS selector list
+         onOpen:    function () {},  // after the sheet opens
+         onClose:   function () {},  // after the sheet closes
          closeOnEsc: true,
          closeOnOverlayClick: true
        }
-     Falls back to legacy IDs if config absent. */
+     Falls back to AI_TRIGGER_SELECTOR if the config is absent or unusable. */
+  var AI_TRIGGER_SELECTOR = '[data-ai-trigger], #ai-dock__tab--ai';
+
   function wireAITriggers() {
     var cfg = (window.AI_CONV_CONFIG || {});
-    var selector = cfg.triggers || '#bottom-bar__ai, #ai-dock__tab--ai';
-    var onOpen = cfg.onOpen || function () {};
-    var onClose = cfg.onClose || function () {};
+    var onOpen = typeof cfg.onOpen === 'function' ? cfg.onOpen : function () {};
+    var onClose = typeof cfg.onClose === 'function' ? cfg.onClose : function () {};
+
+    /* closest() accepts a selector LIST (verified in Chrome: '#a, #c' matches
+       through the chain) but THROWS SyntaxError on a malformed one. That throw
+       matters: this runs during module init, so a typo in a per-site
+       `triggers` value would abort every later init step, not just the
+       conversation. Validate once, loudly enough to be debuggable, then fall
+       back to the default rather than taking the page down. */
+    var selector = AI_TRIGGER_SELECTOR;
+    if (cfg.triggers) {
+      try {
+        document.querySelector(cfg.triggers);
+        selector = cfg.triggers;
+      } catch (e) {
+        if (window.console && console.warn) {
+          console.warn('[ai-conv] AI_CONV_CONFIG.triggers is not a valid CSS ' +
+            'selector; falling back to the default. Offending value:', cfg.triggers, e);
+        }
+      }
+    }
+
+    /* e.target is an Element for the click events this handles, but a text
+       node has no closest(). One guard rather than a try/catch per listener. */
+    function hit(el) {
+      return !!(el && typeof el.closest === 'function' && el.closest(selector));
+    }
 
     function openConv() {
       if (window.AuthBar && typeof window.AuthBar.selectTab === 'function') {
@@ -70,31 +123,30 @@
       onClose();
     }
 
-    // Delegated click handler
+    /* Single delegated click handler, bound on the document, so it also sees
+       triggers added to the DOM after load (the auth slot is populated by a
+       fetch and rewrites the nav). */
     document.addEventListener('click', function (e) {
-      var trigger = e.target.closest(selector);
-      if (!trigger) return;
-      e.preventDefault();
-      openConv();
+      if (hit(e.target)) {
+        // Only swallow the default for real controls. A trigger that happens
+        // to be an <a> without its own handler should still be able to
+        // navigate; this handler owns the button case.
+        if (e.target.closest('button, a')) e.preventDefault();
+        openConv();
+        return;
+      }
+      if (cfg.closeOnOverlayClick === false) return;
+      if (!isConvOpen()) return;
+      var modal = document.getElementById('ai-conv');
+      if (!modal) return;
+      var chrome = modal.querySelector('.ai-conv__chrome');
+      // Click landed on the sheet's own gutter, not its content: dismiss.
+      if (chrome && !chrome.contains(e.target)) closeConv();
     });
 
-    // Keyboard: Escape to close
     if (cfg.closeOnEsc !== false) {
       document.addEventListener('keydown', function (e) {
         if (e.key === 'Escape' && isConvOpen()) closeConv();
-      });
-    }
-
-    // Overlay click to close
-    if (cfg.closeOnOverlayClick !== false) {
-      document.addEventListener('click', function (e) {
-        if (!isConvOpen()) return;
-        var modal = document.getElementById('ai-conv');
-        if (!modal) return;
-        var chrome = modal.querySelector('.ai-conv__chrome');
-        if (chrome && !chrome.contains(e.target) && !e.target.closest(selector)) {
-          closeConv();
-        }
       });
     }
 
@@ -142,21 +194,39 @@
       });
     });
 
-    // Reveal-on-scroll for .reveal (auto-mark major sections)
+    /* Reveal-on-scroll.
+       The class this adds MUST be `is-revealed`, not `reveal-in`.
+       assets/css/main.css keys the whole effect off
+       `.reveal-ready <selector> { opacity: 0 }` and `.reveal-ready .is-revealed
+       { opacity: 1 }`. This block used to add `reveal-in`, a name no
+       stylesheet matches, so every element it marked was set to opacity 0 by the
+       gate and nothing ever took it back to 1. On this site that silently
+       emptied the "All Milestones Cataloged" grid: twelve .milestone-card nodes
+       present in the DOM, all at opacity 0.
+
+       Two safeguards, because "the animation must never be load-bearing for
+       content being visible" is the rule main.css already states:
+         - prefers-reduced-motion reveals everything immediately, no observer.
+         - a failsafe timer reveals anything still hidden after 2.5s, so an
+           observer that never fires (no IO, a zero-height ancestor, a headless
+           run) degrades to "everything visible" instead of "blank page". */
     const auto = document.querySelectorAll('.section, .tool-card, .guide-card, .community-card, .milestone-card, .feature, .glide-card, .fpm-spotlight, .quote-card, .feature-card, .row-card, .step-card, .cta-card, .panel, .lesson-card, .ep-card, .ep-stream-card, .ep-tile, .post-card, .article-card, .commit-card, .metric-card');
-    auto.forEach(el => el.classList.add('reveal'));
-    if ('IntersectionObserver' in window) {
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const revealAll = () => auto.forEach(el => el.classList.add('is-revealed'));
+    if (reduce || !('IntersectionObserver' in window)) {
+      revealAll();
+    } else {
       const io = new IntersectionObserver(entries => {
         entries.forEach(entry => {
           if (entry.isIntersecting) {
-            entry.target.classList.add('reveal-in');
+            entry.target.classList.add('is-revealed');
             io.unobserve(entry.target);
           }
         });
       }, { threshold: 0.08, rootMargin: '0px 0px -8% 0px' });
       auto.forEach(el => io.observe(el));
-    } else {
-      auto.forEach(el => el.classList.add('reveal-in'));
+      // Failsafe: never leave content stranded at opacity 0.
+      setTimeout(revealAll, 2500);
     }
 
     // Animated orbs: randomize positions slightly
@@ -415,9 +485,9 @@
           <a class="ai-conv__privacy" href="https://neohiro.github.io/privacy/" rel="noopener" target="_blank">Privacy</a>
         </div>
 
-        {# Voicemail triage. Two questions decide where a message ends up, so
+        <!-- Voicemail triage. Two questions decide where a message ends up, so
            they are asked before the message itself. Hidden until requested, and
-           it never blocks reading the conversation above it. #}
+           it never blocks reading the conversation above it. -->
         <form class="ai-conv__triage hidden" id="ai-conv__triage" novalidate>
           <p class="ai-conv__triage-lede">
             This goes to a person, not the assistant. Two quick answers so it lands
@@ -1651,5 +1721,19 @@ Got it — I can help you with that. To give you the most useful answer, tell me
 
   // Expose
   window.NEohiro = NEohiro;
+
+  // Self-start.
+  //
+  // This line is the one the module shipped without: init() was defined and
+  // exposed on window.NEohiro, and nothing -- not the layout, not another
+  // script -- ever called it. Every feature below therefore never mounted on
+  // any of the four sites: no conversation sheet, no assistant/voicemail bar,
+  // no nav auth slot, no ripples. It failed silently because the absence of an
+  // element is not an error.
+  //
+  // Scripts are loaded with `defer`, so readyState is normally 'interactive' by
+  // the time this runs; init() also handles the 'loading' case by waiting for
+  // DOMContentLoaded, and is idempotent, so a second call is harmless.
+  init();
 })();
 

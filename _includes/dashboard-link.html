@@ -1,7 +1,7 @@
-{# dashboard-link.html — single source of truth for the "live dashboard" link.
+<!-- dashboard-link.html — single source of truth for the "live dashboard" link.
 
    Heartbeat updates _data/dashboard.yml with the current dashboard URL
-   and the latest 3-tier SVG path per site. #}
+   and the latest 3-tier SVG path per site. -->
 
 {%- assign d = site.data.dashboard -%}
 {%- assign url = d.url | default: 'https://neohiro.github.io/dashboard/' -%}

@@ -5,6 +5,12 @@ baseurl: ""
 github_username: transhumanists
 github_repo: transhumanists.github.io
 
+# Chrome identity for the shared chrome includes (_includes/bottom-bar.html).
+# See the note in frenzypenguin-media.github.io/_config.yml: `github_username`
+# is shared with FPM and cannot identify a site. One of:
+# fpm | neohiro | osi | transhumanists
+shell: transhumanists
+
 theme: null
 
 plugins:

@@ -1,12 +1,12 @@
-{# org-profile.md — single source of truth for the org description block.
+<!-- org-profile.md — single source of truth for the org description block.
 
    Used in:
-     - README.md (jekyll include with {% capture %})
+     - README.md (jekyll include with a capture tag)
      - github.io landing pages
      - heartbeat-generated public summaries
 
    Variables expected (from caller):
-     org: 'neohiro' | 'fpm' | 'osi' | 'hplus' #}
+     org: 'neohiro' | 'fpm' | 'osi' | 'hplus' -->
 
 {%- case include.org -%}
 {%- when 'neohiro' -%}

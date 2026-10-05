@@ -19,18 +19,35 @@
 
 /* ── Bottom dock shell ───────────────────────────────────────────── */
 .ai-dock {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  z-index: var(--ai-dock-z);
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  font-family: var(--font-ui, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif);
-  pointer-events: none;
-  transition: transform 0.34s cubic-bezier(0.4, 0, 0.2, 1);
-}
+    /* This dock is retired. Its rail moved to bottom-bar.html and the
+       conversation is the screenwide `ai-conv` sheet that network-ux.js mounts.
+       The markup still carries the id because auth-bar.js wires the login panel,
+       so it must stay in the DOM but must never render.
+
+       `display: flex` here silently defeated the `hidden` attribute in the
+       markup: an author-level `display` beats the UA stylesheet's
+       `[hidden] { display: none }`, so the dock painted at the bottom of every
+       page -- an empty panel strip with its inner panels all individually
+       hidden, and `.ai-dock__panels { pointer-events: auto }` swallowing clicks
+       over the new bar. Explicitly re-honouring the attribute fixes both. */
+    display: none;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: var(--ai-dock-z);
+    flex-direction: column;
+    align-items: stretch;
+    font-family: var(--font-ui, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif);
+    pointer-events: none;
+    transition: transform 0.34s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  /* Belt and braces: any script that flips `hidden` off cannot resurrect the
+     retired dock. `.ai-dock[hidden]` alone would still lose to a later
+     `.ai-dock { display: flex }` from another stylesheet. */
+  .ai-dock[hidden] {
+    display: none !important;
+  }
 /* A conversation is open: get out of the way so the screenwide sheet can take
    the full bottom edge. The page behind stays scrollable and interactive. */
 body.ai-conv-active .ai-dock {
@@ -39,13 +56,15 @@ body.ai-conv-active .ai-dock {
 }
 
 .ai-dock__rail,
-.ai-dock__panels {
-  pointer-events: auto;
-}
+  .ai-dock__panels {
+    /* Retired dock: never capture clicks even if the element is unhidden by a
+       script, so nothing can intercept pointer events meant for the real bar. */
+    pointer-events: none;
+  }
 
 /* ── Persistent rail (the sway bar itself) ──────────────────────── */
 .ai-dock__rail {
-  display: flex;
+  
   align-items: center;
   justify-content: center;
   gap: 2px;

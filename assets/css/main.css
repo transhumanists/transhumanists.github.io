@@ -1775,11 +1775,18 @@ optgroup {
   transition: opacity 0.5s ease, transform 0.55s cubic-bezier(0.22, 0.8, 0.3, 1);
   will-change: opacity, transform;
 }
-.reveal-ready .is-revealed {
-  opacity: 1;
-  transform: translateY(0);
-  will-change: auto;
-}
+.reveal-ready .is-revealed,
+  /* `#world-map` needs repeating here. The hidden rule above uses the ID, so it
+     scores 0,1,1,0 while the class-only `.reveal-ready .is-revealed` scores
+     0,2,0 -- and the ID tiebreak is compared FIRST, so the hidden rule wins and
+     the map stays at opacity 0 forever, is-revealed class or not. Every other
+     selector in that list is a class and was unaffected, which is why only the
+     map went missing. Matching the ID raises this to 0,2,1,0 and it wins. */
+  .reveal-ready #world-map.is-revealed {
+    opacity: 1;
+    transform: translateY(0);
+    will-change: auto;
+  }
 /* The map is a canvas that redraws continuously; transitioning its transform
    while the pointer is inside it makes a drag feel like it is fighting the
    transition. */

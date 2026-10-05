@@ -20,3 +20,17 @@ playwright-report/
 test-results/
 .ruff_cache/
 node_modules/
+
+# Jekyll build output. The other three sites in the network already ignore this;
+# without it a local `jekyll build` shows the whole generated tree as untracked
+# and it is one `git add -A` away from being committed.
+_site/
+.jekyll-cache/
+.jekyll-metadata
+
+
+# Generated locally by `jekyll build` / `bundle`. Not committed:
+# GitHub Pages resolves its own pinned gem set and only reads the Gemfile to
+# decide whether to run Bundler, so a committed lock file buys nothing and can
+# fail the Pages build with "Your Gemfile.lock is not compatible".
+Gemfile.lock
