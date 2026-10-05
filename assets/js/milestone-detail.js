@@ -160,9 +160,11 @@
     if (typeof raw !== 'string') return '';
     // Strip C0/C1 controls except newline and tab: a comment is prose, and control
     // characters in one are always a copy-paste artefact or an attempt at layout
-    // games. Runs of blank lines collapse to a single break.
+    // games. Also strip Unicode line separators (U+2028, U+2029) which are valid
+    // in JavaScript strings but render inconsistently in HTML. Runs of blank
+    // lines collapse to a single break.
     return raw
-      .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F-\u009F]/g, '')
+      .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F-\u009F\u2028\u2029]/g, '')
       .replace(/\r\n?/g, '\n')
       .replace(/\n{3,}/g, '\n\n')
       .trim()
@@ -514,7 +516,9 @@ function relativeTime(ts, nowMs) {
     // The one node this module creates rather than ships: the "N reactions from
     // readers" line only has something to say once a card is open.
     view.reactionSummary = makeEl(doc, 'p', 'ms-detail__reaction-summary');
-    view.reactionBar.parentNode.insertBefore(view.reactionSummary, view.reactionBar.nextSibling);
+    if (view.reactionBar.parentNode) {
+      view.reactionBar.parentNode.insertBefore(view.reactionSummary, view.reactionBar.nextSibling);
+    }
 
     return view;
   }
@@ -816,6 +820,7 @@ function relativeTime(ts, nowMs) {
     let remoteState = 'unknown'; // 'unknown' | 'live' | 'offline'
     let lastPostAt = 0;
     let closeTimer = null;
+    let closeGeneration = 0;
     // Whether the composer is currently showing a "Posted." confirmation. Tracked
     // separately from the text so a late write can tell a confirmation apart from
     // the resting policy line without string-matching either of them.
@@ -856,6 +861,10 @@ function relativeTime(ts, nowMs) {
         const milestone = byId.get(card.dataset.milestoneId) || card.__milestone;
         if (milestone) paintCardStrip(doc, card, milestone, store);
       }
+    }
+
+    function clearRegistry() {
+      byId.clear();
     }
 
     // ---- remote ----------------------------------------------------------
@@ -915,7 +924,9 @@ function relativeTime(ts, nowMs) {
           return null;
         }
         remoteState = 'live';
-        return await res.json().catch(() => null);
+        const result = await res.json().catch(() => null);
+        clearTimeout(timer);
+        return result;
       } catch (_) {
         remoteState = 'offline';
         return null;
@@ -1048,6 +1059,7 @@ function relativeTime(ts, nowMs) {
       view.panel.style.transition = '';
 
       clearTimeout(closeTimer);
+      closeGeneration++;
       view.root.classList.remove('is-closing');
       view.root.classList.add('is-open');
       view.root.setAttribute('aria-hidden', 'false');
@@ -1107,7 +1119,9 @@ function relativeTime(ts, nowMs) {
       }
       view.panel.style.opacity = '0';
 
+      const generation = ++closeGeneration;
       const onDone = e => {
+        if (generation !== closeGeneration) return;
         if (e.target !== view.panel || e.propertyName !== 'transform') return;
         view.panel.removeEventListener('transitionend', onDone);
         finishClose();
@@ -1117,7 +1131,9 @@ function relativeTime(ts, nowMs) {
       // Backstop, not the mechanism: transitionend never fires if the panel is
       // display:none'd mid-flight, and a dialog that cannot be dismissed is the
       // one failure this code must not have.
-      closeTimer = setTimeout(finishClose, 480);
+      closeTimer = setTimeout(() => {
+        if (generation === closeGeneration) finishClose();
+      }, 480);
     }
 
     // ---- reactions -------------------------------------------------------
@@ -1153,6 +1169,7 @@ function relativeTime(ts, nowMs) {
       if (event) event.preventDefault();
       if (!current) return;
 
+      identity = currentIdentity(storage, now());
       const text = sanitizeComment(view.comment ? view.comment.value : '');
       if (!text) {
         note('Write something first.', 'warn');
@@ -1238,8 +1255,9 @@ function relativeTime(ts, nowMs) {
       // Cards are re-created on every filter change and on "Load more", so the
       // observer keeps strips in step with the grid without the catalog renderer
       // having to know this module exists at render time.
+      let observer = null;
       if (typeof MutationObserver === 'function') {
-        const observer = new MutationObserver(mutations => {
+        observer = new MutationObserver(mutations => {
           for (const mutation of mutations) {
             for (const node of mutation.addedNodes) {
               if (!node || node.nodeType !== 1) continue;
@@ -1276,7 +1294,10 @@ function relativeTime(ts, nowMs) {
       register,
       isOpen: () => view.root.classList.contains('is-open'),
       view,
-      store
+      store,
+      destroy: () => {
+        if (observer) observer.disconnect();
+      }
     };
   }
 

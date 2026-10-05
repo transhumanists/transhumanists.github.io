@@ -217,9 +217,7 @@ body.ai-conv-active .ai-dock {
 }
 
 .ai-dock__panel[hidden] {
-  display: block !important;
-  visibility: hidden;
-  pointer-events: none;
+  display: none !important;
 }
 
 /* ── Panel content padding ────────────────────────────────────── */

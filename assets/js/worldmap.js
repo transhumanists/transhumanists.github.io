@@ -493,7 +493,7 @@ function createTooltipCard() {
 
   function desaturateHex(hexColor, amount) {
     if (typeof hexColor !== 'string' || !/^#[0-9a-fA-F]{6}$/.test(hexColor)) {
-      return hexColor; // Return as-is for invalid input (fail-open for rendering)
+      return '#808080'; // Safe fallback for invalid input
     }
     const r = parseInt(hexColor.slice(1, 3), 16);
     const g = parseInt(hexColor.slice(3, 5), 16);
@@ -850,10 +850,11 @@ function createTooltipCard() {
     'ijcai': { lat: 37.7749, lon: -122.4194 },
   };
 
+  const escapeRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   const INSTITUTION_PATTERNS = Object.entries(INSTITUTION_COORDS).map(([key, coords]) => ({
     key,
     coords,
-    pattern: new RegExp(`(^|[^a-z0-9])${key.toLowerCase()}([^a-z0-9]|$)`)
+    pattern: new RegExp(`(^|[^a-z0-9])${escapeRe(key.toLowerCase())}([^a-z0-9]|$)`)
   }));
 
   function geocodeInstitution(source, title, category) {
@@ -928,75 +929,75 @@ const STORAGE_KEY_HIDDEN_CATEGORIES = 'worldmap_hidden_categories';
   } catch (_) {}
 
   const state = {
-     width: 0,
-height: 0,
-      dpr: window.devicePixelRatio || 1,
-      transform: { scale: 1, tx: 0, ty: 0 },
-      isDragging: false,
-      hoveredEvent: null,
-      hoveredType: null, // 'zone', 'deployment', 'event', 'crisis', 'alliance', 'human_rights'
-      selectedEvent: null,
-      tooltipHover: false,
-      // The landmark a hover-anchored popup belongs to, and whether the popup has
-      // been "taken over" by the pointer (i.e. the pointer travelled onto the
-      // popup itself rather than away from the map).
-      //
-      // This is what makes a popup's links clickable without pinning it first:
-      // pointer leaves the landmark -> travels onto the popup -> the popup is
-      // still anchored to that landmark, so it must not be dismissed for being
-      // "no longer hovered". Released again on the way out, so moving on to the
-      // next landmark still hands over cleanly.
-      hoverAnchor: null,
-      hoverAnchorType: null,
-      // Last pointer position in canvas space. A popup that changes subject while
-      // the pointer is stationary still has to be placed, and the only place that
-      // knows where the pointer is is the last mousemove.
-      lastPointerX: 0,
-      lastPointerY: 0,
-      stackIndex: 0,
-      pressX: null,
-      pressY: null,
-      events: [],
-      showTerminator: true,
-      // Test/demo override for the sun position (set via the __WORLDMAP_TEST__
-      // hook so day/night rendering is deterministic in the test suite).
-      sunPositionOverride: null,
-      // Non-null when the milestone feed could not be loaded in production. Drives
-      // the on-map notice so an empty map is explained rather than mysterious.
-      dataLoadError: null,
-      hiddenCategories: new Set(),
-  selectedHumanRight: null,
-  selectedLayer: null,
-  selectedLayerType: null,
-  _box: null, _boxW: -1, _boxH: -1,
-      foldedCategories: false,  // whether the entire categories section is folded
-      zones: [],
-      fleets: [],
-      allianceDots: [],
-      crises: [],
-      humanRights: [],
-      // Filter states
-      filterRecent: filterRecentDefault,  // breakthroughs this week only
-      filterMilitary: filterMilitaryDefault, // conflict zones & deployments
-      filterCrisis: filterCrisisDefault,   // crisis zones
-      // Layer visibility (persisted, default OFF)
-      showZones: showZonesDefault,
-      showFleets: showFleetsDefault,
-      showCrises: showCrisesDefault,
-      showHumanRights: showHumanRightsDefault,
-      showAllianceDots: showAllianceDotsDefault,
-      // Cached terminator data (geo-space: sun angle barely moves, but the
-      // screen projection must be recomputed for every draw since pan/zoom
-      // changes the transform).
-      terminatorCache: {
-        sunLon: null,
-        sunLat: null,
-        sunsetGeo: null,
-        sunriseGeo: null,
-        nightBand: null,
-        computedAt: 0
-      }
-    };
+    width: 0,
+    height: 0,
+    dpr: window.devicePixelRatio || 1,
+    transform: { scale: 1, tx: 0, ty: 0 },
+    isDragging: false,
+    hoveredEvent: null,
+    hoveredType: null, // 'zone', 'deployment', 'event', 'crisis', 'alliance', 'human_rights'
+    selectedEvent: null,
+    tooltipHover: false,
+    // The landmark a hover-anchored popup belongs to, and whether the popup has
+    // been "taken over" by the pointer (i.e. the pointer travelled onto the
+    // popup itself rather than away from the map).
+    //
+    // This is what makes a popup's links clickable without pinning it first:
+    // pointer leaves the landmark -> travels onto the popup -> the popup is
+    // still anchored to that landmark, so it must not be dismissed for being
+    // "no longer hovered". Released again on the way out, so moving on to the
+    // next landmark still hands over cleanly.
+    hoverAnchor: null,
+    hoverAnchorType: null,
+    // Last pointer position in canvas space. A popup that changes subject while
+    // the pointer is stationary still has to be placed, and the only place that
+    // knows where the pointer is is the last mousemove.
+    lastPointerX: 0,
+    lastPointerY: 0,
+    stackIndex: 0,
+    pressX: null,
+    pressY: null,
+    events: [],
+    showTerminator: true,
+    // Test/demo override for the sun position (set via the __WORLDMAP_TEST__
+    // hook so day/night rendering is deterministic in the test suite).
+    sunPositionOverride: null,
+    // Non-null when the milestone feed could not be loaded in production. Drives
+    // the on-map notice so an empty map is explained rather than mysterious.
+    dataLoadError: null,
+    hiddenCategories: new Set(),
+    selectedHumanRight: null,
+    selectedLayer: null,
+    selectedLayerType: null,
+    _box: null, _boxW: -1, _boxH: -1,
+    foldedCategories: false, // whether the entire categories section is folded
+    zones: [],
+    fleets: [],
+    allianceDots: [],
+    crises: [],
+    humanRights: [],
+    // Filter states
+    filterRecent: filterRecentDefault, // breakthroughs this week only
+    filterMilitary: filterMilitaryDefault, // conflict zones & deployments
+    filterCrisis: filterCrisisDefault, // crisis zones
+    // Layer visibility (persisted, default OFF)
+    showZones: showZonesDefault,
+    showFleets: showFleetsDefault,
+    showCrises: showCrisesDefault,
+    showHumanRights: showHumanRightsDefault,
+    showAllianceDots: showAllianceDotsDefault,
+    // Cached terminator data (geo-space: sun angle barely moves, but the
+    // screen projection must be recomputed for every draw since pan/zoom
+    // changes the transform).
+    terminatorCache: {
+      sunLon: null,
+      sunLat: null,
+      sunsetGeo: null,
+      sunriseGeo: null,
+      nightBand: null,
+      computedAt: 0
+    }
+  };
 
   const CATEGORY_COLORS = {
     'Biotechnology & Biohacking': '#00e676',
@@ -1359,7 +1360,6 @@ function mapScreenRect() {
   }
 
   function normalizeLon(lon) {
-    // Normalize longitude to [-180, 180) using modulo (faster than while loops)
     return ((lon + 180) % 360 + 360) % 360 - 180;
   }
 

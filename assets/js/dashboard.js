@@ -2,6 +2,9 @@
 (function() {
   'use strict';
 
+  if (window.__DASHBOARD_INIT__) return;
+  window.__DASHBOARD_INIT__ = true;
+
   const CATEGORY_CONFIG = {
     biotechnology: { name: 'Biotechnology & Biohacking', icon: '🧬', color: '#00e676', toneColor: '#00a651', tone: 'Biohacking' },
     computing_agi: { name: 'Computing & AGI', icon: '🧠', color: '#448aff' },
@@ -335,17 +338,17 @@
   let milestonesCache = null;
   let milestonesCachePromise = null;
   let historyCachePromise = null;
-  let fetchAbortControllers = [];
+  const fetchAbortControllers = new Set();
 
   function abortAllFetches() {
     fetchAbortControllers.forEach(ac => ac.abort());
-    fetchAbortControllers = [];
+    fetchAbortControllers.clear();
   }
 
   async function fetchJSON(url, retries = 2) {
     for (let attempt = 0; attempt <= retries; attempt++) {
       const ac = new AbortController();
-      fetchAbortControllers.push(ac);
+      fetchAbortControllers.add(ac);
       try {
         const r = await fetch(url, { cache: 'no-store', signal: ac.signal });
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
@@ -358,8 +361,7 @@
         }
         await new Promise(r => setTimeout(r, 500 * (attempt + 1)));
       } finally {
-        const idx = fetchAbortControllers.indexOf(ac);
-        if (idx >= 0) fetchAbortControllers.splice(idx, 1);
+        fetchAbortControllers.delete(ac);
       }
     }
     return null;
@@ -819,7 +821,10 @@ function nextChartBucket(key, size) {
         }
       });
       const sortedYears = Array.from(years).sort((a, b) => b - a);
-      yearFilter.innerHTML = '<option value="all">All years</option>';
+      yearFilter.replaceChildren();
+      const allOpt = createEl('option', '', 'All years');
+      allOpt.value = 'all';
+      yearFilter.appendChild(allOpt);
       sortedYears.forEach(y => {
         const opt = createEl('option', '', y);
         opt.value = y;
@@ -840,7 +845,12 @@ function nextChartBucket(key, size) {
       if (sparkEl) sparkEl.hidden = true;
       if (staleEl) staleEl.hidden = true;
       if (!key) {
-        if (yearFilter) yearFilter.innerHTML = '<option value="all">All years</option>';
+        if (yearFilter) {
+          yearFilter.replaceChildren();
+          const allOpt = createEl('option', '', 'All years');
+          allOpt.value = 'all';
+          yearFilter.appendChild(allOpt);
+        }
         return;
       }
 
@@ -1065,7 +1075,7 @@ function nextChartBucket(key, size) {
         (catData.milestones || []).forEach(m => {
           const isBeaten = beatenMap.has(m.id);
           const item = createEl('div', 'category-milestone-item');
-          item.style.cssText = 'animation: slideDown 0.3s ease;';
+          item.style.animation = 'slideDown 0.3s ease';
           if (isBeaten) item.classList.add('category-milestone-beaten');
 
           const info = createEl('div', 'category-milestone-info');
@@ -1106,7 +1116,9 @@ function nextChartBucket(key, size) {
             link.href = newer.url || '#';
             link.target = '_blank';
             link.rel = 'noopener noreferrer';
-            link.style.cssText = 'color:var(--orange);font-weight:600;text-decoration:none;';
+            link.style.color = 'var(--orange)';
+            link.style.fontWeight = '600';
+            link.style.textDecoration = 'none';
             const beatVal = milestoneMetricText(newer);
             beatenBadge.append(arrow, label, link);
             if (beatVal) {
@@ -1166,7 +1178,10 @@ function nextChartBucket(key, size) {
     const data = await getMilestonesData();
     if (!data || !data.categories) {
       grid.replaceChildren(createEl('p', '', 'No milestone data available'));
-      grid.firstElementChild.style.cssText = 'color: var(--fg-muted); text-align: center; padding: 40px; width: 100%;';
+      grid.firstElementChild.style.color = 'var(--fg-muted)';
+      grid.firstElementChild.style.textAlign = 'center';
+      grid.firstElementChild.style.padding = '40px';
+      grid.firstElementChild.style.width = '100%';
       return;
     }
 
@@ -1192,7 +1207,13 @@ function nextChartBucket(key, size) {
     }
 
     // Sort by date descending (newest first)
-    allMilestones.sort((a, b) => new Date(b.date) - new Date(a.date));
+    allMilestones.sort((a, b) => {
+      const da = Date.parse(a.date), db = Date.parse(b.date);
+      if (isNaN(da) && isNaN(db)) return 0;
+      if (isNaN(da)) return 1;
+      if (isNaN(db)) return -1;
+      return db - da;
+    });
 
     // Determine available years from milestone data
     const yearsSet = new Set();
@@ -1217,7 +1238,7 @@ function nextChartBucket(key, size) {
 
     // Build year filter options
     if (yearFilter) {
-      yearFilter.innerHTML = '';
+      yearFilter.replaceChildren();
       availableYears.forEach(y => {
         const opt = document.createElement('option');
         opt.value = y;
@@ -1251,7 +1272,10 @@ function nextChartBucket(key, size) {
 
       if (filtered.length === 0) {
         grid.replaceChildren(createEl('p', '', 'No milestones in this category/year'));
-        grid.firstElementChild.style.cssText = 'color: var(--fg-muted); text-align: center; padding: 40px; width: 100%;';
+        grid.firstElementChild.style.color = 'var(--fg-muted)';
+        grid.firstElementChild.style.textAlign = 'center';
+        grid.firstElementChild.style.padding = '40px';
+        grid.firstElementChild.style.width = '100%';
         return;
       }
 
@@ -1456,7 +1480,6 @@ function nextChartBucket(key, size) {
   function cleanup() {
     counterObserver.disconnect();
     abortAllFetches();
-    removeModalEventListeners();
     timelineResizeObservers.forEach((ro) => ro.disconnect());
     timelineResizeObservers.length = 0;
     // Stop the highlights rotation and release its timer. The old code replaced
@@ -1495,7 +1518,11 @@ function nextChartBucket(key, size) {
     const track = document.getElementById('highlights-carousel-track');
     if (!carousel || !track) return null;
 
-    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const reduceMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    let prefersReducedMotion = reduceMotionQuery.matches;
+    reduceMotionQuery.addEventListener('change', (e) => {
+      prefersReducedMotion = e.matches;
+    });
     let cards = [];
     let index = 0;
     let timer = null;
@@ -1717,7 +1744,13 @@ function nextChartBucket(key, size) {
               category_icon: catData.icon, category_color: catData.color,
             }));
           }
-          all.sort((a, b) => new Date(b.date) - new Date(a.date));
+          all.sort((a, b) => {
+            const da = Date.parse(a.date), db = Date.parse(b.date);
+            if (isNaN(da) && isNaN(db)) return 0;
+            if (isNaN(da)) return 1;
+            if (isNaN(db)) return -1;
+            return db - da;
+          });
           list = all.slice(0, 12);
         }
       } catch (e) {
