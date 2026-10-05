@@ -342,6 +342,7 @@ beforeAll(async () => {
   globalThis.requestAnimationFrame = () => 1;
   globalThis.cancelAnimationFrame = () => {};
   globalThis.AbortController = class { abort() {} signal = {}; };
+  globalThis.ResizeObserver = class { constructor() {} observe() {} unobserve() {} disconnect() {} };
   globalThis.setInterval = () => 1;
   globalThis.clearInterval = () => {};
   globalThis.fetch = async (url) => ({
