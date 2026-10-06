@@ -1299,7 +1299,14 @@ test('zoom controls, keyboard and double-click do not throw', () => {
         { id: 'c1', name: 'Concluded zone', lat: 41, lon: 26, status: 'concluded', start_date: '2022-01-01', end_date: '2024-01-01' },
       ],
       [{ id: 'f-old', label: 'Old op', from: { lat: 50, lon: 10 }, to: { lat: 55, lon: 15 }, status: 'concluded', end_date: '2023-06-01' }],
-      [{ id: 'cr1', name: 'Active crisis', lat: 10, lon: 20, status: 'active' }]
+      [{ id: 'cr1', name: 'Active crisis', lat: 10, lon: 20, status: 'active' }],
+      [],
+      // Explicitly empty seals. computeStats counts the deployments datalayer as
+      // arrows PLUS seals, and setLayers leaves the ambient seals alone when the
+      // argument is omitted - which is right for a test that only cares about
+      // zones, but makes this exact count depend on whatever the real feed
+      // happened to carry. Five extra seals arrived and fleets read 5, not 1.
+      []
     );
     const stats = api.computeStats();
     expect(stats.conflicts).toBe(2);
@@ -2464,6 +2471,26 @@ const css = fs.readFileSync(path.join(process.cwd(), 'assets/css/main.css'), 'ut
       render();
     });
 
+    test('the categories list boots expanded, and the fold control starts unpressed', () => {
+      // The browser suite measures the fold control's geometry and normalises the
+      // fold state before it does, because that flag is module-global and a stale
+      // value made it order-dependent. The value the page actually boots with
+      // therefore has to be asserted here, where it is deterministic and cheap.
+      render();
+      expect(api().getState().foldedCategories).toBe(false);
+      const title = byClass(head(), 'map-legend-title');
+      expect(title.getAttribute('aria-pressed')).toBe('false');
+      // And the list is really open, not merely flagged open: the wrapper is only
+      // collapsed to zero height when folded. The wrapper is a sibling of the
+      // header under #map-legend, and `byClass` only looks at direct children -
+      // so ask for it there. Looking under the header instead finds nothing and
+      // `expect(null).not.toBe('0px')` passes without asserting anything at all,
+      // which is the failure mode this line exists to avoid.
+      const wrapper = byClass(registeredEls['map-legend'], 'map-legend-categories');
+      expect(wrapper, 'the categories wrapper exists').toBeTruthy();
+      expect(wrapper.style.maxHeight).not.toBe('0px');
+    });
+
     test('the eye sits in the legend header beside CATEGORIES', () => {
       render();
       expect(head()).toBeTruthy();
@@ -2920,13 +2947,19 @@ const css = fs.readFileSync(path.join(process.cwd(), 'assets/css/main.css'), 'ut
       expect(doc).not.toContain('## The 7 Verticals');
     });
 
-    test('the four operational layers are documented as layers, not categories', () => {
+    test('every operational layer is documented as a layer, not a category', () => {
       const doc = readme();
       expect(doc).toContain('Operational layers');
-      expect(doc).toContain('Human Rights Violations');
-      expect(doc).toContain('Conflict Zones');
-      expect(doc).toContain('Crisis Zones');
-      expect(doc).toContain('Ground Deployments');
+      // Read the labels out of LAYER_LABELS rather than pinning strings here.
+      // This assertion was 'Ground Deployments' and the row was renamed to
+      // 'Ground & Fleet Deployments', so it had been failing on main since the
+      // rename - it went green in review and red on main, which is the same
+      // stale-assertion failure the browser spec had. The module is the one
+      // place the label lives, so a rename cannot desynchronise it again.
+      const api = windowObj.__WORLDMAP_TEST__;
+      for (const label of Object.values(api.LAYER_LABELS)) {
+        expect(doc, `README does not document "${label}"`).toContain(label);
+      }
     });
 
     test('the stale legend header is gone', () => {

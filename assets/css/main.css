@@ -635,7 +635,18 @@ body {
   font-size: 0.62rem;
   line-height: 1.22;
   font-family: var(--font-mono);
-  z-index: 5;
+  /* Above .map-tooltip (z-index 20), not below it.
+     Both are absolutely positioned siblings inside #world-map, so this is a
+     direct paint-order contest. At 5 the legend lost: an open tooltip - a pinned
+     landmark, which by design does not close when the pointer travels away -
+     covered the legend's fold control and the bulk-visibility eye, and because a
+     visible tooltip is pointer-events:auto it swallowed the clicks. A visitor on
+     a narrow viewport could not operate the legend at all while a popup was up.
+
+     The tooltip still has to sit above the map's own markers (z-index 10/11),
+     which 20 does. 21 puts the legend on top of both: it is chrome with
+     interactive controls, and the tooltip is transient content. */
+  z-index: 21;
   min-width: 168px;
   user-select: none;
  }

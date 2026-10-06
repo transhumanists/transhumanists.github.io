@@ -63,7 +63,28 @@ describe('map.html', () => {
     // which is precisely the chrome this page exists to avoid.
     expect(page.startsWith('<!DOCTYPE html>')).toBe(true);
     expect(page).not.toContain('---\nlayout:');
-    expect(page).not.toContain('{%');
+
+    // No Liquid outside HTML comments.
+    //
+    // This was `expect(page).not.toContain('{%')`, which is a proxy for "no
+    // Liquid pass runs here" rather than the thing itself — and it fails on a
+    // comment that explains exactly why there is no Liquid pass. map.html carries
+    // this, verbatim:
+    //
+    //   Note: this is an HTML comment, not a Liquid {% comment %} block.
+    //
+    // Those characters are inert here for a reason worth stating: with no front
+    // matter — asserted on the line above — Jekyll copies the file verbatim and
+    // no Liquid pass runs at all, so `{%` cannot be interpreted even inside a
+    // comment. Were front matter ever added, that reasoning stops holding, because
+    // Jekyll evaluates Liquid regardless of HTML comments.
+    //
+    // So the assertion is split: comments are documentation and may mention the
+    // syntax they are documenting, while anything outside a comment is live markup
+    // where a Liquid tag would actually render.
+    const withoutComments = page.replace(/<!--[\s\S]*?-->/g, '');
+    expect(withoutComments).not.toContain('{%');
+    expect(withoutComments).not.toContain('{{');
   });
 
   test('keeps the WORLD MAP block identical to the dashboard', () => {

@@ -6,6 +6,12 @@
      meta viewport would make the "phone" project test desktop widths. -->
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>worldmap layout fixture</title>
+<!-- The browser requests /favicon.ico unprompted when a page declares no icon, the
+     static server 404s it, and the suite's "the page logged errors" assertion then
+     fails on every test for a request this page never made. An empty data URI is
+     the standard way to say "no icon", and it keeps that assertion pointed at
+     errors the page actually caused. -->
+<link rel="icon" href="data:,">
 <!-- The real stylesheet, not a copy. These checks exist to catch layout regressions
      in the shipped CSS, so styling a fixture differently would defeat the point. -->
 <link rel="stylesheet" href="../assets/css/main.css">

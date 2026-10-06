@@ -242,6 +242,13 @@ class TestCli(unittest.TestCase):
             capture_output=True,
             text=True,
             encoding="utf-8",
+            # Lenient, because the child writes to a pipe in whatever encoding
+            # the host console uses - cp1252 on Windows - and a record title
+            # containing an em dash is then a byte sequence strict UTF-8 cannot
+            # decode. Without this the failure surfaces as a UnicodeDecodeError
+            # from a reader thread inside subprocess, which looks like a hang or a
+            # crash in the tool under test rather than a harness encoding bug.
+            errors="replace",
         )
 
     def test_update_baseline_then_gate_is_green(self):
