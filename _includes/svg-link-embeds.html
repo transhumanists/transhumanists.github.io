@@ -14,10 +14,23 @@
 
 {%- case include.id -%}
 {%- when 'worldmap' -%}
+  {#-
+    Was: https://raw.githubusercontent.com/neohiro/worldmap/main/assets/world-map-inline.svg
+
+    That URL has always 404'd — neohiro/worldmap never had an assets/
+    directory. It pointed at a static SVG from a different, private-dashboard
+    project while this site renders its own map from data/world_layers.json.
+
+    Now it links /map.html, which is the real thing: the same map, live,
+    including the layers this repository maintains. A broken <img> was a
+    silent cost here — a card with a caption promising data that never loaded.
+  -#}
   <figure class="svg-embed svg-embed--worldmap">
-    <img src="https://raw.githubusercontent.com/neohiro/worldmap/main/assets/world-map-inline.svg"
-         alt="World map of progress, events, aerial, orbital, identity" loading="lazy">
-    <figcaption>neohiro/worldmap · 5 dimensions, updated every 6h</figcaption>
+    <a href="{{ '/map.html' | relative_url }}">
+      <img src="{{ '/assets/img/worldmap-card.svg' | relative_url }}"
+           alt="World map of human-progress milestones, conflict zones and deployments" loading="lazy">
+    </a>
+    <figcaption><a href="{{ '/map.html' | relative_url }}">transhumanists · the live map</a></figcaption>
   </figure>
 {%- when 'llm' -%}
   <figure class="svg-embed svg-embed--llm">
