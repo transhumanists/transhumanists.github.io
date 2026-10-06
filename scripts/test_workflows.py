@@ -49,13 +49,6 @@ PREINSTALLED = {
 
 # Shell keywords that begin a control structure rather than a command.
 SHELL_KEYWORDS = {
-    # `!` negates a command. It is a prefix operator, not a command, so the line
-    # "! grep -q 'auth-bar' _site/map.html" is a use of grep and not a use of a
-    # program called "!". Without this, every negated assertion was reported as
-    # "runs '!' with no install step" -- a false alarm in the one job whose entire
-    # purpose is asserting that something is absent, so it failed on correct code
-    # and would have been ignored for that reason alone.
-    "!",
     "if",
     "then",
     "else",
@@ -91,6 +84,19 @@ def _workflows() -> list[Path]:
     return sorted(WORKFLOW_DIR.glob("*.yml"))
 
 
+# Shell prefixes that sit in front of the real command and are not themselves
+# tools. `!` is the one that bites here: `jekyll-build` asserts the isolation
+# guarantee with
+#
+#     ! grep -q 'auth-bar' _site/map.html
+#
+# which is bash's negation. Taking the first token verbatim reported a tool named
+# `!` that no install step can provide, so a correct workflow failed the
+# dependency check with a message about a character. `time` and `command` are the
+# other two that appear in the wild.
+SHELL_PREFIXES = frozenset({"!", "time", "command", "builtin", "exec", "nohup"})
+
+
 def _commands(run: str) -> list[str]:
     """Leading token of each logical command in a run block."""
     joined = run.replace("\\\n", " ")
@@ -107,7 +113,14 @@ def _commands(run: str) -> list[str]:
                 continue
             if _ASSIGNMENT.match(part):
                 continue
-            token = part.split()[0].strip("'\"")
+            words = part.split()
+            # Step past any run of shell prefixes to reach the command itself.
+            # `! grep ...` and `!! grep ...` both name `grep`.
+            while words and words[0].strip("'\"") in SHELL_PREFIXES:
+                words.pop(0)
+            if not words:
+                continue
+            token = words[0].strip("'\"")
             if not token or token.startswith("$"):
                 continue
             base = token.split("/")[-1]
