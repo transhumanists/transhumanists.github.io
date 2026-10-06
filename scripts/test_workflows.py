@@ -49,6 +49,13 @@ PREINSTALLED = {
 
 # Shell keywords that begin a control structure rather than a command.
 SHELL_KEYWORDS = {
+    # `!` negates a command. It is a prefix operator, not a command, so the line
+    # "! grep -q 'auth-bar' _site/map.html" is a use of grep and not a use of a
+    # program called "!". Without this, every negated assertion was reported as
+    # "runs '!' with no install step" -- a false alarm in the one job whose entire
+    # purpose is asserting that something is absent, so it failed on correct code
+    # and would have been ignored for that reason alone.
+    "!",
     "if",
     "then",
     "else",

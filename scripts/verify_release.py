@@ -176,6 +176,16 @@ def _build_steps(
     # Runs after Data validation and before determinism, because it asserts
     # cross-file properties that per-file validation cannot see.
     steps.append(("Publish invariants hold", [sys.executable, "scripts/publish_invariants.py"]))
+    # The shared chrome gate, and its own self-test. Both are in CI, so both belong
+    # here too: this script exists to be the local mirror of the pipeline, and a
+    # check that runs in CI but not locally is a check nobody runs before pushing.
+    # Single-site mode, since a checkout has no sibling repos to diff against.
+    steps.append(
+        ("Shared chrome contract", [sys.executable, "scripts/check_chrome_contract.py"])
+    )
+    steps.append(
+        ("Chrome gate self-test", [sys.executable, "scripts/test_check_chrome_contract.py"])
+    )
     if not skip_determinism:
         steps.append(("Data regeneration is deterministic", None))
     if not skip_browser and _playwright_installed():
