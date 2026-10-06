@@ -93,6 +93,23 @@ jobs:
       - name: Full pytest suite
         run: python -m pytest scripts/
 
+      - name: Check shared chrome contract
+        # The shared chrome (ai-seal.css, bottom-bar.css, network-ux.css,
+        # network-ux.js) is hand-copied to all four *.github.io sites and has
+        # shipped broken while every other gate here stayed green:
+        #
+        #   - a `display: flex` surviving a `display: none` fix, so the retired
+        #     dock kept painting over the live bottom bar and swallowing clicks;
+        #   - hardcoded #fff on text that sits on the page background, which
+        #     measured 1.05:1 in light mode -- white on near-white;
+        #   - a conversation frame sized by its content instead of its container,
+        #     so it measured 29% of the viewport rather than being usable.
+        #
+        # None of that fails a Jekyll build or a data gate. Single-site mode here
+        # (a checkout has no siblings to diff against), so it checks this site's
+        # own copy; the cross-site byte-identity comparison runs in the workspace.
+        run: python scripts/check_chrome_contract.py
+
       - name: Scratch end-to-end generation
         env:
           STALE_ERROR_DAYS: "99"
