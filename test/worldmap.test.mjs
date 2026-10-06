@@ -1293,6 +1293,13 @@ test('zoom controls, keyboard and double-click do not throw', () => {
 
   test('stats split active vs concluded layers and labels reflect it', () => {
     const api = windowObj.__WORLDMAP_TEST__;
+    // All five positional args, always. `allianceDots` is the fifth and
+    // setLayers treats an OMITTED one as "keep what is there" -- deliberately,
+    // so a test that does not care about the sublayer cannot wipe it. That
+    // means omitting it here leaks the previous test's four seals into
+    // stats.fleets, which counts deployments + alliance dots. Four leaks make
+    // fleets 5 instead of 1, and the failure names neither the leak nor the
+    // contract that caused it.
     api.setLayers(
       [
         { id: 'a1', name: 'Active zone', lat: 40, lon: 25, status: 'active' },
@@ -1323,8 +1330,16 @@ test('zoom controls, keyboard and double-click do not throw', () => {
     expect(rowByLayer('zones').getAttribute('title')).toBe('1 active, 1 concluded');
     // Concluded deployments produce the detailed fleet label.
     expect(registeredEls['filter-military-fleet-label'].textContent).toContain('concluded');
-    // Restore shared fixtures.
-    api.setLayers(LAYER_PAYLOAD.conflict_zones, LAYER_PAYLOAD.deployments, LAYER_PAYLOAD.crisis_zones);
+    // Restore the shared fixtures, sublayer included -- the same contract in
+    // reverse: restoring zones/fleets/crises alone would leave this test's
+    // empty sublayer in place and quietly break the alliance tests below.
+    api.setLayers(
+      LAYER_PAYLOAD.conflict_zones,
+      LAYER_PAYLOAD.deployments,
+      LAYER_PAYLOAD.crisis_zones,
+      [],
+      LAYER_PAYLOAD.alliance_dots
+    );
     expect(Number(registeredEls['map-stat-conflicts'].textContent)).toBe(3);
   });
 
