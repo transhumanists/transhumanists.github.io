@@ -110,6 +110,13 @@ jobs:
         # own copy; the cross-site byte-identity comparison runs in the workspace.
         run: python scripts/check_chrome_contract.py
 
+      - name: Test the chrome gate itself
+        # A checker that silently stops detecting things reports green, which is
+        # how this gate could pass while the bottom bar was invisible. The
+        # self-test pins a real defect for every rule and fails loudly if the
+        # gate stops catching it.
+        run: python scripts/test_check_chrome_contract.py
+
       - name: Scratch end-to-end generation
         env:
           STALE_ERROR_DAYS: "99"
