@@ -388,6 +388,25 @@ def evaluate_gate(report: dict, baseline: dict, floor: float) -> list[str]:
 
 
 def main(argv: list[str] | None = None) -> int:
+    # Pin stdout/stderr to UTF-8 before anything prints.
+    #
+    # The tables carry U+00B7 middle dots, and Python encodes to the *locale*
+    # encoding when a stream is attached to a console -- cp1252 on a stock
+    # Windows host, where 0x97 is the middle dot. A caller that reads the output
+    # as UTF-8 (every other script in this repo, and the test suite) then gets a
+    # UnicodeDecodeError and, with capture_output, an empty stdout rather than a
+    # traceback -- so the failure surfaces as "metric gate FAILED" missing from
+    # an empty string, which names neither the encoding nor the script.
+    #
+    # errors="replace" rather than "strict" so a character with no cp1252
+    # equivalent degrades to "?" instead of raising mid-report, which would
+    # leave a half-printed table and a traceback instead of a readable one.
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            stream.reconfigure(encoding="utf-8", errors="replace")
+        except (AttributeError, ValueError):  # not a TextIOWrapper, or detached
+            pass
+
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument(
         "--data-dir", default=str(DATA_DIR), help="directory containing data/ (default: the repo's)"
