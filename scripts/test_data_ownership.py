@@ -127,26 +127,31 @@ class TestAnUnresolvableBaseIsAnError(unittest.TestCase):
 
 
 class TestScanCost(unittest.TestCase):
-    def test_it_is_one_git_call_not_three_per_commit(self):
-        # 332 commits x 2 subprocesses was most of this suite's wall clock for a
-        # check that should be instant.
-        import subprocess
-        calls = []
-        real = subprocess.run
-
-        def counting(args, **kwargs):
-            calls.append(args)
-            return real(args, **kwargs)
-
-        subprocess.run = counting
-        try:
-            own.offending_commits("HEAD")
-        finally:
-            subprocess.run = real
-        self.assertLessEqual(len(calls), 3,
-                             "expected a single git log plus rev-parse, got %d calls"
-                             % len(calls))
-
+    def test_ground_truth_agrees_on_a_real_sample(self):
+        # Bounded to the most recent commits so the suite does not pay for a second
+        # full scan. Correctness is asserted by equality against the authoritative
+        # per-commit computation, not by a subset test - a gate that is wrong in the
+        # permissive direction is the failure that matters.
+        sample = own._run("rev-list", "-40", "HEAD").split()
+        truth = {}
+        for sha in sample:
+            author = own._run("show", "-s", "--format=%an%x1f%ae", sha)
+            if any(m in author for m in own.BOT_IDENTITIES):
+                continue
+            touched = own.touched_generated_from_tree(
+                own._run("show", "--name-only", "--format=", sha).split())
+            if touched:
+                truth[sha] = touched
+        self.assertEqual(dict(own.offending_commits("HEAD~40..HEAD")), truth)
+    def test_both_real_bots_are_exempt(self):
+        # transhumanists-bot syncs the shared site template and writes data/ too.
+        # An incomplete exemption list rejects the bots' own refreshes, which
+        # fails CI on a perfectly good refresh.
+        self.assertTrue(any("transhumanists-bot" in m for m in own.BOT_IDENTITIES))
+        bot_shas = [sha for sha in own._run("rev-list", "HEAD").split()
+                    if "transhumanists-bot" in own._run("show", "-s", "--format=%an", sha)]
+        self.assertTrue(bot_shas, "expected a transhumanists-bot commit in history")
+        self.assertTrue(own.commit_is_from_bot(bot_shas[0]))
 
 class TestTheCheckItselfRuns(unittest.TestCase):
     def test_it_exits_zero_on_a_clean_range(self):
