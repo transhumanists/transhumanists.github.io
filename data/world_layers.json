@@ -1,6 +1,6 @@
 {
   "version": "1.3.0",
-  "last_update": "2026-10-07T06:05:16+00:00",
+  "last_update": "2026-10-07T09:58:54+00:00",
   "conflict_zones": [
     {
       "id": "zone-ukraine",
@@ -1137,7 +1137,7 @@
       "status": "concluded",
       "note": "Millions displaced, famine risk",
       "source": "UN OCHA",
-      "url": "https://www.unocha.org/news/todays-top-news-central-emergency-response-fund-yemen-ethiopia-democratic-republic-congo",
+      "url": "https://www.unocha.org/news/todays-top-news-ethiopia-ebola-outbreak-occupied-palestinian-territory",
       "start_date": "2020-01-01",
       "last_news_year": 2026,
       "end_date": "2022-11-02"
@@ -1154,20 +1154,6 @@
       "source": "UN OCHA",
       "url": "https://data.humdata.org/dataset/haiti-humanitarian-needs",
       "start_date": "2021-01-01",
-      "last_news_year": 2026
-    },
-    {
-      "id": "crisis-kenya-floods-displacement",
-      "name": "Kenya · Floods & displacement",
-      "region": "East Africa",
-      "lat": -1.29,
-      "lon": 36.82,
-      "radiusDeg": 2.1,
-      "status": "active",
-      "note": "Flooding, displacement and mudslides",
-      "source": "UN OCHA",
-      "url": "https://www.unocha.org/news/kenya-survival-choice-how-cash-assistance-helps-refugees-dadaab",
-      "start_date": "2022-01-01",
       "last_news_year": 2026
     },
     {
@@ -1264,7 +1250,7 @@
       "status": "active",
       "note": "Civil conflict, displacement and food insecurity",
       "source": "UN OCHA",
-      "url": "https://data.humdata.org/dataset/south-sudan-humanitarian-needs",
+      "url": "https://data.humdata.org/dataset/south-sudan-humanitarian-access-incidents",
       "start_date": "2013-01-01",
       "last_news_year": 2026
     },
@@ -1280,6 +1266,20 @@
       "source": "UN OCHA",
       "url": "https://data.humdata.org/dataset/sudan-humanitarian-needs",
       "start_date": "2003-01-01",
+      "last_news_year": 2026
+    },
+    {
+      "id": "crisis-syria-humanitarian-crisis",
+      "name": "Syria · Humanitarian crisis",
+      "region": "Middle East",
+      "lat": 34.8,
+      "lon": 38.9,
+      "radiusDeg": 3.3,
+      "status": "active",
+      "note": "15M+ in need of humanitarian aid",
+      "source": "UN OCHA",
+      "url": "https://data.humdata.org/dataset/syrian-arab-republic-humanitarian-needs",
+      "start_date": "2011-01-01",
       "last_news_year": 2026
     },
     {
