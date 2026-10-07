@@ -51,11 +51,23 @@ class TestGeneratedSet(unittest.TestCase):
             ["data/events.json"])
 
     def test_a_bot_commit_would_be_exempt(self):
-        # HEAD on this branch is the cron's own tip, so it is a bot commit by
-        # construction. Asserting it is exempt proves the exemption fires on a real
-        # commit rather than on a fixture - the alternative would be the cron
-        # refreshing and CI rejecting its own refresh.
-        self.assertTrue(own.commit_is_from_bot("HEAD"))
+        # Found from real history rather than assumed to be HEAD, which stops being a
+        # bot commit the moment anyone commits on the branch. Asserting a real cron
+        # commit is exempt proves the exemption fires on a real commit rather than a
+        # fixture - the alternative is the cron refreshing and CI rejecting its own
+        # refresh.
+        log = git("log", "--format=%H|%an|%ae", "HEAD")
+        bot = [row.split("|")[0] for row in log.split("\n")
+               if "github-actions[bot]" in row]
+        self.assertTrue(bot, "expected bot commits in history")
+        self.assertTrue(own.commit_is_from_bot(bot[0]))
+
+    def test_a_human_commit_is_not_exempt(self):
+        log = git("log", "--format=%H|%an|%ae", "HEAD")
+        human = [row.split("|")[0] for row in log.split("\n")
+                 if row.strip() and "github-actions[bot]" not in row]
+        self.assertTrue(human, "expected human commits in history")
+        self.assertFalse(own.commit_is_from_bot(human[0]))
 class TestScope(unittest.TestCase):
     def test_default_scope_is_branch_new_commits_only(self):
         # Scanning all history flags ~40 commits, including legitimate repairs.
@@ -66,11 +78,74 @@ class TestScope(unittest.TestCase):
         # The cron commits are the legitimate writers of data/. If the bot identity
         # stopped matching them, every refresh would start failing CI and the check
         # would get switched off within a day.
-        bot_commits = [sha for sha in git("rev-list", "HEAD").split()
-                       if "chore(milestone-check)" in git("show", "-s", "--format=%s", sha)
-                       or "chore(human-rights)" in git("show", "-s", "--format=%s", sha)]
-        self.assertTrue(bot_commits, "expected cron commits in history to test against")
-        self.assertTrue(all(own.commit_is_from_bot(sha) for sha in bot_commits[:20]))
+        #
+        # One git log rather than two calls per commit: the previous version asked git
+        # about each of 332 commits separately and dominated this suite's runtime.
+        log = git("log", "--format=%H|%an|%ae|%s", "HEAD")
+        bot_rows = [row for row in log.split("\n")
+                    if "github-actions[bot]" in row]
+        self.assertTrue(bot_rows, "expected bot commits in history")
+        offenders = own.offending_commits("HEAD")
+        # Every offender must be a human commit: a bot commit in the offender list
+        # would mean the cron's own refresh is being rejected.
+        for sha, _files in offenders:
+            row = next((r for r in log.split("\n") if r.startswith(sha)), "")
+            self.assertNotIn("github-actions[bot]", row,
+                             "bot commit %s was not exempted" % sha[:9])
+
+
+class TestAnUnresolvableBaseIsAnError(unittest.TestCase):
+    """A check that cannot run must not report success.
+
+    `git rev-list` against a missing ref exits 0 and prints nothing, so the obvious
+    implementation reads a shallow clone - which has no origin/main - as "no
+    offending commits". The check would pass having examined nothing, which is the
+    exact failure mode it exists to prevent.
+    """
+
+    def test_base_ref_existence_is_reported(self):
+        ok, why = own.base_ref_exists("origin/definitely-not-a-ref..HEAD")
+        self.assertFalse(ok)
+        self.assertIn("origin/definitely-not-a-ref", why)
+
+    def test_a_real_base_is_found(self):
+        ok, _ = own.base_ref_exists("origin/main..HEAD")
+        self.assertTrue(ok)
+
+    def test_asking_for_a_missing_range_raises(self):
+        with self.assertRaises(own.UnknownBase):
+            own.offending_commits("origin/definitely-not-a-ref..HEAD")
+
+    def test_the_cli_exits_nonzero_rather_than_passing(self):
+        import subprocess
+        proc = subprocess.run(
+            [sys.executable, "scripts/data_ownership.py",
+             "--rev-list", "origin/definitely-not-a-ref..HEAD"],
+            capture_output=True, text=True, cwd=str(ROOT))
+        self.assertEqual(proc.returncode, 2, proc.stdout + proc.stderr)
+        self.assertIn("could not run", proc.stderr)
+
+
+class TestScanCost(unittest.TestCase):
+    def test_it_is_one_git_call_not_three_per_commit(self):
+        # 332 commits x 2 subprocesses was most of this suite's wall clock for a
+        # check that should be instant.
+        import subprocess
+        calls = []
+        real = subprocess.run
+
+        def counting(args, **kwargs):
+            calls.append(args)
+            return real(args, **kwargs)
+
+        subprocess.run = counting
+        try:
+            own.offending_commits("HEAD")
+        finally:
+            subprocess.run = real
+        self.assertLessEqual(len(calls), 3,
+                             "expected a single git log plus rev-parse, got %d calls"
+                             % len(calls))
 
 
 class TestTheCheckItselfRuns(unittest.TestCase):
