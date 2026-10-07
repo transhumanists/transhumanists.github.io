@@ -175,7 +175,16 @@ def _build_steps(
     )
     # Runs after Data validation and before determinism, because it asserts
     # cross-file properties that per-file validation cannot see.
-    steps.append(("Publish invariants hold", [sys.executable, "scripts/publish_invariants.py"]))
+    steps.append(
+        ("Publish invariants hold", [sys.executable, "scripts/publish_invariants.py"])
+    )
+    # Branch-commit check: needs origin/main, present in CI and in a clone
+    # with a full history. Absent a remote it reports every commit, so it is
+    # scoped rather than skipped.
+    steps.append(
+        ("Generated data is not hand-edited",
+         [sys.executable, "scripts/data_ownership.py"])
+    )
     # The shared chrome gate, and its own self-test. Both are in CI, so both belong
     # here too: this script exists to be the local mirror of the pipeline, and a
     # check that runs in CI but not locally is a check nobody runs before pushing.

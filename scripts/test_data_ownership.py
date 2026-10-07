@@ -1,0 +1,90 @@
+"""Tests for the generated-data ownership check.
+
+The check has one job and one easy way to be useless: if it fails on history nobody
+can delete, it gets switched off. So the interesting behaviour is that it is scoped,
+that it exempts the bot, and that it actually catches a hand edit.
+"""
+from __future__ import annotations
+
+import subprocess
+import sys
+import unittest
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT / "scripts"))
+
+import data_ownership as own
+
+
+def git(*args: str) -> str:
+    return subprocess.run(["git", *args], capture_output=True, text=True,
+                          cwd=str(ROOT)).stdout.strip()
+
+
+class TestGeneratedSet(unittest.TestCase):
+    def test_every_data_file_is_listed(self):
+        # If the set drifts from the directory, the check guards the wrong thing.
+        on_disk = {"data/" + p.name for p in (ROOT / "data").glob("*.json")}
+        on_disk |= {"data/" + p.name for p in (ROOT / "data").glob(".*")
+                    if p.name == ".sync_fingerprint"}
+        missing = on_disk - set(own.GENERATED)
+        self.assertEqual(missing, set(), "not covered by the ownership check: %s" % missing)
+
+    def test_the_bot_is_exempt(self):
+        self.assertTrue(any("github-actions" in m for m in own.BOT_IDENTITIES))
+
+    def test_this_branch_does_not_hand_edit_generated_data(self):
+        offenders = own.offending_commits("origin/main..HEAD")
+        self.assertEqual([(s[:9], f) for s, f in offenders], [])
+
+    def test_the_check_would_catch_a_hand_edit(self):
+        # Positive control. Without it a check that silently stopped examining
+        # anything would still pass every other test above.
+        self.assertEqual(
+            own.touched_generated_from_tree(["data/milestones.json"]),
+            ["data/milestones.json"])
+        self.assertEqual(own.touched_generated_from_tree(["scripts/x.py"]), [])
+        self.assertEqual(
+            own.touched_generated_from_tree(
+                ["scripts/x.py", "data/events.json", "README.md"]),
+            ["data/events.json"])
+
+    def test_a_bot_commit_would_be_exempt(self):
+        # HEAD on this branch is the cron's own tip, so it is a bot commit by
+        # construction. Asserting it is exempt proves the exemption fires on a real
+        # commit rather than on a fixture - the alternative would be the cron
+        # refreshing and CI rejecting its own refresh.
+        self.assertTrue(own.commit_is_from_bot("HEAD"))
+class TestScope(unittest.TestCase):
+    def test_default_scope_is_branch_new_commits_only(self):
+        # Scanning all history flags ~40 commits, including legitimate repairs.
+        src = (ROOT / "scripts" / "data_ownership.py").read_text(encoding="utf-8")
+        self.assertIn('"origin/main..HEAD"', src)
+
+    def test_the_bot_exemption_matches_real_bot_commits(self):
+        # The cron commits are the legitimate writers of data/. If the bot identity
+        # stopped matching them, every refresh would start failing CI and the check
+        # would get switched off within a day.
+        bot_commits = [sha for sha in git("rev-list", "HEAD").split()
+                       if "chore(milestone-check)" in git("show", "-s", "--format=%s", sha)
+                       or "chore(human-rights)" in git("show", "-s", "--format=%s", sha)]
+        self.assertTrue(bot_commits, "expected cron commits in history to test against")
+        self.assertTrue(all(own.commit_is_from_bot(sha) for sha in bot_commits[:20]))
+
+
+class TestTheCheckItselfRuns(unittest.TestCase):
+    def test_it_exits_zero_on_a_clean_range(self):
+        proc = subprocess.run([sys.executable, "scripts/data_ownership.py"],
+                              capture_output=True, text=True, cwd=str(ROOT))
+        self.assertEqual(proc.returncode, 0, proc.stdout[-300:])
+
+    def test_list_mode_prints_the_set(self):
+        proc = subprocess.run([sys.executable, "scripts/data_ownership.py", "--list"],
+                              capture_output=True, text=True, cwd=str(ROOT))
+        self.assertEqual(proc.returncode, 0)
+        self.assertIn("data/milestones.json", proc.stdout)
+
+
+if __name__ == "__main__":
+    unittest.main()
