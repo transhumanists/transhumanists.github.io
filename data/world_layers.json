@@ -1,6 +1,6 @@
 {
   "version": "1.3.0",
-  "last_update": "2026-10-07T23:08:14+00:00",
+  "last_update": "2026-10-08T06:10:57+00:00",
   "conflict_zones": [
     {
       "id": "zone-ukraine",
@@ -1312,6 +1312,18 @@
     }
   ],
   "human_rights_violations": [
+    {
+      "id": "hr-3909483d93",
+      "name": "Bahrain: Authorities Rearrest Pardoned Detainees",
+      "region": "Western Asia",
+      "lat": 26.0,
+      "lon": 50.6,
+      "status": "active",
+      "start_date": "2026-10-08",
+      "note": "Human rights defender, Naji Fateel. © Private (Beirut) – Bahraini authorities have rearrested at least nine men who had previously been released from prison by royal pardon, the Bahrain Institute for Rights and Democracy (BIRD) and Human Rights Watch said today. The men, who were",
+      "source": "Human Rights Watch",
+      "url": "https://www.hrw.org/news/2026/10/08/bahrain-authorities-rearrest-pardoned-detainees"
+    },
     {
       "id": "hr-c3ded78a6d",
       "name": "Missing Lao Critic in Thailand Feared ‘Disappeared’",
