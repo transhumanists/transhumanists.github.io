@@ -511,8 +511,9 @@ def main():
     check("mojibake is reported with its file and line",
           code == 1 and failing(out, "no mojibake in assets/css/bottom-bar.css"),
           "exit=%d" % code)
-    check("mojibake report quotes the offending sequence",
-          failing(out, mojibake_em_dash()[:3]), "")
+    # The mojibake sequence is U+00E2 U+20AC U+201D -> UTF-8: c3 a2 e2 82 ac e2 80 9d
+    check("mojibake report quotes the offending sequence as hex bytes",
+          failing(out, "c3 a2 e2 82 ac"), "")
 
     # A genuine non-ASCII character must not be mistaken for corruption. The
     # signature is U+00E2/U+00C3 followed by another cp1252-mapped byte; a correct

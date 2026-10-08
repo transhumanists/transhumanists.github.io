@@ -341,11 +341,16 @@ def check_mojibake():
                 continue
             first = _MOJIBAKE.search(text)
             line = text[:first.start()].count("\n") + 1
+            snippet = text[first.start():first.start() + 12]
+            # Show the raw UTF-8 bytes of the offending sequence so mojibake is
+            # visible even when the terminal replaces undisplayable chars.
+            snippet_bytes = snippet.encode("utf-8")
+            byte_repr = " ".join("%02x" % b for b in snippet_bytes[:24])
             check(site,
                   "no mojibake in %s" % rel.replace(os.sep, "/"),
                   False,
-                  "%d sequence(s), first at line %d: %r"
-                  % (len(hits), line, text[first.start():first.start() + 12]))
+                  "%d sequence(s), first at line %d: UTF-8 bytes %s"
+                  % (len(hits), line, byte_repr))
 
 
 def report():
