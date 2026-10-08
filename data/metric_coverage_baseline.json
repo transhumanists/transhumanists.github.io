@@ -1,6 +1,6 @@
 {
   "_comment": "Accepted state of metric comparability, written by scripts/metric_coverage.py --update-baseline. The gate fails only when a subcategory gets LESS comparable than recorded here, so this file is a ratchet: improve it deliberately, never let it drift downward silently.",
-  "generated": "2026-10-04",
+  "generated": "2026-10-09",
   "groups": {
     "Biotechnology & Biohacking/biosensors": {
       "coherence": 0.5,
@@ -62,9 +62,19 @@
       "comparable_rate": 0.8,
       "records": 5
     },
+    "Computing & AGI/allocatable_vram": {
+      "coherence": 1.0,
+      "comparable_rate": 1.0,
+      "records": 4
+    },
     "Computing & AGI/benchmarks": {
       "coherence": 0.333,
       "comparable_rate": 0.6,
+      "records": 5
+    },
+    "Computing & AGI/chassis_volume": {
+      "coherence": 1.0,
+      "comparable_rate": 1.0,
       "records": 5
     },
     "Computing & AGI/computing_power": {
@@ -97,6 +107,11 @@
       "comparable_rate": 1.0,
       "records": 1
     },
+    "Computing & AGI/local_llm_params": {
+      "coherence": 1.0,
+      "comparable_rate": 1.0,
+      "records": 4
+    },
     "Computing & AGI/low_resource_speech": {
       "coherence": 0.0,
       "comparable_rate": 0.0,
@@ -106,6 +121,11 @@
       "coherence": 1.0,
       "comparable_rate": 0.333,
       "records": 3
+    },
+    "Computing & AGI/memory_bandwidth": {
+      "coherence": 1.0,
+      "comparable_rate": 1.0,
+      "records": 9
     },
     "Computing & AGI/ml_structural_analysis": {
       "coherence": 1.0,
@@ -131,6 +151,16 @@
       "coherence": 1.0,
       "comparable_rate": 1.0,
       "records": 1
+    },
+    "Computing & AGI/price_per_gb": {
+      "coherence": 1.0,
+      "comparable_rate": 1.0,
+      "records": 10
+    },
+    "Computing & AGI/unified_memory": {
+      "coherence": 1.0,
+      "comparable_rate": 1.0,
+      "records": 12
     },
     "Cybersecurity/encryption": {
       "coherence": 0.5,
