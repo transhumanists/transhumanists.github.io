@@ -908,7 +908,7 @@ const STORAGE_KEY_HIDDEN_CATEGORIES = 'worldmap_hidden_categories';
   // The dot sublayer follows the parent datalayer: if the visitor has never
   // touched the key, it is visible whenever Ground & Fleet Deployments is on.
   // Anything else would hide dots the visitor never asked to hide.
-  let showAllianceDotsDefault = true;
+  let showAllianceDotsDefault = false;
   try {
     const fr = localStorage.getItem(STORAGE_KEY_FILTER_RECENT);
     const fm = localStorage.getItem(STORAGE_KEY_FILTER_MILITARY);
@@ -3572,8 +3572,7 @@ function showTooltip(ev, x, y) {
     // headline count can disagree with what is drawn on the map.
     const todayISO = currentDayISO();
     state.events.forEach(ev => {
-       if (!isCategoryVisible(ev.category)) return;
-       // Always count breakthroughs in the last 7 days (static count)
+       // Always count breakthroughs in the last 7 days (static count, not dynamic based on hide/show)
        if (!isInRolling7Days(ev.date, todayISO)) return;
        const statMap = CATEGORY_STAT_MAP[canonicalCategory(ev.category)];
        if (!statMap || statMap.statId !== 'map-stat-active') return;
@@ -3598,6 +3597,10 @@ function showTooltip(ev, x, y) {
   function toggleFilterRecent() {
     state.filterRecent = !state.filterRecent;
     try { localStorage.setItem(STORAGE_KEY_FILTER_RECENT, String(state.filterRecent)); } catch (_) {}
+    if (state.filterRecent) {
+      state.hiddenCategories.clear();
+      state.foldedCategories = false;
+    }
     rebuildStackMap();
     dismissTooltipIfTargetHidden();
     updateFilterButton('filter-recent', state.filterRecent);
@@ -3607,10 +3610,11 @@ function showTooltip(ev, x, y) {
   }
 
   function toggleFilterMilitary() {
-    state.filterMilitary = !state.filterMilitary;
-    // When toggling military filter, also toggle both layers together
-    state.showZones = state.filterMilitary;
-    state.showFleets = state.filterMilitary;
+    const active = militaryVisible();
+    const target = !active;
+    state.filterMilitary = target;
+    state.showZones = target;
+    state.showFleets = target;
     try { 
       localStorage.setItem(STORAGE_KEY_FILTER_MILITARY, String(state.filterMilitary)); 
       localStorage.setItem(STORAGE_KEY_SHOW_ZONES, String(state.showZones));
@@ -3623,9 +3627,10 @@ function showTooltip(ev, x, y) {
   }
 
   function toggleFilterCrisis() {
-    state.filterCrisis = !state.filterCrisis;
-    // When toggling crisis filter, also toggle crisis layer
-    state.showCrises = state.filterCrisis;
+    const active = crisisVisible();
+    const target = !active;
+    state.filterCrisis = target;
+    state.showCrises = target;
     try { 
       localStorage.setItem(STORAGE_KEY_FILTER_CRISIS, String(state.filterCrisis)); 
       localStorage.setItem(STORAGE_KEY_SHOW_CRISES, String(state.showCrises));
@@ -4059,7 +4064,7 @@ const fragment = document.createDocumentFragment();
         appendLayerRow(fragment, {
           key: 'alliance_dots',
           label: LAYER_LABELS.alliance_dots,
-          visible: deploymentsVisible && state.showAllianceDots,
+          visible: state.showAllianceDots,
           color: ALLIANCE_DOT_COLOR,
           count: String(state.allianceDots.length),
           seal: true,
