@@ -123,6 +123,38 @@ class TestInheritedRecordsAreScrubbed(unittest.TestCase):
         twice = sm._scrub_inherited(once)
         self.assertEqual(once, twice)
 
+    def test_merge_history_heals_legacy_category_label(self):
+        # A record archived under a pre-rename label must fold onto its canonical
+        # bucket on the next run, even when upstream no longer re-sends it -
+        # otherwise the archive validator (canonical categories only) fails on data
+        # the pipeline can no longer reach.
+        out = sm.merge_history([_rec(category="Robotics")], [], "2026-10-02")
+        self.assertEqual(out[0]["category"], "Robotics & Drones")
+
+    def test_merge_feed_heals_legacy_category_label(self):
+        feed = sm.merge_feed([], [_rec(category="Computational Archaeology")])
+        self.assertEqual(feed[0]["category"], "Computing & AGI")
+
+    def test_scrub_does_not_invent_a_category(self):
+        # Only known aliases fold. An unknown label must survive untouched so it
+        # still fails validation rather than being silently filed somewhere.
+        out = sm._scrub_inherited(_rec(category="Astrology"))
+        self.assertEqual(out["category"], "Astrology")
+
+    def test_category_fold_is_idempotent(self):
+        once = sm._scrub_inherited(_rec(category="Robotics"))
+        twice = sm._scrub_inherited(once)
+        self.assertEqual(once, twice)
+
+    def test_scrub_heals_both_geolocation_and_category(self):
+        # A record with both legacy null-island geolocation AND a legacy category
+        # should have both healed in a single pass.
+        rec = _rec(category="Robotics", geolocation={"lat": 0.0, "lon": 0.0})
+        out = sm._scrub_inherited(rec)
+        self.assertNotIn("geolocation", out)
+        self.assertIs(out["located"], False)
+        self.assertEqual(out["category"], "Robotics & Drones")
+
     def test_fresh_metadata_still_wins_on_duplicate_id(self):
         existing = [_rec(geolocation={"lat": 0.0, "lon": 0.0}, first_seen="2020-01-01")]
         current = [

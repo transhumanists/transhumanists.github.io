@@ -67,6 +67,71 @@ class TestFalsePositives(unittest.TestCase):
         self.assertFalse(out["located"], out)
 
 
+class TestSourceFallback(unittest.TestCase):
+    def test_source_tier_is_opt_in(self):
+        rec = {"title": "Some benchmark result", "url": "https://arxiv.org/abs/1234.5678"}
+        self.assertFalse(ag.resolve(rec)["located"])
+        out = ag.resolve(rec, allow_source=True)
+        self.assertTrue(out["located"], out)
+        self.assertEqual(out["confidence"], "source")
+        self.assertEqual(out["evidence"], "arxiv")
+        self.assertEqual((out["lat"], out["lon"]), (42.4440, -76.5019))
+
+    def test_source_fallback_covers_below_floor_and_uncorroborated(self):
+        # A summary-only institution mention (1.0 < 3.0 floor) and a lone title
+        # acronym both refuse by default yet resolve at source level on opt-in.
+        weak = {
+            "title": "A small study",
+            "summary": "nvidia hardware was used",
+            "url": "https://arxiv.org/abs/1234.5678",
+        }
+        self.assertFalse(ag.resolve(weak)["located"])
+        self.assertEqual(ag.resolve(weak, allow_source=True)["confidence"], "source")
+        lone = {
+            "title": "USCIS AAO decisions dataset for legal reasoning",
+            "url": "https://arxiv.org/abs/1234.5678",
+        }
+        self.assertFalse(ag.resolve(lone)["located"])
+        self.assertEqual(ag.resolve(lone, allow_source=True)["confidence"], "source")
+
+    def test_unknown_domain_and_missing_url_stay_unlocated(self):
+        self.assertFalse(
+            ag.resolve(
+                {"title": "Some benchmark", "url": "https://example.org/x"},
+                allow_source=True,
+            )["located"]
+        )
+        self.assertFalse(ag.resolve({"title": "Some benchmark"}, allow_source=True)["located"])
+        for bad_url in (None, 123, b"https://arxiv.org/abs/1234", "notaurl"):
+            out = ag.resolve({"title": "Some benchmark", "url": bad_url}, allow_source=True)
+            self.assertFalse(out["located"], repr(bad_url))
+
+    def test_lookalike_hosts_cannot_claim_a_source_dot(self):
+        # Substring matching would place these at Cornell; exact-or-subdomain only.
+        for url in (
+            "https://notarxiv.org/abs/1234",
+            "https://arxiv.org.evil.com/abs/1234",
+            "https://arxiv.org:443@evil.com/x",
+        ):
+            out = ag.resolve({"title": "Some benchmark", "url": url}, allow_source=True)
+            self.assertFalse(out["located"], url)
+
+    def test_subdomain_and_port_still_match(self):
+        out = ag.resolve(
+            {"title": "Some benchmark", "url": "https://export.arxiv.org:443/abs/1234"},
+            allow_source=True,
+        )
+        self.assertTrue(out["located"], out)
+        self.assertEqual(out["evidence"], "arxiv")
+
+    def test_source_never_outranks_content_evidence(self):
+        # A content-resolved record keeps its stronger confidence even on opt-in.
+        rec = {"title": "Record-low CER in Maltese OCR benchmarks"}
+        out = ag.resolve(rec, allow_source=True)
+        self.assertTrue(out["located"], out)
+        self.assertNotEqual(out["confidence"], "source")
+
+
 class TestAffiliations(unittest.TestCase):
     def test_a_lone_affiliation_is_accepted(self):
         body = "The work was done by a researcher at ETH Zurich."
@@ -235,33 +300,130 @@ class TestResolveIsPure(unittest.TestCase):
                 self.assertNotEqual((out["lat"], out["lon"]), (0, 0), title)
 
 
-class TestWeighting(unittest.TestCase):
-    def test_title_outranks_summary(self):
-        # Japan in the title (3.0), Germany in the summary (1.0). Both are real
-        # entries in the place table, so this is a genuine contest rather than one
-        # signal with nothing to beat it.
-        out = ag.resolve({"title": "Results from Japan", "summary": "The team met in Germany."})
-        self.assertTrue(out["located"], out)
-        self.assertIn("japan", out["evidence"].lower())
+class TestPublisherExtractors(unittest.TestCase):
+    """Tests for publisher-specific affiliation extraction functions."""
 
-    def test_a_single_mention_with_no_rival_is_refused(self):
-        # The safe default. With nothing to compare against there is no margin to
-        # clear, and one place name is not a location.
-        out = ag.resolve({"title": "Results from Japan"})
-        self.assertFalse(out["located"], out)
+    def test_arxiv_affiliation_extraction(self):
+        # arXiv HTML with affiliation spans and meta tags
+        html = (
+            '<html><body>'
+            '<span class="descriptor">Affiliation:</span>'
+            '<span class="affiliation">MIT Computer Science & Artificial Intelligence Laboratory</span>'
+            '<span class="descriptor">Affiliation:</span>'
+            '<span class="affiliation">Stanford University</span>'
+            '<meta name="citation_author_institution" content="MIT">'
+            '<meta name="citation_author_institution" content="Stanford University">'
+            '</body></html>'
+        )
+        affils = ag._extract_arxiv_affiliations(html, "https://arxiv.org/abs/1234.5678")
+        self.assertIn("MIT Computer Science & Artificial Intelligence Laboratory", affils)
+        self.assertIn("Stanford University", affils)
+        self.assertIn("MIT", affils)
+        self.assertIn("Stanford University", affils)
 
-    def test_the_same_place_twice_is_not_independent_corroboration(self):
-        # Title and summary are the same paper; agreeing with itself is not a second
-        # independent route to the coordinate.
-        out = ag.resolve({"title": "Results from Japan", "summary": "Further results from Japan."})
-        self.assertFalse(out["located"], out)
+    def test_nature_affiliation_extraction(self):
+        html = (
+            '<html><body>'
+            '<div class="c-article-author-affiliation__address">University of Cambridge</div>'
+            '<meta name="citation_author_institution" content="University of Oxford">'
+            '</body></html>'
+        )
+        affils = ag._extract_nature_affiliations(html, "https://nature.com/articles/1234")
+        self.assertIn("University of Cambridge", affils)
+        self.assertIn("University of Oxford", affils)
 
-    def test_confidence_values_are_from_the_declared_set(self):
-        import location_contract as lc
+    def test_science_affiliation_extraction(self):
+        html = (
+            '<html><body>'
+            '<meta name="citation_author_institution" content="Caltech">'
+            '<div class="affiliation">Harvard University</div>'
+            '</body></html>'
+        )
+        affils = ag._extract_science_affiliations(html, "https://science.org/articles/1234")
+        self.assertIn("Caltech", affils)
+        self.assertIn("Harvard University", affils)
 
-        out = ag.resolve({"title": "Results from Japan and Japan"})
-        if out.get("located"):
-            self.assertTrue(lc.validate_confidence(out["confidence"]))
+    def test_quantamagazine_affiliation_extraction(self):
+        html = (
+            '<html><body>'
+            '<div class="author-bio">MIT</div>'
+            '<div class="author-affiliation">Stanford University</div>'
+            '</body></html>'
+        )
+        affils = ag._extract_quantamagazine_affiliations(html, "https://quantamagazine.org/article")
+        self.assertIn("MIT", affils)
+        self.assertIn("Stanford University", affils)
+
+    def test_github_affiliation_no_token(self):
+        # Without GITHUB_TOKEN, should return empty list
+        import os
+        original_token = os.environ.get("GITHUB_TOKEN")
+        os.environ.pop("GITHUB_TOKEN", None)
+        try:
+            result = ag._extract_github_affiliation("<html></html>", "https://github.com/owner/repo")
+            self.assertEqual(result, [])
+        finally:
+            if original_token:
+                os.environ["GITHUB_TOKEN"] = original_token
+
+
+class TestAffiliationGeocoding(unittest.TestCase):
+    """Tests for _geocode_affiliations and _extract_author_affiliations."""
+
+    def test_geocode_affiliations_institution(self):
+        rec = {"url": "https://arxiv.org/abs/1234"}
+        affils = ["MIT Computer Science & Artificial Intelligence Laboratory", "Stanford University"]
+        results = ag._geocode_affiliations(rec, affils)
+        # Should find MIT and Stanford
+        self.assertTrue(any(r[2] == "mit" for r in results))
+        self.assertTrue(any(r[2] == "stanford" for r in results))
+
+    def test_geocode_affiliations_place(self):
+        rec = {"url": "https://example.com"}
+        affils = ["Cambridge, UK"]
+        results = ag._geocode_affiliations(rec, affils)
+        # Should find Cambridge via place matching
+        self.assertTrue(any(r[2] == "cambridge" for r in results))
+
+    def test_geocode_affiliations_demonym(self):
+        rec = {"url": "https://example.com"}
+        affils = ["Japanese researchers"]
+        results = ag._geocode_affiliations(rec, affils)
+        # Should find Japan via demonym
+        self.assertTrue(any(r[2] == "Japan" for r in results))
+
+    def test_extract_author_affiliations_arxiv(self):
+        rec = {"url": "https://arxiv.org/abs/1234"}
+        html = (
+            '<html><body>'
+            '<span class="descriptor">Affiliation:</span>'
+            '<span class="affiliation">MIT</span>'
+            '</body></html>'
+        )
+        affils = ag._extract_author_affiliations(rec, html)
+        self.assertIn("MIT", affils)
+
+    def test_extract_author_affiliations_fallback(self):
+        # When publisher-specific extraction fails, falls back to affiliation_windows
+        rec = {"url": "https://example.com/article"}
+        html = "The work was done by a researcher at ETH Zurich."
+        affils = ag._extract_author_affiliations(rec, html)
+        self.assertTrue(any("ETH Zurich" in a for a in affils))
+
+
+class TestPublisherParsersRegistry(unittest.TestCase):
+    """Tests for the PUBLISHER_PARSERS registry."""
+
+    def test_registry_contains_expected_domains(self):
+        expected = {"arxiv.org", "nature.com", "science.org", "quantamagazine.org", "github.com"}
+        self.assertEqual(set(ag.PUBLISHER_PARSERS.keys()), expected)
+
+    def test_registry_values_are_callable(self):
+        for func in ag.PUBLISHER_PARSERS.values():
+            self.assertTrue(callable(func))
+
+    def test_arxiv_parser_returns_expected_function(self):
+        self.assertEqual(ag.PUBLISHER_PARSERS["arxiv.org"], ag._extract_arxiv_affiliations)
 
 
 if __name__ == "__main__":

@@ -1063,8 +1063,11 @@ const STORAGE_KEY_HIDDEN_CATEGORIES = 'worldmap_hidden_categories';
     'Quantum Gravity': 'Quantum Physics',
     'Mathematics': 'Computing & AGI',
     'Computational Archaeology': 'Computing & AGI',
+    'Causal Inference': 'Computing & AGI',
     'Computer Vision': 'Computing & AGI',
     'Legal AI': 'Computing & AGI',
+    'Legal Technology': 'Computing & AGI',
+    'Optimization': 'Computing & AGI',
     // Split / renamed categories. Legacy payloads and the dev sample data still
     // carry the old labels, so they fold into the canonical bucket.
     'Biotechnology': 'Biotechnology & Biohacking',

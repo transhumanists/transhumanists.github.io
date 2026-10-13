@@ -2,7 +2,7 @@
 """Geocode milestones from the article they came from, not just their title.
 
 The pipeline's existing cascade only ever sees `title`, `summary`, `subcategory` and
-`source`. That is why 13 records publish without a dot: an arXiv preprint titled
+`source`. That is why records publish without a dot: an arXiv preprint titled
 "LV-ROVER-MLT achieves record-low CER in Maltese OCR" says Malta, and nothing looks
 at the adjective. This module adds three evidence sources the cascade lacks:
 
@@ -25,18 +25,34 @@ Usage:
     python scripts/article_geocode.py --refresh         # fetch, update the cache
     python scripts/article_geocode.py --refresh --limit 20
     python scripts/article_geocode.py --apply --dry-run # write resolved coords
+    python scripts/article_geocode.py --report --include-source  # + publisher-HQ
+                                                        # last resort, opt-in only
 """
 
 from __future__ import annotations
 
 import argparse
+import concurrent.futures
+import functools
 import json
+import math
+import os
 import re
 import ssl
 import sys
+import time
 import urllib.error
 import urllib.request
 from pathlib import Path
+from typing import Callable
+from urllib.parse import urlparse
+
+try:
+    from bs4 import BeautifulSoup
+    HAS_BS4 = True
+except ImportError:
+    HAS_BS4 = False
+    BeautifulSoup = None  # type: ignore
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
@@ -65,9 +81,54 @@ MIN_MARGIN = 2.0
 # DEMONYMS) - a 0.1 degree gap straddles any grid boundary.
 MERGE_KM = 40.0
 
-MAX_BYTES = 4 * 1024 * 1024
+# Maximum number of affiliation windows to process per article.
+# Limits CPU time on pathological inputs.
+MAX_WINDOWS = 60
+
+_MAX_UPSTREAM_BYTES = 10 * 1024 * 1024  # safety cap on the mirrored upstream file
 TIMEOUT = 20
 USER_AGENT = "transhumanists-milestone-geocoder/1.0 (+https://transhumanists.github.io/)"
+
+# Publisher-specific affiliation extraction functions
+# Each entry: host_pattern -> extractor function
+# Functions are defined below; this dict is populated after all extractor functions are defined.
+PUBLISHER_PARSERS: dict[str, Callable[[str, str], list[str]]] = {}
+
+SOURCE_COORDS: dict[str, tuple[float, float, str]] = {
+    "arxiv.org": (42.4440, -76.5019, "arxiv"),
+    "nature.com": (51.5074, -0.1278, "nature"),
+    "science.org": (38.8951, -77.0364, "science"),
+    "quantamagazine.org": (40.7128, -74.0060, "quantamagazine"),
+    "github.com": (37.7749, -122.4194, "github"),
+}
+# Deliberately no entry for hosts whose operator HQ is not known (e.g. aggregator
+# blogs): a "source" dot asserts the publisher's headquarters, and guessing it
+# would trade an honest gap for a confident wrong dot. Those records stay
+# unlocated until content evidence places them.
+
+
+def _source_fallback(record: dict) -> dict | None:
+    url = record.get("url", "")
+    # Non-string urls (None, ints from hand-built dicts) must refuse, not raise:
+    # urlparse accepts bytes, whose hostname would then blow up the str endswith.
+    if not isinstance(url, str) or not url:
+        return None
+    parsed = urlparse(url)
+    # hostname, not netloc: it strips ports and userinfo, so
+    # "arxiv.org:443@evil.com" resolves to evil.com, not arxiv.org.
+    host = (parsed.hostname or "").lower()
+    for domain, (lat, lon, src) in SOURCE_COORDS.items():
+        # Exact or subdomain match only: a substring test would let
+        # "notarxiv.org" or "arxiv.org.evil.com" claim Cornell's dot.
+        if host == domain or host.endswith("." + domain):
+            return {
+                "located": True,
+                "lat": lat,
+                "lon": lon,
+                "confidence": "source",
+                "evidence": src,
+            }
+    return None
 
 # ---------------------------------------------------------------- demonyms
 # Adjective/noun -> (lat, lon, canonical place name). Deliberately conservative:
@@ -166,6 +227,7 @@ DEMONYMS: dict[str, tuple[float, float, str]] = {
     "laotian": (18.2, 105.7, "Laos"),
     "mongolian": (46.9, 103.8, "Mongolia"),
     "kazakhstani": (48.0, 67.0, "Kazakhstan"),
+    "moroccan": (31.8, -7.1, "Morocco"),
     "inca": (-13.5, -71.9, "Peru"),
     "aztec": (19.4, -99.1, "Mexico"),
     "mayan": (17.2, -89.1, "Guatemala"),
@@ -251,7 +313,7 @@ def fetch_text(url: str) -> tuple[str | None, str]:
     try:
         opener = urllib.request.build_opener(_NoPrivateRedirects())
         with opener.open(req, timeout=TIMEOUT) as resp:
-            raw = resp.read(MAX_BYTES)
+            raw = resp.read(_MAX_UPSTREAM_BYTES)
             ctype = resp.headers.get("Content-Type", "")
     except urllib.error.HTTPError as exc:
         return None, "http %s" % exc.code
@@ -428,24 +490,279 @@ def _kind_of(key: str) -> str:
     return "demonym"
 
 
-def _within_km(a, b) -> bool:
+# Module-level cache for haversine distance calculations.
+# This is called frequently during candidate merging and the same coordinate
+# pairs are often compared multiple times.
+@functools.lru_cache(maxsize=1024)
+def _haversine(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
     """Great-circle distance between two coordinates, in km."""
-    import math
-
-    lat1, lon1 = math.radians(a[0]), math.radians(a[1])
-    lat2, lon2 = math.radians(b[0]), math.radians(b[1])
+    lat1, lon1 = math.radians(lat1), math.radians(lon1)
+    lat2, lon2 = math.radians(lat2), math.radians(lon2)
     dlat, dlon = lat2 - lat1, lon2 - lon1
     h = math.sin(dlat / 2) ** 2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlon / 2) ** 2
-    return 2 * 6371.0 * math.asin(min(1.0, math.sqrt(h))) <= MERGE_KM
+    return 2 * 6371.0 * math.asin(min(1.0, math.sqrt(h)))
 
 
-def resolve(record: dict, body: str | None = None) -> dict:
+def _within_km(a, b) -> bool:
+    """Great-circle distance between two coordinates, in km.
+    
+    Uses module-level LRU cache because this is called frequently during
+    candidate merging and the same coordinate pairs are often compared
+    multiple times.
+    """
+    return _haversine(a[0], a[1], b[0], b[1]) <= MERGE_KM
+
+
+# ------------------------------------------------------------- publisher-specific affiliation extraction
+
+def _soup(html: str) -> BeautifulSoup | None:
+    """Parse HTML with BeautifulSoup if available, else fall back to regex."""
+    if HAS_BS4:
+        return BeautifulSoup(html, "html.parser")
+    return None
+
+
+def _extract_arxiv_affiliations(html: str, url: str) -> list[str]:
+    """Extract affiliations from arXiv abstract page."""
+    if HAS_BS4:
+        soup = _soup(html)
+        affils = []
+        # arXiv has author affiliations in the abs page - look for .affiliation class
+        for span in soup.find_all("span", class_="affiliation"):
+            text = span.get_text(strip=True)
+            if text and len(text) > 2:
+                affils.append(text)
+        # Also check for "affiliation" in meta tags
+        for meta in soup.find_all("meta", attrs={"name": "citation_author_institution"}):
+            content = meta.get("content", "").strip()
+            if content and len(content) > 2:
+                affils.append(content)
+        return affils
+    # Fallback: regex-based extraction
+    affils = []
+    for m in re.finditer(r'class="affiliation"[^>]*>([^<]+)', html, re.I):
+        affils.append(m.group(1).strip())
+    for m in re.finditer(r'name="citation_author_institution"[^>]*content="([^"]+)"', html, re.I):
+        affils.append(m.group(1).strip())
+    return [a for a in affils if a and len(a) > 2]
+
+
+def _extract_nature_affiliations(html: str, url: str) -> list[str]:
+    """Extract affiliations from Nature article page."""
+    if HAS_BS4:
+        soup = _soup(html)
+        affils = []
+        # Nature uses various patterns - look for affiliation lists
+        for div in soup.find_all("div", class_="c-article-author-affiliation__address"):
+            text = div.get_text(strip=True)
+            if text and len(text) > 2:
+                affils.append(text)
+        # Also check meta tags
+        for meta in soup.find_all("meta", attrs={"name": "citation_author_institution"}):
+            content = meta.get("content", "").strip()
+            if content and len(content) > 2:
+                affils.append(content)
+        return affils
+    # Fallback: regex-based extraction
+    affils = []
+    for m in re.finditer(r'class="c-article-author-affiliation__address"[^>]*>([^<]+)', html, re.I):
+        affils.append(m.group(1).strip())
+    for m in re.finditer(r'name="citation_author_institution"[^>]*content="([^"]+)"', html, re.I):
+        affils.append(m.group(1).strip())
+    return [a for a in affils if a and len(a) > 2]
+
+
+def _extract_science_affiliations(html: str, url: str) -> list[str]:
+    """Extract affiliations from Science article page."""
+    if HAS_BS4:
+        soup = _soup(html)
+        affils = []
+        # Science uses similar meta tags
+        for meta in soup.find_all("meta", attrs={"name": "citation_author_institution"}):
+            content = meta.get("content", "").strip()
+            if content and len(content) > 2:
+                affils.append(content)
+        # Also check for affiliation divs
+        for div in soup.find_all(class_="affiliation"):
+            text = div.get_text(strip=True)
+            if text and len(text) > 2:
+                affils.append(text)
+        return affils
+    # Fallback: regex-based extraction
+    affils = []
+    for m in re.finditer(r'name="citation_author_institution"[^>]*content="([^"]+)"', html, re.I):
+        affils.append(m.group(1).strip())
+    for m in re.finditer(r'class="affiliation"[^>]*>([^<]+)', html, re.I):
+        affils.append(m.group(1).strip())
+    return [a for a in affils if a and len(a) > 2]
+
+
+def _extract_quantamagazine_affiliations(html: str, url: str) -> list[str]:
+    """Extract affiliations from Quanta Magazine article page."""
+    if HAS_BS4:
+        soup = _soup(html)
+        affils = []
+        # Quanta often has author bios with affiliations
+        for div in soup.find_all(class_="author-bio"):
+            text = div.get_text(strip=True)
+            if text and len(text) > 2:
+                affils.append(text)
+        for div in soup.find_all(class_="author-affiliation"):
+            text = div.get_text(strip=True)
+            if text and len(text) > 2:
+                affils.append(text)
+        return affils
+    # Fallback: regex-based extraction
+    affils = []
+    for m in re.finditer(r'class="author-bio"[^>]*>([^<]+)', html, re.I):
+        affils.append(m.group(1).strip())
+    for m in re.finditer(r'class="author-affiliation"[^>]*>([^<]+)', html, re.I):
+        affils.append(m.group(1).strip())
+    return [a for a in affils if a and len(a) > 2]
+
+
+def _github_api_request(url: str, token: str, timeout: int = TIMEOUT) -> tuple[dict | None, int | None]:
+    """Make a GitHub API request with rate limit handling.
+    
+    Returns (data, remaining_requests) or (None, None) on failure.
+    """
+    headers = {"User-Agent": USER_AGENT, "Authorization": f"token {token}"}
+    req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT, "Authorization": f"token {github_token}"})
+    try:
+        with urllib.request.urlopen(req, timeout=TIMEOUT) as resp:
+            remaining = int(resp.headers.get("X-RateLimit-Remaining", "1"))
+            data = json.loads(resp.read().decode())
+            return data, remaining
+    except urllib.error.HTTPError as e:
+        if e.code == 403:
+            reset_time = int(e.headers.get("X-RateLimit-Reset", "0"))
+            wait = max(reset_time - int(time.time()), 0) + 1
+            return None, wait
+        raise
+    except (urllib.error.URLError, json.JSONDecodeError, TimeoutError):
+        return None, None
+
+
+def _extract_github_affiliation(html: str, url: str) -> list[str]:
+    """Extract location from GitHub repository/profile page using API if token available."""
+    github_token = os.environ.get("GITHUB_TOKEN", "")
+    if not github_token:
+        return []
+    # Extract owner/repo from URL
+    m = re.search(r"github\.com/([^/]+)/([^/?#]+)", url)
+    if not m:
+        return []
+    owner, repo = m.group(1), m.group(2).rstrip(".git")
+    
+    for attempt in range(3):
+        # First request: get repo info
+        data, remaining = _github_api_request(
+            f"https://api.github.com/repos/{owner}/{repo}", github_token
+        )
+        if data is None:
+            if remaining is not None:  # rate limited
+                if attempt < 2:
+                    time.sleep(remaining)
+                    continue
+            break
+        if data is None:
+            break
+            
+        # Get owner location (could be user or org)
+        owner_url = data.get("owner", {}).get("url")
+        if not owner_url:
+            break
+            
+        # Second request: get owner details
+        owner_data, remaining = _github_api_request(owner_url, github_token)
+        if owner_data is None:
+            if remaining is not None:  # rate limited
+                if attempt < 2:
+                    time.sleep(remaining)
+                    continue
+            break
+        if owner_data is None:
+            break
+            
+        loc = owner_data.get("location")
+        if loc:
+            return [loc.strip()]
+        break
+    return []
+
+
+def _publisher_affiliations(html: str, url: str) -> list[str]:
+    """Dispatch to publisher-specific affiliation extractor."""
+    parsed = urlparse(url)
+    host = (parsed.hostname or "").lower()
+    for domain, func in PUBLISHER_PARSERS.items():
+        if host == domain or host.endswith("." + domain):
+            return func(html, url)
+    return []
+
+
+# Register publisher parsers after all extractor functions are defined.
+PUBLISHER_PARSERS.update({
+    "arxiv.org": _extract_arxiv_affiliations,
+    "nature.com": _extract_nature_affiliations,
+    "science.org": _extract_science_affiliations,
+    "quantamagazine.org": _extract_quantamagazine_affiliations,
+    "github.com": _extract_github_affiliation,
+})
+
+
+def _extract_author_affiliations(record: dict, body: str | None = None) -> list[str]:
+    """Extract affiliations from article body using publisher-specific parsers."""
+    url = record.get("url", "")
+    if not body:
+        return []
+    html = body
+    # Try publisher-specific extraction first
+    affils = _publisher_affiliations(html, url)
+    if affils:
+        return affils
+    # Fallback: generic affiliation window extraction
+    return affiliation_windows(body)
+
+
+def _geocode_affiliations(record: dict, affiliations: list[str]) -> list[tuple[float, float, str, str]]:
+    """Geocode a list of affiliation strings, returning (lat, lon, name, evidence) tuples."""
+    results = []
+    for aff in affiliations:
+        # Try to match institution
+        inst = sm._match_institution(aff.lower())
+        if inst:
+            key, coords = inst
+            if lc.is_located(coords):
+                results.append((coords["lat"], coords["lon"], key, f"affiliation:{aff[:50]}"))
+                continue
+        # Try place matching
+        place = gh.match_place(aff.lower())
+        if place:
+            name, (lat, lon, _region) = place
+            if lc.is_located({"lat": lat, "lon": lon}):
+                results.append((lat, lon, name, f"affiliation:{aff[:50]}"))
+                continue
+        # Try demonym
+        demonym = match_demonym(aff)
+        if demonym:
+            lat, lon, country = demonym
+            results.append((lat, lon, country, f"demonym:{aff[:50]}"))
+    return results
+
+
+def resolve(record: dict, body: str | None = None, allow_source: bool = False) -> dict:
     """Best (lat, lon, confidence, evidence) for one record, or a refusal.
 
     Candidates are merged by *resolved coordinate*, not by name. "Maltese" is both a
     place in the hints table and a demonym, and counting them as two rivals would
     make the strongest signal in this dataset look ambiguous. Two routes to the same
     place are corroboration, which is the point.
+
+    When every content pass declines, `allow_source` permits the documented last
+    resort from `location_contract`: the publisher/preprint-server headquarters
+    with confidence "source". Default False, so the conservative refusal behaviour
+    - and every test asserting it - is unchanged unless the caller opts in.
     """
     # coord -> {"score": float, "keys": set, "kinds": set}
     merged: dict[tuple, dict] = {}
@@ -480,21 +797,59 @@ def resolve(record: dict, body: str | None = None) -> dict:
     scan(str(record.get("title") or ""), W_TITLE, True)
     scan(str(record.get("summary") or ""), W_SUMMARY, True)
     if body:
-        # Body prose is where affiliations live, but it is also where stray place
-        # names appear, so no demonym matching here.
-        # Each candidate gets one affiliation vote, however many overlapping
-        # windows it appears in. Without this an institution named in two windows
-        # scores 10.0 against a rival's 5.0 and wins on an artefact of window
-        # overlap rather than on evidence.
+        # Body prose is where affiliations live. Try publisher-specific extraction first,
+        # then fall back to generic affiliation windows.
+        affiliations = _extract_author_affiliations(record, body)
+        if affiliations:
+            geo_results = _geocode_affiliations(record, affiliations)
+            for lat, lon, name, evidence in geo_results:
+                # Use institution weight for affiliation-derived locations
+                offer(f"affiliation:{name}", evidence, W_AFFILIATION, "institution")
+        # Also fall back to generic affiliation windows for any missed signals
+        # Weight earlier windows slightly higher (likely to contain corresponding author affiliation)
+        # Prioritize institution matches over generic place matches in affiliation windows
+        # Skip windows with only generic country-level places
         body_voted: set[str] = set()
-        for window in affiliation_windows(body):
-            for key, (_score, evidence) in _candidates(window, 0.0, False).items():
+        for idx, window in enumerate(affiliation_windows(body)):
+            # Small decay factor: first window gets full weight, each subsequent gets 90%
+            window_weight = W_AFFILIATION * (0.9 ** idx)
+            cands = _candidates(window, 0.0, False)
+            # Separate institution and place/demonym candidates
+            inst_cands = {k: v for k, v in cands.items() if k.startswith("inst:")}
+            other_cands = {k: v for k, v in cands.items() if not k.startswith("inst:")}
+            # If this window has institution matches, only use those (more specific)
+            # Otherwise fall back to place/demonym matches, but skip generic country-only places
+            if inst_cands:
+                active_cands = inst_cands
+            else:
+                # Filter out generic country-only place matches (e.g., "China", "USA")
+                # Keep only sub-national places or demonyms
+                specific_other = {}
+                for k, v in other_cands.items():
+                    if k.startswith("place:"):
+                        place_name = k.split(":", 1)[1]
+                        # Skip generic countries - keep only sub-national places
+                        if place_name not in {"china", "usa", "united states", "uk", "united kingdom",
+                                              "russia", "india", "japan", "germany", "france",
+                                              "canada", "australia", "brazil"}:
+                            specific_other[k] = v
+                    else:
+                        specific_other[k] = v
+                active_cands = specific_other if specific_other else {}
+            # If no active candidates after filtering, skip this window
+            if not active_cands:
+                continue
+            for key, (_score, evidence) in active_cands.items():
                 if key in body_voted:
                     continue
                 body_voted.add(key)
-                offer(key, evidence, W_AFFILIATION, _kind_of(key))
+                offer(key, evidence, window_weight, _kind_of(key))
 
     if not merged:
+        if allow_source:
+            source_out = _source_fallback(record)
+            if source_out:
+                return source_out
         return {"located": False, "reason": "no place, institution or demonym found"}
 
     ranked = sorted(
@@ -509,6 +864,10 @@ def resolve(record: dict, body: str | None = None) -> dict:
         return sorted(entry["keys"])[0]
 
     if top_score < MIN_SCORE:
+        if allow_source:
+            source_out = _source_fallback(record)
+            if source_out:
+                return source_out
         return {
             "located": False,
             "reason": "best signal %s scored %.1f, below the %.1f floor"
@@ -532,6 +891,10 @@ def resolve(record: dict, body: str | None = None) -> dict:
     # finding. With a rival present the ordinary margin rule applies.
     stated = top_score >= W_AFFILIATION and runner_up == 0.0
     if not (corroborated or beat_a_rival or stated):
+        if allow_source:
+            source_out = _source_fallback(record)
+            if source_out:
+                return source_out
         return {
             "located": False,
             "reason": "uncorroborated: %s (%.1f), no rival and no second route"
@@ -653,6 +1016,13 @@ def main() -> int:
     ap.add_argument(
         "--apply", action="store_true", help="write resolved coordinates into the data files"
     )
+    ap.add_argument(
+        "--include-source",
+        action="store_true",
+        help="as a last resort, place otherwise-unlocatable records at their "
+        "publisher/preprint-server headquarters with confidence 'source'. "
+        "Off by default: a source dot is honest provenance, not evidence.",
+    )
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--limit", type=int, default=25)
     args = ap.parse_args()
@@ -696,12 +1066,25 @@ def main() -> int:
             outcome = resolve(rec)
         else:
             replayed = True
+        if not outcome.get("located") and args.include_source:
+            # The cache deliberately stores only content-evidence outcomes, so the
+            # source tier is computed live here and never leaks into a default
+            # report through a replayed entry.
+            outcome = _source_fallback(rec) or outcome
         rows.append((rec, outcome))
 
     resolved = [r for r in rows if r[1].get("located")]
+    sourced = [r for r in resolved if r[1].get("confidence") == "source"]
     print(
-        "\n%d/%d unlocated records resolved%s"
-        % (len(resolved), len(rows), " (replayed from cached article bodies)" if replayed else "")
+        "\n%d/%d unlocated records resolved%s%s"
+        % (
+            len(resolved),
+            len(rows),
+            " (replayed from cached article bodies)" if replayed else "",
+            " (including %d at 'source' confidence)" % len(sourced)
+            if args.include_source and sourced
+            else "",
+        )
     )
     for rec, out in rows:
         title = (rec.get("title") or "")[:56]

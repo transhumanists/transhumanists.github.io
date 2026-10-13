@@ -38,6 +38,27 @@ class TestValidateCatalog(unittest.TestCase):
         ok, errors = shm.validate_catalog(catalog)
         self.assertTrue(ok, errors)
 
+    def test_unknown_category_rejected(self):
+        # The archive validator requires canonical categories, so a typo'd label
+        # must be caught at catalog validation, not after ingestion.
+        entry = make_catalog_entry(category="Astrology")
+        ok, errors = shm.validate_catalog({"milestones": [entry]})
+        self.assertFalse(ok)
+        self.assertTrue(any("not a known category" in e for e in errors), errors)
+
+    def test_legacy_alias_category_accepted(self):
+        # A catalog may name a pre-rename label; it folds onto the canonical bucket,
+        # so categorisation must not reject it.
+        entry = make_catalog_entry(category="Mathematics")
+        ok, errors = shm.validate_catalog({"milestones": [entry]})
+        self.assertTrue(ok, errors)
+
+    def test_non_string_category_rejected(self):
+        entry = make_catalog_entry(category=42)
+        ok, errors = shm.validate_catalog({"milestones": [entry]})
+        self.assertFalse(ok)
+        self.assertTrue(any("category must be a non-empty string" in e for e in errors), errors)
+
     def test_missing_milestones_key(self):
         ok, errors = shm.validate_catalog({})
         self.assertFalse(ok)
@@ -73,6 +94,16 @@ class TestValidateCatalog(unittest.TestCase):
         ok, errors = shm.validate_catalog({"milestones": [entry]})
         self.assertFalse(ok)
         self.assertTrue(any("not numeric" in e for e in errors))
+
+    def test_non_finite_geolocation(self):
+        entry = make_catalog_entry(geolocation={"lat": float("inf"), "lon": 0})
+        ok, errors = shm.validate_catalog({"milestones": [entry]})
+        self.assertFalse(ok)
+        self.assertTrue(any("not finite" in e for e in errors))
+        entry = make_catalog_entry(geolocation={"lat": float("nan"), "lon": 0})
+        ok, errors = shm.validate_catalog({"milestones": [entry]})
+        self.assertFalse(ok)
+        self.assertTrue(any("not finite" in e for e in errors))
 
     def test_empty_id(self):
         entry = make_catalog_entry(id="")

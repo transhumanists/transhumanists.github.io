@@ -94,7 +94,10 @@ INSTITUTION_COORDS = {
     "sparktx": {"lat": 39.9526, "lon": -75.1652},
     "jcvi": {"lat": 32.7157, "lon": -117.1611},
     "eth": {"lat": 47.3769, "lon": 8.5417},
-    "nvidia": {"lat": 37.3688, "lon": -122.0363},
+    "tsinghua": {"lat": 39.9897, "lon": 116.3329},
+    "tsinghua university": {"lat": 39.9897, "lon": 116.3329},
+    "perimeter institute": {"lat": 43.4753, "lon": -80.5386},
+    "perimeter institute for theoretical physics": {"lat": 43.4753, "lon": -80.5386},
     "quantumscape": {"lat": 37.5485, "lon": -122.0591},
     "autogpt": {"lat": 37.7749, "lon": -122.4194},
     "cncell": {"lat": 31.2304, "lon": 121.4737},
@@ -142,11 +145,7 @@ INSTITUTION_COORDS = {
     "nature": {"lat": 51.5074, "lon": -0.1278},
     "fiercebiotech": {"lat": 42.3601, "lon": -71.0942},  # Boston area
     "open khipu repository": {"lat": -13.5, "lon": -71.9},  # Cusco, Peru (Inca region)
-    "research team": {"lat": 0.0, "lon": 0.0},  # Will not match - generic
-    "research authors": {"lat": 0.0, "lon": 0.0},  # Will not match - generic
-    "academic researchers": {"lat": 0.0, "lon": 0.0},  # Will not match - generic
     "international mathematics collaboration": {"lat": 48.8566, "lon": 2.3522},  # Paris (IMU)
-    "quantamagazine": {"lat": 40.7580, "lon": -73.9683},  # NYC (Quanta Magazine)
     "ieee": {"lat": 40.7580, "lon": -73.9683},  # NYC
     "acm": {"lat": 40.7580, "lon": -73.9683},  # NYC
     "usenix": {"lat": 37.7749, "lon": -122.4194},  # Berkeley/SF
@@ -157,7 +156,6 @@ INSTITUTION_COORDS = {
     "cvpr": {"lat": 37.7749, "lon": -122.4194},
     "iclr": {"lat": 37.7749, "lon": -122.4194},
     "ijcai": {"lat": 37.7749, "lon": -122.4194},
-    "aaai": {"lat": 37.7749, "lon": -122.4194},
 }
 
 MILESTONES_REPO = os.environ.get("MILESTONES_REPO", "transhumanists/milestones")
@@ -301,8 +299,11 @@ CATEGORY_ALIASES = {
     "Quantum Gravity": "Quantum Physics",
     "Mathematics": "Computing & AGI",
     "Computational Archaeology": "Computing & AGI",
+    "Causal Inference": "Computing & AGI",
     "Computer Vision": "Computing & AGI",
     "Legal AI": "Computing & AGI",
+    "Legal Technology": "Computing & AGI",
+    "Optimization": "Computing & AGI",
     # Category splits and renames. Upstream buckets keep whatever name they had;
     # the site folds them into the canonical bucket so history is preserved
     # instead of orphaning every pre-existing milestone in a dead key.
@@ -642,17 +643,44 @@ def _archive_geolocation(geo):
 
 
 def _scrub_inherited(rec: dict) -> dict:
-    """Apply the archive geolocation rule to a record read back off disk.
+    """Apply the archive normalisation rules to a record read back off disk.
 
     `archive_record` sanitises every record built from upstream, but records
     inherited from the existing archive bypass it entirely - they are passed
     through as-is. That is how a pre-fix sentinel record stays in the file forever:
     it is never rebuilt, so nothing ever re-examines it. Mirrored here so the
     archive heals on the next run instead of needing a one-off repair script.
+
+    Two rules, both idempotent:
+
+    * the geolocation rule (see `archive_record`); and
+    * the category fold: a record archived under a legacy or renamed upstream label
+      is re-labelled to its canonical bucket. Without it, a record upstream stops
+      re-sending keeps its pre-rename label indefinitely and the archive validator -
+      which requires canonical categories - fails on data the pipeline can no longer
+      reach. This is the generalised form of what `scripts/fix_milestones.py` did by
+      hand for the two Computational Archaeology records.
     """
     if not isinstance(rec, dict):
         return rec
-    return lc.strip_unlocated(rec)
+    rec = lc.strip_unlocated(rec)
+    category = rec.get("category")
+    if isinstance(category, str) and category:
+        canonical = display_category(category)
+        if canonical != category:
+            rec = {**rec, "category": canonical}
+    # Heal unlocated archive records using source fallback if URL is present
+    if lc.is_unlocated(rec.get("geolocation")):
+        import article_geocode
+        source_geo = article_geocode._source_fallback(rec)
+        if source_geo and source_geo.get("located"):
+            rec = {
+                **rec,
+                "geolocation": {"lat": source_geo["lat"], "lon": source_geo["lon"]},
+                "location_confidence": "source",
+            }
+            rec.pop("located", None)
+    return rec
 
 
 def archive_record(m: dict, seen_on: str) -> dict:
@@ -1125,13 +1153,18 @@ def geocode_with_confidence(m: dict) -> tuple[float | None, float | None, str]:
     # than a location - so it is tried after the content passes have declined, and a
     # single adjective is not enough on its own without article_context.
     title = str(m.get("title") or "").lower()
+    import article_geocode
     if title.strip():
-        import article_geocode
-
         demonym = article_geocode.match_demonym(title)
         if demonym:
             lat, lon, name = demonym
             return lat, lon, "article"
+
+    # Finally, as a last resort for publisher/preprint servers when content passes
+    # decline: the publisher/preprint-server headquarters with confidence "source".
+    source_geo = article_geocode._source_fallback(m)
+    if source_geo and source_geo.get("located"):
+        return source_geo["lat"], source_geo["lon"], "source"
 
     return None, None, lc.UNLOCATED
 
@@ -1150,7 +1183,8 @@ def geocode_milestone(m: dict) -> tuple[float, float] | None:
     1. an institution named in the article's own text (title + summary);
     2. a place named in the article's own text;
     3. an institution or place named in the subcategory;
-    4. the source - the publisher or preprint server - as a last resort.
+    4. a demonym in the title (e.g., "Maltese", "Korean") naming a country;
+    5. the source - the publisher or preprint server - as a last resort.
 
     A publisher anchor is a real answer for a corporate announcement (a SpaceX
     launch does happen at Boca Chica) and a poor one for a paper, which is why

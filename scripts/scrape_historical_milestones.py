@@ -25,6 +25,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import re
 import sys
 from datetime import date
@@ -49,6 +50,12 @@ REQUIRED_CATALOG_FIELDS = {
     "geolocation",
 }
 
+# The categories the published archive accepts. A catalog entry may name a legacy
+# or renamed label - the same ones CATEGORY_ALIASES folds - but it must resolve to
+# one of these, so a typo is caught at catalog validation instead of surfacing much
+# later as an archive-validation failure on a file the pipeline can no longer fix.
+_CANONICAL_CATEGORIES = frozenset(sm.SITE_KEY_TO_DISPLAY.values())
+
 
 def validate_catalog_entry(entry: dict, index: int) -> list[str]:
     """Validate a single catalog entry. Returns list of error strings."""
@@ -58,6 +65,12 @@ def validate_catalog_entry(entry: dict, index: int) -> list[str]:
             errors.append(f"Entry {index}: missing required field '{field}'")
     if "id" in entry and not str(entry["id"]).strip():
         errors.append(f"Entry {index}: empty id")
+    if "category" in entry:
+        category = entry["category"]
+        if not (isinstance(category, str) and category.strip()):
+            errors.append(f"Entry {index}: category must be a non-empty string")
+        elif sm.display_category(category) not in _CANONICAL_CATEGORIES:
+            errors.append(f"Entry {index}: category {category!r} is not a known category")
     if "title" in entry and not str(entry["title"]).strip():
         errors.append(f"Entry {index}: empty title")
     if "source" in entry and not str(entry["source"]).strip():
@@ -80,7 +93,9 @@ def validate_catalog_entry(entry: dict, index: int) -> list[str]:
         else:
             try:
                 lat, lon = float(geo["lat"]), float(geo["lon"])
-                if not (-90 <= lat <= 90) or not (-180 <= lon <= 180):
+                if not (math.isfinite(lat) and math.isfinite(lon)):
+                    errors.append(f"Entry {index}: geolocation not finite")
+                elif not (-90 <= lat <= 90) or not (-180 <= lon <= 180):
                     errors.append(f"Entry {index}: geolocation out of bounds")
                 elif lc.is_unlocated({"lat": lat, "lon": lon}):
                     errors.append(
