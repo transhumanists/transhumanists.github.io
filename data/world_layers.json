@@ -1,6 +1,6 @@
 {
   "version": "1.3.0",
-  "last_update": "2026-10-13T00:45:34+00:00",
+  "last_update": "2026-10-13T14:17:07+00:00",
   "conflict_zones": [
     {
       "id": "zone-ukraine",
@@ -1312,6 +1312,18 @@
     }
   ],
   "human_rights_violations": [
+    {
+      "id": "hr-25da41d551",
+      "name": "India: End Crackdown on Protesters, Arbitrary Detentions",
+      "region": "Southern Asia",
+      "lat": 20.6,
+      "lon": 79.0,
+      "status": "active",
+      "start_date": "2026-10-13",
+      "note": "Police detain protesters during a demonstration demanding the resignation of India's chief election commissioner, in New Delhi, India, October 10, 2026. © 2026 AP Photo/Manish Swarup (New York) – Indian authorities are using abusive methods to crack down on thousands of peaceful",
+      "source": "Human Rights Watch",
+      "url": "https://www.hrw.org/news/2026/10/13/india-end-crackdown-on-protesters-arbitrary-detentions"
+    },
     {
       "id": "hr-3909483d93",
       "name": "Bahrain: Authorities Rearrest Pardoned Detainees",
