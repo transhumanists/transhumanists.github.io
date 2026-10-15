@@ -1,0 +1,154 @@
+<div class="reactions-widget" id="reactions-widget" aria-label="Community Reactions">
+  <div class="reactions-header">
+    <h4 class="reactions-title">Post Reactions & Terminal Feedback</h4>
+    <span class="reactions-subtitle">Zero telemetry · Stored locally & synced</span>
+  </div>
+  
+  <div class="reaction-buttons" id="reaction-buttons">
+    <button class="reaction-btn" data-emoji="👍" title="Thumbs Up">👍 <span class="count" data-count="thumbs">0</span></button>
+    <button class="reaction-btn" data-emoji="❤️" title="Resonate">❤️ <span class="count" data-count="heart">0</span></button>
+    <button class="reaction-btn" data-emoji="🚀" title="Accelerate">🚀 <span class="count" data-count="rocket">0</span></button>
+    <button class="reaction-btn" data-emoji="💡" title="Insight">💡 <span class="count" data-count="insight">0</span></button>
+    <button class="reaction-btn" data-emoji="🔥" title="Ignite">🔥 <span class="count" data-count="fire">0</span></button>
+  </div>
+
+  <div class="reaction-comments-section">
+    <form id="reaction-form" class="reaction-form">
+      <input type="text" id="comment-author" placeholder="Your callsign / name..." required maxlength="32">
+      <textarea id="comment-text" placeholder="Transmit your thoughts or feedback..." required rows="2" maxlength="280"></textarea>
+      <button type="submit" class="reaction-submit">Transmit Feedback</button>
+    </form>
+    <div class="comments-list" id="comments-list">
+      <!-- Dynamic comments loaded here -->
+    </div>
+  </div>
+</div>
+
+<style>
+.reactions-widget {
+  margin: 3rem auto;
+  padding: 1.75rem;
+  background: rgba(12, 18, 24, 0.85);
+  border: 1px solid rgba(0, 229, 255, 0.25);
+  border-radius: 12px;
+  font-family: var(--font-mono, monospace);
+  color: #e8eef2;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  max-width: 680px;
+}
+.reactions-header {
+  margin-bottom: 1rem;
+}
+.reactions-title {
+  font-size: 1rem;
+  color: #00e5ff;
+  margin: 0 0 0.25rem 0;
+  letter-spacing: 0.04em;
+}
+.reactions-subtitle {
+  font-size: 0.75rem;
+  color: #778899;
+}
+.reaction-buttons {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 1.5rem;
+}
+.reaction-btn {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 8px;
+  padding: 8px 14px;
+  color: #e8eef2;
+  cursor: pointer;
+  font-size: 1.1rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s;
+}
+.reaction-btn:hover {
+  background: rgba(0,229,255,0.15);
+  border-color: rgba(0,229,255,0.5);
+  transform: translateY(-2px);
+}
+.reaction-btn.reacted {
+  background: rgba(0,229,255,0.25);
+  border-color: #00e5ff;
+  box-shadow: 0 0 12px rgba(0,229,255,0.3);
+}
+.reaction-btn .count {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #00e5ff;
+}
+.reaction-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 1.5rem;
+}
+.reaction-form input,
+.reaction-form textarea {
+  background: rgba(0,0,0,0.4);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 6px;
+  padding: 10px;
+  color: #fff;
+  font-family: inherit;
+  font-size: 0.85rem;
+  resize: vertical;
+}
+.reaction-form input:focus,
+.reaction-form textarea:focus {
+  outline: none;
+  border-color: #00e5ff;
+  box-shadow: 0 0 8px rgba(0,229,255,0.3);
+}
+.reaction-submit {
+  align-self: flex-end;
+  background: linear-gradient(135deg, #00e5ff, #7c4dff);
+  border: none;
+  border-radius: 6px;
+  color: #fff;
+  font-weight: 600;
+  padding: 8px 18px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: opacity 0.2s, transform 0.2s;
+}
+.reaction-submit:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+.comments-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.comment-item {
+  background: rgba(255,255,255,0.02);
+  border-left: 3px solid #00e5ff;
+  padding: 10px 14px;
+  border-radius: 4px;
+  font-size: 0.85rem;
+}
+.comment-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  color: #778899;
+  margin-bottom: 4px;
+}
+.comment-author {
+  color: #00e5ff;
+  font-weight: 600;
+}
+.comment-body {
+  color: #e8eef2;
+  word-break: break-word;
+}
+</style>
+
+<script src="{{ '/assets/js/reactions.js' | relative_url }}" defer></script>
