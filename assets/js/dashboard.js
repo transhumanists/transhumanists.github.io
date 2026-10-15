@@ -1505,10 +1505,11 @@ function nextChartBucket(key, size) {
   // once; and at the mobile breakpoint `flex: 0 0 100%` made every card a full
   // screen wide, turning a slow drift into an unreadable crawl.
   //
-  // What is here instead: one highlight at a time, a new one every 2s, an
+  // What is here instead: one highlight at a time, a new one every 6s, an
   // overshoot-and-settle at the end of each slide, and a wrap straight back to
   // the first card. Same DOM ids as before, so nothing else has to change.
-  const HIGHLIGHT_INTERVAL_MS = 2000;
+  // Increased from 2s to 6s - the previous interval was too fast to absorb.
+  const HIGHLIGHT_INTERVAL_MS = 6000;
   // Long enough to read a title and a source, short enough that the section feels
   // live rather than like a slideshow you have to wait out.
   const HIGHLIGHT_SLIDE_MS = 520;

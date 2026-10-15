@@ -382,7 +382,7 @@ describe('the highlights carousel rotates one card at a time', () => {
   // into an unreadable crawl.
 
   test('the rotation interval is the two seconds the section promises', () => {
-    expect(api.HIGHLIGHT_INTERVAL_MS).toBe(2000);
+    expect(api.HIGHLIGHT_INTERVAL_MS).toBe(6000);
   });
 
   test('the timeline helpers the carousel shares are still correct', () => {
