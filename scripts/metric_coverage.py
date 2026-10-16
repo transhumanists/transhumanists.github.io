@@ -340,13 +340,19 @@ def build_debt(report: dict, findings: list[str], generated: str | None = None) 
 
 
 def debt_digest(report: dict, findings: list[str]) -> str:
-    """Stable fingerprint of the backlog, used to suppress no-op rewrites.
+    """Stable fingerprint of the ledger's content, used to suppress no-op rewrites.
 
     The ledger is committed by the same step that commits the data refresh, so a
     rewrite that changes nothing but the date would hand that step a diff on every
     single tick - four no-op commits a day, for twelve days. coverage_report.py
     --snapshot already guards against exactly this with a digest; this is the
     same guard for the same reason.
+
+    The overall totals are part of the fingerprint, not just the findings: the
+    ledger publishes them, and a file whose totals lagged the data it describes
+    would be worse than one that rewrites. So the file is rewritten whenever
+    either the backlog or the published totals move, and left byte-identical when
+    neither does.
     """
     payload = {"overall": report["overall"], "findings": findings}
     return hashlib.sha256(
@@ -446,6 +452,11 @@ def baseline_numeric(entry: dict) -> int:
 def evaluate_gate(report: dict, baseline: dict, floor: float) -> list[str]:
     """Reasons the refresh must not be published. Empty list means green.
 
+    `floor` is accepted for symmetry with evaluate_advisory() and ignored: the
+    floor describes curation debt, which belongs to the advisory tier. Reading it
+    here would reintroduce the discovery-vs-floor deadlock this tier exists to
+    avoid.
+
     This is the blocking tier, and it answers one question only: **did this run
     make the published set harder to compare than it was?**
 
@@ -509,14 +520,19 @@ def evaluate_advisory(report: dict, baseline: dict, floor: float) -> list[str]:
 
         if g["incoherent"]:
             units = ", ".join(sorted(g["units"]))
+            # Bound once, then used for both the comparison and the message. Reading
+            # known["coherence"] in the f-string instead raised KeyError on a
+            # baseline entry that predates the field, turning a debt report into a
+            # crash - the gate then died on a file it was only meant to read.
+            was_coherence = known.get("coherence", 1.0) if known is not None else None
             if known is None:
                 notes.append(
                     f"{name}: mixes units and is not in the baseline "
                     f"(coherence {g['unit_coherence']:.2f}; units: {units})"
                 )
-            elif g["unit_coherence"] < known.get("coherence", 1.0) - 1e-9:
+            elif g["unit_coherence"] < was_coherence - 1e-9:
                 notes.append(
-                    f"{name}: unit coherence fell from {known['coherence']:.2f} to "
+                    f"{name}: unit coherence fell from {was_coherence:.2f} to "
                     f"{g['unit_coherence']:.2f} (units: {units})"
                 )
 
@@ -573,7 +589,8 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument(
         "--record-debt",
         action="store_true",
-        help="write the curation-debt ledger to data/metric_coverage_debt.json",
+        help="write the curation-debt ledger to data/metric_coverage_debt.json "
+        "(ignored alongside --update-baseline, which exits first)",
     )
     ap.add_argument(
         "--advisory",
@@ -592,16 +609,42 @@ def main(argv: list[str] | None = None) -> int:
             encoding="utf-8",
         )
         print("baseline written: %s (%d subcategories)" % (path.name, len(report["groups"])))
+        if args.record_debt:
+            # --update-baseline returns here, so a combined invocation would
+            # otherwise drop the ledger request on the floor with no output to
+            # suggest it. Say so, rather than leaving the caller to notice a
+            # ledger that did not move.
+            print("note: --update-baseline wrote the baseline and exited; the debt "
+                  "ledger was not refreshed. Run again with --record-debt.")
         return 0
 
     baseline = load_baseline(data_dir)
+
+    # Fail closed, not open. With no baseline there is nothing to ratchet against,
+    # so every group is "new" and no group can regress - the gate would report OK
+    # and exit 0 having checked nothing at all. That is the worst possible failure
+    # for this check: a deleted, renamed or half-checked-out baseline silently
+    # removes the only thing standing between the pipeline and a refresh that lost
+    # its metrics, and the green run log is indistinguishable from a real pass.
+    if args.gate and not baseline:
+        print("metric gate FAILED:")
+        print(
+            "  - no baseline to ratchet against: %s is missing or unreadable."
+            % _baseline_path(data_dir).name
+        )
+        print("    Without it every check passes vacuously, so a refresh that lost")
+        print("    its metrics would publish unnoticed. Restore the file, or record")
+        print("    a new one deliberately with --update-baseline.")
+        return 1
+
     debt = evaluate_advisory(report, baseline, args.floor)
 
     if args.record_debt:
         state = write_debt(report, debt, data_dir)
-        print(
-            "debt ledger %s: %d findings" % (state, len(debt))
-        )
+        # stdout may be piped straight into a JSON parser, so this status line is
+        # only safe when JSON is not also going to it.
+        if not args.json:
+            print("debt ledger %s: %d findings" % (state, len(debt)))
 
     if args.json:
         print(json.dumps(report, indent=2, ensure_ascii=False))

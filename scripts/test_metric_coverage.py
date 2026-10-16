@@ -40,6 +40,32 @@ def _write(tmp: Path, records, name="milestones.json"):
     (tmp / name).write_text(json.dumps(payload), encoding="utf-8")
 
 
+def _run_cli(tmp: Path, *args):
+    """Invoke the script the way CI does, and capture what it printed."""
+    return subprocess.run(
+        [
+            sys.executable,
+            str(ROOT / "scripts" / "metric_coverage.py"),
+            "--data-dir",
+            str(tmp),
+            *args,
+        ],
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        # check=False: these tests assert on the exit code themselves, and a
+        # non-zero run is a result to inspect rather than an exception.
+        check=False,
+        # Lenient, because the child writes to a pipe in whatever encoding
+        # the host console uses - cp1252 on Windows - and a record title
+        # containing an em dash is then a byte sequence strict UTF-8 cannot
+        # decode. Without this the failure surfaces as a UnicodeDecodeError
+        # from a reader thread inside subprocess, which looks like a hang or a
+        # crash in the tool under test rather than a harness encoding bug.
+        errors="replace",
+    )
+
+
 class TestNumericValue(unittest.TestCase):
     def test_reads_plain_and_grouped_numbers(self):
         self.assertEqual(mc.numeric_value("1000"), 1000.0)
@@ -288,6 +314,79 @@ class TestGate(unittest.TestCase):
         self.assertEqual(mc.baseline_numeric({"records": 4, "comparable_rate": 0.25}), 1)
         self.assertEqual(mc.baseline_numeric({"numeric": 7, "records": 4, "comparable_rate": 0.25}), 7)
 
+    def test_a_baseline_entry_without_coherence_is_reported_not_crashed_on(self):
+        # The comparison defaulted coherence to 1.0 but the message read
+        # known["coherence"] directly, so a partial or older baseline entry raised
+        # KeyError - the gate died on the very file it exists to compare against.
+        report = self._report([_rec(id="a"), _rec(id="b", unit="qv"), _rec(id="c", unit="g")])
+        partial = {"Quantum Physics/quantum_supremacy": {"records": 3, "comparable_rate": 0.333}}
+        notes = mc.evaluate_advisory(report, partial, 0.25)
+        self.assertTrue(any("unit coherence fell" in p for p in notes))
+        self.assertEqual(mc.evaluate_gate(report, partial, 0.25), [])
+
+
+class TestGateFailsClosed(unittest.TestCase):
+    """A gate that passes vacuously is worse than no gate.
+
+    With the baseline absent every subcategory looks new, so nothing can regress
+    and --gate exits 0 having checked nothing. That is indistinguishable in the run
+    log from a genuine pass, and it removes the only thing standing between the
+    pipeline and publishing a refresh that lost its metrics.
+    """
+
+    def _run(self, tmp: Path, *args):
+        return _run_cli(tmp, *args)
+
+    def test_gate_fails_when_no_baseline_exists(self):
+        with tempfile.TemporaryDirectory() as td:
+            tmp = Path(td)
+            _write(tmp, [_rec(id="a"), _rec(id="b")])
+            result = self._run(tmp, "--gate")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("no baseline to ratchet against", result.stdout)
+
+    def test_report_without_a_baseline_still_works(self):
+        # Only --gate fails closed. A human running the report against a fresh
+        # checkout has no ratchet to honour and should still get the report.
+        with tempfile.TemporaryDirectory() as td:
+            tmp = Path(td)
+            _write(tmp, [_rec(id="a")])
+            result = self._run(tmp)
+        self.assertEqual(result.returncode, 0)
+        self.assertIn("total", result.stdout)
+
+    def test_gate_is_green_once_a_baseline_exists(self):
+        with tempfile.TemporaryDirectory() as td:
+            tmp = Path(td)
+            _write(tmp, [_rec(id="a"), _rec(id="b")])
+            self.assertEqual(self._run(tmp, "--update-baseline").returncode, 0)
+            green = self._run(tmp, "--gate")
+        self.assertEqual(green.returncode, 0)
+        self.assertIn("metric gate: OK", green.stdout)
+
+    def test_record_debt_does_not_corrupt_json_output(self):
+        # stdout may be piped straight into a JSON parser. A status line printed
+        # alongside --json makes the whole stream unparseable.
+        with tempfile.TemporaryDirectory() as td:
+            tmp = Path(td)
+            _write(tmp, [_rec(id="a"), _rec(id="b", unit="qv"), _rec(id="c", unit="g")])
+            self.assertEqual(self._run(tmp, "--update-baseline").returncode, 0)
+            result = self._run(tmp, "--json", "--record-debt")
+        self.assertEqual(result.returncode, 0)
+        json.loads(result.stdout)  # raises if anything else reached stdout
+
+    def test_update_baseline_says_it_ignored_record_debt(self):
+        # --update-baseline returns before the ledger is reached. Silently
+        # dropping the flag leaves the caller waiting for a ledger that never
+        # moved, so the combination has to announce itself.
+        with tempfile.TemporaryDirectory() as td:
+            tmp = Path(td)
+            _write(tmp, [_rec(id="a"), _rec(id="b")])
+            result = self._run(tmp, "--update-baseline", "--record-debt")
+            self.assertFalse((tmp / "metric_coverage_debt.json").exists())
+        self.assertEqual(result.returncode, 0)
+        self.assertIn("--update-baseline wrote the baseline and exited", result.stdout)
+
 
 class TestDebtLedger(unittest.TestCase):
     def _report(self, records):
@@ -376,25 +475,7 @@ class TestUnitAliases(unittest.TestCase):
 
 class TestCli(unittest.TestCase):
     def _run(self, tmp: Path, *args):
-        return subprocess.run(
-            [
-                sys.executable,
-                str(ROOT / "scripts" / "metric_coverage.py"),
-                "--data-dir",
-                str(tmp),
-                *args,
-            ],
-            capture_output=True,
-            text=True,
-            encoding="utf-8",
-            # Lenient, because the child writes to a pipe in whatever encoding
-            # the host console uses - cp1252 on Windows - and a record title
-            # containing an em dash is then a byte sequence strict UTF-8 cannot
-            # decode. Without this the failure surfaces as a UnicodeDecodeError
-            # from a reader thread inside subprocess, which looks like a hang or a
-            # crash in the tool under test rather than a harness encoding bug.
-            errors="replace",
-        )
+        return _run_cli(tmp, *args)
 
     def test_update_baseline_then_gate_is_green(self):
         with tempfile.TemporaryDirectory() as td:
