@@ -1,7 +1,289 @@
 {
-  "last_update": "2026-10-04T11:50:28+00:00",
+  "last_update": "2026-10-16T01:30:26+00:00",
   "version": "1.0.0",
   "events": [
+    {
+      "id": "ev-ms-56183fe2bf28",
+      "title": "Hirudo Android Trojan Uses Patched Banking Apps to Bypass Security Checks",
+      "category": "Cybersecurity",
+      "value": "Hirudo Android Trojan Uses Patched Banking Apps to Bypass Security Checks",
+      "source": "ThreatFabric",
+      "url": "https://thehackernews.com/2026/10/hirudo-android-trojan-uses-patched.html",
+      "date": "2026-10-14",
+      "subcategory": "exploits",
+      "location_confidence": "stated",
+      "geolocation": {
+        "lat": 47.3769,
+        "lon": 8.5417
+      }
+    },
+    {
+      "id": "ev-ms-ad4fd193955d",
+      "title": "Microsoft patches record 1,400+ vulnerabilities in single month",
+      "category": "Cybersecurity",
+      "value": "1400 vulnerabilities",
+      "source": "Microsoft",
+      "url": "https://krebsonsecurity.com/2026/10/microsoft-patches-more-than-1400-security-flaws/",
+      "date": "2026-10-13",
+      "subcategory": "mitigations",
+      "location_confidence": "institution",
+      "geolocation": {
+        "lat": 47.6062,
+        "lon": -122.3321
+      }
+    },
+    {
+      "id": "ev-ms-cccd1dd1feae",
+      "title": "Few-shot multimodal representation alignment via distilled optimal transport",
+      "category": "Computing & AGI",
+      "value": "Few-shot multimodal representation alignment via distilled optimal transport",
+      "source": "arXiv",
+      "url": "https://arxiv.org/abs/2610.12781",
+      "date": "2026-10-13",
+      "subcategory": "multimodal",
+      "location_confidence": "stated",
+      "geolocation": {
+        "lat": 42.444,
+        "lon": -76.5019
+      }
+    },
+    {
+      "id": "ev-ms-ba424f6afe44",
+      "title": "EmbodiedCLBench: First benchmark for continual learning in embodied agents",
+      "category": "Computing & AGI",
+      "value": "EmbodiedCLBench: First benchmark for continual learning in embodied agents",
+      "source": "arXiv",
+      "url": "https://arxiv.org/abs/2610.13021",
+      "date": "2026-10-13",
+      "subcategory": "benchmarks",
+      "location_confidence": "stated",
+      "geolocation": {
+        "lat": 42.444,
+        "lon": -76.5019
+      }
+    },
+    {
+      "id": "ev-ms-54e3ea140a46",
+      "title": "CLEAT: Value-Guided Clarification for Interactive LLM Agents",
+      "category": "Computing & AGI",
+      "value": "CLEAT: Value-Guided Clarification for Interactive LLM Agents",
+      "source": "arXiv",
+      "url": "https://arxiv.org/abs/2610.12655",
+      "date": "2026-10-13",
+      "subcategory": "agentic_ai",
+      "location_confidence": "stated",
+      "geolocation": {
+        "lat": 42.444,
+        "lon": -76.5019
+      }
+    },
+    {
+      "id": "ev-ms-fc512f295a81",
+      "title": "In vivo engineering of CAR NK cells via lipid nanoparticles for immunotherapy",
+      "category": "Biotechnology & Biohacking",
+      "value": "In vivo engineering of CAR NK cells via lipid nanoparticles for immunotherapy",
+      "source": "Nature Biotechnology",
+      "url": "https://www.nature.com/articles/s41587-026-03310-1",
+      "date": "2026-10-13",
+      "subcategory": "immunotherapy",
+      "location_confidence": "stated",
+      "geolocation": {
+        "lat": 32.0603,
+        "lon": 118.7969
+      }
+    },
+    {
+      "id": "ev-ms-b0c0800e6617",
+      "title": "First clinical trial deployment of six proteomic aging clocks",
+      "category": "Biotechnology & Biohacking",
+      "value": "First clinical trial deployment of six proteomic aging clocks",
+      "source": "Nature Biotechnology",
+      "url": "https://www.nature.com/articles/s41587-026-03361-4",
+      "date": "2026-10-13",
+      "subcategory": "longevity",
+      "location_confidence": "stated",
+      "geolocation": {
+        "lat": 32.0603,
+        "lon": 118.7969
+      }
+    },
+    {
+      "id": "ev-ms-f7e3ed1a332b",
+      "title": "RevMed's pancreatic cancer drug first",
+      "category": "Biotechnology & Biohacking",
+      "value": "RevMed's pancreatic cancer drug first",
+      "source": "RevMed",
+      "url": "https://www.nature.com/articles/s41587-026-03363-2",
+      "date": "2026-10-12",
+      "subcategory": "immunotherapy",
+      "location_confidence": "stated",
+      "geolocation": {
+        "lat": 51.5074,
+        "lon": -0.1278
+      }
+    },
+    {
+      "id": "ev-ms-d7a87738cf3b",
+      "title": "Engrafting human cortical organoids demonstrates functional integration in vivo",
+      "category": "Biotechnology & Biohacking",
+      "value": "Engrafting human cortical organoids demonstrates functional integration in vivo",
+      "source": "Nature Biotechnology",
+      "url": "https://www.nature.com/articles/s41587-026-03355-2",
+      "date": "2026-10-12",
+      "subcategory": "neuroscience",
+      "location_confidence": "stated",
+      "geolocation": {
+        "lat": 32.0603,
+        "lon": 118.7969
+      }
+    },
+    {
+      "id": "ev-ms-ba0f78571314",
+      "title": "P7 DarkSword iOS Exploit Kit Adds Crypto Wallet Theft and Two-Way C2",
+      "category": "Cybersecurity",
+      "value": "P7 DarkSword iOS Exploit Kit Adds Crypto Wallet Theft and Two-Way C2",
+      "source": "iVerify",
+      "url": "https://thehackernews.com/2026/10/p7-darksword-ios-exploit-kit-adds.html",
+      "date": "2026-10-09",
+      "subcategory": "exploits",
+      "location_confidence": "unlocated",
+      "located": false
+    },
+    {
+      "id": "ev-ms-20a3326da088",
+      "title": "Anthropic launches free AI-powered vulnerability scanner for open-source projects",
+      "category": "Cybersecurity",
+      "value": "Anthropic launches free AI-powered vulnerability scanner for open-source projects",
+      "source": "Anthropic",
+      "url": "https://thehackernews.com/2026/10/anthropic-launches-free-ai.html",
+      "date": "2026-10-09",
+      "subcategory": "mitigations",
+      "location_confidence": "stated",
+      "geolocation": {
+        "lat": 37.7749,
+        "lon": -122.4194
+      }
+    },
+    {
+      "id": "ev-ms-da39844869ed",
+      "title": "Persistent KV cache enables 50M-token context window on single H100",
+      "category": "Computing & AGI",
+      "value": "50000000 tokens",
+      "source": "arXiv (galahad-kv authors)",
+      "url": "https://arxiv.org/abs/2610.10845",
+      "date": "2026-10-09",
+      "subcategory": "inference_cost",
+      "location_confidence": "stated",
+      "geolocation": {
+        "lat": 42.444,
+        "lon": -76.5019
+      }
+    },
+    {
+      "id": "ev-ms-bc6a33f89941",
+      "title": "Prefill-Only Decision Models Reduce Inference Cost by 10-100x",
+      "category": "Computing & AGI",
+      "value": "100 x",
+      "source": "arXiv",
+      "url": "https://arxiv.org/abs/2610.07716",
+      "date": "2026-10-07",
+      "subcategory": "inference_cost",
+      "location_confidence": "stated",
+      "geolocation": {
+        "lat": 42.444,
+        "lon": -76.5019
+      }
+    },
+    {
+      "id": "ev-ms-79a5aeaa5895",
+      "title": "Shotgun genetic engineering enables novel metabolic pathways in mammalian cells",
+      "category": "Biotechnology & Biohacking",
+      "value": "Shotgun genetic engineering enables novel metabolic pathways in mammalian cells",
+      "source": "Nature Biotechnology",
+      "url": "https://www.nature.com/articles/s41587-026-03329-4",
+      "date": "2026-10-06",
+      "subcategory": "synthetic_biology",
+      "location_confidence": "stated",
+      "geolocation": {
+        "lat": 32.0603,
+        "lon": 118.7969
+      }
+    },
+    {
+      "id": "ev-ms-353f7e5bc1a0",
+      "title": "Highly multiplexed mammalian metabolic engineering via shotgun screening",
+      "category": "Biotechnology & Biohacking",
+      "value": "Highly multiplexed mammalian metabolic engineering via shotgun screening",
+      "source": "Nature Biotechnology",
+      "url": "https://www.nature.com/articles/s41587-026-03318-7",
+      "date": "2026-10-06",
+      "subcategory": "synthetic_biology",
+      "location_confidence": "stated",
+      "geolocation": {
+        "lat": 32.0603,
+        "lon": 118.7969
+      }
+    },
+    {
+      "id": "ev-ms-fd76df20d111",
+      "title": "Engineered avian R2 retrotransposons enable targeted DNA integration in human cells",
+      "category": "Biotechnology & Biohacking",
+      "value": "Engineered avian R2 retrotransposons enable targeted DNA integration in human cells",
+      "source": "Nature Biotechnology",
+      "url": "https://www.nature.com/articles/s41587-026-03315-w",
+      "date": "2026-10-05",
+      "subcategory": "gene_therapy",
+      "location_confidence": "stated",
+      "geolocation": {
+        "lat": 32.0603,
+        "lon": 118.7969
+      }
+    },
+    {
+      "id": "ev-ms-45ba0e7b2200",
+      "title": "Engineered avian R2 retrotransposons enable all-RNA targeted DNA integration in human cells",
+      "category": "Biotechnology & Biohacking",
+      "value": "Engineered avian R2 retrotransposons enable all-RNA targeted DNA integration in human cells",
+      "source": "Nature Biotechnology",
+      "url": "https://www.nature.com/articles/s41587-026-03315-w",
+      "date": "2026-10-05",
+      "subcategory": "gene_editing",
+      "location_confidence": "stated",
+      "geolocation": {
+        "lat": 32.0603,
+        "lon": 118.7969
+      }
+    },
+    {
+      "id": "ev-ms-d092c3d026b8",
+      "title": "Detectrons: RNA-to-DNA barcode conversion for high-throughput RNA analysis",
+      "category": "Biotechnology & Biohacking",
+      "value": "Detectrons: RNA-to-DNA barcode conversion for high-throughput RNA analysis",
+      "source": "Nature Biotechnology",
+      "url": "https://www.nature.com/articles/s41587-026-03334-7",
+      "date": "2026-10-05",
+      "subcategory": "biosensors",
+      "location_confidence": "stated",
+      "geolocation": {
+        "lat": 32.0603,
+        "lon": 118.7969
+      }
+    },
+    {
+      "id": "ev-ms-2df4dfe4cf19",
+      "title": "Format-aware fusion enables fast FP4 pretraining at 160B-token scale",
+      "category": "Computing & AGI",
+      "value": "160 billion tokens",
+      "source": "arXiv",
+      "url": "https://arxiv.org/abs/2610.00053",
+      "date": "2026-10-03",
+      "subcategory": "gpu_efficiency",
+      "location_confidence": "stated",
+      "geolocation": {
+        "lat": 42.444,
+        "lon": -76.5019
+      }
+    },
     {
       "id": "ev-ms-4ff7841d61d0",
       "title": "TutlAit v1: first crowdsourced Moroccan Tamazight speech dataset with Arabic transcriptions and regional accent labels",
@@ -11,7 +293,7 @@
       "url": "https://arxiv.org/abs/2609.38219",
       "date": "2026-10-02",
       "subcategory": "low_resource_speech",
-      "location_confidence": "source",
+      "location_confidence": "stated",
       "geolocation": {
         "lat": 42.444,
         "lon": -76.5019
@@ -26,7 +308,7 @@
       "url": "https://arxiv.org/abs/2609.38469",
       "date": "2026-10-02",
       "subcategory": "benchmarks",
-      "location_confidence": "source",
+      "location_confidence": "stated",
       "geolocation": {
         "lat": 42.444,
         "lon": -76.5019
@@ -138,21 +420,6 @@
       }
     },
     {
-      "id": "ev-ms-8644b2a34d60",
-      "title": "New ionizable lipid LC-1 enables efficient LNP delivery of large gene editors to multiple tissues",
-      "category": "Biotechnology & Biohacking",
-      "value": "New ionizable lipid LC-1 enables efficient LNP delivery of large gene editors to multiple tissues",
-      "source": "Nature Biotechnology",
-      "url": "https://www.nature.com/articles/s41587-026-03297-9",
-      "date": "2026-09-28",
-      "subcategory": "gene_therapy",
-      "location_confidence": "stated",
-      "geolocation": {
-        "lat": 32.0603,
-        "lon": 118.7969
-      }
-    },
-    {
       "id": "ev-ms-e0d7fb1f057f",
       "title": "Lipid nanoparticles optimized for large RNA cargo enhance in vivo genome editing",
       "category": "Biotechnology & Biohacking",
@@ -168,6 +435,21 @@
       }
     },
     {
+      "id": "ev-ms-8644b2a34d60",
+      "title": "LC-1 lipid nanoparticle enables efficient delivery of large gene editors in mice",
+      "category": "Biotechnology & Biohacking",
+      "value": "LC-1 lipid nanoparticle enables efficient delivery of large gene editors in mice",
+      "source": "Nature Biotechnology",
+      "url": "https://www.nature.com/articles/s41587-026-03297-9",
+      "date": "2026-09-28",
+      "subcategory": "gene_therapy",
+      "location_confidence": "stated",
+      "geolocation": {
+        "lat": 32.0603,
+        "lon": 118.7969
+      }
+    },
+    {
       "id": "ev-ms-bc2c513b6177",
       "title": "AI-guided optimization yields thermostable mRNA vaccines stable at 37°C for 2 months",
       "category": "Biotechnology & Biohacking",
@@ -176,6 +458,21 @@
       "url": "https://www.nature.com/articles/s41587-026-03330-x",
       "date": "2026-09-28",
       "subcategory": "gene_therapy",
+      "location_confidence": "stated",
+      "geolocation": {
+        "lat": 32.0603,
+        "lon": 118.7969
+      }
+    },
+    {
+      "id": "ev-ms-0a6a4227b697",
+      "title": "AI-guided optimization yields thermostable mRNA vaccines stable at 37°C for 2 months",
+      "category": "Biotechnology & Biohacking",
+      "value": "2 months",
+      "source": "Nature Biotechnology",
+      "url": "https://www.nature.com/articles/s41587-026-03330-x",
+      "date": "2026-09-28",
+      "subcategory": "synthetic_biology",
       "location_confidence": "stated",
       "geolocation": {
         "lat": 32.0603,
@@ -221,10 +518,10 @@
       "url": "https://www.quantamagazine.org/gravity-seems-holographic-what-does-that-mean-for-reality-20260925/",
       "date": "2026-09-25",
       "subcategory": "holographic_principle",
-      "location_confidence": "source",
+      "location_confidence": "stated",
       "geolocation": {
-        "lat": 40.758,
-        "lon": -73.9683
+        "lat": 40.7128,
+        "lon": -74.006
       }
     },
     {
@@ -236,7 +533,7 @@
       "url": "https://arxiv.org/abs/2609.28876",
       "date": "2026-09-25",
       "subcategory": "benchmarks",
-      "location_confidence": "source",
+      "location_confidence": "stated",
       "geolocation": {
         "lat": 42.444,
         "lon": -76.5019
@@ -266,7 +563,7 @@
       "url": "https://arxiv.org/abs/2609.25166",
       "date": "2026-09-23",
       "subcategory": "benchmarks",
-      "location_confidence": "source",
+      "location_confidence": "stated",
       "geolocation": {
         "lat": 42.444,
         "lon": -76.5019
@@ -386,8 +683,11 @@
       "url": "https://www.nature.com/articles/s41587-026-03322-x",
       "date": "2026-09-15",
       "subcategory": "biosensors",
-      "location_confidence": "unlocated",
-      "located": false
+      "location_confidence": "stated",
+      "geolocation": {
+        "lat": 51.5074,
+        "lon": -0.1278
+      }
     },
     {
       "id": "ev-ms-e55c8cf4e432",
@@ -563,7 +863,7 @@
       "url": "https://arxiv.org/abs/2609.38490",
       "date": "2026-09-01",
       "subcategory": "agentic_ai",
-      "location_confidence": "source",
+      "location_confidence": "stated",
       "geolocation": {
         "lat": 42.444,
         "lon": -76.5019
@@ -1059,14 +1359,32 @@
       "url": "http://arxiv.org/abs/2607.00266v1",
       "date": "2026-06-30",
       "subcategory": "quantum_resource_theory",
-      "location_confidence": "unlocated",
-      "located": false
+      "location_confidence": "stated",
+      "geolocation": {
+        "lat": 42.444,
+        "lon": -76.5019
+      }
+    },
+    {
+      "id": "ev-ms-c9cc51e4d880",
+      "title": "Theoretical sample complexity bounds for Gumbel-Max watermark proportion estimation",
+      "category": "Computing & AGI",
+      "value": "Theoretical sample complexity bounds for Gumbel-Max watermark proportion estimation",
+      "source": "arXiv preprint",
+      "url": "http://arxiv.org/abs/2607.00224v2",
+      "date": "2026-06-30",
+      "subcategory": "benchmarks",
+      "location_confidence": "stated",
+      "geolocation": {
+        "lat": 42.444,
+        "lon": -76.5019
+      }
     },
     {
       "id": "ev-ms-cede87aeb630",
-      "title": "Seed2.0 model achieves world-leading reasoning and multimodal capabilities",
+      "title": "Seed2.0 model series sets new frontier in reasoning and multimodal AI",
       "category": "Computing & AGI",
-      "value": "Seed2.0 model achieves world-leading reasoning and multimodal capabilities",
+      "value": "Seed2.0 model series sets new frontier in reasoning and multimodal AI",
       "source": "ByteDance",
       "url": "http://arxiv.org/abs/2607.00248v1",
       "date": "2026-06-30",
@@ -1078,11 +1396,41 @@
       }
     },
     {
-      "id": "ev-ms-fc6083e0cc69",
-      "title": "ORACLE-2 Omni achieves 0.73 macro F1 for real-time transient classification using multimodal data",
+      "id": "ev-ms-1e9a08b4a528",
+      "title": "SLIM-RL matches TraceRL math accuracy with 54% fewer training samples",
       "category": "Computing & AGI",
-      "value": "0.73 macro F1",
-      "source": "Zwicky Transient Facility collaboration",
+      "value": "0.46 sample_ratio",
+      "source": "Academic research team",
+      "url": "http://arxiv.org/abs/2607.00208v1",
+      "date": "2026-06-30",
+      "subcategory": "benchmarks",
+      "location_confidence": "stated",
+      "geolocation": {
+        "lat": 42.444,
+        "lon": -76.5019
+      }
+    },
+    {
+      "id": "ev-ms-2a999b4415a4",
+      "title": "Persistent memory architecture enables 86.7% coordination reliability in LLM agent language emergence",
+      "category": "Computing & AGI",
+      "value": "0.867 coordination_score",
+      "source": "Research Team",
+      "url": "http://arxiv.org/abs/2607.00233v1",
+      "date": "2026-06-30",
+      "subcategory": "agentic_ai",
+      "location_confidence": "stated",
+      "geolocation": {
+        "lat": 42.444,
+        "lon": -76.5019
+      }
+    },
+    {
+      "id": "ev-ms-fc6083e0cc69",
+      "title": "ORACLE-2 Omni achieves 0.73 macro F1 for real-time transient classification",
+      "category": "Computing & AGI",
+      "value": "0.73 macro F1 score",
+      "source": "Zwicky Transient Facility (ZTF)",
       "url": "http://arxiv.org/abs/2607.00228v1",
       "date": "2026-06-30",
       "subcategory": "multimodal",
@@ -1094,15 +1442,18 @@
     },
     {
       "id": "ev-ms-46a7d8543058",
-      "title": "Mnemosyne introduces Agentic Transaction Processing with formal safety guarantees for AI workflows",
+      "title": "Mnemosyne: Agentic Transaction Processing for Validating and Repairing AI-Generated Workflows",
       "category": "Computing & AGI",
       "value": "5.9 % throughput overhead",
-      "source": "Unknown",
+      "source": "Academic Research",
       "url": "http://arxiv.org/abs/2607.00269v3",
       "date": "2026-06-30",
       "subcategory": "agentic_ai",
-      "location_confidence": "unlocated",
-      "located": false
+      "location_confidence": "stated",
+      "geolocation": {
+        "lat": 42.444,
+        "lon": -76.5019
+      }
     },
     {
       "id": "ev-ms-10f19d45d95b",
@@ -1113,10 +1464,10 @@
       "url": "http://arxiv.org/abs/2607.00185v1",
       "date": "2026-06-30",
       "subcategory": "pattern_mining",
-      "location_confidence": "source",
+      "location_confidence": "stated",
       "geolocation": {
-        "lat": -13.5,
-        "lon": -71.9
+        "lat": 42.444,
+        "lon": -76.5019
       },
       "sources": [
         "Open Khipu Repository",
@@ -1132,10 +1483,10 @@
       "url": "http://arxiv.org/abs/2608.20391v1",
       "date": "2026-06-30",
       "subcategory": "legal_datasets",
-      "location_confidence": "place",
+      "location_confidence": "stated",
       "geolocation": {
-        "lat": 39.8,
-        "lon": -98.6
+        "lat": 42.444,
+        "lon": -76.5019
       }
     },
     {
@@ -1147,32 +1498,56 @@
       "url": "http://arxiv.org/abs/2608.20392v1",
       "date": "2026-06-30",
       "subcategory": "benchmarks",
-      "location_confidence": "unlocated",
-      "located": false
+      "location_confidence": "stated",
+      "geolocation": {
+        "lat": 42.444,
+        "lon": -76.5019
+      }
     },
     {
       "id": "ev-ms-d6824a356960",
-      "title": "EgoSafetyBench: Diagnostic Egocentric Video Benchmark for Embodied VLM Safety Guards",
+      "title": "EgoSafetyBench: Egocentric Video Benchmark for Embodied VLM Safety Evaluation",
       "category": "Computing & AGI",
       "value": "1200 scenarios",
-      "source": "Research Consortium",
-      "url": "http://arxiv.org/abs/2607.00218v1",
+      "source": "Research authors (institution not specified)",
+      "url": "http://arxiv.org/abs/2607.00218v2",
       "date": "2026-06-30",
       "subcategory": "benchmarks",
-      "location_confidence": "unlocated",
-      "located": false
+      "location_confidence": "stated",
+      "geolocation": {
+        "lat": 42.444,
+        "lon": -76.5019
+      }
     },
     {
       "id": "ev-ms-110c8b5371e0",
-      "title": "ASPIRE achieves up to 77% improvement on robot manipulation benchmarks via autonomous skill discovery",
+      "title": "ASPIRE achieves up to 77% improvement on robotic manipulation benchmarks",
       "category": "Computing & AGI",
-      "value": "77 percent improvement",
-      "source": "ASPIRE research team",
+      "value": "77 %",
+      "source": "ASPIRE Research Team",
       "url": "http://arxiv.org/abs/2607.00272v1",
       "date": "2026-06-30",
       "subcategory": "agentic_ai",
-      "location_confidence": "unlocated",
-      "located": false
+      "location_confidence": "stated",
+      "geolocation": {
+        "lat": 42.444,
+        "lon": -76.5019
+      }
+    },
+    {
+      "id": "ev-ms-1bc7a446bfe6",
+      "title": "ALEE benchmark evaluates text embeddings across 275+ languages",
+      "category": "Computing & AGI",
+      "value": "275 languages",
+      "source": "Andrian0s",
+      "url": "http://arxiv.org/abs/2607.00171v2",
+      "date": "2026-06-30",
+      "subcategory": "benchmarks",
+      "location_confidence": "stated",
+      "geolocation": {
+        "lat": 42.444,
+        "lon": -76.5019
+      }
     },
     {
       "id": "ev-def-002",

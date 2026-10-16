@@ -1,0 +1,19 @@
+{
+  "_comment": "Curation debt reported by scripts/metric_coverage.py --record-debt. Non-blocking: these findings arrive whenever the sync discovers more milestones, so gating on them would stop the pipeline publishing the records it just discovered. Reconcile them by fixing the record's unit or splitting the subcategory, not by loosening this file.",
+  "generated": "2026-10-16",
+  "digest": "3b0b2a5a24caeafa",
+  "overall": {
+    "records": 178,
+    "numeric": 109,
+    "unitless": 0,
+    "prose": 69,
+    "comparable_rate": 0.612
+  },
+  "count": 4,
+  "findings": [
+    "Biotechnology & Biohacking/synthetic_biology: unit coherence fell from 1.00 to 0.50 (units: bp, months)",
+    "Computing & AGI/benchmarks: unit coherence fell from 0.33 to 0.20 (units: events, languages, sample_ratio, scenarios, x)",
+    "Computing & AGI/gpu_efficiency: unit coherence fell from 1.00 to 0.50 (units: billion tokens, tflops/w)",
+    "Computing & AGI/inference_cost: mixes units and is not in the baseline (coherence 0.50; units: tokens, x)"
+  ]
+}

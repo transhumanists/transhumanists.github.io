@@ -1,9 +1,9 @@
 {
-  "last_update": "2026-10-04T11:50:28+00:00",
+  "last_update": "2026-10-16T01:30:26+00:00",
   "bucket": "month",
   "first": "1945-07-01",
   "last": "2026-10-01",
-  "total": 154,
+  "total": 178,
   "days": [
     {
       "date": "1945-07-01",
@@ -3891,7 +3891,7 @@
     },
     {
       "date": "2026-06-01",
-      "count": 14
+      "count": 18
     },
     {
       "date": "2026-07-01",
@@ -3903,18 +3903,18 @@
     },
     {
       "date": "2026-09-01",
-      "count": 31
+      "count": 32
     },
     {
       "date": "2026-10-01",
-      "count": 7
+      "count": 26
     }
   ],
   "spikes": [
     {
       "date": "2026-06-30",
-      "count": 10,
-      "reason": "Seed2.0 model achieves world-leading reasoning and multimodal capabilities; ORACLE-2 Omni achieves 0.73 macro F1 for real-time transient classification using multimodal data; Mnemosyne introduces Agentic Transaction Processing with formal safety guarantees for AI workflows"
+      "count": 14,
+      "reason": "Theoretical sample complexity bounds for Gumbel-Max watermark proportion estimation; Seed2.0 model series sets new frontier in reasoning and multimodal AI; SLIM-RL matches TraceRL math accuracy with 54% fewer training samples"
     },
     {
       "date": "2026-09-07",
@@ -3922,9 +3922,9 @@
       "reason": "Largest local LLM claimed for the CHUWI UniBox AI495 Pro; Largest local LLM claimed for the CHUWI UniBox AI395; CHUWI UniBox AI495 Pro unified memory bandwidth"
     },
     {
-      "date": "2026-10-01",
-      "count": 5,
-      "reason": "Lenovo ThinkCentre X Ultra chassis volume; Lenovo ThinkCentre X Ultra caps at 128 GB unified memory in a 1.6-litre chassis; HP ZBook Ultra G3a graphics-allocatable unified memory"
+      "date": "2026-10-13",
+      "count": 6,
+      "reason": "Microsoft patches record 1,400+ vulnerabilities in single month; In vivo engineering of CAR NK cells via lipid nanoparticles for immunotherapy; First clinical trial deployment of six proteomic aging clocks"
     }
   ]
 }

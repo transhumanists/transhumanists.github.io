@@ -1,8 +1,252 @@
 {
-  "last_update": "2026-10-04T11:50:28+00:00",
+  "last_update": "2026-10-16T01:30:26+00:00",
   "version": "1.0.0",
   "schema": "https://transhumanists.github.io/schema/milestone-v1.json",
   "categories": {
+    "cybersecurity": {
+      "name": "Cybersecurity",
+      "icon": "🛡️",
+      "color": "#ff5252",
+      "subcategories": [
+        "exploits",
+        "mitigations",
+        "encryption",
+        "threat_intelligence",
+        "defense_scores",
+        "zero_day",
+        "ransomware",
+        "supply_chain"
+      ],
+      "milestones": [
+        {
+          "id": "ms-56183fe2bf28",
+          "title": "Hirudo Android Trojan Uses Patched Banking Apps to Bypass Security Checks",
+          "summary": "Researchers at ThreatFabric discovered the Hirudo banking trojan, which replaces legitimate Indonesian banking apps with patched versions that bypass in-app security checks, representing a novel escal",
+          "category": "Cybersecurity",
+          "subcategory": "exploits",
+          "value": null,
+          "unit": null,
+          "source": "ThreatFabric",
+          "date": "2026-10-14",
+          "url": "https://thehackernews.com/2026/10/hirudo-android-trojan-uses-patched.html",
+          "is_record": false,
+          "is_breakthrough": true,
+          "is_new": false,
+          "geolocation": {
+            "lat": 47.3769,
+            "lon": 8.5417
+          },
+          "category_key": "cybersecurity"
+        },
+        {
+          "id": "ms-ad4fd193955d",
+          "title": "Microsoft patches record 1,400+ vulnerabilities in single month",
+          "summary": "Microsoft released updates fixing over 1,400 security flaws, surpassing the previous monthly record of nearly 1,000 patches set in September.",
+          "category": "Cybersecurity",
+          "subcategory": "mitigations",
+          "value": 1400,
+          "unit": "vulnerabilities",
+          "source": "Microsoft",
+          "date": "2026-10-13",
+          "url": "https://krebsonsecurity.com/2026/10/microsoft-patches-more-than-1400-security-flaws/",
+          "is_record": true,
+          "is_breakthrough": false,
+          "is_new": false,
+          "category_key": "cybersecurity",
+          "located": false,
+          "location_confidence": "unlocated"
+        },
+        {
+          "id": "ms-ba0f78571314",
+          "title": "P7 DarkSword iOS Exploit Kit Adds Crypto Wallet Theft and Two-Way C2",
+          "summary": "Researchers disclose P7 DarkSword, a new iOS exploit kit variant with reduced footprint, crypto wallet theft, and two-way command-and-control communication.",
+          "category": "Cybersecurity",
+          "subcategory": "exploits",
+          "value": null,
+          "unit": null,
+          "source": "iVerify",
+          "date": "2026-10-09",
+          "url": "https://thehackernews.com/2026/10/p7-darksword-ios-exploit-kit-adds.html",
+          "is_record": false,
+          "is_breakthrough": true,
+          "is_new": false,
+          "category_key": "cybersecurity",
+          "located": false,
+          "location_confidence": "unlocated"
+        },
+        {
+          "id": "ms-20a3326da088",
+          "title": "Anthropic launches free AI-powered vulnerability scanner for open-source projects",
+          "summary": "Anthropic unveils OSS Scanner, a free opt-in service using its strongest AI models to periodically scan open-source projects for vulnerabilities.",
+          "category": "Cybersecurity",
+          "subcategory": "mitigations",
+          "value": null,
+          "unit": null,
+          "source": "Anthropic",
+          "date": "2026-10-09",
+          "url": "https://thehackernews.com/2026/10/anthropic-launches-free-ai.html",
+          "is_record": false,
+          "is_breakthrough": true,
+          "is_new": false,
+          "geolocation": {
+            "lat": 37.7749,
+            "lon": -122.4194
+          },
+          "category_key": "cybersecurity"
+        },
+        {
+          "id": "ms-84669fafeb66",
+          "title": "Elementor WordPress Plugin CSRF Vulnerability Allows Site Takeover",
+          "summary": "High-severity CSRF flaw in Elementor plugin (CVSS 8.8) enables unauthenticated attackers to create admin accounts via crafted links.",
+          "category": "Cybersecurity",
+          "subcategory": "exploits",
+          "value": 8.8,
+          "unit": "CVSS",
+          "source": "Security researchers",
+          "date": "2026-09-26",
+          "url": "https://thehackernews.com/2026/09/elementor-csrf-flaw-lets-attackers-take.html",
+          "is_record": false,
+          "is_breakthrough": false,
+          "is_new": false,
+          "geolocation": {
+            "lat": 32.0853,
+            "lon": 34.7818
+          },
+          "category_key": "cybersecurity"
+        },
+        {
+          "id": "cyber-001",
+          "subcategory": "exploits",
+          "title": "Highest active CVSS score (0day)",
+          "value": 10.0,
+          "unit": "CRITICAL",
+          "source": "NVD / CISA",
+          "date": "2026-08-24",
+          "url": "https://nvd.nist.gov",
+          "geolocation": {
+            "lat": 38.8951,
+            "lon": -77.0364
+          },
+          "category": "Cybersecurity",
+          "is_new": false,
+          "category_key": "cybersecurity"
+        },
+        {
+          "id": "cyber-002",
+          "subcategory": "encryption",
+          "title": "Post-quantum TLS deployment (Top 100)",
+          "value": 34,
+          "unit": "%",
+          "source": "Google Transparency",
+          "date": "2026-08-15",
+          "url": "https://transparencyreport.google.com",
+          "geolocation": {
+            "lat": 37.4219,
+            "lon": -122.084
+          },
+          "category": "Cybersecurity",
+          "is_new": false,
+          "category_key": "cybersecurity"
+        },
+        {
+          "id": "cyber-003",
+          "subcategory": "encryption",
+          "title": "NIST PQC standard (CRYSTALS-Kyber)",
+          "value": 256,
+          "unit": "bit security",
+          "source": "NIST",
+          "date": "2026-06-01",
+          "url": "https://csrc.nist.gov",
+          "geolocation": {
+            "lat": 38.8951,
+            "lon": -77.0364
+          },
+          "category": "Cybersecurity",
+          "is_new": false,
+          "category_key": "cybersecurity"
+        },
+        {
+          "id": "his-2020-12-13-solarwinds",
+          "category": "Cybersecurity",
+          "subcategory": "exploits",
+          "title": "SolarWinds supply-chain compromise disclosed",
+          "value": null,
+          "unit": null,
+          "source": "FireEye / Microsoft",
+          "url": "https://en.wikipedia.org/wiki/SolarWinds_attack",
+          "date": "2020-12-13",
+          "geolocation": {
+            "lat": 30.2672,
+            "lon": -97.7431
+          },
+          "category_key": "cybersecurity"
+        },
+        {
+          "id": "his-2014-04-07-heartbleed",
+          "category": "Cybersecurity",
+          "subcategory": "encryption",
+          "title": "Heartbleed vulnerability in OpenSSL disclosed publicly",
+          "value": null,
+          "unit": null,
+          "source": "Codenomicon / Google Security",
+          "url": "https://en.wikipedia.org/wiki/Heartbleed",
+          "date": "2014-04-07",
+          "geolocation": {
+            "lat": 47.3769,
+            "lon": 8.5417
+          },
+          "category_key": "cybersecurity"
+        },
+        {
+          "id": "his-2010-06-17-stuxnet",
+          "category": "Cybersecurity",
+          "subcategory": "exploits",
+          "title": "Stuxnet - a cyber weapon targeting Iranian nuclear enrichment - is publicly identified",
+          "value": null,
+          "unit": null,
+          "source": "Symantec / VirusBlokAda",
+          "url": "https://en.wikipedia.org/wiki/Stuxnet",
+          "date": "2010-06-17",
+          "geolocation": {
+            "lat": 33.5066,
+            "lon": 51.9163
+          },
+          "category_key": "cybersecurity"
+        },
+        {
+          "id": "his-2007-04-27-estonia-cyber",
+          "category": "Cybersecurity",
+          "subcategory": "exploits",
+          "title": "Estonia suffers a coordinated cyberattack against state infrastructure",
+          "value": null,
+          "unit": null,
+          "source": "Estonian Ministry of Defence",
+          "url": "https://en.wikipedia.org/wiki/Cyberattacks_on_Estonia_(2007)",
+          "date": "2007-04-27",
+          "geolocation": {
+            "lat": 59.437,
+            "lon": 24.7536
+          },
+          "category_key": "cybersecurity"
+        },
+        {
+          "id": "his-1988-11-02-morris-worm",
+          "category": "Cybersecurity",
+          "subcategory": "exploits",
+          "title": "Morris worm infects roughly a tenth of the early internet",
+          "value": null,
+          "unit": null,
+          "source": "MIT / Cornell",
+          "url": "https://en.wikipedia.org/wiki/Morris_worm",
+          "date": "1988-11-02",
+          "geolocation": {
+            "lat": 42.3601,
+            "lon": -71.0942
+          },
+          "category_key": "cybersecurity"
+        }
+      ]
+    },
     "computing_agi": {
       "name": "Computing & AGI",
       "icon": "🧠",
@@ -21,6 +265,132 @@
       ],
       "milestones": [
         {
+          "id": "ms-cccd1dd1feae",
+          "title": "Few-shot multimodal representation alignment via distilled optimal transport",
+          "summary": "New method aligns independently pretrained unimodal encoders using only 100-500 paired examples via optimal transport, drastically reducing paired data requirements.",
+          "category": "Computing & AGI",
+          "subcategory": "multimodal",
+          "value": null,
+          "unit": null,
+          "source": "arXiv",
+          "date": "2026-10-13",
+          "url": "https://arxiv.org/abs/2610.12781",
+          "is_record": false,
+          "is_breakthrough": true,
+          "is_new": false,
+          "category_key": "computing_agi",
+          "location_confidence": "source",
+          "geolocation": {
+            "lat": 42.444,
+            "lon": -76.5019
+          }
+        },
+        {
+          "id": "ms-ba424f6afe44",
+          "title": "EmbodiedCLBench: First benchmark for continual learning in embodied agents",
+          "summary": "EmbodiedCLBench introduces the first benchmark for evaluating continual learning in embodied agents, enabling assessment of self-evolving agents in simulation.",
+          "category": "Computing & AGI",
+          "subcategory": "benchmarks",
+          "value": null,
+          "unit": null,
+          "source": "arXiv",
+          "date": "2026-10-13",
+          "url": "https://arxiv.org/abs/2610.13021",
+          "is_record": true,
+          "is_breakthrough": true,
+          "is_new": false,
+          "category_key": "computing_agi",
+          "location_confidence": "source",
+          "geolocation": {
+            "lat": 42.444,
+            "lon": -76.5019
+          }
+        },
+        {
+          "id": "ms-54e3ea140a46",
+          "title": "CLEAT: Value-Guided Clarification for Interactive LLM Agents",
+          "summary": "New training method CLEAT teaches LLM agents to ask high-value clarifying questions that improve decision-making under ambiguous user intent.",
+          "category": "Computing & AGI",
+          "subcategory": "agentic_ai",
+          "value": null,
+          "unit": null,
+          "source": "arXiv",
+          "date": "2026-10-13",
+          "url": "https://arxiv.org/abs/2610.12655",
+          "is_record": false,
+          "is_breakthrough": true,
+          "is_new": false,
+          "category_key": "computing_agi",
+          "location_confidence": "source",
+          "geolocation": {
+            "lat": 42.444,
+            "lon": -76.5019
+          }
+        },
+        {
+          "id": "ms-da39844869ed",
+          "title": "Persistent KV cache enables 50M-token context window on single H100",
+          "summary": "A new memory layer (galahad-kv) saves and loads key-value state to encrypted NVMe disk, allowing a 50-million-token context window on one NVIDIA H100 without recomputation, drastically reducing infere",
+          "category": "Computing & AGI",
+          "subcategory": "inference_cost",
+          "value": 50000000,
+          "unit": "tokens",
+          "source": "arXiv (galahad-kv authors)",
+          "date": "2026-10-09",
+          "url": "https://arxiv.org/abs/2610.10845",
+          "is_record": true,
+          "is_breakthrough": true,
+          "is_new": false,
+          "category_key": "computing_agi",
+          "location_confidence": "source",
+          "geolocation": {
+            "lat": 42.444,
+            "lon": -76.5019
+          }
+        },
+        {
+          "id": "ms-bc6a33f89941",
+          "title": "Prefill-Only Decision Models Reduce Inference Cost by 10-100x",
+          "summary": "New prefill-only decision models eliminate decoding to make single calls one to two orders of magnitude cheaper than generative language models of similar scale.",
+          "category": "Computing & AGI",
+          "subcategory": "inference_cost",
+          "value": 100,
+          "unit": "x",
+          "source": "arXiv",
+          "date": "2026-10-07",
+          "url": "https://arxiv.org/abs/2610.07716",
+          "is_record": false,
+          "is_breakthrough": true,
+          "is_new": false,
+          "category_key": "computing_agi",
+          "location_confidence": "source",
+          "geolocation": {
+            "lat": 42.444,
+            "lon": -76.5019
+          }
+        },
+        {
+          "id": "ms-2df4dfe4cf19",
+          "title": "Format-aware fusion enables fast FP4 pretraining at 160B-token scale",
+          "summary": "New format-aware fusion technique co-designs FP4 quantization producers and consumers to achieve efficient Llama-3 8B pretraining over 160B tokens using native MXFP and NVFP formats.",
+          "category": "Computing & AGI",
+          "subcategory": "gpu_efficiency",
+          "value": 160,
+          "unit": "billion tokens",
+          "source": "arXiv",
+          "date": "2026-10-03",
+          "url": "https://arxiv.org/abs/2610.00053",
+          "is_record": false,
+          "is_breakthrough": true,
+          "is_new": false,
+          "category_key": "computing_agi",
+          "location_confidence": "source",
+          "geolocation": {
+            "lat": 42.444,
+            "lon": -76.5019
+          }
+        },
+        {
           "id": "ms-4ff7841d61d0",
           "title": "TutlAit v1: first crowdsourced Moroccan Tamazight speech dataset with Arabic transcriptions and regional accent labels",
           "summary": "First publicly available Moroccan Tamazight speech corpus with Modern Standard Arabic transcriptions and explicit regional accent labels, collected via a dedicated crowdsourcing web application.",
@@ -33,10 +403,13 @@
           "url": "https://arxiv.org/abs/2609.38219",
           "is_record": true,
           "is_breakthrough": true,
-          "is_new": true,
+          "is_new": false,
           "category_key": "computing_agi",
-          "located": false,
-          "location_confidence": "unlocated"
+          "location_confidence": "source",
+          "geolocation": {
+            "lat": 42.444,
+            "lon": -76.5019
+          }
         },
         {
           "id": "ms-4c82e9a77bfd",
@@ -53,8 +426,11 @@
           "is_breakthrough": true,
           "is_new": false,
           "category_key": "computing_agi",
-          "located": false,
-          "location_confidence": "unlocated"
+          "location_confidence": "source",
+          "geolocation": {
+            "lat": 42.444,
+            "lon": -76.5019
+          }
         },
         {
           "id": "his-2026-10-01-lenovo-thinkcentre-x-ultra-chassis-volume",
@@ -179,8 +555,11 @@
           "is_breakthrough": false,
           "is_new": false,
           "category_key": "computing_agi",
-          "located": false,
-          "location_confidence": "unlocated"
+          "location_confidence": "source",
+          "geolocation": {
+            "lat": 42.444,
+            "lon": -76.5019
+          }
         },
         {
           "id": "ms-0a47a34ebd2d",
@@ -197,8 +576,11 @@
           "is_breakthrough": true,
           "is_new": false,
           "category_key": "computing_agi",
-          "located": false,
-          "location_confidence": "unlocated"
+          "location_confidence": "source",
+          "geolocation": {
+            "lat": 42.444,
+            "lon": -76.5019
+          }
         },
         {
           "id": "ms-2457b1872a8c",
@@ -467,8 +849,11 @@
           "is_breakthrough": true,
           "is_new": false,
           "category_key": "computing_agi",
-          "located": false,
-          "location_confidence": "unlocated"
+          "location_confidence": "source",
+          "geolocation": {
+            "lat": 42.444,
+            "lon": -76.5019
+          }
         },
         {
           "id": "his-2026-08-25-apple-m5-ultra-memory-bandwidth",
@@ -593,9 +978,30 @@
           "category_key": "computing_agi"
         },
         {
+          "id": "ms-c9cc51e4d880",
+          "title": "Theoretical sample complexity bounds for Gumbel-Max watermark proportion estimation",
+          "summary": "Researchers establish matching upper and lower bounds for estimating watermark proportions in LLM outputs, showing pivotal reduction increases sample complexity versus full observation.",
+          "category": "Computing & AGI",
+          "subcategory": "benchmarks",
+          "value": null,
+          "unit": null,
+          "source": "arXiv preprint",
+          "date": "2026-06-30",
+          "url": "http://arxiv.org/abs/2607.00224v2",
+          "is_record": false,
+          "is_breakthrough": true,
+          "is_new": false,
+          "category_key": "computing_agi",
+          "location_confidence": "source",
+          "geolocation": {
+            "lat": 42.444,
+            "lon": -76.5019
+          }
+        },
+        {
           "id": "ms-cede87aeb630",
-          "title": "Seed2.0 model achieves world-leading reasoning and multimodal capabilities",
-          "summary": "Seed2.0 model series demonstrates world-leading reasoning, visual understanding, and search capabilities for complex real-world tasks, serving hundreds of millions of users.",
+          "title": "Seed2.0 model series sets new frontier in reasoning and multimodal AI",
+          "summary": "ByteDance's Seed2.0 model series claims world-leading reasoning, visual understanding, and search capabilities, substantially improving reliability on complex real-world tasks for hundreds of millions",
           "category": "Computing & AGI",
           "subcategory": "frontier_models",
           "value": null,
@@ -613,17 +1019,59 @@
           "category_key": "computing_agi"
         },
         {
+          "id": "ms-1e9a08b4a528",
+          "title": "SLIM-RL matches TraceRL math accuracy with 54% fewer training samples",
+          "summary": "SLIM-RL achieves 6.32% higher MATH500 and 11.05% higher GSM8K accuracy than TraceRL using only 46% of training samples by eliminating trajectory slicing via risk-budgeted random masking.",
+          "category": "Computing & AGI",
+          "subcategory": "benchmarks",
+          "value": 0.46,
+          "unit": "sample_ratio",
+          "source": "Academic research team",
+          "date": "2026-06-30",
+          "url": "http://arxiv.org/abs/2607.00208v1",
+          "is_record": true,
+          "is_breakthrough": true,
+          "is_new": false,
+          "category_key": "computing_agi",
+          "location_confidence": "source",
+          "geolocation": {
+            "lat": 42.444,
+            "lon": -76.5019
+          }
+        },
+        {
+          "id": "ms-2a999b4415a4",
+          "title": "Persistent memory architecture enables 86.7% coordination reliability in LLM agent language emergence",
+          "summary": "LLM agents with persistent private notebooks achieve 86.7% coordination reliability in Lewis signaling games, outperforming stateless agents and demonstrating memory architecture matters more than cha",
+          "category": "Computing & AGI",
+          "subcategory": "agentic_ai",
+          "value": 0.867,
+          "unit": "coordination_score",
+          "source": "Research Team",
+          "date": "2026-06-30",
+          "url": "http://arxiv.org/abs/2607.00233v1",
+          "is_record": true,
+          "is_breakthrough": true,
+          "is_new": false,
+          "category_key": "computing_agi",
+          "location_confidence": "source",
+          "geolocation": {
+            "lat": 42.444,
+            "lon": -76.5019
+          }
+        },
+        {
           "id": "ms-fc6083e0cc69",
-          "title": "ORACLE-2 Omni achieves 0.73 macro F1 for real-time transient classification using multimodal data",
-          "summary": "A new multimodal AI model deployed on the ZTF alert stream improves early classification of astronomical transients by up to 40% over light-curve-only methods.",
+          "title": "ORACLE-2 Omni achieves 0.73 macro F1 for real-time transient classification",
+          "summary": "New multimodal AI model ORACLE-2 Omni improves real-time classification of astronomical transients by up to 40% over light-curve-only models on ZTF data.",
           "category": "Computing & AGI",
           "subcategory": "multimodal",
           "value": 0.73,
-          "unit": "macro F1",
-          "source": "Zwicky Transient Facility collaboration",
+          "unit": "macro F1 score",
+          "source": "Zwicky Transient Facility (ZTF)",
           "date": "2026-06-30",
           "url": "http://arxiv.org/abs/2607.00228v1",
-          "is_record": true,
+          "is_record": false,
           "is_breakthrough": true,
           "is_new": false,
           "geolocation": {
@@ -634,21 +1082,24 @@
         },
         {
           "id": "ms-46a7d8543058",
-          "title": "Mnemosyne introduces Agentic Transaction Processing with formal safety guarantees for AI workflows",
-          "summary": "New Agentic Transaction Processing framework proves four safety properties and achieves 5.2-6.6% throughput overhead while rejecting all targeted violations in benchmarks.",
+          "title": "Mnemosyne: Agentic Transaction Processing for Validating and Repairing AI-Generated Workflows",
+          "summary": "Mnemosyne introduces Agentic Transaction Processing (ATP) with four proven safety properties and 5.2-6.6% throughput overhead for validating and repairing AI-generated workflows across nine benchmarks",
           "category": "Computing & AGI",
           "subcategory": "agentic_ai",
           "value": 5.9,
           "unit": "% throughput overhead",
-          "source": "Unknown",
+          "source": "Academic Research",
           "date": "2026-06-30",
           "url": "http://arxiv.org/abs/2607.00269v3",
           "is_record": false,
           "is_breakthrough": true,
           "is_new": false,
           "category_key": "computing_agi",
-          "located": false,
-          "location_confidence": "unlocated"
+          "location_confidence": "source",
+          "geolocation": {
+            "lat": 42.444,
+            "lon": -76.5019
+          }
         },
         {
           "id": "ms-10f19d45d95b",
@@ -660,8 +1111,11 @@
           "source": "Open Khipu Repository",
           "url": "http://arxiv.org/abs/2607.00185v1",
           "date": "2026-06-30",
-          "located": false,
-          "location_confidence": "unlocated",
+          "location_confidence": "source",
+          "geolocation": {
+            "lat": 42.444,
+            "lon": -76.5019
+          },
           "sources": [
             "Open Khipu Repository",
             "Academic researchers (Open Khipu Repository)"
@@ -678,8 +1132,11 @@
           "source": "Academic researchers",
           "url": "http://arxiv.org/abs/2608.20391v1",
           "date": "2026-06-30",
-          "located": false,
-          "location_confidence": "unlocated",
+          "location_confidence": "source",
+          "geolocation": {
+            "lat": 42.444,
+            "lon": -76.5019
+          },
           "category_key": "computing_agi"
         },
         {
@@ -697,44 +1154,74 @@
           "is_breakthrough": true,
           "is_new": false,
           "category_key": "computing_agi",
-          "located": false,
-          "location_confidence": "unlocated"
+          "location_confidence": "source",
+          "geolocation": {
+            "lat": 42.444,
+            "lon": -76.5019
+          }
         },
         {
           "id": "ms-d6824a356960",
-          "title": "EgoSafetyBench: Diagnostic Egocentric Video Benchmark for Embodied VLM Safety Guards",
-          "summary": "New 1,200-scenario egocentric video benchmark with half-second annotations and contrastive ladders evaluates VLMs as streaming safety guards for embodied agents across situational and visual-channel d",
+          "title": "EgoSafetyBench: Egocentric Video Benchmark for Embodied VLM Safety Evaluation",
+          "summary": "New benchmark with 1,200 annotated egocentric scenarios evaluates vision-language models as runtime safety guards for embodied agents, revealing gaps in hazard detection.",
           "category": "Computing & AGI",
           "subcategory": "benchmarks",
           "value": 1200,
           "unit": "scenarios",
-          "source": "Research Consortium",
+          "source": "Research authors (institution not specified)",
           "date": "2026-06-30",
-          "url": "http://arxiv.org/abs/2607.00218v1",
-          "is_record": true,
+          "url": "http://arxiv.org/abs/2607.00218v2",
+          "is_record": false,
           "is_breakthrough": true,
           "is_new": false,
           "category_key": "computing_agi",
-          "located": false,
-          "location_confidence": "unlocated"
+          "location_confidence": "source",
+          "geolocation": {
+            "lat": 42.444,
+            "lon": -76.5019
+          }
         },
         {
           "id": "ms-110c8b5371e0",
-          "title": "ASPIRE achieves up to 77% improvement on robot manipulation benchmarks via autonomous skill discovery",
-          "summary": "ASPIRE, a continual learning system for autonomous robot skill programming, surpasses prior methods by up to 77% on LIBERO-Pro, 72% on Robosuite bimanual handover, and 32% on BEHAVIOR-1K household tas",
+          "title": "ASPIRE achieves up to 77% improvement on robotic manipulation benchmarks",
+          "summary": "ASPIRE, an agentic continual learning system for robotics, autonomously writes and refines control programs, surpassing prior methods by up to 77% on LIBERO-Pro, 72% on Robosuite bimanual handover, an",
           "category": "Computing & AGI",
           "subcategory": "agentic_ai",
           "value": 77,
-          "unit": "percent improvement",
-          "source": "ASPIRE research team",
+          "unit": "%",
+          "source": "ASPIRE Research Team",
           "date": "2026-06-30",
           "url": "http://arxiv.org/abs/2607.00272v1",
           "is_record": true,
           "is_breakthrough": true,
           "is_new": false,
           "category_key": "computing_agi",
-          "located": false,
-          "location_confidence": "unlocated"
+          "location_confidence": "source",
+          "geolocation": {
+            "lat": 42.444,
+            "lon": -76.5019
+          }
+        },
+        {
+          "id": "ms-1bc7a446bfe6",
+          "title": "ALEE benchmark evaluates text embeddings across 275+ languages",
+          "summary": "Researchers introduce ALEE, a cross-lingual embedding evaluation framework tested on over 275 languages, revealing persistent gaps in semantic representation for low-resource languages.",
+          "category": "Computing & AGI",
+          "subcategory": "benchmarks",
+          "value": 275,
+          "unit": "languages",
+          "source": "Andrian0s",
+          "date": "2026-06-30",
+          "url": "http://arxiv.org/abs/2607.00171v2",
+          "is_record": true,
+          "is_breakthrough": true,
+          "is_new": false,
+          "category_key": "computing_agi",
+          "location_confidence": "source",
+          "geolocation": {
+            "lat": 42.444,
+            "lon": -76.5019
+          }
         },
         {
           "id": "ms-6a684b1bc5a3",
@@ -1389,16 +1876,16 @@
       ],
       "milestones": [
         {
-          "id": "ms-2a45f74dd818",
-          "title": "Deep learning perturbation models outperform baselines on calibrated metrics",
-          "summary": "Calibration-aware evaluation demonstrates deep learning models surpass baseline methods in perturbation prediction.",
+          "id": "ms-fc512f295a81",
+          "title": "In vivo engineering of CAR NK cells via lipid nanoparticles for immunotherapy",
+          "summary": "Researchers demonstrate in vivo generation of CAR natural killer cells using ligand-directed lipid nanoparticles for treating autoimmune diseases and cancer.",
           "category": "Biotechnology & Biohacking",
-          "subcategory": "ml_perturbation",
+          "subcategory": "immunotherapy",
           "value": null,
           "unit": null,
           "source": "Nature Biotechnology",
-          "date": "2026-10-01",
-          "url": "https://www.nature.com/articles/s41587-026-03307-w",
+          "date": "2026-10-13",
+          "url": "https://www.nature.com/articles/s41587-026-03310-1",
           "is_record": false,
           "is_breakthrough": true,
           "is_new": false,
@@ -1409,16 +1896,177 @@
           "category_key": "biotechnology"
         },
         {
-          "id": "ms-8644b2a34d60",
-          "title": "New ionizable lipid LC-1 enables efficient LNP delivery of large gene editors to multiple tissues",
-          "summary": "Screening identified lipid LC-1 that enhances endosomal escape and achieves efficient genome editing in liver, lung, and brain of mice using lipid nanoparticles for large gene-editor mRNAs.",
+          "id": "ms-b0c0800e6617",
+          "title": "First clinical trial deployment of six proteomic aging clocks",
+          "summary": "Six proteomic aging clocks are used in a clinical trial for the first time, marking a milestone in aging biomarker validation.",
+          "category": "Biotechnology & Biohacking",
+          "subcategory": "longevity",
+          "value": null,
+          "unit": null,
+          "source": "Nature Biotechnology",
+          "date": "2026-10-13",
+          "url": "https://www.nature.com/articles/s41587-026-03361-4",
+          "is_record": false,
+          "is_breakthrough": true,
+          "is_new": true,
+          "geolocation": {
+            "lat": 32.0603,
+            "lon": 118.7969
+          },
+          "category_key": "biotechnology"
+        },
+        {
+          "id": "ms-f7e3ed1a332b",
+          "title": "RevMed's pancreatic cancer drug first",
+          "summary": "RevMed publishes first pancreatic cancer drug candidate in Nature Biotechnology.",
+          "category": "Biotechnology & Biohacking",
+          "subcategory": "immunotherapy",
+          "value": null,
+          "unit": null,
+          "source": "RevMed",
+          "date": "2026-10-12",
+          "url": "https://www.nature.com/articles/s41587-026-03363-2",
+          "is_record": false,
+          "is_breakthrough": true,
+          "is_new": false,
+          "category_key": "biotechnology",
+          "location_confidence": "source",
+          "geolocation": {
+            "lat": 51.5074,
+            "lon": -0.1278
+          }
+        },
+        {
+          "id": "ms-d7a87738cf3b",
+          "title": "Engrafting human cortical organoids demonstrates functional integration in vivo",
+          "summary": "Researchers achieve successful engraftment of human cortical organoids, advancing neural tissue transplantation and disease modeling.",
+          "category": "Biotechnology & Biohacking",
+          "subcategory": "neuroscience",
+          "value": null,
+          "unit": null,
+          "source": "Nature Biotechnology",
+          "date": "2026-10-12",
+          "url": "https://www.nature.com/articles/s41587-026-03355-2",
+          "is_record": false,
+          "is_breakthrough": true,
+          "is_new": false,
+          "geolocation": {
+            "lat": 32.0603,
+            "lon": 118.7969
+          },
+          "category_key": "biotechnology"
+        },
+        {
+          "id": "ms-79a5aeaa5895",
+          "title": "Shotgun genetic engineering enables novel metabolic pathways in mammalian cells",
+          "summary": "Shotgun genetic engineering allows large-scale random gene combination testing to discover new metabolic pathways for essential amino acid synthesis in mammalian cells.",
+          "category": "Biotechnology & Biohacking",
+          "subcategory": "synthetic_biology",
+          "value": null,
+          "unit": null,
+          "source": "Nature Biotechnology",
+          "date": "2026-10-06",
+          "url": "https://www.nature.com/articles/s41587-026-03329-4",
+          "is_record": false,
+          "is_breakthrough": true,
+          "is_new": false,
+          "geolocation": {
+            "lat": 32.0603,
+            "lon": 118.7969
+          },
+          "category_key": "biotechnology"
+        },
+        {
+          "id": "ms-353f7e5bc1a0",
+          "title": "Highly multiplexed mammalian metabolic engineering via shotgun screening",
+          "summary": "A shotgun screening approach simplifies and scales metabolic engineering in mammalian cells.",
+          "category": "Biotechnology & Biohacking",
+          "subcategory": "synthetic_biology",
+          "value": null,
+          "unit": null,
+          "source": "Nature Biotechnology",
+          "date": "2026-10-06",
+          "url": "https://www.nature.com/articles/s41587-026-03318-7",
+          "is_record": false,
+          "is_breakthrough": true,
+          "is_new": false,
+          "geolocation": {
+            "lat": 32.0603,
+            "lon": 118.7969
+          },
+          "category_key": "biotechnology"
+        },
+        {
+          "id": "ms-fd76df20d111",
+          "title": "Engineered avian R2 retrotransposons enable targeted DNA integration in human cells",
+          "summary": "Researchers engineered avian R2 retrotransposons to achieve site-specific DNA integration in human cells, a breakthrough for gene therapy.",
           "category": "Biotechnology & Biohacking",
           "subcategory": "gene_therapy",
           "value": null,
           "unit": null,
           "source": "Nature Biotechnology",
-          "date": "2026-09-28",
-          "url": "https://www.nature.com/articles/s41587-026-03297-9",
+          "date": "2026-10-05",
+          "url": "https://www.nature.com/articles/s41587-026-03315-w",
+          "is_record": false,
+          "is_breakthrough": true,
+          "is_new": false,
+          "geolocation": {
+            "lat": 32.0603,
+            "lon": 118.7969
+          },
+          "category_key": "biotechnology"
+        },
+        {
+          "id": "ms-45ba0e7b2200",
+          "title": "Engineered avian R2 retrotransposons enable all-RNA targeted DNA integration in human cells",
+          "summary": "Researchers engineered avian R2 retrotransposons to achieve site-specific DNA integration in human cells using an all-RNA system.",
+          "category": "Biotechnology & Biohacking",
+          "subcategory": "gene_editing",
+          "value": null,
+          "unit": null,
+          "source": "Nature Biotechnology",
+          "date": "2026-10-05",
+          "url": "https://www.nature.com/articles/s41587-026-03315-w",
+          "is_record": false,
+          "is_breakthrough": true,
+          "is_new": false,
+          "geolocation": {
+            "lat": 32.0603,
+            "lon": 118.7969
+          },
+          "category_key": "biotechnology"
+        },
+        {
+          "id": "ms-d092c3d026b8",
+          "title": "Detectrons: RNA-to-DNA barcode conversion for high-throughput RNA analysis",
+          "summary": "New Detectron technology enables direct conversion of transient RNA sequences into stable DNA barcodes for high-throughput analysis of RNA-dependent processes.",
+          "category": "Biotechnology & Biohacking",
+          "subcategory": "biosensors",
+          "value": null,
+          "unit": null,
+          "source": "Nature Biotechnology",
+          "date": "2026-10-05",
+          "url": "https://www.nature.com/articles/s41587-026-03334-7",
+          "is_record": false,
+          "is_breakthrough": true,
+          "is_new": false,
+          "geolocation": {
+            "lat": 32.0603,
+            "lon": 118.7969
+          },
+          "category_key": "biotechnology"
+        },
+        {
+          "id": "ms-2a45f74dd818",
+          "title": "Deep learning perturbation models outperform baselines on calibrated metrics",
+          "summary": "Calibration-aware evaluation demonstrates deep learning models surpass baseline methods in perturbation prediction.",
+          "category": "Biotechnology & Biohacking",
+          "subcategory": "ml_perturbation",
+          "value": null,
+          "unit": null,
+          "source": "Nature Biotechnology",
+          "date": "2026-10-01",
+          "url": "https://www.nature.com/articles/s41587-026-03307-w",
           "is_record": false,
           "is_breakthrough": true,
           "is_new": false,
@@ -1449,6 +2097,26 @@
           "category_key": "biotechnology"
         },
         {
+          "id": "ms-8644b2a34d60",
+          "title": "LC-1 lipid nanoparticle enables efficient delivery of large gene editors in mice",
+          "summary": "New ionizable lipid LC-1 improves endosomal escape and enables efficient genome editing in liver, lung, and brain of mice for large mRNA cargo.",
+          "category": "Biotechnology & Biohacking",
+          "subcategory": "gene_therapy",
+          "value": null,
+          "unit": null,
+          "source": "Nature Biotechnology",
+          "date": "2026-09-28",
+          "url": "https://www.nature.com/articles/s41587-026-03297-9",
+          "is_record": false,
+          "is_breakthrough": true,
+          "is_new": false,
+          "geolocation": {
+            "lat": 32.0603,
+            "lon": 118.7969
+          },
+          "category_key": "biotechnology"
+        },
+        {
           "id": "ms-bc2c513b6177",
           "title": "AI-guided optimization yields thermostable mRNA vaccines stable at 37°C for 2 months",
           "summary": "AI-driven framework AGENT enables mRNA vaccines retaining full bioactivity after 2 months at 37°C, allowing cold-chain-free delivery via microneedle patches.",
@@ -1456,6 +2124,26 @@
           "subcategory": "gene_therapy",
           "value": 37,
           "unit": "°C",
+          "source": "Nature Biotechnology",
+          "date": "2026-09-28",
+          "url": "https://www.nature.com/articles/s41587-026-03330-x",
+          "is_record": true,
+          "is_breakthrough": true,
+          "is_new": false,
+          "geolocation": {
+            "lat": 32.0603,
+            "lon": 118.7969
+          },
+          "category_key": "biotechnology"
+        },
+        {
+          "id": "ms-0a6a4227b697",
+          "title": "AI-guided optimization yields thermostable mRNA vaccines stable at 37°C for 2 months",
+          "summary": "AI framework AGENT engineers mRNA vaccines retaining full bioactivity after 2 months at 37°C, enabling cold-chain-free microneedle patch delivery in primates.",
+          "category": "Biotechnology & Biohacking",
+          "subcategory": "synthetic_biology",
+          "value": 2,
+          "unit": "months",
           "source": "Nature Biotechnology",
           "date": "2026-09-28",
           "url": "https://www.nature.com/articles/s41587-026-03330-x",
@@ -1543,8 +2231,11 @@
           "is_breakthrough": true,
           "is_new": false,
           "category_key": "biotechnology",
-          "located": false,
-          "location_confidence": "unlocated"
+          "location_confidence": "source",
+          "geolocation": {
+            "lat": 51.5074,
+            "lon": -0.1278
+          }
         },
         {
           "id": "ms-e55c8cf4e432",
@@ -1890,174 +2581,6 @@
         }
       ]
     },
-    "cybersecurity": {
-      "name": "Cybersecurity",
-      "icon": "🛡️",
-      "color": "#ff5252",
-      "subcategories": [
-        "exploits",
-        "mitigations",
-        "encryption",
-        "threat_intelligence",
-        "defense_scores",
-        "zero_day",
-        "ransomware",
-        "supply_chain"
-      ],
-      "milestones": [
-        {
-          "id": "ms-84669fafeb66",
-          "title": "Elementor WordPress Plugin CSRF Vulnerability Allows Site Takeover",
-          "summary": "High-severity CSRF flaw in Elementor plugin (CVSS 8.8) enables unauthenticated attackers to create admin accounts via crafted links.",
-          "category": "Cybersecurity",
-          "subcategory": "exploits",
-          "value": 8.8,
-          "unit": "CVSS",
-          "source": "Security researchers",
-          "date": "2026-09-26",
-          "url": "https://thehackernews.com/2026/09/elementor-csrf-flaw-lets-attackers-take.html",
-          "is_record": false,
-          "is_breakthrough": false,
-          "is_new": false,
-          "geolocation": {
-            "lat": 32.0853,
-            "lon": 34.7818
-          },
-          "category_key": "cybersecurity"
-        },
-        {
-          "id": "cyber-001",
-          "subcategory": "exploits",
-          "title": "Highest active CVSS score (0day)",
-          "value": 10.0,
-          "unit": "CRITICAL",
-          "source": "NVD / CISA",
-          "date": "2026-08-24",
-          "url": "https://nvd.nist.gov",
-          "geolocation": {
-            "lat": 38.8951,
-            "lon": -77.0364
-          },
-          "category": "Cybersecurity",
-          "is_new": false,
-          "category_key": "cybersecurity"
-        },
-        {
-          "id": "cyber-002",
-          "subcategory": "encryption",
-          "title": "Post-quantum TLS deployment (Top 100)",
-          "value": 34,
-          "unit": "%",
-          "source": "Google Transparency",
-          "date": "2026-08-15",
-          "url": "https://transparencyreport.google.com",
-          "geolocation": {
-            "lat": 37.4219,
-            "lon": -122.084
-          },
-          "category": "Cybersecurity",
-          "is_new": false,
-          "category_key": "cybersecurity"
-        },
-        {
-          "id": "cyber-003",
-          "subcategory": "encryption",
-          "title": "NIST PQC standard (CRYSTALS-Kyber)",
-          "value": 256,
-          "unit": "bit security",
-          "source": "NIST",
-          "date": "2026-06-01",
-          "url": "https://csrc.nist.gov",
-          "geolocation": {
-            "lat": 38.8951,
-            "lon": -77.0364
-          },
-          "category": "Cybersecurity",
-          "is_new": false,
-          "category_key": "cybersecurity"
-        },
-        {
-          "id": "his-2020-12-13-solarwinds",
-          "category": "Cybersecurity",
-          "subcategory": "exploits",
-          "title": "SolarWinds supply-chain compromise disclosed",
-          "value": null,
-          "unit": null,
-          "source": "FireEye / Microsoft",
-          "url": "https://en.wikipedia.org/wiki/SolarWinds_attack",
-          "date": "2020-12-13",
-          "geolocation": {
-            "lat": 30.2672,
-            "lon": -97.7431
-          },
-          "category_key": "cybersecurity"
-        },
-        {
-          "id": "his-2014-04-07-heartbleed",
-          "category": "Cybersecurity",
-          "subcategory": "encryption",
-          "title": "Heartbleed vulnerability in OpenSSL disclosed publicly",
-          "value": null,
-          "unit": null,
-          "source": "Codenomicon / Google Security",
-          "url": "https://en.wikipedia.org/wiki/Heartbleed",
-          "date": "2014-04-07",
-          "geolocation": {
-            "lat": 47.3769,
-            "lon": 8.5417
-          },
-          "category_key": "cybersecurity"
-        },
-        {
-          "id": "his-2010-06-17-stuxnet",
-          "category": "Cybersecurity",
-          "subcategory": "exploits",
-          "title": "Stuxnet - a cyber weapon targeting Iranian nuclear enrichment - is publicly identified",
-          "value": null,
-          "unit": null,
-          "source": "Symantec / VirusBlokAda",
-          "url": "https://en.wikipedia.org/wiki/Stuxnet",
-          "date": "2010-06-17",
-          "geolocation": {
-            "lat": 33.5066,
-            "lon": 51.9163
-          },
-          "category_key": "cybersecurity"
-        },
-        {
-          "id": "his-2007-04-27-estonia-cyber",
-          "category": "Cybersecurity",
-          "subcategory": "exploits",
-          "title": "Estonia suffers a coordinated cyberattack against state infrastructure",
-          "value": null,
-          "unit": null,
-          "source": "Estonian Ministry of Defence",
-          "url": "https://en.wikipedia.org/wiki/Cyberattacks_on_Estonia_(2007)",
-          "date": "2007-04-27",
-          "geolocation": {
-            "lat": 59.437,
-            "lon": 24.7536
-          },
-          "category_key": "cybersecurity"
-        },
-        {
-          "id": "his-1988-11-02-morris-worm",
-          "category": "Cybersecurity",
-          "subcategory": "exploits",
-          "title": "Morris worm infects roughly a tenth of the early internet",
-          "value": null,
-          "unit": null,
-          "source": "MIT / Cornell",
-          "url": "https://en.wikipedia.org/wiki/Morris_worm",
-          "date": "1988-11-02",
-          "geolocation": {
-            "lat": 42.3601,
-            "lon": -71.0942
-          },
-          "category_key": "cybersecurity"
-        }
-      ]
-    },
     "quantum": {
       "name": "Quantum Physics",
       "icon": "⚛️",
@@ -2084,8 +2607,11 @@
           "source": "Quanta Magazine",
           "url": "https://www.quantamagazine.org/gravity-seems-holographic-what-does-that-mean-for-reality-20260925/",
           "date": "2026-09-25",
-          "located": false,
-          "location_confidence": "unlocated",
+          "location_confidence": "source",
+          "geolocation": {
+            "lat": 40.7128,
+            "lon": -74.006
+          },
           "category_key": "quantum"
         },
         {
@@ -2188,8 +2714,11 @@
           "is_breakthrough": true,
           "is_new": false,
           "category_key": "quantum",
-          "located": false,
-          "location_confidence": "unlocated"
+          "location_confidence": "source",
+          "geolocation": {
+            "lat": 42.444,
+            "lon": -76.5019
+          }
         },
         {
           "id": "his-2023-12-04-ibm-condor",
