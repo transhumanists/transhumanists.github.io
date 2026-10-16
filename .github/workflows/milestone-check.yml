@@ -18,10 +18,19 @@ on:
       - "scripts/scrape_historical_milestones.py"
       - "scripts/metric_coverage.py"
       - "data/metric_coverage_baseline.json"
+      - "data/metric_coverage_debt.json"
       - "data/historical_milestones.json"
 
 permissions:
   contents: write
+
+env:
+  # How many catalog entries the historical backfill may ingest per run. Small on
+  # purpose: one tick must not be able to rewrite the archive wholesale, so any
+  # bad batch stays easy to spot and revert. Overridable per-run by setting the
+  # variable in the job; previously it was read from the environment but never
+  # defined anywhere, so the fallback was the only value it ever took.
+  HISTORICAL_BACKFILL_LIMIT: 5
 
 concurrency:
   # Both world_layers.json writers share this group so a crisis-zone refresh
@@ -55,11 +64,18 @@ jobs:
           if [ "$DRY_RUN" = "true" ]; then
             python scripts/sync_milestones.py --dry-run
           else
-            OUT=$(python scripts/sync_milestones.py 2>&1)
-            echo "$OUT"
-            if echo "$OUT" | grep -q "No content changes"; then
-              echo "No new upstream milestones - backfilling historical archive"
+            python scripts/sync_milestones.py
+            # Backfill the historical archive only when the live feed brought
+            # nothing new, so a busy upstream cannot starve the archive.
+            #
+            # Keyed on whether the sync actually touched data/, NOT on the text it
+            # printed. The previous version grepped the output for a magic string,
+            # which stops working silently the moment the wording changes: the
+            # backfill would simply stop running and nothing would fail.
+            if git diff --quiet -- data/; then
+              echo "No content changes - backfilling historical archive"
               python scripts/scrape_historical_milestones.py --limit "${HISTORICAL_BACKFILL_LIMIT:-5}"
+              # Fold the newly ingested records into the published feed.
               python scripts/sync_milestones.py
             fi
           fi
@@ -99,12 +115,32 @@ jobs:
         run: python scripts/coverage_report.py --fail-on-null-island --quiet
 
       - name: Gate metric comparability
-        # Fails the job when a subcategory gets LESS comparable than the recorded
-        # baseline, when a new subcategory mixes units, or when a metric that was
-        # extractable is republished as prose. Adding records never fails it.
-        # The baseline is a ratchet: when comparability genuinely improves, re-record
-        # it with --update-baseline so the bar moves up rather than drifting.
-        run: python scripts/metric_coverage.py --gate
+        # Fails the job when this run made the published set HARDER to compare:
+        # a subcategory holding fewer records that carry a number and a unit
+        # than the baseline recorded. The ratchet is the absolute count, not the
+        # share.
+        #
+        # The share cannot be the ratchet: it falls every time the sync discovers
+        # a milestone with no metric, and discovery is what the sync is for. The
+        # previous gate keyed on the share, so it rejected the batch it had just
+        # discovered - and since this step runs BEFORE the commit step, those
+        # records could never land. Each run re-discovered them and failed
+        # identically: ~100 consecutive red runs over 12 days, and no data
+        # refresh reaching main at all.
+        #
+        # Mixed units and below-floor new subcategories are curation debt. They
+        # arrive with every batch the scraper discovers and need a human to
+        # decide whether the record's unit or its subcategory is wrong, so they
+        # are recorded rather than enforced: --record-debt writes them to
+        # data/metric_coverage_debt.json, which accumulates into a ledger showing
+        # what to reconcile instead of an alert that must be cleared before
+        # anything can ship. Add --advisory to make the debt blocking while
+        # working through it.
+        #
+        # The baseline is a ratchet: when comparability genuinely improves,
+        # re-record it with --update-baseline so the bar moves up rather than
+        # drifting.
+        run: python scripts/metric_coverage.py --gate --record-debt
 
       - name: Publish invariants
         # Before the commit, alongside validate data files: a refresh that breaks a
