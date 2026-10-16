@@ -413,7 +413,7 @@ strips on it.
         <h3>neohiro</h3>
         <p>Security hardening & privacy tools for Windows and Linux</p>
       </a>
-      <a class="network-card" href="https://neohiro.github.io/openstageisland.github.io/" rel="noopener" style="text-decoration: none; color: inherit;">
+      <a class="network-card" href="https://openstageis.land/" rel="noopener" style="text-decoration: none; color: inherit;">
         <div class="network-card-icon" aria-hidden="true">🎤</div>
         <h3>Open Stage Island</h3>
         <p>Free 24/7 open-air music stage in Second Life &mdash; no booking, no fee</p>
