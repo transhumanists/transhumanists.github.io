@@ -1828,7 +1828,11 @@ function nextChartBucket(key, size) {
       CHART_MAX_COLUMNS,
       parseDateToISO,
       normalizeLayerDate,
-      HIGHLIGHT_INTERVAL_MS: 2000,
+      // Exported by reference, not as a literal. The interval was slowed from
+      // 2s to 6s and this export was left pinned at the old number, so the value
+      // the tests (and anything else reading the test surface) saw no longer
+      // matched the value the carousel actually rotated at.
+      HIGHLIGHT_INTERVAL_MS,
     };
   }
 

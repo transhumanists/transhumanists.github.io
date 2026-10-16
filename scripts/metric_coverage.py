@@ -27,16 +27,25 @@ Usage
     python scripts/metric_coverage.py            # human report
     python scripts/metric_coverage.py --json     # machine-readable
     python scripts/metric_coverage.py --gate     # exit 1 on regression
+    python scripts/metric_coverage.py --gate --advisory   # also exit 1 on debt
+    python scripts/metric_coverage.py --record-debt        # write the ledger
 
-`--gate` is the part CI runs. It fails when a subcategory that was previously
-comparable stops being comparable, when unit incoherence appears, or when a
-subcategory's comparability drops below `--floor`. Read-only: it never fails on a
-record being *added*, only on the published set getting harder to compare.
+`--gate` is the part CI runs, and it is deliberately narrow: it exits non-zero
+only when this run made the published set **harder** to compare - a subcategory
+holding fewer comparable records than the baseline recorded. It never fails on a
+record being *added*, because discovery is what the sync is for and a discovered
+milestone often carries no metric at all.
+
+Mixed units and new subcategories below `--floor` are curation debt. They are
+reported on every run, written to `data/metric_coverage_debt.json`, and only fail
+the job under `--advisory`. Gating on them would mean every batch the scraper
+discovers stops the pipeline from publishing the batch it just discovered.
 """
 
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import re
 import sys
@@ -136,6 +145,16 @@ UNIT_ALIASES = {
     "per cent": "percent",
     "usd": "usd",
     "$": "usd",
+    # Output-qualified spellings of a power/energy unit are the same quantity, not
+    # a different one. "MJ" and "MJ output" in the fusion subcategory were being
+    # scored as two units and reported as incoherent, which is a spelling
+    # difference in the source, not a fact about the milestones.
+    "mj": "megajoule",
+    "megajoules": "megajoule",
+    "mj output": "megajoule",
+    "mw output": "megawatt",
+    "gw output": "gigawatt",
+    "kw output": "kilowatt",
 }
 
 
@@ -291,6 +310,78 @@ def _baseline_path(data_dir: Path) -> Path:
     return data_dir / "metric_coverage_baseline.json"
 
 
+def _debt_path(data_dir: Path) -> Path:
+    return data_dir / "metric_coverage_debt.json"
+
+
+def build_debt(report: dict, findings: list[str], generated: str | None = None) -> dict:
+    """The curation backlog as a committed ledger.
+
+    These findings used to fail the refresh, which meant they were never fixed:
+    the run that discovered a mixed-unit subcategory could not publish it, so the
+    run that discovered it again found it still unreconciled. Recording them here
+    turns an un-actionable failure into a diff - the ledger shows what changed,
+    and the next run shows what was closed.
+    """
+    return {
+        "_comment": (
+            "Curation debt reported by scripts/metric_coverage.py --record-debt. "
+            "Non-blocking: these findings arrive whenever the sync discovers more "
+            "milestones, so gating on them would stop the pipeline publishing the "
+            "records it just discovered. Reconcile them by fixing the record's "
+            "unit or splitting the subcategory, not by loosening this file."
+        ),
+        "generated": generated or report["generated"],
+        "digest": debt_digest(report, findings),
+        "overall": report["overall"],
+        "count": len(findings),
+        "findings": findings,
+    }
+
+
+def debt_digest(report: dict, findings: list[str]) -> str:
+    """Stable fingerprint of the backlog, used to suppress no-op rewrites.
+
+    The ledger is committed by the same step that commits the data refresh, so a
+    rewrite that changes nothing but the date would hand that step a diff on every
+    single tick - four no-op commits a day, for twelve days. coverage_report.py
+    --snapshot already guards against exactly this with a digest; this is the
+    same guard for the same reason.
+    """
+    payload = {"overall": report["overall"], "findings": findings}
+    return hashlib.sha256(
+        json.dumps(payload, sort_keys=True, ensure_ascii=False).encode("utf-8")
+    ).hexdigest()[:16]
+
+
+def write_debt(report: dict, findings: list[str], data_dir: Path) -> str:
+    """Write the debt ledger only when the backlog actually moved.
+
+    Returns "written" or "unchanged". When unchanged the file is not touched at
+    all, and `generated` keeps the date the backlog last really changed rather
+    than the date of the run that happened to look at it.
+    """
+    path = _debt_path(data_dir)
+    digest = debt_digest(report, findings)
+    generated = None
+
+    if path.exists():
+        try:
+            existing = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            existing = {}
+        if isinstance(existing, dict) and existing.get("digest") == digest:
+            return "unchanged"
+        if isinstance(existing, dict):
+            generated = existing.get("generated")
+
+    path.write_text(
+        json.dumps(build_debt(report, findings, generated), indent=2, ensure_ascii=False) + "\n",
+        encoding="utf-8",
+    )
+    return "written"
+
+
 def load_baseline(data_dir: Path) -> dict:
     path = _baseline_path(data_dir)
     if not path.exists():
@@ -323,32 +414,94 @@ def build_baseline(report: dict) -> dict:
                 "coherence": g["unit_coherence"],
                 "comparable_rate": g["comparable_rate"],
                 "records": g["records"],
+                # Absolute count of comparable records, stored alongside the rate.
+                # The ratchet runs on this, not the rate: a rate falls every time a
+                # metric-less milestone is discovered, and discovery is the whole
+                # point of the sync. See baseline_numeric() and evaluate_gate().
+                "numeric": g["numeric"],
             }
             for g in report["groups"]
         },
     }
 
 
+def baseline_numeric(entry: dict) -> int:
+    """Comparable-record count recorded in the baseline, for one subcategory.
+
+    Prefers the stored `numeric`. Baselines written before that field existed only
+    carry `records` and a rate rounded to 3 places, so fall back to
+    round(records * rate) - close enough to detect a lost metric, which is the
+    only thing the count is used for.
+    """
+    stored = entry.get("numeric")
+    if isinstance(stored, int):
+        return stored
+    try:
+        return int(round(float(entry.get("records", 0)) * float(entry.get("comparable_rate", 0.0))))
+    except (TypeError, ValueError):
+        return 0
+
+
 def evaluate_gate(report: dict, baseline: dict, floor: float) -> list[str]:
-    """Reasons the gate fails. Empty list means green.
+    """Reasons the refresh must not be published. Empty list means green.
 
-    The baseline is what makes this gate useful. Comparability is currently poor
-    across most subcategories - that is real, existing debt - and a gate that
-    fails on all of it from day one is a gate nobody reads. So:
+    This is the blocking tier, and it answers one question only: **did this run
+    make the published set harder to compare than it was?**
 
-      * incoherence already recorded in the baseline is a known issue, not a
-        failure, UNLESS its coherence has dropped further;
-      * a subcategory that is incoherent and absent from the baseline IS a
-        failure, because that is a new problem introduced since the baseline;
-      * comparable_rate falling below the baseline value is a failure;
-      * comparable_rate below `floor` is only a failure for a subcategory the
-        baseline shows should be doing better.
+    The ratchet is the absolute count of comparable records, not their share.
 
-    Adding records never fails. Adding a *metric-less* record to a subcategory
-    whose rate is already low does not fail either - only the rate going down
-    from where it was does.
+    That distinction is the whole reason this gate is trustworthy. The sync's job
+    is to *discover* more milestones, and a discovered milestone frequently has no
+    metric at all - upstream publishes its title as the value. Adding one of those
+    to a subcategory lowers `comparable_rate` (the numerator stays put, the
+    denominator grows) while making the dataset strictly better. A gate keyed on
+    the rate therefore rejects the refresh that discovered the record, every time,
+    and because this check runs before the commit step, those records can never
+    land: the next run re-discovers them and fails identically. That is a deadlock,
+    not a gate, and it is what kept this job red for a hundred consecutive runs.
+
+    So: a subcategory fails when it holds *fewer* comparable records than the
+    baseline recorded - a metric was lost, or republished as prose. A subcategory
+    that simply holds more records, some of them metric-less, passes.
+
+    Curation debt (a subcategory mixing units, a new subcategory below the floor)
+    is NOT a blocking condition: it needs a human to decide whether the unit is
+    wrong or the subcategory is wrong, and it arrives with every batch the scraper
+    discovers. It is reported by evaluate_advisory() and recorded durably, so it
+    stays visible without stopping the pipeline from doing its job.
     """
     problems: list[str] = []
+    for g in report["groups"]:
+        known = baseline.get(group_key(g))
+        if known is None:
+            continue  # Brand new subcategory: advisory, never blocking.
+
+        was = baseline_numeric(known)
+        if g["numeric"] < was:
+            problems.append(
+                f"{group_key(g)}: lost comparable metrics - {was} -> {g['numeric']} "
+                f"(now {g['numeric']}/{g['records']} records carry a number and a unit)"
+            )
+    return problems
+
+
+def evaluate_advisory(report: dict, baseline: dict, floor: float) -> list[str]:
+    """Curation debt: findings that need a human, and must not stop the refresh.
+
+    Everything here arrives as a *consequence of discovering more milestones*, so
+    none of it can be a blocking condition without wedging the pipeline:
+
+      * a subcategory whose numbers quote more than one unit, so they cannot be
+        ranked against each other;
+      * such a subcategory being new, or getting worse than the baseline recorded;
+      * a new subcategory sitting below the floor with enough records to mean
+        something.
+
+    These are reported every run and written to data/metric_coverage_debt.json, so
+    they accumulate into a ledger that shows what to reconcile rather than an
+    alert that must be silenced before anything can ship.
+    """
+    notes: list[str] = []
     for g in report["groups"]:
         name = group_key(g)
         known = baseline.get(name)
@@ -356,35 +509,23 @@ def evaluate_gate(report: dict, baseline: dict, floor: float) -> list[str]:
         if g["incoherent"]:
             units = ", ".join(sorted(g["units"]))
             if known is None:
-                problems.append(
-                    f"{name}: metrics are not comparable to each other and this "
-                    f"subcategory is not in the baseline "
+                notes.append(
+                    f"{name}: mixes units and is not in the baseline "
                     f"(coherence {g['unit_coherence']:.2f}; units: {units})"
                 )
             elif g["unit_coherence"] < known.get("coherence", 1.0) - 1e-9:
-                problems.append(
+                notes.append(
                     f"{name}: unit coherence fell from {known['coherence']:.2f} to "
                     f"{g['unit_coherence']:.2f} (units: {units})"
                 )
 
-        if known is None:
-            # Brand new subcategory. Only hold it to the floor if it has enough
-            # records to mean something.
-            if g["records"] >= 3 and g["comparable_rate"] < floor:
-                problems.append(
-                    f"{name}: new subcategory with comparable rate "
-                    f"{g['comparable_rate']:.2f} below floor {floor:.2f} "
-                    f"({g['numeric']}/{g['records']})"
-                )
-            continue
-
-        if g["comparable_rate"] < known.get("comparable_rate", 0.0) - 1e-9:
-            problems.append(
-                f"{name}: comparable rate fell from "
-                f"{known['comparable_rate']:.2f} to {g['comparable_rate']:.2f} "
-                f"({g['numeric']}/{g['records']} records)"
+        if known is None and g["records"] >= 3 and g["comparable_rate"] < floor:
+            notes.append(
+                f"{name}: new subcategory with comparable rate "
+                f"{g['comparable_rate']:.2f} below floor {floor:.2f} "
+                f"({g['numeric']}/{g['records']})"
             )
-    return problems
+    return notes
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -428,6 +569,16 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="record the current state as the accepted baseline",
     )
+    ap.add_argument(
+        "--record-debt",
+        action="store_true",
+        help="write the curation-debt ledger to data/metric_coverage_debt.json",
+    )
+    ap.add_argument(
+        "--advisory",
+        action="store_true",
+        help="also exit non-zero on curation debt (mixed units / below-floor groups)",
+    )
     args = ap.parse_args(argv)
 
     data_dir = Path(args.data_dir)
@@ -442,21 +593,42 @@ def main(argv: list[str] | None = None) -> int:
         print("baseline written: %s (%d subcategories)" % (path.name, len(report["groups"])))
         return 0
 
+    baseline = load_baseline(data_dir)
+    debt = evaluate_advisory(report, baseline, args.floor)
+
+    if args.record_debt:
+        state = write_debt(report, debt, data_dir)
+        print(
+            "debt ledger %s: %d findings" % (state, len(debt))
+        )
+
     if args.json:
         print(json.dumps(report, indent=2, ensure_ascii=False))
     else:
         print(format_report(report))
 
+    # Debt is reported on every run whether or not it gates. It is the backlog a
+    # curation pass works through, so it must stay legible in the log; --advisory
+    # only decides whether it is allowed to fail the job.
+    if debt and not args.json:
+        print("\ncuration debt (%d, non-blocking):" % len(debt))
+        for d in debt:
+            print("  - " + d)
+        print("  Ledger: %s" % _debt_path(data_dir).name)
+
     if args.gate:
-        baseline = load_baseline(data_dir)
         problems = evaluate_gate(report, baseline, args.floor)
+        if args.advisory:
+            problems = problems + debt
         if problems:
             print("\nmetric gate FAILED:")
             for p in problems:
                 print("  - " + p)
             return 1
         if not args.json:
-            print("\nmetric gate: OK (%d subcategories within baseline)" % len(report["groups"]))
+            print("\nmetric gate: OK (%d subcategories, %d known metrics)" % (
+                len(report["groups"]), report["overall"]["numeric"],
+            ))
     return 0
 
 

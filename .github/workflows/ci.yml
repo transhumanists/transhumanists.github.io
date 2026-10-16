@@ -60,6 +60,15 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          # Full history, deliberately. scripts/test_data_ownership.py resolves a
+          # base ref (origin/main, HEAD~40) and looks for real bot commits to
+          # decide what counts as hand-edited data. actions/checkout defaults to
+          # fetch-depth: 1, so under the default those lookups all fail and the
+          # tests report "expected bot commits in history" - failing on a shallow
+          # clone, not on a regression. Verified: 7 failures at depth 1, 16 passed
+          # with full history, same commit.
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v6

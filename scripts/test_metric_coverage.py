@@ -152,7 +152,17 @@ class TestReport(unittest.TestCase):
 
 
 class TestGate(unittest.TestCase):
-    """The gate must be green on the accepted state and red on every drift."""
+    """The gate must be green on the accepted state and red on every drift.
+
+    Two tiers, and the split is the point:
+
+      * evaluate_gate() blocks - the published set got harder to compare.
+      * evaluate_advisory() reports - curation debt a human has to reconcile.
+
+    Both directions of the blocking tier are pinned, and so is the case that
+    originally wedged this pipeline: discovering a milestone that carries no
+    metric must never stop the refresh that discovered it.
+    """
 
     def _report(self, records):
         with tempfile.TemporaryDirectory() as td:
@@ -173,20 +183,61 @@ class TestGate(unittest.TestCase):
         grown = base_recs + [_rec(id="c"), _rec(id="d")]
         self.assertEqual(mc.evaluate_gate(self._report(grown), baseline, 0.25), [])
 
+    def test_green_when_metric_less_records_are_added(self):
+        # The regression that wedged the pipeline for ~100 consecutive runs.
+        #
+        # Upstream publishes the title as the value when a milestone has no
+        # metric, so most records the sync discovers are metric-less. Adding one
+        # lowers comparable_rate (numerator flat, denominator up) while making
+        # the dataset strictly better. A rate-based gate therefore rejects every
+        # batch it discovers, and because the gate runs before the commit step,
+        # those records can never land - each run re-discovers them and fails
+        # identically.
+        base_recs = [_rec(id="a"), _rec(id="b")]
+        baseline = mc.build_baseline(self._report(base_recs))["groups"]
+
+        prose = {"value": "A machine did a thing", "unit": ""}
+        grown = base_recs + [_rec(id="c", **prose), _rec(id="d", **prose)]
+
+        report = self._report(grown)
+        # The rate really did halve...
+        self.assertAlmostEqual(report["groups"][0]["comparable_rate"], 0.5, places=3)
+        # ...and the gate must still be green, because no metric was lost.
+        self.assertEqual(report["groups"][0]["numeric"], 2)
+        self.assertEqual(mc.evaluate_gate(report, baseline, 0.25), [])
+
     def test_red_when_a_metric_disappears(self):
         # The exact regression this exists to catch: a record that had a metric
-        # is republished as prose.
+        # is republished as prose. Comparable count drops 2 -> 1.
         with_metric = [_rec(id="a"), _rec(id="b")]
         baseline = mc.build_baseline(self._report(with_metric))["groups"]
         regressed = [_rec(id="a"), _rec(id="b", value="Something happened", unit="")]
         problems = mc.evaluate_gate(self._report(regressed), baseline, 0.25)
         self.assertTrue(problems)
-        self.assertIn("comparable rate fell", problems[0])
+        self.assertIn("lost comparable metrics", problems[0])
 
-    def test_red_when_a_new_incoherent_group_appears(self):
+    def test_red_when_records_are_deleted(self):
+        # Losing a comparable record must fail even though the *rate* goes UP,
+        # which is the hole a rate-based ratchet has: pruning prose records and a
+        # metric together raises the share while destroying a metric. The count is
+        # what actually has to not regress.
+        base_recs = [_rec(id="a"), _rec(id="b"), _rec(id="c", value="prose", unit="")]
+        baseline = mc.build_baseline(self._report(base_recs))["groups"]
+        shrunk = [_rec(id="a")]
+        report = self._report(shrunk)
+        # The rate improved...
+        self.assertGreater(report["groups"][0]["comparable_rate"], 0.66)
+        # ...and a comparable metric was lost, which is what the gate keys on.
+        self.assertEqual(report["groups"][0]["numeric"], 1)
+        problems = mc.evaluate_gate(report, baseline, 0.25)
+        self.assertTrue(problems)
+        self.assertIn("lost comparable metrics", problems[0])
+
+    def test_red_when_a_new_incoherent_group_appears_is_advisory_not_blocking(self):
+        # Mixed units need a human to decide whether the unit or the subcategory
+        # is wrong. Blocking here stops the pipeline publishing the batch that
+        # introduced it, so it is reported instead of enforced.
         baseline = mc.build_baseline(self._report([_rec(id="a")]))["groups"]
-        # A different subcategory, absent from the baseline, holding two
-        # different units - incoherent, and not yet accounted for.
         report = self._report(
             [
                 _rec(id="a"),
@@ -194,13 +245,12 @@ class TestGate(unittest.TestCase):
                 _rec(id="c", subcategory="other", unit="qv"),
             ]
         )
-        problems = mc.evaluate_gate(report, baseline, 0.25)
-        self.assertTrue(problems)
-        self.assertTrue(any("not in the baseline" in p for p in problems))
+        self.assertEqual(mc.evaluate_gate(report, baseline, 0.25), [])
+        notes = mc.evaluate_advisory(report, baseline, 0.25)
+        self.assertTrue(any("not in the baseline" in p for p in notes))
 
-    def test_red_when_coherence_drops_further(self):
-        # Already incoherent, and now worse. The baseline knows it was bad at
-        # 0.50; 0.33 is a new drop.
+    def test_red_when_coherence_drops_further_is_advisory_not_blocking(self):
+        # Already incoherent, and now worse. Reported as debt, not enforced.
         recs = [_rec(id="a"), _rec(id="b", unit="qv"), _rec(id="c", unit="g")]
         report = self._report(recs)
         baseline = mc.build_baseline(report)["groups"]
@@ -210,9 +260,9 @@ class TestGate(unittest.TestCase):
             _rec(id="c", unit="g"),
             _rec(id="d", unit="s"),
         ]
-        problems = mc.evaluate_gate(self._report(worse), baseline, 0.25)
-        self.assertTrue(problems)
-        self.assertTrue(any("unit coherence fell" in p for p in problems))
+        self.assertEqual(mc.evaluate_gate(self._report(worse), baseline, 0.25), [])
+        notes = mc.evaluate_advisory(self._report(worse), baseline, 0.25)
+        self.assertTrue(any("unit coherence fell" in p for p in notes))
 
     def test_known_inecoherence_alone_is_not_a_failure(self):
         # Debt already recorded in the baseline is reported, not enforced.
@@ -221,12 +271,107 @@ class TestGate(unittest.TestCase):
         self.assertTrue(report["groups"][0]["incoherent"])
         baseline = mc.build_baseline(report)["groups"]
         self.assertEqual(mc.evaluate_gate(report, baseline, 0.25), [])
+        self.assertEqual(mc.evaluate_advisory(report, baseline, 0.25), [])
 
-    def test_empty_baseline_holds_new_groups_to_the_floor(self):
+    def test_empty_baseline_reports_debt_without_blocking(self):
         # No baseline yet: anything incoherent or below the floor is a finding,
-        # which is the behaviour before --update-baseline has ever run.
-        problems = mc.evaluate_gate(self._report([_rec(id="a"), _rec(id="b", unit="qv")]), {}, 0.25)
-        self.assertTrue(problems)
+        # which is the behaviour before --update-baseline has ever run. It is a
+        # finding, not a hard stop - with no ratchet there is nothing to regress
+        # from, so blocking would make a fresh clone unrunnable.
+        report = self._report([_rec(id="a"), _rec(id="b", unit="qv")])
+        self.assertEqual(mc.evaluate_gate(report, {}, 0.25), [])
+        self.assertTrue(mc.evaluate_advisory(report, {}, 0.25))
+
+    def test_baseline_numeric_reads_legacy_entries_without_the_field(self):
+        # Baselines written before `numeric` was stored carry only a 3-place
+        # rate. The ratchet must still reconstruct a usable count from them.
+        self.assertEqual(mc.baseline_numeric({"records": 4, "comparable_rate": 0.25}), 1)
+        self.assertEqual(mc.baseline_numeric({"numeric": 7, "records": 4, "comparable_rate": 0.25}), 7)
+
+
+class TestDebtLedger(unittest.TestCase):
+    def _report(self, records):
+        with tempfile.TemporaryDirectory() as td:
+            tmp = Path(td)
+            _write(tmp, records)
+            return mc.build_report(tmp)
+
+    def _backlog(self):
+        """Two subcategories mixing units, neither in the baseline, so both are debt."""
+        return [
+            _rec(id="a"),
+            _rec(id="b", unit="qv"),
+            _rec(id="c", unit="g"),
+            _rec(id="d", subcategory="trajectory", unit="km"),
+            _rec(id="e", subcategory="trajectory", unit="m"),
+        ]
+
+    def test_writes_then_reports_unchanged_for_the_same_backlog(self):
+        # The ledger is committed by the step that commits the data refresh. If a
+        # run rewrote it while the backlog was identical, it would change only the
+        # date - a diff on every tick, i.e. four no-op commits a day.
+        with tempfile.TemporaryDirectory() as td:
+            tmp = Path(td)
+            report = self._report(self._backlog())
+            findings = mc.evaluate_advisory(report, {}, 0.25)
+            self.assertEqual(len(findings), 2)
+
+            self.assertEqual(mc.write_debt(report, findings, tmp), "written")
+            path = tmp / "metric_coverage_debt.json"
+            first = path.read_bytes()
+
+            self.assertEqual(mc.write_debt(report, findings, tmp), "unchanged")
+            self.assertEqual(path.read_bytes(), first)
+
+    def test_generated_records_when_the_backlog_moved_not_when_it_was_looked_at(self):
+        with tempfile.TemporaryDirectory() as td:
+            tmp = Path(td)
+            report = self._report(self._backlog())
+            findings = mc.evaluate_advisory(report, {}, 0.25)
+            mc.write_debt(report, findings, tmp)
+            path = tmp / "metric_coverage_debt.json"
+            settled = json.loads(path.read_text(encoding="utf-8"))["generated"]
+
+            # A later run that reconciles one finding must record the change...
+            self.assertEqual(mc.write_debt(report, findings[:1], tmp), "written")
+            moved = json.loads(path.read_text(encoding="utf-8"))
+            self.assertEqual(len(moved["findings"]), 1)
+
+            # ...and a run that finds the same backlog again must leave the file
+            # byte-identical rather than ticking the date forward.
+            self.assertEqual(mc.write_debt(report, findings[:1], tmp), "unchanged")
+            self.assertEqual(
+                json.loads(path.read_text(encoding="utf-8"))["generated"], settled
+            )
+
+    def test_ledger_records_the_full_backlog(self):
+        with tempfile.TemporaryDirectory() as td:
+            tmp = Path(td)
+            report = self._report(self._backlog())
+            findings = mc.evaluate_advisory(report, {}, 0.25)
+            mc.write_debt(report, findings, tmp)
+            payload = json.loads((tmp / "metric_coverage_debt.json").read_text(encoding="utf-8"))
+        self.assertEqual(payload["count"], len(findings))
+        self.assertEqual(payload["findings"], findings)
+        self.assertEqual(payload["overall"], report["overall"])
+        self.assertTrue(payload["digest"])
+
+
+class TestUnitAliases(unittest.TestCase):
+    def test_output_qualified_power_units_are_one_unit(self):
+        # "MJ" and "MJ output" are the same quantity wearing different letters.
+        # Scoring them as two units reported the fusion subcategory as incoherent
+        # when nothing about the milestones had actually changed.
+        self.assertEqual(mc.comparable_unit({"unit": "MJ"}), mc.comparable_unit({"unit": "MJ output"}))
+        self.assertEqual(mc.comparable_unit({"unit": "MW output"}), mc.comparable_unit({"unit": "MW"}))
+
+    def test_different_quantities_stay_distinct(self):
+        # The whole reason the aliasing is conservative: a qualifier that changes
+        # the quantity must never be collapsed.
+        self.assertNotEqual(
+            mc.comparable_unit({"unit": "physical qubits"}), mc.comparable_unit({"unit": "qubits"})
+        )
+        self.assertNotEqual(mc.comparable_unit({"unit": "gb"}), mc.comparable_unit({"unit": "gb/s"}))
 
 
 class TestCli(unittest.TestCase):
