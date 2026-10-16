@@ -1,8 +1,752 @@
 {
-  "last_update": "2026-10-16T01:30:26+00:00",
+  "last_update": "2026-10-16T15:45:50+00:00",
   "version": "1.0.0",
   "schema": "https://transhumanists.github.io/schema/milestone-v1.json",
   "categories": {
+    "biotechnology": {
+      "name": "Biotechnology & Biohacking",
+      "icon": "🧬",
+      "color": "#00e676",
+      "subcategories": [
+        "gene_editing",
+        "medical_implants",
+        "microscopy",
+        "macroscopy",
+        "longevity",
+        "synthetic_biology",
+        "neuroscience",
+        "gene_therapy",
+        "immunotherapy",
+        "biosensors",
+        "ml_perturbation"
+      ],
+      "milestones": [
+        {
+          "id": "ms-f81083f4be60",
+          "title": "HitSV improves structural variant detection across sequencing technologies",
+          "summary": "The HitSV model improves structural variant detection by modeling the interaction between genomic repetitiveness and signature intensity.",
+          "category": "Biotechnology & Biohacking",
+          "subcategory": "gene_editing",
+          "value": null,
+          "unit": null,
+          "source": "Nature Biotechnology",
+          "date": "2026-10-15",
+          "url": "https://www.nature.com/articles/s41587-026-03332-9",
+          "is_record": false,
+          "is_breakthrough": true,
+          "is_new": false,
+          "geolocation": {
+            "lat": 32.0603,
+            "lon": 118.7969
+          },
+          "category_key": "biotechnology"
+        },
+        {
+          "id": "ms-fc512f295a81",
+          "title": "In vivo engineering of CAR NK cells via lipid nanoparticles for immunotherapy",
+          "summary": "Researchers demonstrate in vivo generation of CAR natural killer cells using ligand-directed lipid nanoparticles for treating autoimmune diseases and cancer.",
+          "category": "Biotechnology & Biohacking",
+          "subcategory": "immunotherapy",
+          "value": null,
+          "unit": null,
+          "source": "Nature Biotechnology",
+          "date": "2026-10-13",
+          "url": "https://www.nature.com/articles/s41587-026-03310-1",
+          "is_record": false,
+          "is_breakthrough": true,
+          "is_new": false,
+          "geolocation": {
+            "lat": 32.0603,
+            "lon": 118.7969
+          },
+          "category_key": "biotechnology"
+        },
+        {
+          "id": "ms-b0c0800e6617",
+          "title": "First clinical trial deployment of six proteomic aging clocks",
+          "summary": "Six proteomic aging clocks are used in a clinical trial for the first time, marking a milestone in aging biomarker validation.",
+          "category": "Biotechnology & Biohacking",
+          "subcategory": "longevity",
+          "value": null,
+          "unit": null,
+          "source": "Nature Biotechnology",
+          "date": "2026-10-13",
+          "url": "https://www.nature.com/articles/s41587-026-03361-4",
+          "is_record": false,
+          "is_breakthrough": true,
+          "is_new": false,
+          "geolocation": {
+            "lat": 32.0603,
+            "lon": 118.7969
+          },
+          "category_key": "biotechnology"
+        },
+        {
+          "id": "ms-f7e3ed1a332b",
+          "title": "RevMed's pancreatic cancer drug first",
+          "summary": "RevMed publishes first pancreatic cancer drug candidate in Nature Biotechnology.",
+          "category": "Biotechnology & Biohacking",
+          "subcategory": "immunotherapy",
+          "value": null,
+          "unit": null,
+          "source": "RevMed",
+          "date": "2026-10-12",
+          "url": "https://www.nature.com/articles/s41587-026-03363-2",
+          "is_record": false,
+          "is_breakthrough": true,
+          "is_new": false,
+          "category_key": "biotechnology",
+          "location_confidence": "source",
+          "geolocation": {
+            "lat": 51.5074,
+            "lon": -0.1278
+          }
+        },
+        {
+          "id": "ms-d7a87738cf3b",
+          "title": "Engrafting human cortical organoids demonstrates functional integration in vivo",
+          "summary": "Researchers achieve successful engraftment of human cortical organoids, advancing neural tissue transplantation and disease modeling.",
+          "category": "Biotechnology & Biohacking",
+          "subcategory": "neuroscience",
+          "value": null,
+          "unit": null,
+          "source": "Nature Biotechnology",
+          "date": "2026-10-12",
+          "url": "https://www.nature.com/articles/s41587-026-03355-2",
+          "is_record": false,
+          "is_breakthrough": true,
+          "is_new": false,
+          "geolocation": {
+            "lat": 32.0603,
+            "lon": 118.7969
+          },
+          "category_key": "biotechnology"
+        },
+        {
+          "id": "ms-79a5aeaa5895",
+          "title": "Shotgun genetic engineering enables novel metabolic pathways in mammalian cells",
+          "summary": "Shotgun genetic engineering allows large-scale random gene combination testing to discover new metabolic pathways for essential amino acid synthesis in mammalian cells.",
+          "category": "Biotechnology & Biohacking",
+          "subcategory": "synthetic_biology",
+          "value": null,
+          "unit": null,
+          "source": "Nature Biotechnology",
+          "date": "2026-10-06",
+          "url": "https://www.nature.com/articles/s41587-026-03329-4",
+          "is_record": false,
+          "is_breakthrough": true,
+          "is_new": false,
+          "geolocation": {
+            "lat": 32.0603,
+            "lon": 118.7969
+          },
+          "category_key": "biotechnology"
+        },
+        {
+          "id": "ms-353f7e5bc1a0",
+          "title": "Highly multiplexed mammalian metabolic engineering via shotgun screening",
+          "summary": "A shotgun screening approach simplifies and scales metabolic engineering in mammalian cells.",
+          "category": "Biotechnology & Biohacking",
+          "subcategory": "synthetic_biology",
+          "value": null,
+          "unit": null,
+          "source": "Nature Biotechnology",
+          "date": "2026-10-06",
+          "url": "https://www.nature.com/articles/s41587-026-03318-7",
+          "is_record": false,
+          "is_breakthrough": true,
+          "is_new": false,
+          "geolocation": {
+            "lat": 32.0603,
+            "lon": 118.7969
+          },
+          "category_key": "biotechnology"
+        },
+        {
+          "id": "ms-fd76df20d111",
+          "title": "Engineered avian R2 retrotransposons enable targeted DNA integration in human cells",
+          "summary": "Researchers engineered avian R2 retrotransposons to achieve site-specific DNA integration in human cells, a breakthrough for gene therapy.",
+          "category": "Biotechnology & Biohacking",
+          "subcategory": "gene_therapy",
+          "value": null,
+          "unit": null,
+          "source": "Nature Biotechnology",
+          "date": "2026-10-05",
+          "url": "https://www.nature.com/articles/s41587-026-03315-w",
+          "is_record": false,
+          "is_breakthrough": true,
+          "is_new": false,
+          "geolocation": {
+            "lat": 32.0603,
+            "lon": 118.7969
+          },
+          "category_key": "biotechnology"
+        },
+        {
+          "id": "ms-45ba0e7b2200",
+          "title": "Engineered avian R2 retrotransposons enable all-RNA targeted DNA integration in human cells",
+          "summary": "Researchers engineered avian R2 retrotransposons to achieve site-specific DNA integration in human cells using an all-RNA system.",
+          "category": "Biotechnology & Biohacking",
+          "subcategory": "gene_editing",
+          "value": null,
+          "unit": null,
+          "source": "Nature Biotechnology",
+          "date": "2026-10-05",
+          "url": "https://www.nature.com/articles/s41587-026-03315-w",
+          "is_record": false,
+          "is_breakthrough": true,
+          "is_new": false,
+          "geolocation": {
+            "lat": 32.0603,
+            "lon": 118.7969
+          },
+          "category_key": "biotechnology"
+        },
+        {
+          "id": "ms-d092c3d026b8",
+          "title": "Detectrons: RNA-to-DNA barcode conversion for high-throughput RNA analysis",
+          "summary": "New Detectron technology enables direct conversion of transient RNA sequences into stable DNA barcodes for high-throughput analysis of RNA-dependent processes.",
+          "category": "Biotechnology & Biohacking",
+          "subcategory": "biosensors",
+          "value": null,
+          "unit": null,
+          "source": "Nature Biotechnology",
+          "date": "2026-10-05",
+          "url": "https://www.nature.com/articles/s41587-026-03334-7",
+          "is_record": false,
+          "is_breakthrough": true,
+          "is_new": false,
+          "geolocation": {
+            "lat": 32.0603,
+            "lon": 118.7969
+          },
+          "category_key": "biotechnology"
+        },
+        {
+          "id": "ms-2a45f74dd818",
+          "title": "Deep learning perturbation models outperform baselines on calibrated metrics",
+          "summary": "Calibration-aware evaluation demonstrates deep learning models surpass baseline methods in perturbation prediction.",
+          "category": "Biotechnology & Biohacking",
+          "subcategory": "ml_perturbation",
+          "value": null,
+          "unit": null,
+          "source": "Nature Biotechnology",
+          "date": "2026-10-01",
+          "url": "https://www.nature.com/articles/s41587-026-03307-w",
+          "is_record": false,
+          "is_breakthrough": true,
+          "is_new": false,
+          "geolocation": {
+            "lat": 32.0603,
+            "lon": 118.7969
+          },
+          "category_key": "biotechnology"
+        },
+        {
+          "id": "ms-e0d7fb1f057f",
+          "title": "Lipid nanoparticles optimized for large RNA cargo enhance in vivo genome editing",
+          "summary": "Researchers improved lipid nanoparticle design by incorporating RNA cargo size, enabling better tissue targeting and enhanced in vivo genome editing.",
+          "category": "Biotechnology & Biohacking",
+          "subcategory": "gene_editing",
+          "value": null,
+          "unit": null,
+          "source": "Nature Biotechnology",
+          "date": "2026-09-28",
+          "url": "https://www.nature.com/articles/s41587-026-03298-8",
+          "is_record": false,
+          "is_breakthrough": true,
+          "is_new": false,
+          "geolocation": {
+            "lat": 32.0603,
+            "lon": 118.7969
+          },
+          "category_key": "biotechnology"
+        },
+        {
+          "id": "ms-8644b2a34d60",
+          "title": "LC-1 lipid nanoparticle enables efficient delivery of large gene editors in mice",
+          "summary": "New ionizable lipid LC-1 improves endosomal escape and enables efficient genome editing in liver, lung, and brain of mice for large mRNA cargo.",
+          "category": "Biotechnology & Biohacking",
+          "subcategory": "gene_therapy",
+          "value": null,
+          "unit": null,
+          "source": "Nature Biotechnology",
+          "date": "2026-09-28",
+          "url": "https://www.nature.com/articles/s41587-026-03297-9",
+          "is_record": false,
+          "is_breakthrough": true,
+          "is_new": false,
+          "geolocation": {
+            "lat": 32.0603,
+            "lon": 118.7969
+          },
+          "category_key": "biotechnology"
+        },
+        {
+          "id": "ms-bc2c513b6177",
+          "title": "AI-guided optimization yields thermostable mRNA vaccines stable at 37°C for 2 months",
+          "summary": "AI-driven framework AGENT enables mRNA vaccines retaining full bioactivity after 2 months at 37°C, allowing cold-chain-free delivery via microneedle patches.",
+          "category": "Biotechnology & Biohacking",
+          "subcategory": "gene_therapy",
+          "value": 37,
+          "unit": "°C",
+          "source": "Nature Biotechnology",
+          "date": "2026-09-28",
+          "url": "https://www.nature.com/articles/s41587-026-03330-x",
+          "is_record": true,
+          "is_breakthrough": true,
+          "is_new": false,
+          "geolocation": {
+            "lat": 32.0603,
+            "lon": 118.7969
+          },
+          "category_key": "biotechnology"
+        },
+        {
+          "id": "ms-0a6a4227b697",
+          "title": "AI-guided optimization yields thermostable mRNA vaccines stable at 37°C for 2 months",
+          "summary": "AI framework AGENT engineers mRNA vaccines retaining full bioactivity after 2 months at 37°C, enabling cold-chain-free microneedle patch delivery in primates.",
+          "category": "Biotechnology & Biohacking",
+          "subcategory": "synthetic_biology",
+          "value": 2,
+          "unit": "months",
+          "source": "Nature Biotechnology",
+          "date": "2026-09-28",
+          "url": "https://www.nature.com/articles/s41587-026-03330-x",
+          "is_record": true,
+          "is_breakthrough": true,
+          "is_new": false,
+          "geolocation": {
+            "lat": 32.0603,
+            "lon": 118.7969
+          },
+          "category_key": "biotechnology"
+        },
+        {
+          "id": "ms-f725a993460b",
+          "title": "AI-accelerated discovery of thermostable mRNA–LNP vaccines",
+          "summary": "Data-efficient AI enables rapid identification of thermostable mRNA–lipid nanoparticle vaccine formulations, advancing vaccine stability and deployment.",
+          "category": "Biotechnology & Biohacking",
+          "subcategory": "synthetic_biology",
+          "value": null,
+          "unit": null,
+          "source": "Nature Biotechnology",
+          "date": "2026-09-28",
+          "url": "https://www.nature.com/articles/s41587-026-03331-w",
+          "is_record": false,
+          "is_breakthrough": true,
+          "is_new": false,
+          "geolocation": {
+            "lat": 32.0603,
+            "lon": 118.7969
+          },
+          "category_key": "biotechnology"
+        },
+        {
+          "id": "ms-76a6862f54e8",
+          "title": "Photolabile oligonucleotides enable spatially resolved single-cell transcriptomics and epigenomics",
+          "summary": "A new photolabile oligonucleotide system uses topological light gradients to achieve spatially resolved single-cell measurements linking epigenome regulation to gene expression.",
+          "category": "Biotechnology & Biohacking",
+          "subcategory": "microscopy",
+          "value": null,
+          "unit": null,
+          "source": "Nature Biotechnology",
+          "date": "2026-09-25",
+          "url": "https://www.nature.com/articles/s41587-026-03328-5",
+          "is_record": false,
+          "is_breakthrough": true,
+          "is_new": false,
+          "geolocation": {
+            "lat": 32.0603,
+            "lon": 118.7969
+          },
+          "category_key": "biotechnology"
+        },
+        {
+          "id": "ms-1d88f31518db",
+          "title": "Alkermes reports pioneering ADHD data for orexin agonist",
+          "summary": "Alkermes releases pioneering clinical data for orexin agonist in ADHD, potentially expanding the drug class beyond narcolepsy into broader patient populations.",
+          "category": "Biotechnology & Biohacking",
+          "subcategory": "neuroscience",
+          "value": null,
+          "unit": null,
+          "source": "Alkermes",
+          "date": "2026-09-22",
+          "url": "https://www.fiercebiotech.com/biotech/pioneering-adhd-data-alkermes-eyes-orexin-agonist-potential-company-changer",
+          "is_record": false,
+          "is_breakthrough": true,
+          "is_new": false,
+          "geolocation": {
+            "lat": 42.3765,
+            "lon": -71.2356
+          },
+          "category_key": "biotechnology"
+        },
+        {
+          "id": "ms-e5275443e851",
+          "title": "Versatile nanopore sensor simultaneously identifies four analyte classes with 98.7% accuracy",
+          "summary": "A modified bacterial porin nanopore coupled with machine learning simultaneously identifies amino acids, nucleoside monophosphates, saccharides, and peptides with 98.7% accuracy, enabling native glyco",
+          "category": "Biotechnology & Biohacking",
+          "subcategory": "biosensors",
+          "value": 98.7,
+          "unit": "percent",
+          "source": "Unknown",
+          "date": "2026-09-15",
+          "url": "https://www.nature.com/articles/s41587-026-03322-x",
+          "is_record": false,
+          "is_breakthrough": true,
+          "is_new": false,
+          "category_key": "biotechnology",
+          "location_confidence": "source",
+          "geolocation": {
+            "lat": 51.5074,
+            "lon": -0.1278
+          }
+        },
+        {
+          "id": "ms-e55c8cf4e432",
+          "title": "Engineered nanopore simultaneously identifies saccharides, amino acids, peptides, and ribonucleotides",
+          "summary": "A modified nanopore achieves simultaneous detection of four major biomolecule classes and their modifications, marking a breakthrough in multiplexed single-molecule sensing.",
+          "category": "Biotechnology & Biohacking",
+          "subcategory": "biosensors",
+          "value": null,
+          "unit": null,
+          "source": "Nature Biotechnology",
+          "date": "2026-09-14",
+          "url": "https://www.nature.com/articles/s41587-026-03308-9",
+          "is_record": true,
+          "is_breakthrough": true,
+          "is_new": false,
+          "geolocation": {
+            "lat": 32.0603,
+            "lon": 118.7969
+          },
+          "category_key": "biotechnology"
+        },
+        {
+          "id": "ms-a5c98baae9a8",
+          "title": "Moderna mRNA flu vaccine receives FDA approval",
+          "summary": "Moderna's mRNA-based influenza vaccine gains FDA approval, marking the first regulatory clearance for an mRNA flu vaccine.",
+          "category": "Biotechnology & Biohacking",
+          "subcategory": "immunotherapy",
+          "value": null,
+          "unit": null,
+          "source": "FDA",
+          "date": "2026-09-10",
+          "url": "https://www.nature.com/articles/s41587-026-03313-y",
+          "is_record": false,
+          "is_breakthrough": true,
+          "is_new": false,
+          "geolocation": {
+            "lat": 39.0555,
+            "lon": -77.038
+          },
+          "category_key": "biotechnology"
+        },
+        {
+          "id": "ms-0a279b32fda4",
+          "title": "Biomimetic cells enable new platform for T cell mechanotransduction studies",
+          "summary": "Researchers develop biomimetic cells as a novel synthetic biology tool to investigate mechanical force sensing in T cells, opening new avenues for immunotherapy research.",
+          "category": "Biotechnology & Biohacking",
+          "subcategory": "synthetic_biology",
+          "value": null,
+          "unit": null,
+          "source": "Nature Biotechnology",
+          "date": "2026-09-10",
+          "url": "https://www.nature.com/articles/s41587-026-03312-z",
+          "is_record": false,
+          "is_breakthrough": true,
+          "is_new": false,
+          "geolocation": {
+            "lat": 32.0603,
+            "lon": 118.7969
+          },
+          "category_key": "biotechnology"
+        },
+        {
+          "id": "bio-001",
+          "subcategory": "gene_editing",
+          "title": "CRISPR in-vivo editing efficiency",
+          "value": 94.2,
+          "unit": "%",
+          "source": "Broad Institute",
+          "date": "2026-08-25",
+          "url": "https://www.broadinstitute.org",
+          "geolocation": {
+            "lat": 42.3375,
+            "lon": -71.1061
+          },
+          "category": "Biotechnology & Biohacking",
+          "is_new": false,
+          "category_key": "biotechnology"
+        },
+        {
+          "id": "bio-002",
+          "subcategory": "medical_implants",
+          "title": "Neural implant electrode density",
+          "value": 16384,
+          "unit": "channels/cm²",
+          "source": "Neuralink",
+          "date": "2026-08-20",
+          "url": "https://neuralink.com",
+          "geolocation": {
+            "lat": 37.4861,
+            "lon": -122.1519
+          },
+          "category": "Biotechnology & Biohacking",
+          "is_new": false,
+          "category_key": "biotechnology"
+        },
+        {
+          "id": "bio-003",
+          "subcategory": "microscopy",
+          "title": "Electron microscope resolution",
+          "value": 0.39,
+          "unit": "Ångström",
+          "source": "Thermo Fisher FEI",
+          "date": "2026-08-18",
+          "url": "https://www.thermofisher.com",
+          "geolocation": {
+            "lat": 44.4268,
+            "lon": -123.0764
+          },
+          "category": "Biotechnology & Biohacking",
+          "is_new": false,
+          "category_key": "biotechnology"
+        },
+        {
+          "id": "bio-009",
+          "subcategory": "immunotherapy",
+          "title": "CAR-T manufacturing speed (bedside)",
+          "value": 7,
+          "unit": "days",
+          "source": "驯玉兰生物",
+          "date": "2026-08-01",
+          "url": "https://www.cncell.com",
+          "geolocation": {
+            "lat": 31.2304,
+            "lon": 121.4737
+          },
+          "category": "Biotechnology & Biohacking",
+          "is_new": false,
+          "category_key": "biotechnology"
+        },
+        {
+          "id": "bio-010",
+          "subcategory": "biosensors",
+          "title": "Wearable simultaneous biomarker sensors",
+          "value": 12,
+          "unit": "analytes",
+          "source": "Dexcom",
+          "date": "2026-07-20",
+          "url": "https://www.dexcom.com",
+          "geolocation": {
+            "lat": 32.8844,
+            "lon": -117.234
+          },
+          "category": "Biotechnology & Biohacking",
+          "is_new": false,
+          "category_key": "biotechnology"
+        },
+        {
+          "id": "bio-004",
+          "subcategory": "longevity",
+          "title": "Max lifespan extension (mouse)",
+          "value": 38.4,
+          "unit": "%",
+          "source": "Harvard Sinclair Lab",
+          "date": "2026-07-15",
+          "url": "https://sinclair.hms.harvard.edu",
+          "geolocation": {
+            "lat": 42.3375,
+            "lon": -71.1061
+          },
+          "category": "Biotechnology & Biohacking",
+          "is_new": false,
+          "category_key": "biotechnology"
+        },
+        {
+          "id": "bio-007",
+          "subcategory": "macroscopy",
+          "title": "In-vivo whole-organ 3D imaging",
+          "value": 3.2,
+          "unit": "µm",
+          "source": "MPI-CBG",
+          "date": "2026-07-01",
+          "url": "https://www.mpi-cbg.de",
+          "geolocation": {
+            "lat": 51.0504,
+            "lon": 13.7373
+          },
+          "category": "Biotechnology & Biohacking",
+          "is_new": false,
+          "category_key": "biotechnology"
+        },
+        {
+          "id": "bio-008",
+          "subcategory": "gene_therapy",
+          "title": "AAV vector delivery efficiency",
+          "value": 91.7,
+          "unit": "%",
+          "source": "Spark Therapeutics",
+          "date": "2026-06-15",
+          "url": "https://sparktx.com",
+          "geolocation": {
+            "lat": 39.9526,
+            "lon": -75.1652
+          },
+          "category": "Biotechnology & Biohacking",
+          "is_new": false,
+          "category_key": "biotechnology"
+        },
+        {
+          "id": "bio-005",
+          "subcategory": "synthetic_biology",
+          "title": "Largest synthetic genome synthesized",
+          "value": 1500000000,
+          "unit": "bp",
+          "source": "JCVI",
+          "date": "2026-06-01",
+          "url": "https://www.jcvi.org",
+          "geolocation": {
+            "lat": 32.7157,
+            "lon": -117.1611
+          },
+          "category": "Biotechnology & Biohacking",
+          "is_new": false,
+          "category_key": "biotechnology"
+        },
+        {
+          "id": "bio-006",
+          "subcategory": "neuroscience",
+          "title": "Brain organoid complexity (neurons)",
+          "value": 100000000,
+          "unit": "neurons",
+          "source": "ETH Zürich",
+          "date": "2026-05-20",
+          "url": "https://biol.ethz.ch",
+          "geolocation": {
+            "lat": 47.3769,
+            "lon": 8.5417
+          },
+          "category": "Biotechnology & Biohacking",
+          "is_new": false,
+          "category_key": "biotechnology"
+        },
+        {
+          "id": "his-2020-12-11-mrna-vaccine",
+          "category": "Biotechnology & Biohacking",
+          "subcategory": "immunotherapy",
+          "title": "First mRNA vaccine granted emergency use authorisation (COVID-19)",
+          "value": null,
+          "unit": null,
+          "source": "Pfizer / BioNTech / FDA",
+          "url": "https://en.wikipedia.org/wiki/History_of_COVID-19_vaccine_development",
+          "date": "2020-12-11",
+          "geolocation": {
+            "lat": 40.8075,
+            "lon": -73.9626
+          },
+          "category_key": "biotechnology"
+        },
+        {
+          "id": "his-2012-06-28-crispr",
+          "category": "Biotechnology & Biohacking",
+          "subcategory": "gene_editing",
+          "title": "CRISPR-Cas9 programmable genome editing is published",
+          "value": null,
+          "unit": null,
+          "source": "UC Berkeley / Umeå University",
+          "url": "https://en.wikipedia.org/wiki/CRISPR",
+          "date": "2012-06-28",
+          "geolocation": {
+            "lat": 37.8719,
+            "lon": -122.2585
+          },
+          "category_key": "biotechnology"
+        },
+        {
+          "id": "his-2003-04-14-human-genome",
+          "category": "Biotechnology & Biohacking",
+          "subcategory": "synthetic_biology",
+          "title": "Human Genome Project announces completion of the human genome sequence",
+          "value": null,
+          "unit": null,
+          "source": "NIH / Wellcome Trust",
+          "url": "https://en.wikipedia.org/wiki/Human_Genome_Project",
+          "date": "2003-04-14",
+          "geolocation": {
+            "lat": 38.9847,
+            "lon": -77.0947
+          },
+          "category_key": "biotechnology"
+        },
+        {
+          "id": "his-1996-07-05-dolly",
+          "category": "Biotechnology & Biohacking",
+          "subcategory": "synthetic_biology",
+          "title": "Dolly - the first mammal cloned from an adult somatic cell",
+          "value": null,
+          "unit": null,
+          "source": "Roslin Institute",
+          "url": "https://en.wikipedia.org/wiki/Dolly_(sheep)",
+          "date": "1996-07-05",
+          "geolocation": {
+            "lat": 55.9533,
+            "lon": -3.1883
+          },
+          "category_key": "biotechnology"
+        },
+        {
+          "id": "his-1983-04-01-pcr",
+          "category": "Biotechnology & Biohacking",
+          "subcategory": "synthetic_biology",
+          "title": "Kary Mullis conceives the polymerase chain reaction (PCR)",
+          "value": null,
+          "unit": null,
+          "source": "Cetus Corporation",
+          "url": "https://en.wikipedia.org/wiki/Polymerase_chain_reaction",
+          "date": "1983-04-01",
+          "geolocation": {
+            "lat": 37.8313,
+            "lon": -122.2853
+          },
+          "category_key": "biotechnology"
+        },
+        {
+          "id": "his-1973-01-01-recombinant-dna",
+          "category": "Biotechnology & Biohacking",
+          "subcategory": "gene_editing",
+          "title": "Cohen & Boyer pioneer recombinant DNA technology",
+          "value": null,
+          "unit": null,
+          "source": "Stanford University",
+          "url": "https://en.wikipedia.org/wiki/Recombinant_DNA",
+          "date": "1973-01-01",
+          "geolocation": {
+            "lat": 37.4275,
+            "lon": -122.1697
+          },
+          "category_key": "biotechnology"
+        },
+        {
+          "id": "his-1953-04-25-dna-double-helix",
+          "category": "Biotechnology & Biohacking",
+          "subcategory": "synthetic_biology",
+          "title": "Watson & Crick publish the structure of DNA (double helix)",
+          "value": null,
+          "unit": null,
+          "source": "Nature",
+          "url": "https://en.wikipedia.org/wiki/Molecular_structure_of_Nucleic_Acids",
+          "date": "1953-04-25",
+          "geolocation": {
+            "lat": 52.2053,
+            "lon": 0.1218
+          },
+          "category_key": "biotechnology"
+        }
+      ]
+    },
     "cybersecurity": {
       "name": "Cybersecurity",
       "icon": "🛡️",
@@ -1854,730 +2598,6 @@
             "lon": -75.1652
           },
           "category_key": "computing_agi"
-        }
-      ]
-    },
-    "biotechnology": {
-      "name": "Biotechnology & Biohacking",
-      "icon": "🧬",
-      "color": "#00e676",
-      "subcategories": [
-        "gene_editing",
-        "medical_implants",
-        "microscopy",
-        "macroscopy",
-        "longevity",
-        "synthetic_biology",
-        "neuroscience",
-        "gene_therapy",
-        "immunotherapy",
-        "biosensors",
-        "ml_perturbation"
-      ],
-      "milestones": [
-        {
-          "id": "ms-fc512f295a81",
-          "title": "In vivo engineering of CAR NK cells via lipid nanoparticles for immunotherapy",
-          "summary": "Researchers demonstrate in vivo generation of CAR natural killer cells using ligand-directed lipid nanoparticles for treating autoimmune diseases and cancer.",
-          "category": "Biotechnology & Biohacking",
-          "subcategory": "immunotherapy",
-          "value": null,
-          "unit": null,
-          "source": "Nature Biotechnology",
-          "date": "2026-10-13",
-          "url": "https://www.nature.com/articles/s41587-026-03310-1",
-          "is_record": false,
-          "is_breakthrough": true,
-          "is_new": false,
-          "geolocation": {
-            "lat": 32.0603,
-            "lon": 118.7969
-          },
-          "category_key": "biotechnology"
-        },
-        {
-          "id": "ms-b0c0800e6617",
-          "title": "First clinical trial deployment of six proteomic aging clocks",
-          "summary": "Six proteomic aging clocks are used in a clinical trial for the first time, marking a milestone in aging biomarker validation.",
-          "category": "Biotechnology & Biohacking",
-          "subcategory": "longevity",
-          "value": null,
-          "unit": null,
-          "source": "Nature Biotechnology",
-          "date": "2026-10-13",
-          "url": "https://www.nature.com/articles/s41587-026-03361-4",
-          "is_record": false,
-          "is_breakthrough": true,
-          "is_new": true,
-          "geolocation": {
-            "lat": 32.0603,
-            "lon": 118.7969
-          },
-          "category_key": "biotechnology"
-        },
-        {
-          "id": "ms-f7e3ed1a332b",
-          "title": "RevMed's pancreatic cancer drug first",
-          "summary": "RevMed publishes first pancreatic cancer drug candidate in Nature Biotechnology.",
-          "category": "Biotechnology & Biohacking",
-          "subcategory": "immunotherapy",
-          "value": null,
-          "unit": null,
-          "source": "RevMed",
-          "date": "2026-10-12",
-          "url": "https://www.nature.com/articles/s41587-026-03363-2",
-          "is_record": false,
-          "is_breakthrough": true,
-          "is_new": false,
-          "category_key": "biotechnology",
-          "location_confidence": "source",
-          "geolocation": {
-            "lat": 51.5074,
-            "lon": -0.1278
-          }
-        },
-        {
-          "id": "ms-d7a87738cf3b",
-          "title": "Engrafting human cortical organoids demonstrates functional integration in vivo",
-          "summary": "Researchers achieve successful engraftment of human cortical organoids, advancing neural tissue transplantation and disease modeling.",
-          "category": "Biotechnology & Biohacking",
-          "subcategory": "neuroscience",
-          "value": null,
-          "unit": null,
-          "source": "Nature Biotechnology",
-          "date": "2026-10-12",
-          "url": "https://www.nature.com/articles/s41587-026-03355-2",
-          "is_record": false,
-          "is_breakthrough": true,
-          "is_new": false,
-          "geolocation": {
-            "lat": 32.0603,
-            "lon": 118.7969
-          },
-          "category_key": "biotechnology"
-        },
-        {
-          "id": "ms-79a5aeaa5895",
-          "title": "Shotgun genetic engineering enables novel metabolic pathways in mammalian cells",
-          "summary": "Shotgun genetic engineering allows large-scale random gene combination testing to discover new metabolic pathways for essential amino acid synthesis in mammalian cells.",
-          "category": "Biotechnology & Biohacking",
-          "subcategory": "synthetic_biology",
-          "value": null,
-          "unit": null,
-          "source": "Nature Biotechnology",
-          "date": "2026-10-06",
-          "url": "https://www.nature.com/articles/s41587-026-03329-4",
-          "is_record": false,
-          "is_breakthrough": true,
-          "is_new": false,
-          "geolocation": {
-            "lat": 32.0603,
-            "lon": 118.7969
-          },
-          "category_key": "biotechnology"
-        },
-        {
-          "id": "ms-353f7e5bc1a0",
-          "title": "Highly multiplexed mammalian metabolic engineering via shotgun screening",
-          "summary": "A shotgun screening approach simplifies and scales metabolic engineering in mammalian cells.",
-          "category": "Biotechnology & Biohacking",
-          "subcategory": "synthetic_biology",
-          "value": null,
-          "unit": null,
-          "source": "Nature Biotechnology",
-          "date": "2026-10-06",
-          "url": "https://www.nature.com/articles/s41587-026-03318-7",
-          "is_record": false,
-          "is_breakthrough": true,
-          "is_new": false,
-          "geolocation": {
-            "lat": 32.0603,
-            "lon": 118.7969
-          },
-          "category_key": "biotechnology"
-        },
-        {
-          "id": "ms-fd76df20d111",
-          "title": "Engineered avian R2 retrotransposons enable targeted DNA integration in human cells",
-          "summary": "Researchers engineered avian R2 retrotransposons to achieve site-specific DNA integration in human cells, a breakthrough for gene therapy.",
-          "category": "Biotechnology & Biohacking",
-          "subcategory": "gene_therapy",
-          "value": null,
-          "unit": null,
-          "source": "Nature Biotechnology",
-          "date": "2026-10-05",
-          "url": "https://www.nature.com/articles/s41587-026-03315-w",
-          "is_record": false,
-          "is_breakthrough": true,
-          "is_new": false,
-          "geolocation": {
-            "lat": 32.0603,
-            "lon": 118.7969
-          },
-          "category_key": "biotechnology"
-        },
-        {
-          "id": "ms-45ba0e7b2200",
-          "title": "Engineered avian R2 retrotransposons enable all-RNA targeted DNA integration in human cells",
-          "summary": "Researchers engineered avian R2 retrotransposons to achieve site-specific DNA integration in human cells using an all-RNA system.",
-          "category": "Biotechnology & Biohacking",
-          "subcategory": "gene_editing",
-          "value": null,
-          "unit": null,
-          "source": "Nature Biotechnology",
-          "date": "2026-10-05",
-          "url": "https://www.nature.com/articles/s41587-026-03315-w",
-          "is_record": false,
-          "is_breakthrough": true,
-          "is_new": false,
-          "geolocation": {
-            "lat": 32.0603,
-            "lon": 118.7969
-          },
-          "category_key": "biotechnology"
-        },
-        {
-          "id": "ms-d092c3d026b8",
-          "title": "Detectrons: RNA-to-DNA barcode conversion for high-throughput RNA analysis",
-          "summary": "New Detectron technology enables direct conversion of transient RNA sequences into stable DNA barcodes for high-throughput analysis of RNA-dependent processes.",
-          "category": "Biotechnology & Biohacking",
-          "subcategory": "biosensors",
-          "value": null,
-          "unit": null,
-          "source": "Nature Biotechnology",
-          "date": "2026-10-05",
-          "url": "https://www.nature.com/articles/s41587-026-03334-7",
-          "is_record": false,
-          "is_breakthrough": true,
-          "is_new": false,
-          "geolocation": {
-            "lat": 32.0603,
-            "lon": 118.7969
-          },
-          "category_key": "biotechnology"
-        },
-        {
-          "id": "ms-2a45f74dd818",
-          "title": "Deep learning perturbation models outperform baselines on calibrated metrics",
-          "summary": "Calibration-aware evaluation demonstrates deep learning models surpass baseline methods in perturbation prediction.",
-          "category": "Biotechnology & Biohacking",
-          "subcategory": "ml_perturbation",
-          "value": null,
-          "unit": null,
-          "source": "Nature Biotechnology",
-          "date": "2026-10-01",
-          "url": "https://www.nature.com/articles/s41587-026-03307-w",
-          "is_record": false,
-          "is_breakthrough": true,
-          "is_new": false,
-          "geolocation": {
-            "lat": 32.0603,
-            "lon": 118.7969
-          },
-          "category_key": "biotechnology"
-        },
-        {
-          "id": "ms-e0d7fb1f057f",
-          "title": "Lipid nanoparticles optimized for large RNA cargo enhance in vivo genome editing",
-          "summary": "Researchers improved lipid nanoparticle design by incorporating RNA cargo size, enabling better tissue targeting and enhanced in vivo genome editing.",
-          "category": "Biotechnology & Biohacking",
-          "subcategory": "gene_editing",
-          "value": null,
-          "unit": null,
-          "source": "Nature Biotechnology",
-          "date": "2026-09-28",
-          "url": "https://www.nature.com/articles/s41587-026-03298-8",
-          "is_record": false,
-          "is_breakthrough": true,
-          "is_new": false,
-          "geolocation": {
-            "lat": 32.0603,
-            "lon": 118.7969
-          },
-          "category_key": "biotechnology"
-        },
-        {
-          "id": "ms-8644b2a34d60",
-          "title": "LC-1 lipid nanoparticle enables efficient delivery of large gene editors in mice",
-          "summary": "New ionizable lipid LC-1 improves endosomal escape and enables efficient genome editing in liver, lung, and brain of mice for large mRNA cargo.",
-          "category": "Biotechnology & Biohacking",
-          "subcategory": "gene_therapy",
-          "value": null,
-          "unit": null,
-          "source": "Nature Biotechnology",
-          "date": "2026-09-28",
-          "url": "https://www.nature.com/articles/s41587-026-03297-9",
-          "is_record": false,
-          "is_breakthrough": true,
-          "is_new": false,
-          "geolocation": {
-            "lat": 32.0603,
-            "lon": 118.7969
-          },
-          "category_key": "biotechnology"
-        },
-        {
-          "id": "ms-bc2c513b6177",
-          "title": "AI-guided optimization yields thermostable mRNA vaccines stable at 37°C for 2 months",
-          "summary": "AI-driven framework AGENT enables mRNA vaccines retaining full bioactivity after 2 months at 37°C, allowing cold-chain-free delivery via microneedle patches.",
-          "category": "Biotechnology & Biohacking",
-          "subcategory": "gene_therapy",
-          "value": 37,
-          "unit": "°C",
-          "source": "Nature Biotechnology",
-          "date": "2026-09-28",
-          "url": "https://www.nature.com/articles/s41587-026-03330-x",
-          "is_record": true,
-          "is_breakthrough": true,
-          "is_new": false,
-          "geolocation": {
-            "lat": 32.0603,
-            "lon": 118.7969
-          },
-          "category_key": "biotechnology"
-        },
-        {
-          "id": "ms-0a6a4227b697",
-          "title": "AI-guided optimization yields thermostable mRNA vaccines stable at 37°C for 2 months",
-          "summary": "AI framework AGENT engineers mRNA vaccines retaining full bioactivity after 2 months at 37°C, enabling cold-chain-free microneedle patch delivery in primates.",
-          "category": "Biotechnology & Biohacking",
-          "subcategory": "synthetic_biology",
-          "value": 2,
-          "unit": "months",
-          "source": "Nature Biotechnology",
-          "date": "2026-09-28",
-          "url": "https://www.nature.com/articles/s41587-026-03330-x",
-          "is_record": true,
-          "is_breakthrough": true,
-          "is_new": false,
-          "geolocation": {
-            "lat": 32.0603,
-            "lon": 118.7969
-          },
-          "category_key": "biotechnology"
-        },
-        {
-          "id": "ms-f725a993460b",
-          "title": "AI-accelerated discovery of thermostable mRNA–LNP vaccines",
-          "summary": "Data-efficient AI enables rapid identification of thermostable mRNA–lipid nanoparticle vaccine formulations, advancing vaccine stability and deployment.",
-          "category": "Biotechnology & Biohacking",
-          "subcategory": "synthetic_biology",
-          "value": null,
-          "unit": null,
-          "source": "Nature Biotechnology",
-          "date": "2026-09-28",
-          "url": "https://www.nature.com/articles/s41587-026-03331-w",
-          "is_record": false,
-          "is_breakthrough": true,
-          "is_new": false,
-          "geolocation": {
-            "lat": 32.0603,
-            "lon": 118.7969
-          },
-          "category_key": "biotechnology"
-        },
-        {
-          "id": "ms-76a6862f54e8",
-          "title": "Photolabile oligonucleotides enable spatially resolved single-cell transcriptomics and epigenomics",
-          "summary": "A new photolabile oligonucleotide system uses topological light gradients to achieve spatially resolved single-cell measurements linking epigenome regulation to gene expression.",
-          "category": "Biotechnology & Biohacking",
-          "subcategory": "microscopy",
-          "value": null,
-          "unit": null,
-          "source": "Nature Biotechnology",
-          "date": "2026-09-25",
-          "url": "https://www.nature.com/articles/s41587-026-03328-5",
-          "is_record": false,
-          "is_breakthrough": true,
-          "is_new": false,
-          "geolocation": {
-            "lat": 32.0603,
-            "lon": 118.7969
-          },
-          "category_key": "biotechnology"
-        },
-        {
-          "id": "ms-1d88f31518db",
-          "title": "Alkermes reports pioneering ADHD data for orexin agonist",
-          "summary": "Alkermes releases pioneering clinical data for orexin agonist in ADHD, potentially expanding the drug class beyond narcolepsy into broader patient populations.",
-          "category": "Biotechnology & Biohacking",
-          "subcategory": "neuroscience",
-          "value": null,
-          "unit": null,
-          "source": "Alkermes",
-          "date": "2026-09-22",
-          "url": "https://www.fiercebiotech.com/biotech/pioneering-adhd-data-alkermes-eyes-orexin-agonist-potential-company-changer",
-          "is_record": false,
-          "is_breakthrough": true,
-          "is_new": false,
-          "geolocation": {
-            "lat": 42.3765,
-            "lon": -71.2356
-          },
-          "category_key": "biotechnology"
-        },
-        {
-          "id": "ms-e5275443e851",
-          "title": "Versatile nanopore sensor simultaneously identifies four analyte classes with 98.7% accuracy",
-          "summary": "A modified bacterial porin nanopore coupled with machine learning simultaneously identifies amino acids, nucleoside monophosphates, saccharides, and peptides with 98.7% accuracy, enabling native glyco",
-          "category": "Biotechnology & Biohacking",
-          "subcategory": "biosensors",
-          "value": 98.7,
-          "unit": "percent",
-          "source": "Unknown",
-          "date": "2026-09-15",
-          "url": "https://www.nature.com/articles/s41587-026-03322-x",
-          "is_record": false,
-          "is_breakthrough": true,
-          "is_new": false,
-          "category_key": "biotechnology",
-          "location_confidence": "source",
-          "geolocation": {
-            "lat": 51.5074,
-            "lon": -0.1278
-          }
-        },
-        {
-          "id": "ms-e55c8cf4e432",
-          "title": "Engineered nanopore simultaneously identifies saccharides, amino acids, peptides, and ribonucleotides",
-          "summary": "A modified nanopore achieves simultaneous detection of four major biomolecule classes and their modifications, marking a breakthrough in multiplexed single-molecule sensing.",
-          "category": "Biotechnology & Biohacking",
-          "subcategory": "biosensors",
-          "value": null,
-          "unit": null,
-          "source": "Nature Biotechnology",
-          "date": "2026-09-14",
-          "url": "https://www.nature.com/articles/s41587-026-03308-9",
-          "is_record": true,
-          "is_breakthrough": true,
-          "is_new": false,
-          "geolocation": {
-            "lat": 32.0603,
-            "lon": 118.7969
-          },
-          "category_key": "biotechnology"
-        },
-        {
-          "id": "ms-a5c98baae9a8",
-          "title": "Moderna mRNA flu vaccine receives FDA approval",
-          "summary": "Moderna's mRNA-based influenza vaccine gains FDA approval, marking the first regulatory clearance for an mRNA flu vaccine.",
-          "category": "Biotechnology & Biohacking",
-          "subcategory": "immunotherapy",
-          "value": null,
-          "unit": null,
-          "source": "FDA",
-          "date": "2026-09-10",
-          "url": "https://www.nature.com/articles/s41587-026-03313-y",
-          "is_record": false,
-          "is_breakthrough": true,
-          "is_new": false,
-          "geolocation": {
-            "lat": 39.0555,
-            "lon": -77.038
-          },
-          "category_key": "biotechnology"
-        },
-        {
-          "id": "ms-0a279b32fda4",
-          "title": "Biomimetic cells enable new platform for T cell mechanotransduction studies",
-          "summary": "Researchers develop biomimetic cells as a novel synthetic biology tool to investigate mechanical force sensing in T cells, opening new avenues for immunotherapy research.",
-          "category": "Biotechnology & Biohacking",
-          "subcategory": "synthetic_biology",
-          "value": null,
-          "unit": null,
-          "source": "Nature Biotechnology",
-          "date": "2026-09-10",
-          "url": "https://www.nature.com/articles/s41587-026-03312-z",
-          "is_record": false,
-          "is_breakthrough": true,
-          "is_new": false,
-          "geolocation": {
-            "lat": 32.0603,
-            "lon": 118.7969
-          },
-          "category_key": "biotechnology"
-        },
-        {
-          "id": "bio-001",
-          "subcategory": "gene_editing",
-          "title": "CRISPR in-vivo editing efficiency",
-          "value": 94.2,
-          "unit": "%",
-          "source": "Broad Institute",
-          "date": "2026-08-25",
-          "url": "https://www.broadinstitute.org",
-          "geolocation": {
-            "lat": 42.3375,
-            "lon": -71.1061
-          },
-          "category": "Biotechnology & Biohacking",
-          "is_new": false,
-          "category_key": "biotechnology"
-        },
-        {
-          "id": "bio-002",
-          "subcategory": "medical_implants",
-          "title": "Neural implant electrode density",
-          "value": 16384,
-          "unit": "channels/cm²",
-          "source": "Neuralink",
-          "date": "2026-08-20",
-          "url": "https://neuralink.com",
-          "geolocation": {
-            "lat": 37.4861,
-            "lon": -122.1519
-          },
-          "category": "Biotechnology & Biohacking",
-          "is_new": false,
-          "category_key": "biotechnology"
-        },
-        {
-          "id": "bio-003",
-          "subcategory": "microscopy",
-          "title": "Electron microscope resolution",
-          "value": 0.39,
-          "unit": "Ångström",
-          "source": "Thermo Fisher FEI",
-          "date": "2026-08-18",
-          "url": "https://www.thermofisher.com",
-          "geolocation": {
-            "lat": 44.4268,
-            "lon": -123.0764
-          },
-          "category": "Biotechnology & Biohacking",
-          "is_new": false,
-          "category_key": "biotechnology"
-        },
-        {
-          "id": "bio-009",
-          "subcategory": "immunotherapy",
-          "title": "CAR-T manufacturing speed (bedside)",
-          "value": 7,
-          "unit": "days",
-          "source": "驯玉兰生物",
-          "date": "2026-08-01",
-          "url": "https://www.cncell.com",
-          "geolocation": {
-            "lat": 31.2304,
-            "lon": 121.4737
-          },
-          "category": "Biotechnology & Biohacking",
-          "is_new": false,
-          "category_key": "biotechnology"
-        },
-        {
-          "id": "bio-010",
-          "subcategory": "biosensors",
-          "title": "Wearable simultaneous biomarker sensors",
-          "value": 12,
-          "unit": "analytes",
-          "source": "Dexcom",
-          "date": "2026-07-20",
-          "url": "https://www.dexcom.com",
-          "geolocation": {
-            "lat": 32.8844,
-            "lon": -117.234
-          },
-          "category": "Biotechnology & Biohacking",
-          "is_new": false,
-          "category_key": "biotechnology"
-        },
-        {
-          "id": "bio-004",
-          "subcategory": "longevity",
-          "title": "Max lifespan extension (mouse)",
-          "value": 38.4,
-          "unit": "%",
-          "source": "Harvard Sinclair Lab",
-          "date": "2026-07-15",
-          "url": "https://sinclair.hms.harvard.edu",
-          "geolocation": {
-            "lat": 42.3375,
-            "lon": -71.1061
-          },
-          "category": "Biotechnology & Biohacking",
-          "is_new": false,
-          "category_key": "biotechnology"
-        },
-        {
-          "id": "bio-007",
-          "subcategory": "macroscopy",
-          "title": "In-vivo whole-organ 3D imaging",
-          "value": 3.2,
-          "unit": "µm",
-          "source": "MPI-CBG",
-          "date": "2026-07-01",
-          "url": "https://www.mpi-cbg.de",
-          "geolocation": {
-            "lat": 51.0504,
-            "lon": 13.7373
-          },
-          "category": "Biotechnology & Biohacking",
-          "is_new": false,
-          "category_key": "biotechnology"
-        },
-        {
-          "id": "bio-008",
-          "subcategory": "gene_therapy",
-          "title": "AAV vector delivery efficiency",
-          "value": 91.7,
-          "unit": "%",
-          "source": "Spark Therapeutics",
-          "date": "2026-06-15",
-          "url": "https://sparktx.com",
-          "geolocation": {
-            "lat": 39.9526,
-            "lon": -75.1652
-          },
-          "category": "Biotechnology & Biohacking",
-          "is_new": false,
-          "category_key": "biotechnology"
-        },
-        {
-          "id": "bio-005",
-          "subcategory": "synthetic_biology",
-          "title": "Largest synthetic genome synthesized",
-          "value": 1500000000,
-          "unit": "bp",
-          "source": "JCVI",
-          "date": "2026-06-01",
-          "url": "https://www.jcvi.org",
-          "geolocation": {
-            "lat": 32.7157,
-            "lon": -117.1611
-          },
-          "category": "Biotechnology & Biohacking",
-          "is_new": false,
-          "category_key": "biotechnology"
-        },
-        {
-          "id": "bio-006",
-          "subcategory": "neuroscience",
-          "title": "Brain organoid complexity (neurons)",
-          "value": 100000000,
-          "unit": "neurons",
-          "source": "ETH Zürich",
-          "date": "2026-05-20",
-          "url": "https://biol.ethz.ch",
-          "geolocation": {
-            "lat": 47.3769,
-            "lon": 8.5417
-          },
-          "category": "Biotechnology & Biohacking",
-          "is_new": false,
-          "category_key": "biotechnology"
-        },
-        {
-          "id": "his-2020-12-11-mrna-vaccine",
-          "category": "Biotechnology & Biohacking",
-          "subcategory": "immunotherapy",
-          "title": "First mRNA vaccine granted emergency use authorisation (COVID-19)",
-          "value": null,
-          "unit": null,
-          "source": "Pfizer / BioNTech / FDA",
-          "url": "https://en.wikipedia.org/wiki/History_of_COVID-19_vaccine_development",
-          "date": "2020-12-11",
-          "geolocation": {
-            "lat": 40.8075,
-            "lon": -73.9626
-          },
-          "category_key": "biotechnology"
-        },
-        {
-          "id": "his-2012-06-28-crispr",
-          "category": "Biotechnology & Biohacking",
-          "subcategory": "gene_editing",
-          "title": "CRISPR-Cas9 programmable genome editing is published",
-          "value": null,
-          "unit": null,
-          "source": "UC Berkeley / Umeå University",
-          "url": "https://en.wikipedia.org/wiki/CRISPR",
-          "date": "2012-06-28",
-          "geolocation": {
-            "lat": 37.8719,
-            "lon": -122.2585
-          },
-          "category_key": "biotechnology"
-        },
-        {
-          "id": "his-2003-04-14-human-genome",
-          "category": "Biotechnology & Biohacking",
-          "subcategory": "synthetic_biology",
-          "title": "Human Genome Project announces completion of the human genome sequence",
-          "value": null,
-          "unit": null,
-          "source": "NIH / Wellcome Trust",
-          "url": "https://en.wikipedia.org/wiki/Human_Genome_Project",
-          "date": "2003-04-14",
-          "geolocation": {
-            "lat": 38.9847,
-            "lon": -77.0947
-          },
-          "category_key": "biotechnology"
-        },
-        {
-          "id": "his-1996-07-05-dolly",
-          "category": "Biotechnology & Biohacking",
-          "subcategory": "synthetic_biology",
-          "title": "Dolly - the first mammal cloned from an adult somatic cell",
-          "value": null,
-          "unit": null,
-          "source": "Roslin Institute",
-          "url": "https://en.wikipedia.org/wiki/Dolly_(sheep)",
-          "date": "1996-07-05",
-          "geolocation": {
-            "lat": 55.9533,
-            "lon": -3.1883
-          },
-          "category_key": "biotechnology"
-        },
-        {
-          "id": "his-1983-04-01-pcr",
-          "category": "Biotechnology & Biohacking",
-          "subcategory": "synthetic_biology",
-          "title": "Kary Mullis conceives the polymerase chain reaction (PCR)",
-          "value": null,
-          "unit": null,
-          "source": "Cetus Corporation",
-          "url": "https://en.wikipedia.org/wiki/Polymerase_chain_reaction",
-          "date": "1983-04-01",
-          "geolocation": {
-            "lat": 37.8313,
-            "lon": -122.2853
-          },
-          "category_key": "biotechnology"
-        },
-        {
-          "id": "his-1973-01-01-recombinant-dna",
-          "category": "Biotechnology & Biohacking",
-          "subcategory": "gene_editing",
-          "title": "Cohen & Boyer pioneer recombinant DNA technology",
-          "value": null,
-          "unit": null,
-          "source": "Stanford University",
-          "url": "https://en.wikipedia.org/wiki/Recombinant_DNA",
-          "date": "1973-01-01",
-          "geolocation": {
-            "lat": 37.4275,
-            "lon": -122.1697
-          },
-          "category_key": "biotechnology"
-        },
-        {
-          "id": "his-1953-04-25-dna-double-helix",
-          "category": "Biotechnology & Biohacking",
-          "subcategory": "synthetic_biology",
-          "title": "Watson & Crick publish the structure of DNA (double helix)",
-          "value": null,
-          "unit": null,
-          "source": "Nature",
-          "url": "https://en.wikipedia.org/wiki/Molecular_structure_of_Nucleic_Acids",
-          "date": "1953-04-25",
-          "geolocation": {
-            "lat": 52.2053,
-            "lon": 0.1218
-          },
-          "category_key": "biotechnology"
         }
       ]
     },

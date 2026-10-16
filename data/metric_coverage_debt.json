@@ -1,13 +1,13 @@
 {
   "_comment": "Curation debt reported by scripts/metric_coverage.py --record-debt. Non-blocking: these findings arrive whenever the sync discovers more milestones, so gating on them would stop the pipeline publishing the records it just discovered. Reconcile them by fixing the record's unit or splitting the subcategory, not by loosening this file.",
   "generated": "2026-10-16",
-  "digest": "3b0b2a5a24caeafa",
+  "digest": "0d0644091c046d0d",
   "overall": {
-    "records": 178,
+    "records": 179,
     "numeric": 109,
     "unitless": 0,
-    "prose": 69,
-    "comparable_rate": 0.612
+    "prose": 70,
+    "comparable_rate": 0.609
   },
   "count": 4,
   "findings": [

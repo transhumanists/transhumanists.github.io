@@ -1,5 +1,22 @@
 [
   {
+    "id": "ms-f81083f4be60",
+    "category": "Biotechnology & Biohacking",
+    "subcategory": "gene_editing",
+    "title": "HitSV improves structural variant detection across sequencing technologies",
+    "value": null,
+    "unit": null,
+    "source": "Nature Biotechnology",
+    "url": "https://www.nature.com/articles/s41587-026-03332-9",
+    "date": "2026-10-15",
+    "geolocation": {
+      "lat": 32.0603,
+      "lon": 118.7969
+    },
+    "first_seen": "2026-10-16",
+    "last_seen": "2026-10-16"
+  },
+  {
     "id": "ms-56183fe2bf28",
     "category": "Cybersecurity",
     "subcategory": "exploits",

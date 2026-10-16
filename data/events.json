@@ -1,7 +1,22 @@
 {
-  "last_update": "2026-10-16T01:30:26+00:00",
+  "last_update": "2026-10-16T15:45:50+00:00",
   "version": "1.0.0",
   "events": [
+    {
+      "id": "ev-ms-f81083f4be60",
+      "title": "HitSV improves structural variant detection across sequencing technologies",
+      "category": "Biotechnology & Biohacking",
+      "value": "HitSV improves structural variant detection across sequencing technologies",
+      "source": "Nature Biotechnology",
+      "url": "https://www.nature.com/articles/s41587-026-03332-9",
+      "date": "2026-10-15",
+      "subcategory": "gene_editing",
+      "location_confidence": "stated",
+      "geolocation": {
+        "lat": 32.0603,
+        "lon": 118.7969
+      }
+    },
     {
       "id": "ev-ms-56183fe2bf28",
       "title": "Hirudo Android Trojan Uses Patched Banking Apps to Bypass Security Checks",
