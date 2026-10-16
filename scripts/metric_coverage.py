@@ -437,7 +437,8 @@ def baseline_numeric(entry: dict) -> int:
     if isinstance(stored, int):
         return stored
     try:
-        return int(round(float(entry.get("records", 0)) * float(entry.get("comparable_rate", 0.0))))
+        # round() on a float already returns an int, so this needs no cast.
+        return round(float(entry.get("records", 0)) * float(entry.get("comparable_rate", 0.0)))
     except (TypeError, ValueError):
         return 0
 
