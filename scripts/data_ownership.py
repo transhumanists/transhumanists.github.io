@@ -94,6 +94,11 @@ GENERATED = (
 
     "data/metric_coverage_baseline.json",
 
+    # Written by scripts/metric_coverage.py --record-debt. Generated like the
+    # baseline beside it: hand-editing it would hide the curation backlog from
+    # the next run, which re-derives it and overwrites the file.
+    "data/metric_coverage_debt.json",
+
 )
 
 
