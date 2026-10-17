@@ -1708,23 +1708,19 @@ function mapScreenRect() {
   }
 
   function drawStack(px, py, count, color) {
-    const r = 4;
-    for (let i = 0; i < count; i++) {
-      const ox = STACK_FAN_DX * (i - (count - 1) / 2);
-      const oy = STACK_FAN_DY * (i - (count - 1) / 2);
-      ctx.beginPath();
-      ctx.arc(px + ox, py + oy, r, 0, Math.PI * 2);
-      ctx.fillStyle = color;
-      ctx.fill();
-    }
+    const r = count > 1 ? 10 : 4;
+    ctx.beginPath();
+    ctx.arc(px, py, r, 0, Math.PI * 2);
+    ctx.fillStyle = color;
+    ctx.fill();
     if (count > 1) {
       ctx.beginPath();
-      ctx.arc(px, py, r + 1, 0, Math.PI * 2);
-      ctx.strokeStyle = 'rgba(255,255,255,0.35)';
-      ctx.lineWidth = 0.8;
+      ctx.arc(px, py, r + 2, 0, Math.PI * 2);
+      ctx.strokeStyle = 'rgba(255,255,255,0.55)';
+      ctx.lineWidth = 1.5;
       ctx.stroke();
       ctx.fillStyle = '#fff';
-      ctx.font = '7px ui-monospace, SFMono-Regular, monospace';
+      ctx.font = '8px ui-monospace, SFMono-Regular, monospace';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText(String(count), px, py);
