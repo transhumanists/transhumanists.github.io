@@ -1001,24 +1001,22 @@ body {
    than floating text, while staying more transparent than the slider itself. */
 .map-timeline-year-label {
   position: absolute;
-  top: -24px;
+  top: -28px;
   left: 50%;
   transform: translateX(-50%);
-  font-size: 0.6rem;
-  font-weight: 600;
+  font-size: 0.85rem;
+  font-weight: 700;
   font-family: var(--font-mono);
   color: var(--fg);
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+  text-shadow: 0 1px 3px rgba(0,0,0,0.6);
   white-space: nowrap;
-  padding: 1px 8px;
-  background: rgba(6, 11, 20, 0.62);
-  backdrop-filter: blur(8px);
+  padding: 2px 10px;
+  background: rgba(6,11,20,0.92);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   pointer-events: none;
   z-index: 11;
-  transition: opacity 0.12s ease, transform 0.08s ease;
-  opacity: 0.95;
+  opacity: 1;
 }
 
 /* MILESTONES CATALOG */
@@ -2299,6 +2297,10 @@ optgroup {
 }
 .header-mini--visible { opacity: 1; transform: translateY(0); pointer-events: auto; }
 .header-mini:hover { color: var(--accent, #7c4dff); border-color: var(--accent, #7c4dff); }
+/* Mobile map taller so worldmap readable */
+@media (max-width: 768px) {
+  #world-map { min-height: 420px; }
+}
 .header-mini .logo-mark { font-size: 1.15rem; }
 
 .nav-dropdown-btn { display: inline-flex; align-items: center; gap: 5px; }
