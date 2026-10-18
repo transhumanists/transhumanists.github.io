@@ -237,6 +237,8 @@
     if (isPlaying) stopAudio();
     else startAudio();
   });
+  playBtn.setAttribute('tabindex','0');
+  playBtn.addEventListener('keydown', (e) => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); if (isPlaying) stopAudio(); else startAudio(); } });
 
   prevBtn.addEventListener('click', () => {
     currentTrack = (currentTrack - 1 + tracks.length) % tracks.length;
@@ -264,6 +266,8 @@
     if (isPlaying) stopAudio();
     else startAudio();
   });
+  playBtn.setAttribute('tabindex','0');
+  playBtn.addEventListener('keydown', (e) => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); if (isPlaying) stopAudio(); else startAudio(); } });
 
   // Collapse HUD when not playing on load
   const hud = document.getElementById('ul-player');
