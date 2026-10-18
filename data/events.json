@@ -1,5 +1,5 @@
 {
-  "last_update": "2026-10-16T15:45:50+00:00",
+  "last_update": "2026-10-18T02:06:09+00:00",
   "version": "1.0.0",
   "events": [
     {
@@ -109,9 +109,9 @@
     },
     {
       "id": "ev-ms-b0c0800e6617",
-      "title": "First clinical trial deployment of six proteomic aging clocks",
+      "title": "First clinical trial deployment of proteomic aging clocks",
       "category": "Biotechnology & Biohacking",
-      "value": "First clinical trial deployment of six proteomic aging clocks",
+      "value": "First clinical trial deployment of proteomic aging clocks",
       "source": "Nature Biotechnology",
       "url": "https://www.nature.com/articles/s41587-026-03361-4",
       "date": "2026-10-13",

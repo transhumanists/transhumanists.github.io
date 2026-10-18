@@ -1,5 +1,5 @@
 {
-  "last_update": "2026-10-16T15:45:50+00:00",
+  "last_update": "2026-10-18T02:06:09+00:00",
   "version": "1.0.0",
   "schema": "https://transhumanists.github.io/schema/milestone-v1.json",
   "categories": {
@@ -63,8 +63,8 @@
         },
         {
           "id": "ms-b0c0800e6617",
-          "title": "First clinical trial deployment of six proteomic aging clocks",
-          "summary": "Six proteomic aging clocks are used in a clinical trial for the first time, marking a milestone in aging biomarker validation.",
+          "title": "First clinical trial deployment of proteomic aging clocks",
+          "summary": "Six proteomic aging clocks were deployed in a clinical trial for the first time, revealing insights into clock performance rather than drug efficacy.",
           "category": "Biotechnology & Biohacking",
           "subcategory": "longevity",
           "value": null,
@@ -74,7 +74,7 @@
           "url": "https://www.nature.com/articles/s41587-026-03361-4",
           "is_record": false,
           "is_breakthrough": true,
-          "is_new": false,
+          "is_new": true,
           "geolocation": {
             "lat": 32.0603,
             "lon": 118.7969
