@@ -1,5 +1,99 @@
 [
   {
+    "id": "ms-95bcb6fd31f6",
+    "category": "Cybersecurity",
+    "subcategory": "threat_intelligence",
+    "title": "ROMULUS ClickFix Platform Discovered Delivering LegionLoader Malware",
+    "value": null,
+    "unit": null,
+    "source": "Forescout Research - Vedere Labs",
+    "url": "https://thehackernews.com/2026/10/romulus-clickfix-platform-tricks-users.html",
+    "date": "2026-10-20",
+    "first_seen": "2026-10-20",
+    "last_seen": "2026-10-20",
+    "located": false,
+    "location_confidence": "unlocated"
+  },
+  {
+    "id": "ms-9d9bc5bed0e6",
+    "category": "Biotechnology & Biohacking",
+    "subcategory": "synthetic_biology",
+    "title": "Genetic code expansion enables plant-directed control of bacterial activity",
+    "value": null,
+    "unit": null,
+    "source": "Nature Biotechnology",
+    "url": "https://www.nature.com/articles/s41587-026-03360-5",
+    "date": "2026-10-20",
+    "geolocation": {
+      "lat": 32.0603,
+      "lon": 118.7969
+    },
+    "first_seen": "2026-10-20",
+    "last_seen": "2026-10-20"
+  },
+  {
+    "id": "ms-1fae27bb196d",
+    "category": "Biotechnology & Biohacking",
+    "subcategory": "gene_editing",
+    "title": "Engineered human Argonaute 2 enables targeted C-to-U RNA base editing",
+    "value": null,
+    "unit": null,
+    "source": "Nature Biotechnology",
+    "url": "https://www.nature.com/articles/s41587-026-03359-y",
+    "date": "2026-10-20",
+    "geolocation": {
+      "lat": 32.0603,
+      "lon": 118.7969
+    },
+    "first_seen": "2026-10-20",
+    "last_seen": "2026-10-20"
+  },
+  {
+    "id": "ms-8e04e5377614",
+    "category": "Computing & AGI",
+    "subcategory": "agentic_ai",
+    "title": "Self-Evolving Coding Agents via Harness-Policy Optimization",
+    "value": null,
+    "unit": null,
+    "source": "arXiv",
+    "url": "https://arxiv.org/abs/2610.22791",
+    "date": "2026-10-19",
+    "first_seen": "2026-10-20",
+    "last_seen": "2026-10-20",
+    "located": false,
+    "location_confidence": "unlocated"
+  },
+  {
+    "id": "ms-8e8ae326b12d",
+    "category": "Computing & AGI",
+    "subcategory": "benchmarks",
+    "title": "RealCLI: Unified Benchmark for Human-Agent CLI Collaboration",
+    "value": null,
+    "unit": null,
+    "source": "arXiv",
+    "url": "https://arxiv.org/abs/2610.22507",
+    "date": "2026-10-19",
+    "first_seen": "2026-10-20",
+    "last_seen": "2026-10-20",
+    "located": false,
+    "location_confidence": "unlocated"
+  },
+  {
+    "id": "ms-ca80eea5db31",
+    "category": "Computing & AGI",
+    "subcategory": "math_reasoning",
+    "title": "AI proves Quasi-Riemann Hypothesis",
+    "value": null,
+    "unit": null,
+    "source": "Quanta Magazine",
+    "url": "https://www.quantamagazine.org/ai-proved-the-quasi-riemann-hypothesis-what-happens-now-20261019/",
+    "date": "2026-10-19",
+    "first_seen": "2026-10-20",
+    "last_seen": "2026-10-20",
+    "located": false,
+    "location_confidence": "unlocated"
+  },
+  {
     "id": "ms-f81083f4be60",
     "category": "Biotechnology & Biohacking",
     "subcategory": "gene_editing",
@@ -14,7 +108,7 @@
       "lon": 118.7969
     },
     "first_seen": "2026-10-16",
-    "last_seen": "2026-10-18"
+    "last_seen": "2026-10-20"
   },
   {
     "id": "ms-56183fe2bf28",
@@ -31,7 +125,24 @@
       "lon": 8.5417
     },
     "first_seen": "2026-10-16",
-    "last_seen": "2026-10-18"
+    "last_seen": "2026-10-20"
+  },
+  {
+    "id": "ms-b0c0800e6617",
+    "category": "Biotechnology & Biohacking",
+    "subcategory": "longevity",
+    "title": "Proteomic aging clocks deployed in clinical trial for first time",
+    "value": null,
+    "unit": null,
+    "source": "Nature Biotechnology",
+    "url": "https://www.nature.com/articles/s41587-026-03361-4",
+    "date": "2026-10-13",
+    "geolocation": {
+      "lat": 32.0603,
+      "lon": 118.7969
+    },
+    "first_seen": "2026-10-16",
+    "last_seen": "2026-10-20"
   },
   {
     "id": "ms-ad4fd193955d",
@@ -44,7 +155,7 @@
     "url": "https://krebsonsecurity.com/2026/10/microsoft-patches-more-than-1400-security-flaws/",
     "date": "2026-10-13",
     "first_seen": "2026-10-16",
-    "last_seen": "2026-10-18",
+    "last_seen": "2026-10-20",
     "located": false,
     "location_confidence": "unlocated"
   },
@@ -52,7 +163,7 @@
     "id": "ms-fc512f295a81",
     "category": "Biotechnology & Biohacking",
     "subcategory": "immunotherapy",
-    "title": "In vivo engineering of CAR NK cells via lipid nanoparticles for immunotherapy",
+    "title": "In vivo engineering of CAR NK cells via ligand-directed lipid nanoparticles",
     "value": null,
     "unit": null,
     "source": "Nature Biotechnology",
@@ -63,24 +174,7 @@
       "lon": 118.7969
     },
     "first_seen": "2026-10-16",
-    "last_seen": "2026-10-18"
-  },
-  {
-    "id": "ms-b0c0800e6617",
-    "category": "Biotechnology & Biohacking",
-    "subcategory": "longevity",
-    "title": "First clinical trial deployment of proteomic aging clocks",
-    "value": null,
-    "unit": null,
-    "source": "Nature Biotechnology",
-    "url": "https://www.nature.com/articles/s41587-026-03361-4",
-    "date": "2026-10-13",
-    "geolocation": {
-      "lat": 32.0603,
-      "lon": 118.7969
-    },
-    "first_seen": "2026-10-16",
-    "last_seen": "2026-10-18"
+    "last_seen": "2026-10-20"
   },
   {
     "id": "ms-cccd1dd1feae",
@@ -93,7 +187,7 @@
     "url": "https://arxiv.org/abs/2610.12781",
     "date": "2026-10-13",
     "first_seen": "2026-10-16",
-    "last_seen": "2026-10-18",
+    "last_seen": "2026-10-20",
     "located": false,
     "location_confidence": "unlocated"
   },
@@ -108,7 +202,7 @@
     "url": "https://arxiv.org/abs/2610.13021",
     "date": "2026-10-13",
     "first_seen": "2026-10-16",
-    "last_seen": "2026-10-18",
+    "last_seen": "2026-10-20",
     "located": false,
     "location_confidence": "unlocated"
   },
@@ -123,7 +217,7 @@
     "url": "https://arxiv.org/abs/2610.12655",
     "date": "2026-10-13",
     "first_seen": "2026-10-16",
-    "last_seen": "2026-10-18",
+    "last_seen": "2026-10-20",
     "located": false,
     "location_confidence": "unlocated"
   },
@@ -138,7 +232,7 @@
     "url": "https://www.nature.com/articles/s41587-026-03363-2",
     "date": "2026-10-12",
     "first_seen": "2026-10-16",
-    "last_seen": "2026-10-18",
+    "last_seen": "2026-10-20",
     "located": false,
     "location_confidence": "unlocated"
   },
@@ -146,7 +240,7 @@
     "id": "ms-d7a87738cf3b",
     "category": "Biotechnology & Biohacking",
     "subcategory": "neuroscience",
-    "title": "Engrafting human cortical organoids demonstrates functional integration in vivo",
+    "title": "Engrafting human cortical organoids",
     "value": null,
     "unit": null,
     "source": "Nature Biotechnology",
@@ -157,7 +251,7 @@
       "lon": 118.7969
     },
     "first_seen": "2026-10-16",
-    "last_seen": "2026-10-18"
+    "last_seen": "2026-10-20"
   },
   {
     "id": "ms-da39844869ed",
@@ -170,7 +264,7 @@
     "url": "https://arxiv.org/abs/2610.10845",
     "date": "2026-10-09",
     "first_seen": "2026-10-16",
-    "last_seen": "2026-10-18",
+    "last_seen": "2026-10-20",
     "located": false,
     "location_confidence": "unlocated"
   },
@@ -185,7 +279,7 @@
     "url": "https://thehackernews.com/2026/10/p7-darksword-ios-exploit-kit-adds.html",
     "date": "2026-10-09",
     "first_seen": "2026-10-16",
-    "last_seen": "2026-10-18",
+    "last_seen": "2026-10-20",
     "located": false,
     "location_confidence": "unlocated"
   },
@@ -204,7 +298,7 @@
       "lon": -122.4194
     },
     "first_seen": "2026-10-16",
-    "last_seen": "2026-10-18"
+    "last_seen": "2026-10-20"
   },
   {
     "id": "ms-bc6a33f89941",
@@ -217,7 +311,7 @@
     "url": "https://arxiv.org/abs/2610.07716",
     "date": "2026-10-07",
     "first_seen": "2026-10-16",
-    "last_seen": "2026-10-18",
+    "last_seen": "2026-10-20",
     "located": false,
     "location_confidence": "unlocated"
   },
@@ -236,7 +330,7 @@
       "lon": 118.7969
     },
     "first_seen": "2026-10-16",
-    "last_seen": "2026-10-18"
+    "last_seen": "2026-10-20"
   },
   {
     "id": "ms-353f7e5bc1a0",
@@ -253,7 +347,7 @@
       "lon": 118.7969
     },
     "first_seen": "2026-10-16",
-    "last_seen": "2026-10-18"
+    "last_seen": "2026-10-20"
   },
   {
     "id": "ms-fd76df20d111",
@@ -270,7 +364,7 @@
       "lon": 118.7969
     },
     "first_seen": "2026-10-16",
-    "last_seen": "2026-10-18"
+    "last_seen": "2026-10-20"
   },
   {
     "id": "ms-45ba0e7b2200",
@@ -287,7 +381,7 @@
       "lon": 118.7969
     },
     "first_seen": "2026-10-16",
-    "last_seen": "2026-10-18"
+    "last_seen": "2026-10-20"
   },
   {
     "id": "ms-d092c3d026b8",
@@ -304,7 +398,7 @@
       "lon": 118.7969
     },
     "first_seen": "2026-10-16",
-    "last_seen": "2026-10-18"
+    "last_seen": "2026-10-20"
   },
   {
     "id": "ms-2df4dfe4cf19",
@@ -317,7 +411,7 @@
     "url": "https://arxiv.org/abs/2610.00053",
     "date": "2026-10-03",
     "first_seen": "2026-10-16",
-    "last_seen": "2026-10-18",
+    "last_seen": "2026-10-20",
     "located": false,
     "location_confidence": "unlocated"
   },
@@ -332,7 +426,7 @@
     "url": "https://arxiv.org/abs/2609.38219",
     "date": "2026-10-02",
     "first_seen": "2026-10-02",
-    "last_seen": "2026-10-18",
+    "last_seen": "2026-10-20",
     "located": false,
     "location_confidence": "unlocated"
   },
@@ -347,7 +441,7 @@
     "url": "https://arxiv.org/abs/2609.38469",
     "date": "2026-10-02",
     "first_seen": "2026-10-02",
-    "last_seen": "2026-10-18",
+    "last_seen": "2026-10-20",
     "located": false,
     "location_confidence": "unlocated"
   },
@@ -442,7 +536,7 @@
       "lon": 118.7969
     },
     "first_seen": "2026-10-01",
-    "last_seen": "2026-10-18"
+    "last_seen": "2026-10-20"
   },
   {
     "id": "his-2026-09-30-framework-desktop-chassis-volume",
@@ -497,7 +591,7 @@
       "lon": 118.7969
     },
     "first_seen": "2026-09-29",
-    "last_seen": "2026-10-18"
+    "last_seen": "2026-10-20"
   },
   {
     "id": "ms-8644b2a34d60",
@@ -514,7 +608,7 @@
       "lon": 118.7969
     },
     "first_seen": "2026-09-29",
-    "last_seen": "2026-10-18"
+    "last_seen": "2026-10-20"
   },
   {
     "id": "ms-bc2c513b6177",
@@ -531,7 +625,7 @@
       "lon": 118.7969
     },
     "first_seen": "2026-09-30",
-    "last_seen": "2026-10-18"
+    "last_seen": "2026-10-20"
   },
   {
     "id": "ms-0a6a4227b697",
@@ -548,7 +642,7 @@
       "lon": 118.7969
     },
     "first_seen": "2026-10-16",
-    "last_seen": "2026-10-18"
+    "last_seen": "2026-10-20"
   },
   {
     "id": "ms-f725a993460b",
@@ -565,7 +659,7 @@
       "lon": 118.7969
     },
     "first_seen": "2026-10-02",
-    "last_seen": "2026-10-18"
+    "last_seen": "2026-10-20"
   },
   {
     "id": "ms-84669fafeb66",
@@ -582,7 +676,7 @@
       "lon": 34.7818
     },
     "first_seen": "2026-09-26",
-    "last_seen": "2026-10-18"
+    "last_seen": "2026-10-20"
   },
   {
     "id": "ms-76a6862f54e8",
@@ -599,7 +693,7 @@
       "lon": 118.7969
     },
     "first_seen": "2026-09-30",
-    "last_seen": "2026-10-18"
+    "last_seen": "2026-10-20"
   },
   {
     "id": "ms-f9883157aeba",
@@ -630,7 +724,7 @@
     "url": "https://arxiv.org/abs/2609.28876",
     "date": "2026-09-25",
     "first_seen": "2026-09-25",
-    "last_seen": "2026-10-18",
+    "last_seen": "2026-10-20",
     "located": false,
     "location_confidence": "unlocated"
   },
@@ -645,7 +739,7 @@
     "url": "https://arxiv.org/abs/2609.25166",
     "date": "2026-09-23",
     "first_seen": "2026-09-23",
-    "last_seen": "2026-10-18",
+    "last_seen": "2026-10-20",
     "located": false,
     "location_confidence": "unlocated"
   },
@@ -664,7 +758,7 @@
       "lon": -71.2356
     },
     "first_seen": "2026-09-22",
-    "last_seen": "2026-10-18"
+    "last_seen": "2026-10-20"
   },
   {
     "id": "ms-2457b1872a8c",
@@ -789,7 +883,7 @@
     "url": "https://www.nature.com/articles/s41587-026-03322-x",
     "date": "2026-09-15",
     "first_seen": "2026-09-22",
-    "last_seen": "2026-10-18",
+    "last_seen": "2026-10-20",
     "located": false,
     "location_confidence": "unlocated"
   },
@@ -808,7 +902,7 @@
       "lon": 118.7969
     },
     "first_seen": "2026-09-25",
-    "last_seen": "2026-10-18"
+    "last_seen": "2026-10-20"
   },
   {
     "id": "ms-a5c98baae9a8",
@@ -825,7 +919,7 @@
       "lon": -77.038
     },
     "first_seen": "2026-09-22",
-    "last_seen": "2026-10-18"
+    "last_seen": "2026-10-20"
   },
   {
     "id": "ms-0a279b32fda4",
@@ -842,7 +936,7 @@
       "lon": 118.7969
     },
     "first_seen": "2026-09-27",
-    "last_seen": "2026-10-18"
+    "last_seen": "2026-10-20"
   },
   {
     "id": "his-2026-09-07-chuwi-unibox-ai495-pro-local-llm-params",
@@ -1009,7 +1103,7 @@
     "url": "https://arxiv.org/abs/2609.38490",
     "date": "2026-09-01",
     "first_seen": "2026-10-02",
-    "last_seen": "2026-10-18",
+    "last_seen": "2026-10-20",
     "located": false,
     "location_confidence": "unlocated"
   },
@@ -1028,7 +1122,7 @@
       "lon": -71.1061
     },
     "first_seen": "2026-09-22",
-    "last_seen": "2026-10-18"
+    "last_seen": "2026-10-20"
   },
   {
     "id": "his-2026-08-25-apple-m5-ultra-memory-bandwidth",
@@ -1084,7 +1178,7 @@
       "lon": -77.0364
     },
     "first_seen": "2026-09-22",
-    "last_seen": "2026-10-18"
+    "last_seen": "2026-10-20"
   },
   {
     "id": "space-001",
@@ -1101,7 +1195,7 @@
       "lon": -80.649
     },
     "first_seen": "2026-09-22",
-    "last_seen": "2026-10-18"
+    "last_seen": "2026-10-20"
   },
   {
     "id": "q-001",
@@ -1118,7 +1212,7 @@
       "lon": -73.5543
     },
     "first_seen": "2026-09-22",
-    "last_seen": "2026-10-18"
+    "last_seen": "2026-10-20"
   },
   {
     "id": "en-002",
@@ -1135,7 +1229,7 @@
       "lon": 139.6503
     },
     "first_seen": "2026-09-22",
-    "last_seen": "2026-10-18"
+    "last_seen": "2026-10-20"
   },
   {
     "id": "bio-002",
@@ -1152,7 +1246,7 @@
       "lon": -122.1519
     },
     "first_seen": "2026-09-22",
-    "last_seen": "2026-10-18"
+    "last_seen": "2026-10-20"
   },
   {
     "id": "en-001",
@@ -1169,7 +1263,7 @@
       "lon": -121.7045
     },
     "first_seen": "2026-09-22",
-    "last_seen": "2026-10-18"
+    "last_seen": "2026-10-20"
   },
   {
     "id": "en-005",
@@ -1186,7 +1280,7 @@
       "lon": 13.4725
     },
     "first_seen": "2026-09-22",
-    "last_seen": "2026-10-18"
+    "last_seen": "2026-10-20"
   },
   {
     "id": "ai-001",
@@ -1203,7 +1297,7 @@
       "lon": -122.4194
     },
     "first_seen": "2026-09-22",
-    "last_seen": "2026-10-18"
+    "last_seen": "2026-10-20"
   },
   {
     "id": "en-003",
@@ -1220,7 +1314,7 @@
       "lon": 13.683
     },
     "first_seen": "2026-09-22",
-    "last_seen": "2026-10-18"
+    "last_seen": "2026-10-20"
   },
   {
     "id": "q-002",
@@ -1237,7 +1331,7 @@
       "lon": -122.084
     },
     "first_seen": "2026-09-22",
-    "last_seen": "2026-10-18"
+    "last_seen": "2026-10-20"
   },
   {
     "id": "bio-003",
@@ -1254,7 +1348,7 @@
       "lon": -123.0764
     },
     "first_seen": "2026-09-22",
-    "last_seen": "2026-10-18"
+    "last_seen": "2026-10-20"
   },
   {
     "id": "cyber-002",
@@ -1271,7 +1365,7 @@
       "lon": -122.084
     },
     "first_seen": "2026-09-22",
-    "last_seen": "2026-10-18"
+    "last_seen": "2026-10-20"
   },
   {
     "id": "def-005",
@@ -1288,7 +1382,7 @@
       "lon": 4.3676
     },
     "first_seen": "2026-09-22",
-    "last_seen": "2026-10-18"
+    "last_seen": "2026-10-20"
   },
   {
     "id": "ai-002",
@@ -1305,7 +1399,7 @@
       "lon": -122.4194
     },
     "first_seen": "2026-09-22",
-    "last_seen": "2026-10-18"
+    "last_seen": "2026-10-20"
   },
   {
     "id": "q-003",
@@ -1322,7 +1416,7 @@
       "lon": -122.2727
     },
     "first_seen": "2026-09-22",
-    "last_seen": "2026-10-18"
+    "last_seen": "2026-10-20"
   },
   {
     "id": "space-003",
@@ -1339,7 +1433,7 @@
       "lon": -80.681
     },
     "first_seen": "2026-09-22",
-    "last_seen": "2026-10-18"
+    "last_seen": "2026-10-20"
   },
   {
     "id": "space-004",
@@ -1356,7 +1450,7 @@
       "lon": -118.2437
     },
     "first_seen": "2026-09-22",
-    "last_seen": "2026-10-18"
+    "last_seen": "2026-10-20"
   },
   {
     "id": "ai-003",
@@ -1373,7 +1467,7 @@
       "lon": -122.084
     },
     "first_seen": "2026-09-22",
-    "last_seen": "2026-10-18"
+    "last_seen": "2026-10-20"
   },
   {
     "id": "bio-009",
@@ -1390,7 +1484,7 @@
       "lon": 121.4737
     },
     "first_seen": "2026-09-22",
-    "last_seen": "2026-10-18"
+    "last_seen": "2026-10-20"
   },
   {
     "id": "q-004",
@@ -1407,7 +1501,7 @@
       "lon": -0.1278
     },
     "first_seen": "2026-09-22",
-    "last_seen": "2026-10-18"
+    "last_seen": "2026-10-20"
   },
   {
     "id": "ai-004",
@@ -1424,7 +1518,7 @@
       "lon": -122.0363
     },
     "first_seen": "2026-09-22",
-    "last_seen": "2026-10-18"
+    "last_seen": "2026-10-20"
   },
   {
     "id": "en-004",
@@ -1441,7 +1535,7 @@
       "lon": -122.0591
     },
     "first_seen": "2026-09-22",
-    "last_seen": "2026-10-18"
+    "last_seen": "2026-10-20"
   },
   {
     "id": "bio-010",
@@ -1458,7 +1552,7 @@
       "lon": -117.234
     },
     "first_seen": "2026-09-22",
-    "last_seen": "2026-10-18"
+    "last_seen": "2026-10-20"
   },
   {
     "id": "ai-005",
@@ -1475,7 +1569,7 @@
       "lon": -122.4194
     },
     "first_seen": "2026-09-22",
-    "last_seen": "2026-10-18"
+    "last_seen": "2026-10-20"
   },
   {
     "id": "bio-004",
@@ -1492,7 +1586,7 @@
       "lon": -71.1061
     },
     "first_seen": "2026-09-22",
-    "last_seen": "2026-10-18"
+    "last_seen": "2026-10-20"
   },
   {
     "id": "space-002",
@@ -1509,7 +1603,7 @@
       "lon": -80.649
     },
     "first_seen": "2026-09-22",
-    "last_seen": "2026-10-18"
+    "last_seen": "2026-10-20"
   },
   {
     "id": "q-005",
@@ -1526,7 +1620,7 @@
       "lon": 4.3555
     },
     "first_seen": "2026-09-22",
-    "last_seen": "2026-10-18"
+    "last_seen": "2026-10-20"
   },
   {
     "id": "bio-007",
@@ -1543,7 +1637,7 @@
       "lon": 13.7373
     },
     "first_seen": "2026-09-22",
-    "last_seen": "2026-10-18"
+    "last_seen": "2026-10-20"
   },
   {
     "id": "def-001",
@@ -1560,7 +1654,7 @@
       "lon": -77.0364
     },
     "first_seen": "2026-09-22",
-    "last_seen": "2026-10-18"
+    "last_seen": "2026-10-20"
   },
   {
     "id": "ms-c9cc51e4d880",
@@ -1573,7 +1667,7 @@
     "url": "http://arxiv.org/abs/2607.00224v2",
     "date": "2026-06-30",
     "first_seen": "2026-10-16",
-    "last_seen": "2026-10-18",
+    "last_seen": "2026-10-20",
     "located": false,
     "location_confidence": "unlocated"
   },
@@ -1581,7 +1675,7 @@
     "id": "ms-cede87aeb630",
     "category": "Computing & AGI",
     "subcategory": "frontier_models",
-    "title": "Seed2.0 model series sets new frontier in reasoning and multimodal AI",
+    "title": "Seed2.0 model series achieves world-leading reasoning and complex instruction following",
     "value": null,
     "unit": null,
     "source": "ByteDance",
@@ -1592,20 +1686,20 @@
       "lon": 116.4074
     },
     "first_seen": "2026-09-27",
-    "last_seen": "2026-10-18"
+    "last_seen": "2026-10-20"
   },
   {
     "id": "ms-1e9a08b4a528",
     "category": "Computing & AGI",
     "subcategory": "benchmarks",
-    "title": "SLIM-RL matches TraceRL math accuracy with 54% fewer training samples",
+    "title": "SLIM-RL matches TraceRL MATH500 accuracy with 0.46x training samples",
     "value": 0.46,
-    "unit": "sample_ratio",
-    "source": "Academic research team",
+    "unit": "x",
+    "source": "SLIM-RL authors",
     "url": "http://arxiv.org/abs/2607.00208v1",
     "date": "2026-06-30",
     "first_seen": "2026-10-16",
-    "last_seen": "2026-10-18",
+    "last_seen": "2026-10-20",
     "located": false,
     "location_confidence": "unlocated"
   },
@@ -1620,7 +1714,7 @@
     "url": "http://arxiv.org/abs/2607.00233v1",
     "date": "2026-06-30",
     "first_seen": "2026-10-16",
-    "last_seen": "2026-10-18",
+    "last_seen": "2026-10-20",
     "located": false,
     "location_confidence": "unlocated"
   },
@@ -1639,20 +1733,20 @@
       "lon": -118.1253
     },
     "first_seen": "2026-09-27",
-    "last_seen": "2026-10-18"
+    "last_seen": "2026-10-20"
   },
   {
     "id": "ms-46a7d8543058",
     "category": "Computing & AGI",
     "subcategory": "agentic_ai",
-    "title": "Mnemosyne: Agentic Transaction Processing for Validating and Repairing AI-Generated Workflows",
-    "value": 5.9,
-    "unit": "% throughput overhead",
-    "source": "Academic Research",
+    "title": "Mnemosyne introduces Agentic Transaction Processing with formal safety guarantees for AI-generated workflows",
+    "value": 5.2,
+    "unit": "%",
+    "source": "Unknown",
     "url": "http://arxiv.org/abs/2607.00269v3",
     "date": "2026-06-30",
     "first_seen": "2026-09-27",
-    "last_seen": "2026-10-18",
+    "last_seen": "2026-10-20",
     "located": false,
     "location_confidence": "unlocated"
   },
@@ -1714,14 +1808,14 @@
     "id": "ms-f41cd2fc2342",
     "category": "Quantum Physics",
     "subcategory": "quantum_resource_theory",
-    "title": "First certificate-checked solution for quantum-advantage resource extraction from two-mode Gaussian states",
+    "title": "First complete analytical solution for quantum-advantage resource of two-mode Gaussian state with Galois no-go theorem",
     "value": null,
     "unit": null,
     "source": "Unknown",
     "url": "http://arxiv.org/abs/2607.00266v1",
     "date": "2026-06-30",
     "first_seen": "2026-09-27",
-    "last_seen": "2026-10-18",
+    "last_seen": "2026-10-20",
     "located": false,
     "location_confidence": "unlocated"
   },
@@ -1736,7 +1830,7 @@
     "url": "http://arxiv.org/abs/2608.20392v1",
     "date": "2026-06-30",
     "first_seen": "2026-09-29",
-    "last_seen": "2026-10-18",
+    "last_seen": "2026-10-20",
     "located": false,
     "location_confidence": "unlocated"
   },
@@ -1751,7 +1845,7 @@
     "url": "http://arxiv.org/abs/2607.00218v2",
     "date": "2026-06-30",
     "first_seen": "2026-09-27",
-    "last_seen": "2026-10-18",
+    "last_seen": "2026-10-20",
     "located": false,
     "location_confidence": "unlocated"
   },
@@ -1766,7 +1860,7 @@
     "url": "http://arxiv.org/abs/2607.00272v1",
     "date": "2026-06-30",
     "first_seen": "2026-09-30",
-    "last_seen": "2026-10-18",
+    "last_seen": "2026-10-20",
     "located": false,
     "location_confidence": "unlocated"
   },
@@ -1781,7 +1875,7 @@
     "url": "http://arxiv.org/abs/2607.00171v2",
     "date": "2026-06-30",
     "first_seen": "2026-10-16",
-    "last_seen": "2026-10-18",
+    "last_seen": "2026-10-20",
     "located": false,
     "location_confidence": "unlocated"
   },
@@ -1800,7 +1894,7 @@
       "lon": 37.6173
     },
     "first_seen": "2026-09-22",
-    "last_seen": "2026-10-18"
+    "last_seen": "2026-10-20"
   },
   {
     "id": "bio-008",
@@ -1817,7 +1911,7 @@
       "lon": -75.1652
     },
     "first_seen": "2026-09-22",
-    "last_seen": "2026-10-18"
+    "last_seen": "2026-10-20"
   },
   {
     "id": "cyber-003",
@@ -1834,7 +1928,7 @@
       "lon": -77.0364
     },
     "first_seen": "2026-09-22",
-    "last_seen": "2026-10-18"
+    "last_seen": "2026-10-20"
   },
   {
     "id": "bio-005",
@@ -1851,7 +1945,7 @@
       "lon": -117.1611
     },
     "first_seen": "2026-09-22",
-    "last_seen": "2026-10-18"
+    "last_seen": "2026-10-20"
   },
   {
     "id": "bio-006",
@@ -1868,7 +1962,7 @@
       "lon": 8.5417
     },
     "first_seen": "2026-09-22",
-    "last_seen": "2026-10-18"
+    "last_seen": "2026-10-20"
   },
   {
     "id": "def-003",
@@ -1885,7 +1979,7 @@
       "lon": -76.2995
     },
     "first_seen": "2026-09-22",
-    "last_seen": "2026-10-18"
+    "last_seen": "2026-10-20"
   },
   {
     "id": "def-004",
@@ -1902,7 +1996,7 @@
       "lon": 34.7818
     },
     "first_seen": "2026-09-22",
-    "last_seen": "2026-10-18"
+    "last_seen": "2026-10-20"
   },
   {
     "id": "ms-6a684b1bc5a3",

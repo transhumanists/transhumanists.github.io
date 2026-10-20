@@ -1,7 +1,94 @@
 {
-  "last_update": "2026-10-18T02:06:09+00:00",
+  "last_update": "2026-10-20T16:00:57+00:00",
   "version": "1.0.0",
   "events": [
+    {
+      "id": "ev-ms-95bcb6fd31f6",
+      "title": "ROMULUS ClickFix Platform Discovered Delivering LegionLoader Malware",
+      "category": "Cybersecurity",
+      "value": "ROMULUS ClickFix Platform Discovered Delivering LegionLoader Malware",
+      "source": "Forescout Research - Vedere Labs",
+      "url": "https://thehackernews.com/2026/10/romulus-clickfix-platform-tricks-users.html",
+      "date": "2026-10-20",
+      "subcategory": "threat_intelligence",
+      "location_confidence": "unlocated",
+      "located": false
+    },
+    {
+      "id": "ev-ms-9d9bc5bed0e6",
+      "title": "Genetic code expansion enables plant-directed control of bacterial activity",
+      "category": "Biotechnology & Biohacking",
+      "value": "Genetic code expansion enables plant-directed control of bacterial activity",
+      "source": "Nature Biotechnology",
+      "url": "https://www.nature.com/articles/s41587-026-03360-5",
+      "date": "2026-10-20",
+      "subcategory": "synthetic_biology",
+      "location_confidence": "stated",
+      "geolocation": {
+        "lat": 32.0603,
+        "lon": 118.7969
+      }
+    },
+    {
+      "id": "ev-ms-1fae27bb196d",
+      "title": "Engineered human Argonaute 2 enables targeted C-to-U RNA base editing",
+      "category": "Biotechnology & Biohacking",
+      "value": "Engineered human Argonaute 2 enables targeted C-to-U RNA base editing",
+      "source": "Nature Biotechnology",
+      "url": "https://www.nature.com/articles/s41587-026-03359-y",
+      "date": "2026-10-20",
+      "subcategory": "gene_editing",
+      "location_confidence": "stated",
+      "geolocation": {
+        "lat": 32.0603,
+        "lon": 118.7969
+      }
+    },
+    {
+      "id": "ev-ms-8e04e5377614",
+      "title": "Self-Evolving Coding Agents via Harness-Policy Optimization",
+      "category": "Computing & AGI",
+      "value": "Self-Evolving Coding Agents via Harness-Policy Optimization",
+      "source": "arXiv",
+      "url": "https://arxiv.org/abs/2610.22791",
+      "date": "2026-10-19",
+      "subcategory": "agentic_ai",
+      "location_confidence": "stated",
+      "geolocation": {
+        "lat": 42.444,
+        "lon": -76.5019
+      }
+    },
+    {
+      "id": "ev-ms-8e8ae326b12d",
+      "title": "RealCLI: Unified Benchmark for Human-Agent CLI Collaboration",
+      "category": "Computing & AGI",
+      "value": "RealCLI: Unified Benchmark for Human-Agent CLI Collaboration",
+      "source": "arXiv",
+      "url": "https://arxiv.org/abs/2610.22507",
+      "date": "2026-10-19",
+      "subcategory": "benchmarks",
+      "location_confidence": "stated",
+      "geolocation": {
+        "lat": 42.444,
+        "lon": -76.5019
+      }
+    },
+    {
+      "id": "ev-ms-ca80eea5db31",
+      "title": "AI proves Quasi-Riemann Hypothesis",
+      "category": "Computing & AGI",
+      "value": "AI proves Quasi-Riemann Hypothesis",
+      "source": "Quanta Magazine",
+      "url": "https://www.quantamagazine.org/ai-proved-the-quasi-riemann-hypothesis-what-happens-now-20261019/",
+      "date": "2026-10-19",
+      "subcategory": "math_reasoning",
+      "location_confidence": "stated",
+      "geolocation": {
+        "lat": 40.7128,
+        "lon": -74.006
+      }
+    },
     {
       "id": "ev-ms-f81083f4be60",
       "title": "HitSV improves structural variant detection across sequencing technologies",
@@ -93,14 +180,14 @@
       }
     },
     {
-      "id": "ev-ms-fc512f295a81",
-      "title": "In vivo engineering of CAR NK cells via lipid nanoparticles for immunotherapy",
+      "id": "ev-ms-b0c0800e6617",
+      "title": "Proteomic aging clocks deployed in clinical trial for first time",
       "category": "Biotechnology & Biohacking",
-      "value": "In vivo engineering of CAR NK cells via lipid nanoparticles for immunotherapy",
+      "value": "Proteomic aging clocks deployed in clinical trial for first time",
       "source": "Nature Biotechnology",
-      "url": "https://www.nature.com/articles/s41587-026-03310-1",
+      "url": "https://www.nature.com/articles/s41587-026-03361-4",
       "date": "2026-10-13",
-      "subcategory": "immunotherapy",
+      "subcategory": "longevity",
       "location_confidence": "stated",
       "geolocation": {
         "lat": 32.0603,
@@ -108,14 +195,14 @@
       }
     },
     {
-      "id": "ev-ms-b0c0800e6617",
-      "title": "First clinical trial deployment of proteomic aging clocks",
+      "id": "ev-ms-fc512f295a81",
+      "title": "In vivo engineering of CAR NK cells via ligand-directed lipid nanoparticles",
       "category": "Biotechnology & Biohacking",
-      "value": "First clinical trial deployment of proteomic aging clocks",
+      "value": "In vivo engineering of CAR NK cells via ligand-directed lipid nanoparticles",
       "source": "Nature Biotechnology",
-      "url": "https://www.nature.com/articles/s41587-026-03361-4",
+      "url": "https://www.nature.com/articles/s41587-026-03310-1",
       "date": "2026-10-13",
-      "subcategory": "longevity",
+      "subcategory": "immunotherapy",
       "location_confidence": "stated",
       "geolocation": {
         "lat": 32.0603,
@@ -139,9 +226,9 @@
     },
     {
       "id": "ev-ms-d7a87738cf3b",
-      "title": "Engrafting human cortical organoids demonstrates functional integration in vivo",
+      "title": "Engrafting human cortical organoids",
       "category": "Biotechnology & Biohacking",
-      "value": "Engrafting human cortical organoids demonstrates functional integration in vivo",
+      "value": "Engrafting human cortical organoids",
       "source": "Nature Biotechnology",
       "url": "https://www.nature.com/articles/s41587-026-03355-2",
       "date": "2026-10-12",
@@ -1367,9 +1454,9 @@
     },
     {
       "id": "ev-ms-f41cd2fc2342",
-      "title": "First certificate-checked solution for quantum-advantage resource extraction from two-mode Gaussian states",
+      "title": "First complete analytical solution for quantum-advantage resource of two-mode Gaussian state with Galois no-go theorem",
       "category": "Quantum Physics",
-      "value": "First certificate-checked solution for quantum-advantage resource extraction from two-mode Gaussian states",
+      "value": "First complete analytical solution for quantum-advantage resource of two-mode Gaussian state with Galois no-go theorem",
       "source": "Unknown",
       "url": "http://arxiv.org/abs/2607.00266v1",
       "date": "2026-06-30",
@@ -1397,9 +1484,9 @@
     },
     {
       "id": "ev-ms-cede87aeb630",
-      "title": "Seed2.0 model series sets new frontier in reasoning and multimodal AI",
+      "title": "Seed2.0 model series achieves world-leading reasoning and complex instruction following",
       "category": "Computing & AGI",
-      "value": "Seed2.0 model series sets new frontier in reasoning and multimodal AI",
+      "value": "Seed2.0 model series achieves world-leading reasoning and complex instruction following",
       "source": "ByteDance",
       "url": "http://arxiv.org/abs/2607.00248v1",
       "date": "2026-06-30",
@@ -1412,10 +1499,10 @@
     },
     {
       "id": "ev-ms-1e9a08b4a528",
-      "title": "SLIM-RL matches TraceRL math accuracy with 54% fewer training samples",
+      "title": "SLIM-RL matches TraceRL MATH500 accuracy with 0.46x training samples",
       "category": "Computing & AGI",
-      "value": "0.46 sample_ratio",
-      "source": "Academic research team",
+      "value": "0.46 x",
+      "source": "SLIM-RL authors",
       "url": "http://arxiv.org/abs/2607.00208v1",
       "date": "2026-06-30",
       "subcategory": "benchmarks",
@@ -1457,10 +1544,10 @@
     },
     {
       "id": "ev-ms-46a7d8543058",
-      "title": "Mnemosyne: Agentic Transaction Processing for Validating and Repairing AI-Generated Workflows",
+      "title": "Mnemosyne introduces Agentic Transaction Processing with formal safety guarantees for AI-generated workflows",
       "category": "Computing & AGI",
-      "value": "5.9 % throughput overhead",
-      "source": "Academic Research",
+      "value": "5.2 %",
+      "source": "Unknown",
       "url": "http://arxiv.org/abs/2607.00269v3",
       "date": "2026-06-30",
       "subcategory": "agentic_ai",

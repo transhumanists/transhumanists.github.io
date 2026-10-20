@@ -1,9 +1,9 @@
 {
-  "last_update": "2026-10-18T02:06:09+00:00",
+  "last_update": "2026-10-20T16:00:57+00:00",
   "bucket": "month",
   "first": "1945-07-01",
   "last": "2026-10-01",
-  "total": 179,
+  "total": 185,
   "days": [
     {
       "date": "1945-07-01",
@@ -3907,14 +3907,14 @@
     },
     {
       "date": "2026-10-01",
-      "count": 27
+      "count": 33
     }
   ],
   "spikes": [
     {
       "date": "2026-06-30",
       "count": 14,
-      "reason": "Theoretical sample complexity bounds for Gumbel-Max watermark proportion estimation; Seed2.0 model series sets new frontier in reasoning and multimodal AI; SLIM-RL matches TraceRL math accuracy with 54% fewer training samples"
+      "reason": "Theoretical sample complexity bounds for Gumbel-Max watermark proportion estimation; Seed2.0 model series achieves world-leading reasoning and complex instruction following; SLIM-RL matches TraceRL MATH500 accuracy with 0.46x training samples"
     },
     {
       "date": "2026-09-07",
@@ -3924,7 +3924,7 @@
     {
       "date": "2026-10-13",
       "count": 6,
-      "reason": "Microsoft patches record 1,400+ vulnerabilities in single month; In vivo engineering of CAR NK cells via lipid nanoparticles for immunotherapy; First clinical trial deployment of proteomic aging clocks"
+      "reason": "Proteomic aging clocks deployed in clinical trial for first time; Microsoft patches record 1,400+ vulnerabilities in single month; In vivo engineering of CAR NK cells via ligand-directed lipid nanoparticles"
     }
   ]
 }

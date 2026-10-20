@@ -1,8 +1,270 @@
 {
-  "last_update": "2026-10-18T02:06:09+00:00",
+  "last_update": "2026-10-20T16:00:57+00:00",
   "version": "1.0.0",
   "schema": "https://transhumanists.github.io/schema/milestone-v1.json",
   "categories": {
+    "cybersecurity": {
+      "name": "Cybersecurity",
+      "icon": "🛡️",
+      "color": "#ff5252",
+      "subcategories": [
+        "exploits",
+        "mitigations",
+        "encryption",
+        "threat_intelligence",
+        "defense_scores",
+        "zero_day",
+        "ransomware",
+        "supply_chain"
+      ],
+      "milestones": [
+        {
+          "id": "ms-95bcb6fd31f6",
+          "title": "ROMULUS ClickFix Platform Discovered Delivering LegionLoader Malware",
+          "summary": "Researchers uncovered ROMULUS, a new ClickFix-based malware delivery platform distributing LegionLoader and other payloads via deceptive landing pages.",
+          "category": "Cybersecurity",
+          "subcategory": "threat_intelligence",
+          "value": null,
+          "unit": null,
+          "source": "Forescout Research - Vedere Labs",
+          "date": "2026-10-20",
+          "url": "https://thehackernews.com/2026/10/romulus-clickfix-platform-tricks-users.html",
+          "is_record": false,
+          "is_breakthrough": true,
+          "is_new": true,
+          "category_key": "cybersecurity",
+          "located": false,
+          "location_confidence": "unlocated"
+        },
+        {
+          "id": "ms-56183fe2bf28",
+          "title": "Hirudo Android Trojan Uses Patched Banking Apps to Bypass Security Checks",
+          "summary": "Researchers at ThreatFabric discovered the Hirudo banking trojan, which replaces legitimate Indonesian banking apps with patched versions that bypass in-app security checks, representing a novel escal",
+          "category": "Cybersecurity",
+          "subcategory": "exploits",
+          "value": null,
+          "unit": null,
+          "source": "ThreatFabric",
+          "date": "2026-10-14",
+          "url": "https://thehackernews.com/2026/10/hirudo-android-trojan-uses-patched.html",
+          "is_record": false,
+          "is_breakthrough": true,
+          "is_new": false,
+          "geolocation": {
+            "lat": 47.3769,
+            "lon": 8.5417
+          },
+          "category_key": "cybersecurity"
+        },
+        {
+          "id": "ms-ad4fd193955d",
+          "title": "Microsoft patches record 1,400+ vulnerabilities in single month",
+          "summary": "Microsoft released updates fixing over 1,400 security flaws, surpassing the previous monthly record of nearly 1,000 patches set in September.",
+          "category": "Cybersecurity",
+          "subcategory": "mitigations",
+          "value": 1400,
+          "unit": "vulnerabilities",
+          "source": "Microsoft",
+          "date": "2026-10-13",
+          "url": "https://krebsonsecurity.com/2026/10/microsoft-patches-more-than-1400-security-flaws/",
+          "is_record": true,
+          "is_breakthrough": false,
+          "is_new": false,
+          "category_key": "cybersecurity",
+          "located": false,
+          "location_confidence": "unlocated"
+        },
+        {
+          "id": "ms-ba0f78571314",
+          "title": "P7 DarkSword iOS Exploit Kit Adds Crypto Wallet Theft and Two-Way C2",
+          "summary": "Researchers disclose P7 DarkSword, a new iOS exploit kit variant with reduced footprint, crypto wallet theft, and two-way command-and-control communication.",
+          "category": "Cybersecurity",
+          "subcategory": "exploits",
+          "value": null,
+          "unit": null,
+          "source": "iVerify",
+          "date": "2026-10-09",
+          "url": "https://thehackernews.com/2026/10/p7-darksword-ios-exploit-kit-adds.html",
+          "is_record": false,
+          "is_breakthrough": true,
+          "is_new": false,
+          "category_key": "cybersecurity",
+          "located": false,
+          "location_confidence": "unlocated"
+        },
+        {
+          "id": "ms-20a3326da088",
+          "title": "Anthropic launches free AI-powered vulnerability scanner for open-source projects",
+          "summary": "Anthropic unveils OSS Scanner, a free opt-in service using its strongest AI models to periodically scan open-source projects for vulnerabilities.",
+          "category": "Cybersecurity",
+          "subcategory": "mitigations",
+          "value": null,
+          "unit": null,
+          "source": "Anthropic",
+          "date": "2026-10-09",
+          "url": "https://thehackernews.com/2026/10/anthropic-launches-free-ai.html",
+          "is_record": false,
+          "is_breakthrough": true,
+          "is_new": false,
+          "geolocation": {
+            "lat": 37.7749,
+            "lon": -122.4194
+          },
+          "category_key": "cybersecurity"
+        },
+        {
+          "id": "ms-84669fafeb66",
+          "title": "Elementor WordPress Plugin CSRF Vulnerability Allows Site Takeover",
+          "summary": "High-severity CSRF flaw in Elementor plugin (CVSS 8.8) enables unauthenticated attackers to create admin accounts via crafted links.",
+          "category": "Cybersecurity",
+          "subcategory": "exploits",
+          "value": 8.8,
+          "unit": "CVSS",
+          "source": "Security researchers",
+          "date": "2026-09-26",
+          "url": "https://thehackernews.com/2026/09/elementor-csrf-flaw-lets-attackers-take.html",
+          "is_record": false,
+          "is_breakthrough": false,
+          "is_new": false,
+          "geolocation": {
+            "lat": 32.0853,
+            "lon": 34.7818
+          },
+          "category_key": "cybersecurity"
+        },
+        {
+          "id": "cyber-001",
+          "subcategory": "exploits",
+          "title": "Highest active CVSS score (0day)",
+          "value": 10.0,
+          "unit": "CRITICAL",
+          "source": "NVD / CISA",
+          "date": "2026-08-24",
+          "url": "https://nvd.nist.gov",
+          "geolocation": {
+            "lat": 38.8951,
+            "lon": -77.0364
+          },
+          "category": "Cybersecurity",
+          "is_new": false,
+          "category_key": "cybersecurity"
+        },
+        {
+          "id": "cyber-002",
+          "subcategory": "encryption",
+          "title": "Post-quantum TLS deployment (Top 100)",
+          "value": 34,
+          "unit": "%",
+          "source": "Google Transparency",
+          "date": "2026-08-15",
+          "url": "https://transparencyreport.google.com",
+          "geolocation": {
+            "lat": 37.4219,
+            "lon": -122.084
+          },
+          "category": "Cybersecurity",
+          "is_new": false,
+          "category_key": "cybersecurity"
+        },
+        {
+          "id": "cyber-003",
+          "subcategory": "encryption",
+          "title": "NIST PQC standard (CRYSTALS-Kyber)",
+          "value": 256,
+          "unit": "bit security",
+          "source": "NIST",
+          "date": "2026-06-01",
+          "url": "https://csrc.nist.gov",
+          "geolocation": {
+            "lat": 38.8951,
+            "lon": -77.0364
+          },
+          "category": "Cybersecurity",
+          "is_new": false,
+          "category_key": "cybersecurity"
+        },
+        {
+          "id": "his-2020-12-13-solarwinds",
+          "category": "Cybersecurity",
+          "subcategory": "exploits",
+          "title": "SolarWinds supply-chain compromise disclosed",
+          "value": null,
+          "unit": null,
+          "source": "FireEye / Microsoft",
+          "url": "https://en.wikipedia.org/wiki/SolarWinds_attack",
+          "date": "2020-12-13",
+          "geolocation": {
+            "lat": 30.2672,
+            "lon": -97.7431
+          },
+          "category_key": "cybersecurity"
+        },
+        {
+          "id": "his-2014-04-07-heartbleed",
+          "category": "Cybersecurity",
+          "subcategory": "encryption",
+          "title": "Heartbleed vulnerability in OpenSSL disclosed publicly",
+          "value": null,
+          "unit": null,
+          "source": "Codenomicon / Google Security",
+          "url": "https://en.wikipedia.org/wiki/Heartbleed",
+          "date": "2014-04-07",
+          "geolocation": {
+            "lat": 47.3769,
+            "lon": 8.5417
+          },
+          "category_key": "cybersecurity"
+        },
+        {
+          "id": "his-2010-06-17-stuxnet",
+          "category": "Cybersecurity",
+          "subcategory": "exploits",
+          "title": "Stuxnet - a cyber weapon targeting Iranian nuclear enrichment - is publicly identified",
+          "value": null,
+          "unit": null,
+          "source": "Symantec / VirusBlokAda",
+          "url": "https://en.wikipedia.org/wiki/Stuxnet",
+          "date": "2010-06-17",
+          "geolocation": {
+            "lat": 33.5066,
+            "lon": 51.9163
+          },
+          "category_key": "cybersecurity"
+        },
+        {
+          "id": "his-2007-04-27-estonia-cyber",
+          "category": "Cybersecurity",
+          "subcategory": "exploits",
+          "title": "Estonia suffers a coordinated cyberattack against state infrastructure",
+          "value": null,
+          "unit": null,
+          "source": "Estonian Ministry of Defence",
+          "url": "https://en.wikipedia.org/wiki/Cyberattacks_on_Estonia_(2007)",
+          "date": "2007-04-27",
+          "geolocation": {
+            "lat": 59.437,
+            "lon": 24.7536
+          },
+          "category_key": "cybersecurity"
+        },
+        {
+          "id": "his-1988-11-02-morris-worm",
+          "category": "Cybersecurity",
+          "subcategory": "exploits",
+          "title": "Morris worm infects roughly a tenth of the early internet",
+          "value": null,
+          "unit": null,
+          "source": "MIT / Cornell",
+          "url": "https://en.wikipedia.org/wiki/Morris_worm",
+          "date": "1988-11-02",
+          "geolocation": {
+            "lat": 42.3601,
+            "lon": -71.0942
+          },
+          "category_key": "cybersecurity"
+        }
+      ]
+    },
     "biotechnology": {
       "name": "Biotechnology & Biohacking",
       "icon": "🧬",
@@ -21,6 +283,46 @@
         "ml_perturbation"
       ],
       "milestones": [
+        {
+          "id": "ms-9d9bc5bed0e6",
+          "title": "Genetic code expansion enables plant-directed control of bacterial activity",
+          "summary": "Researchers use noncanonical amino acid O-methyl-L-tyrosine to enable plant-directed control of bacterial protein synthesis across diverse plant species.",
+          "category": "Biotechnology & Biohacking",
+          "subcategory": "synthetic_biology",
+          "value": null,
+          "unit": null,
+          "source": "Nature Biotechnology",
+          "date": "2026-10-20",
+          "url": "https://www.nature.com/articles/s41587-026-03360-5",
+          "is_record": false,
+          "is_breakthrough": true,
+          "is_new": false,
+          "geolocation": {
+            "lat": 32.0603,
+            "lon": 118.7969
+          },
+          "category_key": "biotechnology"
+        },
+        {
+          "id": "ms-1fae27bb196d",
+          "title": "Engineered human Argonaute 2 enables targeted C-to-U RNA base editing",
+          "summary": "Researchers engineered human Argonaute 2 to enable targeted C-to-U RNA base editing, a breakthrough in programmable RNA editing.",
+          "category": "Biotechnology & Biohacking",
+          "subcategory": "gene_editing",
+          "value": null,
+          "unit": null,
+          "source": "Nature Biotechnology",
+          "date": "2026-10-20",
+          "url": "https://www.nature.com/articles/s41587-026-03359-y",
+          "is_record": true,
+          "is_breakthrough": true,
+          "is_new": true,
+          "geolocation": {
+            "lat": 32.0603,
+            "lon": 118.7969
+          },
+          "category_key": "biotechnology"
+        },
         {
           "id": "ms-f81083f4be60",
           "title": "HitSV improves structural variant detection across sequencing technologies",
@@ -42,16 +344,16 @@
           "category_key": "biotechnology"
         },
         {
-          "id": "ms-fc512f295a81",
-          "title": "In vivo engineering of CAR NK cells via lipid nanoparticles for immunotherapy",
-          "summary": "Researchers demonstrate in vivo generation of CAR natural killer cells using ligand-directed lipid nanoparticles for treating autoimmune diseases and cancer.",
+          "id": "ms-b0c0800e6617",
+          "title": "Proteomic aging clocks deployed in clinical trial for first time",
+          "summary": "Six proteomic aging clocks used in a clinical trial for the first time, providing insights into clock performance rather than drug efficacy.",
           "category": "Biotechnology & Biohacking",
-          "subcategory": "immunotherapy",
+          "subcategory": "longevity",
           "value": null,
           "unit": null,
           "source": "Nature Biotechnology",
           "date": "2026-10-13",
-          "url": "https://www.nature.com/articles/s41587-026-03310-1",
+          "url": "https://www.nature.com/articles/s41587-026-03361-4",
           "is_record": false,
           "is_breakthrough": true,
           "is_new": false,
@@ -62,16 +364,16 @@
           "category_key": "biotechnology"
         },
         {
-          "id": "ms-b0c0800e6617",
-          "title": "First clinical trial deployment of proteomic aging clocks",
-          "summary": "Six proteomic aging clocks were deployed in a clinical trial for the first time, revealing insights into clock performance rather than drug efficacy.",
+          "id": "ms-fc512f295a81",
+          "title": "In vivo engineering of CAR NK cells via ligand-directed lipid nanoparticles",
+          "summary": "Researchers demonstrate in vivo generation of chimeric antigen receptor natural killer cells using ligand-directed lipid nanoparticles for treating autoimmune disease and cancer.",
           "category": "Biotechnology & Biohacking",
-          "subcategory": "longevity",
+          "subcategory": "immunotherapy",
           "value": null,
           "unit": null,
           "source": "Nature Biotechnology",
           "date": "2026-10-13",
-          "url": "https://www.nature.com/articles/s41587-026-03361-4",
+          "url": "https://www.nature.com/articles/s41587-026-03310-1",
           "is_record": false,
           "is_breakthrough": true,
           "is_new": true,
@@ -104,8 +406,8 @@
         },
         {
           "id": "ms-d7a87738cf3b",
-          "title": "Engrafting human cortical organoids demonstrates functional integration in vivo",
-          "summary": "Researchers achieve successful engraftment of human cortical organoids, advancing neural tissue transplantation and disease modeling.",
+          "title": "Engrafting human cortical organoids",
+          "summary": "Researchers achieve successful engraftment of human cortical organoids, enabling advanced brain modeling and potential neural repair applications.",
           "category": "Biotechnology & Biohacking",
           "subcategory": "neuroscience",
           "value": null,
@@ -747,250 +1049,6 @@
         }
       ]
     },
-    "cybersecurity": {
-      "name": "Cybersecurity",
-      "icon": "🛡️",
-      "color": "#ff5252",
-      "subcategories": [
-        "exploits",
-        "mitigations",
-        "encryption",
-        "threat_intelligence",
-        "defense_scores",
-        "zero_day",
-        "ransomware",
-        "supply_chain"
-      ],
-      "milestones": [
-        {
-          "id": "ms-56183fe2bf28",
-          "title": "Hirudo Android Trojan Uses Patched Banking Apps to Bypass Security Checks",
-          "summary": "Researchers at ThreatFabric discovered the Hirudo banking trojan, which replaces legitimate Indonesian banking apps with patched versions that bypass in-app security checks, representing a novel escal",
-          "category": "Cybersecurity",
-          "subcategory": "exploits",
-          "value": null,
-          "unit": null,
-          "source": "ThreatFabric",
-          "date": "2026-10-14",
-          "url": "https://thehackernews.com/2026/10/hirudo-android-trojan-uses-patched.html",
-          "is_record": false,
-          "is_breakthrough": true,
-          "is_new": false,
-          "geolocation": {
-            "lat": 47.3769,
-            "lon": 8.5417
-          },
-          "category_key": "cybersecurity"
-        },
-        {
-          "id": "ms-ad4fd193955d",
-          "title": "Microsoft patches record 1,400+ vulnerabilities in single month",
-          "summary": "Microsoft released updates fixing over 1,400 security flaws, surpassing the previous monthly record of nearly 1,000 patches set in September.",
-          "category": "Cybersecurity",
-          "subcategory": "mitigations",
-          "value": 1400,
-          "unit": "vulnerabilities",
-          "source": "Microsoft",
-          "date": "2026-10-13",
-          "url": "https://krebsonsecurity.com/2026/10/microsoft-patches-more-than-1400-security-flaws/",
-          "is_record": true,
-          "is_breakthrough": false,
-          "is_new": false,
-          "category_key": "cybersecurity",
-          "located": false,
-          "location_confidence": "unlocated"
-        },
-        {
-          "id": "ms-ba0f78571314",
-          "title": "P7 DarkSword iOS Exploit Kit Adds Crypto Wallet Theft and Two-Way C2",
-          "summary": "Researchers disclose P7 DarkSword, a new iOS exploit kit variant with reduced footprint, crypto wallet theft, and two-way command-and-control communication.",
-          "category": "Cybersecurity",
-          "subcategory": "exploits",
-          "value": null,
-          "unit": null,
-          "source": "iVerify",
-          "date": "2026-10-09",
-          "url": "https://thehackernews.com/2026/10/p7-darksword-ios-exploit-kit-adds.html",
-          "is_record": false,
-          "is_breakthrough": true,
-          "is_new": false,
-          "category_key": "cybersecurity",
-          "located": false,
-          "location_confidence": "unlocated"
-        },
-        {
-          "id": "ms-20a3326da088",
-          "title": "Anthropic launches free AI-powered vulnerability scanner for open-source projects",
-          "summary": "Anthropic unveils OSS Scanner, a free opt-in service using its strongest AI models to periodically scan open-source projects for vulnerabilities.",
-          "category": "Cybersecurity",
-          "subcategory": "mitigations",
-          "value": null,
-          "unit": null,
-          "source": "Anthropic",
-          "date": "2026-10-09",
-          "url": "https://thehackernews.com/2026/10/anthropic-launches-free-ai.html",
-          "is_record": false,
-          "is_breakthrough": true,
-          "is_new": false,
-          "geolocation": {
-            "lat": 37.7749,
-            "lon": -122.4194
-          },
-          "category_key": "cybersecurity"
-        },
-        {
-          "id": "ms-84669fafeb66",
-          "title": "Elementor WordPress Plugin CSRF Vulnerability Allows Site Takeover",
-          "summary": "High-severity CSRF flaw in Elementor plugin (CVSS 8.8) enables unauthenticated attackers to create admin accounts via crafted links.",
-          "category": "Cybersecurity",
-          "subcategory": "exploits",
-          "value": 8.8,
-          "unit": "CVSS",
-          "source": "Security researchers",
-          "date": "2026-09-26",
-          "url": "https://thehackernews.com/2026/09/elementor-csrf-flaw-lets-attackers-take.html",
-          "is_record": false,
-          "is_breakthrough": false,
-          "is_new": false,
-          "geolocation": {
-            "lat": 32.0853,
-            "lon": 34.7818
-          },
-          "category_key": "cybersecurity"
-        },
-        {
-          "id": "cyber-001",
-          "subcategory": "exploits",
-          "title": "Highest active CVSS score (0day)",
-          "value": 10.0,
-          "unit": "CRITICAL",
-          "source": "NVD / CISA",
-          "date": "2026-08-24",
-          "url": "https://nvd.nist.gov",
-          "geolocation": {
-            "lat": 38.8951,
-            "lon": -77.0364
-          },
-          "category": "Cybersecurity",
-          "is_new": false,
-          "category_key": "cybersecurity"
-        },
-        {
-          "id": "cyber-002",
-          "subcategory": "encryption",
-          "title": "Post-quantum TLS deployment (Top 100)",
-          "value": 34,
-          "unit": "%",
-          "source": "Google Transparency",
-          "date": "2026-08-15",
-          "url": "https://transparencyreport.google.com",
-          "geolocation": {
-            "lat": 37.4219,
-            "lon": -122.084
-          },
-          "category": "Cybersecurity",
-          "is_new": false,
-          "category_key": "cybersecurity"
-        },
-        {
-          "id": "cyber-003",
-          "subcategory": "encryption",
-          "title": "NIST PQC standard (CRYSTALS-Kyber)",
-          "value": 256,
-          "unit": "bit security",
-          "source": "NIST",
-          "date": "2026-06-01",
-          "url": "https://csrc.nist.gov",
-          "geolocation": {
-            "lat": 38.8951,
-            "lon": -77.0364
-          },
-          "category": "Cybersecurity",
-          "is_new": false,
-          "category_key": "cybersecurity"
-        },
-        {
-          "id": "his-2020-12-13-solarwinds",
-          "category": "Cybersecurity",
-          "subcategory": "exploits",
-          "title": "SolarWinds supply-chain compromise disclosed",
-          "value": null,
-          "unit": null,
-          "source": "FireEye / Microsoft",
-          "url": "https://en.wikipedia.org/wiki/SolarWinds_attack",
-          "date": "2020-12-13",
-          "geolocation": {
-            "lat": 30.2672,
-            "lon": -97.7431
-          },
-          "category_key": "cybersecurity"
-        },
-        {
-          "id": "his-2014-04-07-heartbleed",
-          "category": "Cybersecurity",
-          "subcategory": "encryption",
-          "title": "Heartbleed vulnerability in OpenSSL disclosed publicly",
-          "value": null,
-          "unit": null,
-          "source": "Codenomicon / Google Security",
-          "url": "https://en.wikipedia.org/wiki/Heartbleed",
-          "date": "2014-04-07",
-          "geolocation": {
-            "lat": 47.3769,
-            "lon": 8.5417
-          },
-          "category_key": "cybersecurity"
-        },
-        {
-          "id": "his-2010-06-17-stuxnet",
-          "category": "Cybersecurity",
-          "subcategory": "exploits",
-          "title": "Stuxnet - a cyber weapon targeting Iranian nuclear enrichment - is publicly identified",
-          "value": null,
-          "unit": null,
-          "source": "Symantec / VirusBlokAda",
-          "url": "https://en.wikipedia.org/wiki/Stuxnet",
-          "date": "2010-06-17",
-          "geolocation": {
-            "lat": 33.5066,
-            "lon": 51.9163
-          },
-          "category_key": "cybersecurity"
-        },
-        {
-          "id": "his-2007-04-27-estonia-cyber",
-          "category": "Cybersecurity",
-          "subcategory": "exploits",
-          "title": "Estonia suffers a coordinated cyberattack against state infrastructure",
-          "value": null,
-          "unit": null,
-          "source": "Estonian Ministry of Defence",
-          "url": "https://en.wikipedia.org/wiki/Cyberattacks_on_Estonia_(2007)",
-          "date": "2007-04-27",
-          "geolocation": {
-            "lat": 59.437,
-            "lon": 24.7536
-          },
-          "category_key": "cybersecurity"
-        },
-        {
-          "id": "his-1988-11-02-morris-worm",
-          "category": "Cybersecurity",
-          "subcategory": "exploits",
-          "title": "Morris worm infects roughly a tenth of the early internet",
-          "value": null,
-          "unit": null,
-          "source": "MIT / Cornell",
-          "url": "https://en.wikipedia.org/wiki/Morris_worm",
-          "date": "1988-11-02",
-          "geolocation": {
-            "lat": 42.3601,
-            "lon": -71.0942
-          },
-          "category_key": "cybersecurity"
-        }
-      ]
-    },
     "computing_agi": {
       "name": "Computing & AGI",
       "icon": "🧠",
@@ -1008,6 +1066,69 @@
         "low_resource_speech"
       ],
       "milestones": [
+        {
+          "id": "ms-8e04e5377614",
+          "title": "Self-Evolving Coding Agents via Harness-Policy Optimization",
+          "summary": "New recursive self-improvement framework (Self-HPO) co-evolves LLM policy models and their execution harnesses to advance autonomous coding agents.",
+          "category": "Computing & AGI",
+          "subcategory": "agentic_ai",
+          "value": null,
+          "unit": null,
+          "source": "arXiv",
+          "date": "2026-10-19",
+          "url": "https://arxiv.org/abs/2610.22791",
+          "is_record": false,
+          "is_breakthrough": true,
+          "is_new": false,
+          "category_key": "computing_agi",
+          "location_confidence": "source",
+          "geolocation": {
+            "lat": 42.444,
+            "lon": -76.5019
+          }
+        },
+        {
+          "id": "ms-8e8ae326b12d",
+          "title": "RealCLI: Unified Benchmark for Human-Agent CLI Collaboration",
+          "summary": "Introduces REALCLI, a paired benchmark unifying task execution and human-agent collaboration quality evaluation for CLI agents via a five-dimensional framework.",
+          "category": "Computing & AGI",
+          "subcategory": "benchmarks",
+          "value": null,
+          "unit": null,
+          "source": "arXiv",
+          "date": "2026-10-19",
+          "url": "https://arxiv.org/abs/2610.22507",
+          "is_record": false,
+          "is_breakthrough": true,
+          "is_new": false,
+          "category_key": "computing_agi",
+          "location_confidence": "source",
+          "geolocation": {
+            "lat": 42.444,
+            "lon": -76.5019
+          }
+        },
+        {
+          "id": "ms-ca80eea5db31",
+          "title": "AI proves Quasi-Riemann Hypothesis",
+          "summary": "AI system proves the Quasi-Riemann Hypothesis, a major mathematical conjecture, with human experts verifying the proof.",
+          "category": "Computing & AGI",
+          "subcategory": "math_reasoning",
+          "value": null,
+          "unit": null,
+          "source": "Quanta Magazine",
+          "date": "2026-10-19",
+          "url": "https://www.quantamagazine.org/ai-proved-the-quasi-riemann-hypothesis-what-happens-now-20261019/",
+          "is_record": true,
+          "is_breakthrough": true,
+          "is_new": true,
+          "category_key": "computing_agi",
+          "location_confidence": "source",
+          "geolocation": {
+            "lat": 40.7128,
+            "lon": -74.006
+          }
+        },
         {
           "id": "ms-cccd1dd1feae",
           "title": "Few-shot multimodal representation alignment via distilled optimal transport",
@@ -1744,8 +1865,8 @@
         },
         {
           "id": "ms-cede87aeb630",
-          "title": "Seed2.0 model series sets new frontier in reasoning and multimodal AI",
-          "summary": "ByteDance's Seed2.0 model series claims world-leading reasoning, visual understanding, and search capabilities, substantially improving reliability on complex real-world tasks for hundreds of millions",
+          "title": "Seed2.0 model series achieves world-leading reasoning and complex instruction following",
+          "summary": "Seed2.0 demonstrates substantial improvements in long-tail knowledge, complex instruction following, reasoning, visual understanding, and search, claiming world-leading performance on real-world tasks",
           "category": "Computing & AGI",
           "subcategory": "frontier_models",
           "value": null,
@@ -1764,13 +1885,13 @@
         },
         {
           "id": "ms-1e9a08b4a528",
-          "title": "SLIM-RL matches TraceRL math accuracy with 54% fewer training samples",
-          "summary": "SLIM-RL achieves 6.32% higher MATH500 and 11.05% higher GSM8K accuracy than TraceRL using only 46% of training samples by eliminating trajectory slicing via risk-budgeted random masking.",
+          "title": "SLIM-RL matches TraceRL MATH500 accuracy with 0.46x training samples",
+          "summary": "SLIM-RL achieves state-of-the-art MATH500 and GSM8K scores for diffusion LLMs using less than half the training samples of prior best method TraceRL.",
           "category": "Computing & AGI",
           "subcategory": "benchmarks",
           "value": 0.46,
-          "unit": "sample_ratio",
-          "source": "Academic research team",
+          "unit": "x",
+          "source": "SLIM-RL authors",
           "date": "2026-06-30",
           "url": "http://arxiv.org/abs/2607.00208v1",
           "is_record": true,
@@ -1826,13 +1947,13 @@
         },
         {
           "id": "ms-46a7d8543058",
-          "title": "Mnemosyne: Agentic Transaction Processing for Validating and Repairing AI-Generated Workflows",
-          "summary": "Mnemosyne introduces Agentic Transaction Processing (ATP) with four proven safety properties and 5.2-6.6% throughput overhead for validating and repairing AI-generated workflows across nine benchmarks",
+          "title": "Mnemosyne introduces Agentic Transaction Processing with formal safety guarantees for AI-generated workflows",
+          "summary": "Mnemosyne presents Agentic Transaction Processing (ATP), a framework that validates and repairs AI-generated workflows with provable safety properties and only 5.2-6.6% throughput overhead.",
           "category": "Computing & AGI",
           "subcategory": "agentic_ai",
-          "value": 5.9,
-          "unit": "% throughput overhead",
-          "source": "Academic Research",
+          "value": 5.2,
+          "unit": "%",
+          "source": "Unknown",
           "date": "2026-06-30",
           "url": "http://arxiv.org/abs/2607.00269v3",
           "is_record": false,
@@ -2721,8 +2842,8 @@
         },
         {
           "id": "ms-f41cd2fc2342",
-          "title": "First certificate-checked solution for quantum-advantage resource extraction from two-mode Gaussian states",
-          "summary": "Researchers present the first complete, certificate-checked analytical solution for extracting quantum complexity resources from two-mode Gaussian states, proving no closed-form solution exists.",
+          "title": "First complete analytical solution for quantum-advantage resource of two-mode Gaussian state with Galois no-go theorem",
+          "summary": "Researchers present the first certificate-checked analytical solution for extracting quantum complexity resources from a two-mode Gaussian state, proving via Galois theory that no closed-form solution",
           "category": "Quantum Physics",
           "subcategory": "quantum_resource_theory",
           "value": null,
@@ -2730,7 +2851,7 @@
           "source": "Unknown",
           "date": "2026-06-30",
           "url": "http://arxiv.org/abs/2607.00266v1",
-          "is_record": true,
+          "is_record": false,
           "is_breakthrough": true,
           "is_new": false,
           "category_key": "quantum",
