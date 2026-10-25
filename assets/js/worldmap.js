@@ -22,19 +22,15 @@
   const DRAW_INTERVAL_MS = 100;
   const MIN_SCALE = 0.5;
   const MAX_SCALE = 8;
-  const ZOOM_FACTOR = 1.1; // Used by zoomAt for keyboard/button zoom steps
+  const ZOOM_FACTOR = 1.08; // Used by zoomAt for keyboard/button zoom steps (gentler)
   const HIT_RADIUS_BASE = 10;
   const CLICK_DRAG_THRESHOLD = 5;
-// Default-view latitude window. The window is asymmetric on purpose: the land is
-  // not symmetric about the equator, and a symmetric window leaves a wide empty
-  // band of Southern Ocean below Antarctica while crowding the Arctic against the
-  // top edge. +76 / -66 keeps every landmass in frame (the dataset's extremes are
-  // 59.4N and 13.5S), trims the dead space underneath, and gives the northern
-  // coastlines room. The span is also slightly smaller than the previous symmetric
-  // +/-72, which zooms the geometry in a little as requested.
-  const MAP_LAT_NORTH = 76;
-  const MAP_LAT_SOUTH = -66;
-  const MAP_LAT_SPAN = MAP_LAT_NORTH - MAP_LAT_SOUTH;
+// Default-view latitude window. Expanded to show all continents including
+  // Antarctica (to 90°S) and full Arctic (to 85°N). The symmetric-ish window
+  // 85 / -90 gives MAP_LAT_SPAN = 175, aspect 360/175 ≈ 2.057:1.
+  const MAP_LAT_NORTH = 85;
+  const MAP_LAT_SOUTH = -90;
+  const MAP_LAT_SPAN = MAP_LAT_NORTH - MAP_LAT_SOUTH; // 175
   // Terminator reach. Deliberately WIDER than the visible frame, so both the
   // boundary curves and the night fill extend past the top and bottom edges.
   //
@@ -932,7 +928,7 @@ const STORAGE_KEY_HIDDEN_CATEGORIES = 'worldmap_hidden_categories';
     width: 0,
     height: 0,
     dpr: window.devicePixelRatio || 1,
-    transform: { scale: 0.75, tx: 0, ty: 40 },
+    transform: { scale: 1.0, tx: 0, ty: 0 },
     isDragging: false,
     hoveredEvent: null,
     hoveredType: null, // 'zone', 'deployment', 'event', 'crisis', 'alliance', 'human_rights'
@@ -2924,7 +2920,7 @@ function findLandmarkAt(x, y) {
   canvas.addEventListener('dblclick', handleDblClick);
   function handleDblClick(e) {
     const rect = canvas.getBoundingClientRect();
-    zoomAt(e.clientX - rect.left, e.clientY - rect.top, 1.5);
+    zoomAt(e.clientX - rect.left, e.clientY - rect.top, 1.25);
   }
 
   // ---- Zoom helpers (used by controls, wheel, keyboard, double-click) ----
@@ -2964,10 +2960,10 @@ function findLandmarkAt(x, y) {
       case 'ArrowDown': state.transform.ty -= panStep; break;
       case '+':
       case '=':
-        zoomAt(state.width / 2, state.height / 2, 1.2);
+        zoomAt(state.width / 2, state.height / 2, ZOOM_FACTOR);
         break;
       case '-':
-        zoomAt(state.width / 2, state.height / 2, 1 / 1.2);
+        zoomAt(state.width / 2, state.height / 2, 1 / ZOOM_FACTOR);
         break;
       case '0':
         resetView();
@@ -4131,8 +4127,8 @@ const fragment = document.createDocumentFragment();
       return btn;
     }
 
-    zoomInBtn = setupButton(zoomInBtn, 'zoom-in', 'map-control-btn', 'Zoom in', '+', () => zoomAt(state.width / 2, state.height / 2, 1.4));
-    zoomOutBtn = setupButton(zoomOutBtn, 'zoom-out', 'map-control-btn', 'Zoom out', '−', () => zoomAt(state.width / 2, state.height / 2, 1 / 1.4));
+    zoomInBtn = setupButton(zoomInBtn, 'zoom-in', 'map-control-btn', 'Zoom in', '+', () => zoomAt(state.width / 2, state.height / 2, 1.15));
+    zoomOutBtn = setupButton(zoomOutBtn, 'zoom-out', 'map-control-btn', 'Zoom out', '−', () => zoomAt(state.width / 2, state.height / 2, 1 / 1.15));
     resetBtn = setupButton(resetBtn, 'reset-view', 'map-control-btn', 'Reset map view', '⟲', resetView);
     function setupTerminatorToggle(btn, icon) {
       if (btn._terminatorHandler) return; // already set up

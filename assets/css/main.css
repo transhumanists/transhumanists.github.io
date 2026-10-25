@@ -346,9 +346,9 @@ body {
 
 #world-map {
   /* Full-width centered map, no container constraint.
-     aspect-ratio 360/142 = 2.535:1 — equirectangular plate, tall enough
-     to show polar regions without excessive cropping. */
-  aspect-ratio: 360 / 142;
+     aspect-ratio 360/175 = 2.057:1 — equirectangular plate showing full
+     world from 85°N to 90°S (all continents including Antarctica). */
+  aspect-ratio: 360 / 175;
   width: 100%;
   max-width: 1600px;
   margin: 0 auto;
