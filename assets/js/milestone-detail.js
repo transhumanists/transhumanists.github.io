@@ -773,8 +773,12 @@ function relativeTime(ts, nowMs) {
     if (hasGeo) {
       let locationStr = '\u{1F4CD} ' + geo.lat.toFixed(4) + ', ' + geo.lon.toFixed(4);
       // Display country/city if available in the milestone data
-      if (milestone.country || milestone.city) {
-        locationStr += ' (' + (milestone.country || '') + ', ' + (milestone.city || '') + ')';
+      if (milestone.country || milestone.city || (geo && geo.country) || (geo && geo.city)) {
+        const cVal = milestone.country || (geo && geo.country) || '';
+        const ciVal = milestone.city || (geo && geo.city) || '';
+        if (cVal || ciVal) {
+          locationStr += ' (' + cVal + (cVal && ciVal ? ', ' : '') + ciVal + ')';
+        }
       }
       view.location.textContent = locationStr;
       view.locationNote.textContent = milestone.location_confidence

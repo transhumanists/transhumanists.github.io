@@ -1327,7 +1327,11 @@ function nextChartBucket(key, size) {
         meta.appendChild(dotSpan);
         meta.appendChild(dateSpan);
         if (m.geolocation && typeof m.geolocation.lat === 'number' && typeof m.geolocation.lon === 'number') {
-          const geoSpan = createEl('span', '', ` · 📍 ${m.geolocation.lat.toFixed(2)}, ${m.geolocation.lon.toFixed(2)}`);
+          var geoText = ' · 📍 ' + m.geolocation.lat.toFixed(2) + ', ' + m.geolocation.lon.toFixed(2);
+          if (m.geolocation.country || m.geolocation.city || m.country || m.city) {
+            geoText += ' (' + (m.geolocation.country || m.country || '') + (m.geolocation.country || m.country ? ', ' : '') + (m.geolocation.city || m.city || '') + ')';
+          }
+          const geoSpan = createEl('span', '', geoText);
           meta.appendChild(geoSpan);
         }
         card.appendChild(meta);
