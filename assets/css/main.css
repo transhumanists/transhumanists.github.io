@@ -338,6 +338,9 @@ body {
   font-size: 0.95rem;
 }
 
+#global-activity { padding-top: 4px; padding-bottom: 8px; }
+#global-activity .section-header { opacity: 1 !important; transform: none !important; margin-bottom: 12px; padding-top: 8px; }
+
 #world-map {
   /* Now stretches fullscreen for immersion while keeping the map ratio intact:
      4.9:1 aspect instead of 2.54:1 so the plate fills the screen edge to edge

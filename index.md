@@ -172,7 +172,7 @@ window.openBannerMilestone = function(idx, el) {
 };
 </script>
 <!-- WORLD MAP -->
-<section class="section">
+<section class="section" id="global-activity">
   <div class="container">
     <header class="section-header">
       <h2>Global Activity Map</h2>
