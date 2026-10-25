@@ -326,7 +326,6 @@ body {
 .section-header {
   text-align: center;
   margin-bottom: 40px;
-  padding-top: 20px;
 }
 .section-header h2 {
   font-size: 1.8rem;
@@ -1760,6 +1759,7 @@ optgroup {
    hidden initial state and the page would look empty - the animation must never
    be load-bearing for content being visible. */
 .reveal-ready .highlights-carousel,
+.reveal-ready .highlights-carousel,
 .reveal-ready .catalog-controls,
 .reveal-ready .catalog-grid,
 .reveal-ready .milestones-grid,
@@ -1772,7 +1772,14 @@ optgroup {
   transition: opacity 0.5s ease, transform 0.55s cubic-bezier(0.22, 0.8, 0.3, 1);
   will-change: opacity, transform;
 }
-.reveal-ready .is-revealed {
+.reveal-ready .is-revealed,
+  /* `#world-map` needs repeating here. The hidden rule above uses the ID, so it
+     scores 0,1,1,0 while the class-only `.reveal-ready .is-revealed` scores
+     0,2,0 -- and the ID tiebreak is compared FIRST, so the hidden rule wins and
+     the map stays at opacity 0 forever, is-revealed class or not. Every other
+     selector in that list is a class and was unaffected, which is why only the
+     map went missing. Matching the ID raises this to 0,2,1,0 and it wins. */
+  .reveal-ready #world-map.is-revealed {
     opacity: 1;
     transform: translateY(0);
     will-change: auto;
@@ -1781,14 +1788,7 @@ optgroup {
    while the pointer is inside it makes a drag feel like it is fighting the
    transition. */
 #world-map {
-  transition: none !important;
-  opacity: 1 !important;
-  transform: none !important;
-}
-.reveal-ready #world-map,
-.reveal-ready #world-map * {
-  opacity: 1 !important;
-  transform: none !important;
+  transition-duration: 0.45s;
 }
 
 @media (prefers-reduced-motion: reduce) {
