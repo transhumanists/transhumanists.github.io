@@ -81,10 +81,6 @@ description: "Tracking milestones across biotech, AGI, quantum, energy, cyber, s
 </section>
 
 <!-- WORLD MAP -->
-  </div>
-</section>
-
-<!-- WORLD MAP -->
 <section class="section">
   <div class="container">
     <header class="section-header">
