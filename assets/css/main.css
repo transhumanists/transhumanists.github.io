@@ -322,8 +322,8 @@ body {
 
 /* WORLD MAP SECTION */
 .section { padding: 60px 0; }
-.section#recent-milestones { padding-top: 4px; padding-bottom: 8px; }
-.section:has(#world-map) { padding-top: 4px; padding-bottom: 8px; }
+.section#recent-milestones { padding-top: 4px; padding-bottom: 2px; }
+.section:has(#world-map) { padding-top: 2px; padding-bottom: 8px; }
 .section-alt { background: var(--bg-elevated); }
 .section-header {
   text-align: center;
