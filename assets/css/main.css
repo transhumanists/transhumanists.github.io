@@ -342,11 +342,10 @@ body {
 
 #world-map {
   aspect-ratio: 360 / 160;
-  width: 100vw;
-  max-width: 1600px;
+  width: 100%;
+  max-width: 1400px;
   min-height: 640px;
-  left: 50%;
-  transform: translateX(-50%);
+  margin: 0 auto;
   border-radius: var(--radius);
   border: 1px solid var(--border);
   overflow: visible;
