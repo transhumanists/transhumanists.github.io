@@ -139,10 +139,13 @@ description: "Tracking milestones across biotech, AGI, quantum, energy, cyber, s
   var current = 0;
   var AUTO_MS = 4200;
   var timer = null;
+  function showCard(i) {
+    cards.forEach(function(c, idx) { c.classList.toggle('is-active', idx === i); });
+    [].forEach.call(dots, function(d, idx) { d.classList.toggle('is-active', idx === i); });
+  }
   function go(dir) {
     current = (current + dir + count) % count;
-    cards.forEach(function(c, i) { c.style.display = (i === current) ? '' : 'none'; });
-    [].forEach.call(dots, function(d, i) { d.classList.toggle('is-active', i === current); });
+    showCard(current);
     restartAuto();
   }
   function restartAuto() {
@@ -151,8 +154,8 @@ description: "Tracking milestones across biotech, AGI, quantum, energy, cyber, s
   }
   if (prev) prev.addEventListener('click', function() { go(-1); });
   if (next) next.addEventListener('click', function() { go(1); });
-  [].forEach.call(dots, function(d, i) { d.addEventListener('click', function() { current = i; cards.forEach(function(c, idx) { c.style.display = (idx === i) ? '' : 'none'; }); [].forEach.call(dots, function(dot, idx) { dot.classList.toggle('is-active', idx === i); }); restartAuto(); }); });
-  cards.forEach(function(c, i) { c.style.display = (i === 0) ? '' : 'none'; });
+  [].forEach.call(dots, function(d, i) { d.addEventListener('click', function() { current = i; showCard(current); restartAuto(); }); });
+  showCard(0);
   restartAuto();
 })();
 

@@ -339,17 +339,12 @@ body {
 }
 
 #world-map {
-  /* Now stretches fullscreen for immersion while keeping the map ratio intact:
-     4.9:1 aspect instead of 2.54:1 so the plate fills the screen edge to edge
-     without overspill into the minimap. Canada ticks north to b.y ≈ 73° on the
-     equirectangular fit; left-top controls stay clear by being inset further
-     than normal (see .map-overlay and .map-controls). */
   aspect-ratio: 360 / 160;
-  width: 100%;
+  width: 100vw;
   max-width: 1600px;
   min-height: 640px;
-  margin: 0 auto;
-  border-radius: var(--radius);
+  margin-left: calc(-50vw + 50%);
+  margin-right: auto;
   border-radius: var(--radius);
   border: 1px solid var(--border);
   overflow: visible;
@@ -2324,6 +2319,8 @@ optgroup {
 .recent-milestones-banner { position: relative; max-width: 100%; overflow: hidden; padding: 0 8px; }
 .recent-milestones-nav-group { display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 16px; }
 .recent-milestones-track { display: flex; gap: 12px; overflow: hidden; padding: 8px 0; justify-content: center; align-items: stretch; }
+.recent-milestones-track .catalog-card { display: none; }
+.recent-milestones-track .catalog-card.is-active { display: block; }
 .recent-milestones-track::-webkit-scrollbar { height: 6px; }
 .recent-milestones-track::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 .recent-milestones-card { scroll-snap-align: start; flex: 0 0 auto; width: 280px; min-height: 160px; padding: 16px; background: var(--bg-elevated); border: 1px solid var(--border); border-radius: var(--radius); border-left: 3px solid var(--accent); transition: transform 0.55s cubic-bezier(0.22,1.4,.36,1), border-color 0.2s ease, box-shadow 0.2s ease; cursor: pointer; opacity: 1; animation: milestoneSlideUp 0.7s cubic-bezier(0.22,1.4,.36,1) both; }
