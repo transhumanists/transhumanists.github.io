@@ -49,7 +49,7 @@
   // and is also physically right: at high latitude a pole is either fully dark or
   // fully lit, so the night side spans a full 180 degrees of longitude there
   // instead of pinching to a point.
-  const TERMINATOR_LAT_LIMIT = 84;
+  const TERMINATOR_LAT_LIMIT = 90;
   const TOOLTIP_WIDTH = 260;
   const TOOLTIP_HEIGHT = 100;
   const TOOLTIP_OFFSET = 12;
