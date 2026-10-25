@@ -35,7 +35,7 @@ description: "Tracking milestones across biotech, AGI, quantum, energy, cyber, s
 </div>
 
 <!-- RECENT MILESTONES BANNER -->
-<section class="section" id="recent-milestones">
+<section class="section" id="recent-milestones" style="display:none;">
   <div class="container">
     <header class="section-header">
       <h2>Recent Milestones</h2>
@@ -43,7 +43,8 @@ description: "Tracking milestones across biotech, AGI, quantum, energy, cyber, s
     </header>
 
     <div class="recent-milestones-banner" id="recent-milestones-banner" aria-live="polite">
-      <div class="recent-milestones-nav-group">
+      <button onclick="document.getElementById('recent-milestones').style.display='none';" style="position:absolute;top:8px;right:12px;background:none;border:none;color:var(--fg-muted);font-size:1.2rem;cursor:pointer;z-index:10;" aria-label="Close">✕</button>
+    <div class="recent-milestones-nav-group">
         <button class="recent-milestones-nav" id="recent-milestones-prev" type="button" aria-label="Previous milestone">‹</button>
         <div class="recent-milestones-track" id="recent-milestones-track" role="region" aria-label="Recent milestones">
       <article class="recent-milestones-card" aria-label="Biotechnology milestone">
@@ -150,6 +151,12 @@ description: "Tracking milestones across biotech, AGI, quantum, energy, cyber, s
               <span id="map-stat-crises">—</span>
               <span>humanitarian crises</span>
             </span>
+          </button>
+        </div>
+        <div class="map-hint-row">
+          <button id="recent-modal-btn" class="map-hint" onclick="document.getElementById('recent-milestones').style.display='block';this.closest('.map-overlay').style.display='none';" aria-label="Show recent milestones">
+            <span class="map-hint-dot" style="background: var(--accent);"></span>
+            <span class="map-hint-title"><span>Recent Milestones</span></span>
           </button>
         </div>
       </div>
