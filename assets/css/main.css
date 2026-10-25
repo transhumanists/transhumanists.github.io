@@ -2323,7 +2323,7 @@ optgroup {
 /* ---- Recent Milestones Banner ---- */
 .recent-milestones-banner { position: relative; max-width: 100%; overflow: hidden; padding: 0 8px; }
 .recent-milestones-nav-group { display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 16px; }
-.recent-milestones-track { display: flex; gap: 12px; overflow-x: auto; scroll-snap-type: x mandatory; padding: 8px 0; -webkit-overflow-scrolling: touch; scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
+.recent-milestones-track { display: flex; gap: 12px; overflow: hidden; padding: 8px 0; justify-content: center; align-items: stretch; }
 .recent-milestones-track::-webkit-scrollbar { height: 6px; }
 .recent-milestones-track::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 .recent-milestones-card { scroll-snap-align: start; flex: 0 0 auto; width: 280px; min-height: 160px; padding: 16px; background: var(--bg-elevated); border: 1px solid var(--border); border-radius: var(--radius); border-left: 3px solid var(--accent); transition: transform 0.55s cubic-bezier(0.22,1.4,.36,1), border-color 0.2s ease, box-shadow 0.2s ease; cursor: pointer; opacity: 1; animation: milestoneSlideUp 0.7s cubic-bezier(0.22,1.4,.36,1) both; }
