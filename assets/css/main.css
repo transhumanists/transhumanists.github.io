@@ -345,11 +345,10 @@ body {
      equirectangular fit; left-top controls stay clear by being inset further
      than normal (see .map-overlay and .map-controls). */
   aspect-ratio: 360 / 160;
-  width: 100vw;
+  width: 100%;
   max-width: 1600px;
   min-height: 640px;
-  left: 50%;
-  transform: translateX(-50%);
+  margin: 0 auto;
   border-radius: var(--radius);
   border-radius: var(--radius);
   border: 1px solid var(--border);
