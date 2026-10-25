@@ -45,7 +45,29 @@ description: "Tracking milestones across biotech, AGI, quantum, energy, cyber, s
     <div class="recent-milestones-banner" id="recent-milestones-banner" aria-live="polite">
       <div class="recent-milestones-nav-group">
         <button class="recent-milestones-nav" id="recent-milestones-prev" type="button" aria-label="Previous milestone">‹</button>
-        <div class="recent-milestones-track" id="recent-milestones-track" role="region" aria-label="Recent milestones"></div>
+        <div class="recent-milestones-track" id="recent-milestones-track" role="region" aria-label="Recent milestones">
+      <article class="recent-milestones-card" aria-label="Biotechnology milestone">
+        <div class="recent-milestones-card__icon">🧬</div>
+        <div class="recent-milestones-card__category">Bio</div>
+        <h3 class="recent-milestones-card__title">Gene editing for longevity enters Phase 2</h3>
+        <div class="recent-milestones-card__metric"><span class="recent-milestones-card__value">+12</span><span class="recent-milestones-card__unit">reactions</span></div>
+        <div class="recent-milestones-card__meta">2026-04 · Geneva</div>
+      </article>
+      <article class="recent-milestones-card" aria-label="Computing milestone">
+        <div class="recent-milestones-card__icon">🧠</div>
+        <div class="recent-milestones-card__category">AGI</div>
+        <h3 class="recent-milestones-card__title">Multi-modal reasoning benchmark exceeded</h3>
+        <div class="recent-milestones-card__metric"><span class="recent-milestones-card__value">+7</span><span class="recent-milestones-card__unit">reactions</span></div>
+        <div class="recent-milestones-card__meta">2026-03 · San Francisco</div>
+      </article>
+      <article class="recent-milestones-card" aria-label="Energy milestone">
+        <div class="recent-milestones-card__icon">⚡</div>
+        <div class="recent-milestones-card__category">Energy</div>
+        <h3 class="recent-milestones-card__title">Fusion net-energy gain sustained</h3>
+        <div class="recent-milestones-card__metric"><span class="recent-milestones-card__value">+9</span><span class="recent-milestones-card__unit">reactions</span></div>
+        <div class="recent-milestones-card__meta">2026-02 · Oxford</div>
+      </article>
+    </div>
         <button class="recent-milestones-nav" id="recent-milestones-next" type="button" aria-label="Next milestone">›</button>
       </div>
       <div class="recent-milestones-indicators" id="recent-milestones-indicators" style="text-align:center; margin-top: 10px;"></div>
