@@ -1441,18 +1441,24 @@ function mapScreenRect() {
   // Draw one terminator boundary as a few stacked translucent passes (widest
   // first) so the day/night edge reads as a gentle, highly transparent gradient
   // band instead of a hard line. Both boundaries get identical treatment so they
-  // blend into each other.
+  // blend into each other. Clip to visible frame so boundaries curve off poles.
   function strokeSoftBoundary(geo, rgbaBase) {
     const passes = [
       { w: 7, a: 0.03 },
       { w: 4, a: 0.06 },
       { w: 1.6, a: 0.11 }
     ];
+    // Visible latitude range: MAP_LAT_SOUTH to MAP_LAT_NORTH (-90 to 85)
+    const latMin = MAP_LAT_SOUTH;
+    const latMax = MAP_LAT_NORTH;
     for (const pass of passes) {
       ctx.beginPath();
-      geo.forEach((pt, i) => {
+      let started = false;
+      geo.forEach((pt) => {
+        // Only draw within visible latitude range (plus small margin)
+        if (pt.lat < latMin - 2 || pt.lat > latMax + 2) return;
         const p = project(pt.lon, pt.lat);
-        if (i === 0) ctx.moveTo(p.x, p.y);
+        if (!started) { ctx.moveTo(p.x, p.y); started = true; }
         else ctx.lineTo(p.x, p.y);
       });
       ctx.strokeStyle = rgbaBase.replace('ALPHA', String(pass.a));
@@ -1483,18 +1489,27 @@ function mapScreenRect() {
     ctx.fillRect(0, 0, w, h);
 
     // ---- Night shading: region between the sunset and sunrise terminators ----
-    // Painted as three longitude-shifted copies of the unwrapped band so the
-    // night side covers the map correctly under any pan/zoom; project() is
-    // linear, so shifted longitudes land off-canvas and clip away cleanly.
+    // The band samples from TERMINATOR_LAT_LIMIT (120) down to -TERMINATOR_LAT_LIMIT (-120),
+    // well past the poles (±90). We extend the polygon to the canvas corners so it fills
+    // the entire night hemisphere without horizontal seams at the poles.
     const band = nightBand;
     ctx.fillStyle = NIGHT_FILL;
     for (const lonShift of [-360, 0, 360]) {
       ctx.beginPath();
-      band.forEach((pt, i) => {
+      // Start at top-left canvas corner
+      ctx.moveTo(-1000, -1000);
+      // Trace sunset edge from north to south
+      band.slice(0, band.length / 2).forEach((pt) => {
         const p = project(pt.lon + lonShift, pt.lat);
-        if (i === 0) ctx.moveTo(p.x, p.y);
-        else ctx.lineTo(p.x, p.y);
+        ctx.lineTo(p.x, p.y);
       });
+      // Trace sunrise edge from south back to north
+      band.slice(band.length / 2).forEach((pt) => {
+        const p = project(pt.lon + lonShift, pt.lat);
+        ctx.lineTo(p.x, p.y);
+      });
+      // Close at top-right canvas corner (extends past frame)
+      ctx.lineTo(1000, -1000);
       ctx.closePath();
       ctx.fill();
     }

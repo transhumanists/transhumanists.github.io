@@ -345,13 +345,13 @@ body {
 #recent-highlights .section-header { opacity: 1 !important; transform: none !important; margin-bottom: 12px; padding-top: 8px; }
 
 #world-map {
-  /* Full-width centered map, no container constraint.
-     aspect-ratio 360/175 = 2.057:1 — equirectangular plate showing full
-     world from 85°N to 90°S (all continents including Antarctica). */
+  /* Full-width centered map, viewport-relative so it centers perfectly
+     even with scrollbar. aspect-ratio 360/175 = 2.057:1 — equirectangular
+     plate showing full world from 85°N to 90°S (all continents). */
   aspect-ratio: 360 / 175;
-  width: 100%;
+  width: 100vw;
   max-width: 1600px;
-  margin: 0 auto;
+  margin-left: calc(50% - 50vw);
   border-radius: var(--radius);
   border: 1px solid var(--border);
   overflow: visible;
