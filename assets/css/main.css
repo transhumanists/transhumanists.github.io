@@ -322,8 +322,6 @@ body {
 
 /* WORLD MAP SECTION */
 .section { padding: 60px 0; }
-.section#recent-milestones { padding-top: 4px; padding-bottom: 2px; }
-.section:has(#world-map) { padding-top: 2px; padding-bottom: 8px; }
 .section-alt { background: var(--bg-elevated); }
 .section-header {
   text-align: center;
@@ -341,11 +339,15 @@ body {
 }
 
 #world-map {
-  aspect-ratio: 360 / 160;
+  /* Now stretches fullscreen for immersion while keeping the map ratio intact:
+     4.9:1 aspect instead of 2.54:1 so the plate fills the screen edge to edge
+     without overspill into the minimap. Canada ticks north to b.y ≈ 73° on the
+     equirectangular fit; left-top controls stay clear by being inset further
+     than normal (see .map-overlay and .map-controls). */
+  aspect-ratio: 360 / 142;
   width: 100vw;
   max-width: 1600px;
-  min-height: 640px;
-  margin: 0 auto;
+  margin-left: calc(-50vw + 50%);  /* break out of .container and center */
   border-radius: var(--radius);
   border: 1px solid var(--border);
   overflow: visible;
@@ -1756,6 +1758,7 @@ optgroup {
    that never runs the script (or one that blocks it) would be served the
    hidden initial state and the page would look empty - the animation must never
    be load-bearing for content being visible. */
+.reveal-ready .section > .container > .section-header,
 .reveal-ready #world-map,
 .reveal-ready .highlights-carousel,
 .reveal-ready .catalog-controls,
@@ -1771,6 +1774,12 @@ optgroup {
   will-change: opacity, transform;
 }
 .reveal-ready .is-revealed,
+  /* `#world-map` needs repeating here. The hidden rule above uses the ID, so it
+     scores 0,1,1,0 while the class-only `.reveal-ready .is-revealed` scores
+     0,2,0 -- and the ID tiebreak is compared FIRST, so the hidden rule wins and
+     the map stays at opacity 0 forever, is-revealed class or not. Every other
+     selector in that list is a class and was unaffected, which is why only the
+     map went missing. Matching the ID raises this to 0,2,1,0 and it wins. */
   .reveal-ready #world-map.is-revealed {
     opacity: 1;
     transform: translateY(0);
@@ -1784,6 +1793,7 @@ optgroup {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .reveal-ready .section > .container > .section-header,
   .reveal-ready #world-map,
   .reveal-ready .highlights-carousel,
   .reveal-ready .catalog-controls,
@@ -2069,16 +2079,32 @@ optgroup {
   .milestones-grid { grid-template-columns: 1fr; }
   .site-nav .nav-link:not(.nav-sponsor) { display: none; }
 
-  #world-map { width: 100%; max-width: 100%; aspect-ratio: 360 / 190; min-height: 440px; margin-left: 0 !important; transform: none !important; left: auto !important; touch-action: pan-x pan-y; }
-  .map-overlay { top: 6px; left: 6px; font-size: 0.68rem; pointer-events: auto; }
-  .map-hint-row { gap: 4px; margin-bottom: 2px; }
-  .map-hint-dot { width: 7px; height: 7px; }
-  .map-hint-title { font-size: 0.65rem; white-space: nowrap; }
-  .map-timeline { bottom: 8px; left: 8px; right: 8px; height: 36px; padding: 4px 6px; font-size: 0.6rem; }
-  .map-legend { left: 8px; bottom: 8px; max-width: calc(100% - 16px); padding: 3px 5px; font-size: 0.45rem; min-width: 80px; }
-  .map-legend-title { font-size: 0.55rem; }
-  .map-legend-label { font-size: 0.5rem; }
-  .map-tooltip { font-size: 0.7rem; max-width: 200px; padding: 6px 8px; }
+  /* Mobile world map optimizations */
+  #world-map { touch-action: pan-x pan-y; }
+  .map-overlay { top: 8px; left: 8px; right: 8px; font-size: 0.7rem; }
+  .map-hint-row { gap: 6px; margin-bottom: 3px; }
+  .map-hint-dot { width: 6px; height: 6px; }
+  .map-hint-title { font-size: 0.7rem; }
+  .map-timeline { bottom: 8px; left: 8px; right: 8px; height: 40px; padding: 6px 8px; }
+  .map-legend { left: 8px; bottom: 8px; max-width: calc(100% - 16px); padding: 4px 6px; font-size: 0.5rem; min-width: 100px; }
+  .map-legend-title { font-size: 0.6rem; margin-bottom: 3px; }
+  .map-legend-row { gap: 5px; padding: 2px 3px; margin: 0 -3px; }
+  .map-legend-dot { width: 5px; height: 5px; }
+  .map-legend-label { font-size: 0.56rem; }
+  .map-legend-count { font-size: 0.56rem; }
+  .map-legend-controls { gap: 4px; margin-top: 5px; padding-top: 5px; }
+  .map-control-btn { padding: 3px 8px; font-size: 0.65rem; }
+  .map-tooltip { font-size: 0.7rem; max-width: 200px; padding: 8px 10px; }
+  .map-tooltip .tt-title { font-size: 0.75rem; margin-bottom: 3px; }
+  .map-tooltip .tt-category { font-size: 0.6rem; }
+  .map-tooltip .tt-value { font-size: 0.65rem; }
+  .map-tooltip .tt-link { font-size: 0.65rem; margin-top: 4px; }
+  .map-hint-row .map-hint { padding: 1px 0; }
+
+  /* Mobile world map timeline.
+     The 60px lift this used to carry is superseded by the docked rule further
+     down. It was labelled "Above carousel", but the highlights carousel is
+     outside #world-map entirely, so it could not have been the reason. */
 }
 
 /* Mobile landscape */
@@ -2311,9 +2337,7 @@ optgroup {
 /* ---- Recent Milestones Banner ---- */
 .recent-milestones-banner { position: relative; max-width: 100%; overflow: hidden; padding: 0 8px; }
 .recent-milestones-nav-group { display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 16px; }
-.recent-milestones-track { display: flex; gap: 12px; overflow: hidden; padding: 8px 0; justify-content: center; align-items: stretch; }
-.recent-milestones-track .catalog-card { display: none; }
-.recent-milestones-track .catalog-card.is-active { display: block; }
+.recent-milestones-track { display: flex; gap: 12px; overflow-x: auto; scroll-snap-type: x mandatory; padding: 8px 0; -webkit-overflow-scrolling: touch; scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
 .recent-milestones-track::-webkit-scrollbar { height: 6px; }
 .recent-milestones-track::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 .recent-milestones-card { scroll-snap-align: start; flex: 0 0 auto; width: 280px; min-height: 160px; padding: 16px; background: var(--bg-elevated); border: 1px solid var(--border); border-radius: var(--radius); border-left: 3px solid var(--accent); transition: transform 0.55s cubic-bezier(0.22,1.4,.36,1), border-color 0.2s ease, box-shadow 0.2s ease; cursor: pointer; opacity: 1; animation: milestoneSlideUp 0.7s cubic-bezier(0.22,1.4,.36,1) both; }
@@ -2345,10 +2369,6 @@ optgroup {
  . r e c e n t - m i l e s t o n e s - c a r d _ _ u n i t   {   f o n t - f a m i l y :   v a r ( - - f o n t - m o n o ) ;   f o n t - s i z e :   0 . 7 r e m ;   c o l o r :   v a r ( - - f g - m u t e d ) ;   } 
  . r e c e n t - m i l e s t o n e s - c a r d _ _ m e t a   {   f o n t - f a m i l y :   v a r ( - - f o n t - m o n o ) ;   f o n t - s i z e :   0 . 6 6 r e m ;   c o l o r :   v a r ( - - f g - s u b t l e ) ;   } 
  . s e c t i o n # r e c e n t - m i l e s t o n e s   {   p a d d i n g - t o p :   2 4 p x ;   p a d d i n g - b o t t o m :   1 6 p x ;   } 
- . r e c e n t - m i l e s t o n e s - n a v - g r o u p   {   m a r g i n - b o t t o m :   1 0 p x ;   } 
- 
- . s e c t i o n # r e c e n t - m i l e s t o n e s   {   p a d d i n g - t o p :   8 p x   ! i m p o r t a n t ;   p a d d i n g - b o t t o m :   4 p x   ! i m p o r t a n t ;   }   . s e c t i o n # w o r l d - m a p   {   p a d d i n g - t o p :   8 p x   ! i m p o r t a n t ;   } 
- 
- . r e c e n t - m i l e s t o n e s - c a r d   {   b o x - s h a d o w :   v a r ( - - s h a d o w ) ;   t r a n s i t i o n :   t r a n s f o r m   0 . 5 5 s   c u b i c - b e z i e r ( 0 . 2 2 , 1 . 4 , . 3 6 , 1 ) ,   b o x - s h a d o w   0 . 2 s   e a s e ,   b o r d e r - c o l o r   0 . 2 s   e a s e ;   o p a c i t y :   1 ;   a n i m a t i o n :   m i l e s t o n e S l i d e U p   0 . 7 s   c u b i c - b e z i e r ( 0 . 2 2 , 1 . 4 , . 3 6 , 1 )   b o t h ;   }   . r e c e n t - m i l e s t o n e s - c a r d : n t h - c h i l d ( 1 )   {   a n i m a t i o n - d e l a y :   0 . 0 5 s ;   }   . r e c e n t - m i l e s t o n e s - c a r d : n t h - c h i l d ( 2 )   {   a n i m a t i o n - d e l a y :   0 . 1 5 s ;   }   . r e c e n t - m i l e s t o n e s - c a r d : n t h - c h i l d ( 3 )   {   a n i m a t i o n - d e l a y :   0 . 2 5 s ;   }   @ k e y f r a m e s   m i l e s t o n e S l i d e U p   {   f r o m   {   o p a c i t y :   0 ;   t r a n s f o r m :   t r a n s l a t e Y ( 1 6 p x )   s c a l e ( 0 . 9 7 ) ;   }   t o   {   o p a c i t y :   1 ;   t r a n s f o r m :   t r a n s l a t e Y ( 0 )   s c a l e ( 1 ) ;   }   }  
- . s e c t i o n # r e c e n t - m i l e s t o n e s   {   p a d d i n g :   4 p x   0   ! i m p o r t a n t ;   }  
+ . r e c e n t - m i l e s t o n e s - n a v - g r o u p   {   m a r g i n - b o t t o m :   1 0 p x ;   }  
+ . s e c t i o n # r e c e n t - m i l e s t o n e s   {   p a d d i n g - t o p :   8 p x   ! i m p o r t a n t ;   p a d d i n g - b o t t o m :   4 p x   ! i m p o r t a n t ;   }   . s e c t i o n # w o r l d - m a p   {   p a d d i n g - t o p :   8 p x   ! i m p o r t a n t ;   }  
  

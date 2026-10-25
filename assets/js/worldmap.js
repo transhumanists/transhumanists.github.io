@@ -49,7 +49,7 @@
   // and is also physically right: at high latitude a pole is either fully dark or
   // fully lit, so the night side spans a full 180 degrees of longitude there
   // instead of pinching to a point.
-  const TERMINATOR_LAT_LIMIT = 120;
+  const TERMINATOR_LAT_LIMIT = 84;
   const TOOLTIP_WIDTH = 260;
   const TOOLTIP_HEIGHT = 100;
   const TOOLTIP_OFFSET = 12;
@@ -932,7 +932,7 @@ const STORAGE_KEY_HIDDEN_CATEGORIES = 'worldmap_hidden_categories';
     width: 0,
     height: 0,
     dpr: window.devicePixelRatio || 1,
-    transform: { scale: 1, tx: 0, ty: 0 },
+    transform: { scale: 0.75, tx: 0, ty: 40 },
     isDragging: false,
     hoveredEvent: null,
     hoveredType: null, // 'zone', 'deployment', 'event', 'crisis', 'alliance', 'human_rights'

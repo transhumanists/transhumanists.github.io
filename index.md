@@ -37,11 +37,6 @@ description: "Tracking milestones across biotech, AGI, quantum, energy, cyber, s
 <!-- RECENT MILESTONES BANNER -->
 <section class="section" id="recent-milestones">
   <div class="container">
-    <header class="section-header">
-      <h2>Recent Milestones</h2>
-      <p class="section-subtitle">Latest breakthroughs — one per category</p>
-    </header>
-
     <div class="recent-milestones-banner" id="recent-milestones-banner" aria-live="polite">
       <div class="recent-milestones-track" id="recent-milestones-track" role="region" aria-label="Recent milestones">
 
