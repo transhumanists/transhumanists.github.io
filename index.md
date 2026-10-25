@@ -77,38 +77,10 @@ description: "Tracking milestones across biotech, AGI, quantum, energy, cyber, s
     <span class="recent-milestones-dot" data-i="3"></span>
   </div>
 
-    <script>
-      // Simple manual carousel for the recent-milestones banner. No framework.
-      (function () {
-        var track = document.getElementById('recent-milestones-track');
-        var prev = document.getElementById('recent-milestones-prev');
-        var next = document.getElementById('recent-milestones-next');
-        var dots = document.getElementById('recent-milestones-indicators').children;
-        var cards = Array.from(track.children);
-        var count = cards.length;
-        var current = 0;
-        var autoTimer = null;
-        var AUTO_MS = 4200;
+  </div>
+</section>
 
-        function go(dir) {
-          current = (current + dir + count) % count;
-          cards.forEach(function (c, i) { c.dataset.active = i === current ? '1' : ''; });
-          [].forEach.call(dots, function (d, i) { d.classList.toggle('is-active', i === current); });
-          window.requestAnimationFrame(function () { track.scrollTo({ left: current * (track.clientWidth || 300), behavior: 'smooth' }); });
-          restartAuto();
-        }
-        if (prev) prev.addEventListener('click', function () { go(-1); });
-        if (next) next.addEventListener('click', function () { go(1); });
-        Array.prototype.forEach.call(dots, function (d) {
-          d.addEventListener('click', function () { current = Number(d.dataset.i); cards.forEach(function (c, i) { c.dataset.active = i === current ? '1' : ''; }); [].forEach.call(dots, function (dd, j) { dd.classList.toggle('is-active', j === current); }); restartAuto(); });
-        });
-        function restartAuto() {
-          clearInterval(autoTimer);
-          autoTimer = setInterval(go.bind(null, 1), AUTO_MS);
-        }
-        restartAuto();
-      })();
-    </script>
+<!-- WORLD MAP -->
   </div>
 </section>
 
