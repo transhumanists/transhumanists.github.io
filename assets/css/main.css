@@ -348,8 +348,9 @@ body {
   width: 100vw;
   max-width: 1600px;
   min-height: 640px;
-  margin-left: calc(-50vw + 50%);
-  margin-right: auto;
+  left: 50%;
+  transform: translateX(-50%);
+  border-radius: var(--radius);
   border-radius: var(--radius);
   border: 1px solid var(--border);
   overflow: visible;
