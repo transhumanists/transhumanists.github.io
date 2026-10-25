@@ -1756,7 +1756,6 @@ optgroup {
    that never runs the script (or one that blocks it) would be served the
    hidden initial state and the page would look empty - the animation must never
    be load-bearing for content being visible. */
-.reveal-ready .section > .container > .section-header,
 .reveal-ready #world-map,
 .reveal-ready .highlights-carousel,
 .reveal-ready .catalog-controls,
@@ -1772,7 +1771,7 @@ optgroup {
   will-change: opacity, transform;
 }
 .reveal-ready .is-revealed,
-  /* `#world-map` needs repeating here. The hidden rule above uses the ID, so it
+  .reveal-ready #world-map.is-revealed {
      scores 0,1,1,0 while the class-only `.reveal-ready .is-revealed` scores
      0,2,0 -- and the ID tiebreak is compared FIRST, so the hidden rule wins and
      the map stays at opacity 0 forever, is-revealed class or not. Every other
