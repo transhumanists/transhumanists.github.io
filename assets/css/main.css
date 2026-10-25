@@ -347,6 +347,7 @@ body {
   aspect-ratio: 360 / 142;
   width: 100vw;
   max-width: 1600px;
+  margin-left: calc(-50vw + 50%);  /* break out of .container and center */
   border-radius: var(--radius);
   border: 1px solid var(--border);
   overflow: visible;

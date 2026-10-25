@@ -932,7 +932,7 @@ const STORAGE_KEY_HIDDEN_CATEGORIES = 'worldmap_hidden_categories';
     width: 0,
     height: 0,
     dpr: window.devicePixelRatio || 1,
-    transform: { scale: 1, tx: 0, ty: 0 },
+    transform: { scale: 0.75, tx: 0, ty: 40 },
     isDragging: false,
     hoveredEvent: null,
     hoveredType: null, // 'zone', 'deployment', 'event', 'crisis', 'alliance', 'human_rights'
