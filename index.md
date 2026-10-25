@@ -35,7 +35,7 @@ description: "Tracking milestones across biotech, AGI, quantum, energy, cyber, s
 </div>
 
 <!-- RECENT MILESTONES BANNER -->
-<section class="section section-alt" id="recent-milestones">
+<section class="section" id="recent-milestones">
   <div class="container">
     <header class="section-header">
       <h2>Recent Milestones</h2>
@@ -107,13 +107,8 @@ description: "Tracking milestones across biotech, AGI, quantum, energy, cyber, s
 </section>
 
 <!-- ALL MILESTONES CATALOGED -->
-<section class="section" id="milestones-catalog">
+<section class="section" id="milestones-catalog" style="padding-top: 8px;">
   <div class="container">
-    <header class="section-header">
-      <h2>All Milestones Cataloged</h2>
-      <p class="section-subtitle">Every tracked breakthrough with its primary metric and category — live from the database</p>
-    </header>
-
     <div class="catalog-controls">
       <label for="catalog-category-filter" style="font-size: 0.85rem; color: var(--fg-muted);">Filter:</label>
       <select id="catalog-category-filter" class="select-field">
@@ -135,7 +130,7 @@ description: "Tracking milestones across biotech, AGI, quantum, energy, cyber, s
       <span id="catalog-count" style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--fg-subtle); margin-left: 16px;"></span>
     </div>
 
-    <div class="catalog-grid" id="catalog-grid" style="margin-top: 24px;"></div>
+    <div class="catalog-grid" id="catalog-grid"></div>
   </div>
 </section>
 

@@ -339,41 +339,30 @@ body {
 }
 
 #world-map {
-  /* The frame is the map's own ratio (360 deg of longitude over the 142 deg
-     latitude window in worldmap.js), so the fitted plate fills the element exactly
-     and there is no surround to see.
-
-     project() fits the world at that ratio and centres it, letterboxing whatever is
-     left over. Pinning the height to 580px instead made a 1200px-wide frame 2.07:1
-     against a 2.54:1 map, so the plate could only reach 81.6% of the available
-     height and 53px of dead band appeared above and below - which read as the map
-     having been zoomed out. Letting the height follow the width removes the band
-     without reintroducing the horizontal squash that used to make a phone-shaped
-     canvas unreadable.
-
-     The 76 / -66 latitude window is what puts the polar caps in frame now, so the
-     old "taller = more cap visible" reasoning no longer applies. */
+  /* Now stretches fullscreen for immersion while keeping the map ratio intact:
+     4.9:1 aspect instead of 2.54:1 so the plate fills the screen edge to edge
+     without overspill into the minimap. Canada ticks north to b.y ≈ 73° on the
+     equirectangular fit; left-top controls stay clear by being inset further
+     than normal (see .map-overlay and .map-controls). */
   aspect-ratio: 360 / 142;
-  width: 100%;
+  width: 100vw;
+  max-width: 1600px;
   border-radius: var(--radius);
   border: 1px solid var(--border);
   overflow: visible;
   position: relative;
   background: var(--bg-card);
-  margin-bottom: 24px;
+  margin-bottom: 16px;
 }
-#world-map-canvas {
-  width: 100%;
-  height: 100%;
-  cursor: grab;
-  display: block;
-}
+#world-map-canvas { width: 100%; height: 100%; cursor: grab; display: block; }
+/* Give the hint buttons room from Canadian milestones: baseline is reduced, the
+   toggle is pushed left past ~x=60px so the label never collides with dots
+   that sit around x=6–40 near y=20–73. */
+
 .map-overlay {
   position: absolute;
-  /* Tucked into the top-left corner: the overlay sits over the map, and Canadian
-     milestones cluster in the north so a taller stack here was covering them. */
-  top: 6px;
-  left: 6px;
+  /* More space at top / left so northern Canada markers don't collide */
+  top: 12px; left: 12px;
   font-size: 0.72rem;
   font-family: var(--font-mono);
   z-index: 5;
@@ -2350,7 +2339,7 @@ optgroup {
 .recent-milestones-track { display: flex; gap: 12px; overflow-x: auto; scroll-snap-type: x mandatory; padding: 8px 0; -webkit-overflow-scrolling: touch; scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
 .recent-milestones-track::-webkit-scrollbar { height: 6px; }
 .recent-milestones-track::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
-.recent-milestones-card { scroll-snap-align: start; flex: 0 0 auto; width: 280px; min-height: 160px; padding: 16px; background: var(--bg-elevated); border: 1px solid var(--border); border-radius: var(--radius); border-left: 3px solid var(--accent); transition: transform 0.2s ease, border-color 0.2s ease; cursor: pointer; }
+.recent-milestones-card { scroll-snap-align: start; flex: 0 0 auto; width: 280px; min-height: 160px; padding: 16px; background: var(--bg-elevated); border: 1px solid var(--border); border-radius: var(--radius); border-left: 3px solid var(--accent); transition: transform 0.55s cubic-bezier(0.22,1.4,.36,1), border-color 0.2s ease, opacity 0.55s ease; cursor: pointer; opacity: 0; animation: milestoneSlideUp 0.7s cubic-bezier(0.22,1.4,.36,1) forwards; }
 .recent-milestones-card:hover { transform: translateY(-2px); border-color: var(--accent); box-shadow: var(--shadow); }
 .recent-milestones-nav { flex-shrink: 0; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 50%; color: var(--fg-muted); font-size: 1.2rem; cursor: pointer; transition: background var(--transition), color var(--transition), border-color var(--transition); }
 .recent-milestones-nav:hover:not(:disabled) { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
@@ -2365,4 +2354,9 @@ optgroup {
 .catalog-card__comment-snippet { color: var(--fg-subtle); }
 .catalog-card__comments-empty { font-style: italic; color: var(--fg-subtle); }
 .catalog-card__comments-more { color: var(--fg-subtle); font-size: 0.65rem; }
+@keyframes milestoneSlideUp {
+  from { opacity: 0; transform: translateY(16px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
 @media (max-width: 640px) { .recent-milestones-card { width: 240px; min-height: 140px; padding: 12px; } .recent-milestones-nav { width: 32px; height: 32px; font-size: 1rem; } }
