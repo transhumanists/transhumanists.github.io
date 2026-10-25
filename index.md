@@ -171,6 +171,19 @@ window.openBannerMilestone = function(idx, el) {
   }
 };
 </script>
+<!-- RECENT HIGHLIGHTS CAROUSEL -->
+<section class="section" id="recent-highlights">
+  <div class="container">
+    <header class="section-header">
+      <h2>Recent Highlights</h2>
+      <p class="section-subtitle">One breakthrough at a time — auto-rotates every 6 seconds</p>
+    </header>
+    <div id="highlights-carousel" class="highlights-carousel">
+      <div id="highlights-carousel-track" class="highlights-carousel-track"></div>
+    </div>
+  </div>
+</section>
+
 <!-- WORLD MAP -->
 <section class="section" id="global-activity">
   <div class="container">
@@ -222,19 +235,6 @@ window.openBannerMilestone = function(idx, el) {
       <div class="map-tooltip" id="map-tooltip" role="tooltip"></div>
     </div>
   </section>
-
-<!-- RECENT HIGHLIGHTS CAROUSEL -->
-<section class="section" id="recent-highlights">
-  <div class="container">
-    <header class="section-header">
-      <h2>Recent Highlights</h2>
-      <p class="section-subtitle">One breakthrough at a time — auto-rotates every 6 seconds</p>
-    </header>
-    <div id="highlights-carousel" class="highlights-carousel">
-      <div id="highlights-carousel-track" class="highlights-carousel-track"></div>
-    </div>
-  </div>
-</section>
 
 <!-- ALL MILESTONES CATALOGED -->
 <section class="section" id="milestones-catalog" style="padding-top: 8px;">
