@@ -1772,12 +1772,6 @@ optgroup {
 }
 .reveal-ready .is-revealed,
   .reveal-ready #world-map.is-revealed {
-     scores 0,1,1,0 while the class-only `.reveal-ready .is-revealed` scores
-     0,2,0 -- and the ID tiebreak is compared FIRST, so the hidden rule wins and
-     the map stays at opacity 0 forever, is-revealed class or not. Every other
-     selector in that list is a class and was unaffected, which is why only the
-     map went missing. Matching the ID raises this to 0,2,1,0 and it wins. */
-  .reveal-ready #world-map.is-revealed {
     opacity: 1;
     transform: translateY(0);
     will-change: auto;
@@ -1790,7 +1784,6 @@ optgroup {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .reveal-ready .section > .container > .section-header,
   .reveal-ready #world-map,
   .reveal-ready .highlights-carousel,
   .reveal-ready .catalog-controls,

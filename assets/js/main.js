@@ -25,7 +25,6 @@
   // cards individually costs a style recalc per card on the way in and looks
   // like a wave, not like a page settling.
   var revealTargets = document.querySelectorAll(
-    '.section > .container > .section-header, ' +
     '#world-map, .highlights-carousel, .catalog-controls, .catalog-grid, ' +
     '.milestones-grid, .activity-chart, .metric-timeline, .network-grid, .feed-panel'
   );
@@ -56,7 +55,6 @@
        revealed is a no-op; anything below the fold just appears. */
     setTimeout(function () {
       document.querySelectorAll(
-        '.section > .container > .section-header, ' +
         '#world-map, .highlights-carousel, .catalog-controls, .catalog-grid, ' +
         '.milestones-grid, .activity-chart, .metric-timeline, .network-grid, .feed-panel'
       ).forEach(function (el) { el.classList.add('is-revealed'); });
