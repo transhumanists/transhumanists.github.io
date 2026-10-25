@@ -60,18 +60,55 @@ description: "Tracking milestones across biotech, AGI, quantum, energy, cyber, s
         <div class="recent-milestones-card__metric"><span class="recent-milestones-card__value">+7</span><span class="recent-milestones-card__unit">reactions</span></div>
         <div class="recent-milestones-card__meta">2026-03 · San Francisco</div>
       </article>
-      <article class="recent-milestones-card" aria-label="Energy milestone">
-        <div class="recent-milestones-card__icon">⚡</div>
-        <div class="recent-milestones-card__category">Energy</div>
-        <h3 class="recent-milestones-card__title">Fusion net-energy gain sustained</h3>
-        <div class="recent-milestones-card__metric"><span class="recent-milestones-card__value">+9</span><span class="recent-milestones-card__unit">reactions</span></div>
-        <div class="recent-milestones-card__meta">2026-02 · Oxford</div>
+      <article class="recent-milestones-card" aria-label="Quantum milestone">
+        <div class="recent-milestones-card__icon">⚛️</div>
+        <div class="recent-milestones-card__category">Quantum</div>
+        <h3 class="recent-milestones-card__title">Topological qubit error rate drops 40%</h3>
+        <div class="recent-milestones-card__metric"><span class="recent-milestones-card__value">+15</span><span class="recent-milestones-card__unit">reactions</span></div>
+        <div class="recent-milestones-card__meta">2026-01 · Delft</div>
       </article>
     </div>
-        <button class="recent-milestones-nav" id="recent-milestones-next" type="button" aria-label="Next milestone">›</button>
-      </div>
-      <div class="recent-milestones-indicators" id="recent-milestones-indicators" style="text-align:center; margin-top: 10px;"></div>
-    </div>
+    <button class="recent-milestones-nav" id="recent-milestones-next" type="button" aria-label="Next milestone">›</button>
+  </div>
+  <div class="recent-milestones-indicators" id="recent-milestones-indicators" style="text-align:center; margin-top: 8px;">
+    <span class="recent-milestones-dot is-active" data-i="0"></span>
+    <span class="recent-milestones-dot" data-i="1"></span>
+    <span class="recent-milestones-dot" data-i="2"></span>
+    <span class="recent-milestones-dot" data-i="3"></span>
+  </div>
+
+    <script>
+      // Simple manual carousel for the recent-milestones banner. No framework.
+      (function () {
+        var track = document.getElementById('recent-milestones-track');
+        var prev = document.getElementById('recent-milestones-prev');
+        var next = document.getElementById('recent-milestones-next');
+        var dots = document.getElementById('recent-milestones-indicators').children;
+        var cards = Array.from(track.children);
+        var count = cards.length;
+        var current = 0;
+        var autoTimer = null;
+        var AUTO_MS = 4200;
+
+        function go(dir) {
+          current = (current + dir + count) % count;
+          cards.forEach(function (c, i) { c.dataset.active = i === current ? '1' : ''; });
+          [].forEach.call(dots, function (d, i) { d.classList.toggle('is-active', i === current); });
+          window.requestAnimationFrame(function () { track.scrollTo({ left: current * (track.clientWidth || 300), behavior: 'smooth' }); });
+          restartAuto();
+        }
+        if (prev) prev.addEventListener('click', function () { go(-1); });
+        if (next) next.addEventListener('click', function () { go(1); });
+        Array.prototype.forEach.call(dots, function (d) {
+          d.addEventListener('click', function () { current = Number(d.dataset.i); cards.forEach(function (c, i) { c.dataset.active = i === current ? '1' : ''; }); [].forEach.call(dots, function (dd, j) { dd.classList.toggle('is-active', j === current); }); restartAuto(); });
+        });
+        function restartAuto() {
+          clearInterval(autoTimer);
+          autoTimer = setInterval(go.bind(null, 1), AUTO_MS);
+        }
+        restartAuto();
+      })();
+    </script>
   </div>
 </section>
 

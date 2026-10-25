@@ -2340,7 +2340,7 @@ optgroup {
 .recent-milestones-track { display: flex; gap: 12px; overflow-x: auto; scroll-snap-type: x mandatory; padding: 8px 0; -webkit-overflow-scrolling: touch; scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
 .recent-milestones-track::-webkit-scrollbar { height: 6px; }
 .recent-milestones-track::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
-.recent-milestones-card { scroll-snap-align: start; flex: 0 0 auto; width: 280px; min-height: 160px; padding: 16px; background: var(--bg-elevated); border: 1px solid var(--border); border-radius: var(--radius); border-left: 3px solid var(--accent); transition: transform 0.55s cubic-bezier(0.22,1.4,.36,1), border-color 0.2s ease, opacity 0.55s ease; cursor: pointer; opacity: 0; animation: milestoneSlideUp 0.7s cubic-bezier(0.22,1.4,.36,1) forwards; }
+.recent-milestones-card { scroll-snap-align: start; flex: 0 0 auto; width: 280px; min-height: 160px; padding: 16px; background: var(--bg-elevated); border: 1px solid var(--border); border-radius: var(--radius); border-left: 3px solid var(--accent); transition: transform 0.55s cubic-bezier(0.22,1.4,.36,1), border-color 0.2s ease, box-shadow 0.2s ease; cursor: pointer; opacity: 1; animation: milestoneSlideUp 0.7s cubic-bezier(0.22,1.4,.36,1) both; }
 .recent-milestones-card:hover { transform: translateY(-2px); border-color: var(--accent); box-shadow: var(--shadow); }
 .recent-milestones-nav { flex-shrink: 0; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 50%; color: var(--fg-muted); font-size: 1.2rem; cursor: pointer; transition: background var(--transition), color var(--transition), border-color var(--transition); }
 .recent-milestones-nav:hover:not(:disabled) { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
@@ -2370,4 +2370,5 @@ optgroup {
  . r e c e n t - m i l e s t o n e s - c a r d _ _ m e t a   {   f o n t - f a m i l y :   v a r ( - - f o n t - m o n o ) ;   f o n t - s i z e :   0 . 6 6 r e m ;   c o l o r :   v a r ( - - f g - s u b t l e ) ;   } 
  . s e c t i o n # r e c e n t - m i l e s t o n e s   {   p a d d i n g - t o p :   2 4 p x ;   p a d d i n g - b o t t o m :   1 6 p x ;   } 
  . r e c e n t - m i l e s t o n e s - n a v - g r o u p   {   m a r g i n - b o t t o m :   1 0 p x ;   }  
+ . s e c t i o n # r e c e n t - m i l e s t o n e s   {   p a d d i n g - t o p :   8 p x   ! i m p o r t a n t ;   p a d d i n g - b o t t o m :   4 p x   ! i m p o r t a n t ;   }   . s e c t i o n # w o r l d - m a p   {   p a d d i n g - t o p :   8 p x   ! i m p o r t a n t ;   }  
  
