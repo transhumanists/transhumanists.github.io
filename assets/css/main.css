@@ -341,16 +341,17 @@ body {
 #global-activity { padding-top: 4px; padding-bottom: 8px; }
 #global-activity .section-header { opacity: 1 !important; transform: none !important; margin-bottom: 12px; padding-top: 8px; }
 
+#recent-highlights { padding-top: 4px; padding-bottom: 8px; }
+#recent-highlights .section-header { opacity: 1 !important; transform: none !important; margin-bottom: 12px; padding-top: 8px; }
+
 #world-map {
-  /* Now stretches fullscreen for immersion while keeping the map ratio intact:
-     4.9:1 aspect instead of 2.54:1 so the plate fills the screen edge to edge
-     without overspill into the minimap. Canada ticks north to b.y ≈ 73° on the
-     equirectangular fit; left-top controls stay clear by being inset further
-     than normal (see .map-overlay and .map-controls). */
+  /* Full-width centered map, no container constraint.
+     aspect-ratio 360/142 = 2.535:1 — equirectangular plate, tall enough
+     to show polar regions without excessive cropping. */
   aspect-ratio: 360 / 142;
-  width: 100vw;
+  width: 100%;
   max-width: 1600px;
-  margin-left: calc(-50vw + 50%);  /* break out of .container and center */
+  margin: 0 auto;
   border-radius: var(--radius);
   border: 1px solid var(--border);
   overflow: visible;

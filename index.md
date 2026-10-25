@@ -178,8 +178,8 @@ window.openBannerMilestone = function(idx, el) {
       <h2>Global Activity Map</h2>
       <p class="section-subtitle">Breakthroughs, defense movements, and frontier engineering — by geolocation</p>
     </header>
-
-    <div id="world-map">
+  </div>
+  <div id="world-map">
       <canvas id="world-map-canvas"></canvas>
       <div class="map-overlay" aria-live="polite">
         <div class="map-hint-row">
@@ -220,6 +220,18 @@ window.openBannerMilestone = function(idx, el) {
         <div class="map-timeline-year-label" id="map-timeline-year-label"></div>
       </div>
       <div class="map-tooltip" id="map-tooltip" role="tooltip"></div>
+    </div>
+  </section>
+
+<!-- RECENT HIGHLIGHTS CAROUSEL -->
+<section class="section" id="recent-highlights">
+  <div class="container">
+    <header class="section-header">
+      <h2>Recent Highlights</h2>
+      <p class="section-subtitle">One breakthrough at a time — auto-rotates every 6 seconds</p>
+    </header>
+    <div id="highlights-carousel" class="highlights-carousel">
+      <div id="highlights-carousel-track" class="highlights-carousel-track"></div>
     </div>
   </div>
 </section>
