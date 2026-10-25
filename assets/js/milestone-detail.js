@@ -67,6 +67,7 @@
   const SESSION_KEY = 'neohiro_session_v1';
 
   const REMOTE_ENDPOINT = '/api/reactions';
+  const SHARED_DATA_URL = '/data/reactions.json';
   const REMOTE_TIMEOUT_MS = 6000;
   // Comment spam guard. Local and per-identity, so it is an honesty measure
   // rather than a security control - a determined poster clears it by waiting.
@@ -568,6 +569,35 @@ function relativeTime(ts, nowMs) {
     }
   }
 
+  // Show the latest 1-2 comments directly in the card so reactions are visible
+  // for every visitor of the core page, not hidden behind a modal.
+  function paintCardComments(doc, card, milestone, store) {
+    let preview = card.querySelector('.catalog-card__comments-preview');
+    if (!preview) {
+      preview = makeEl(doc, 'div', 'catalog-card__comments-preview');
+      card.appendChild(preview);
+    }
+    preview.replaceChildren();
+    const comments = store.comments(milestone.id);
+    if (!comments.length) {
+      preview.appendChild(makeEl(doc, 'span', 'catalog-card__comments-empty',
+        'Be the first to comment — open to post'));
+      return;
+    }
+    const show = comments.slice(-2); // latest 2 visible on card
+    for (const c of show) {
+      const row = makeEl(doc, 'div', 'catalog-card__comment-row');
+      row.appendChild(makeEl(doc, 'span', 'catalog-card__comment-author', c.author || 'Anonymous'));
+      const snippet = String(c.text || '').slice(0, 100);
+      row.appendChild(makeEl(doc, 'span', 'catalog-card__comment-snippet', snippet + (c.text && c.text.length > 100 ? '...' : '')));
+      preview.appendChild(row);
+    }
+    if (comments.length > 2) {
+      preview.appendChild(makeEl(doc, 'span', 'catalog-card__comments-more',
+        '+' + (comments.length - 2) + ' more in details'));
+    }
+  }
+
   function paintIdentity(view, identity, shared) {
     if (!view.identity) return;
     view.identity.dataset.kind = identity.kind;
@@ -741,7 +771,12 @@ function relativeTime(ts, nowMs) {
       && Number.isFinite(geo.lat) && Number.isFinite(geo.lon);
     setHidden(view.locationSection, !hasGeo);
     if (hasGeo) {
-      view.location.textContent = '\u{1F4CD} ' + geo.lat.toFixed(4) + ', ' + geo.lon.toFixed(4);
+      let locationStr = '\u{1F4CD} ' + geo.lat.toFixed(4) + ', ' + geo.lon.toFixed(4);
+      // Display country/city if available in the milestone data
+      if (milestone.country || milestone.city) {
+        locationStr += ' (' + (milestone.country || '') + ', ' + (milestone.city || '') + ')';
+      }
+      view.location.textContent = locationStr;
       view.locationNote.textContent = milestone.location_confidence
         ? 'Confidence: ' + String(milestone.location_confidence).replace(/_/g, ' ')
         : '';
@@ -842,13 +877,17 @@ function relativeTime(ts, nowMs) {
       card.__milestone = milestone;
       card.dataset.milestoneId = milestone.id;
       byId.set(milestone.id, milestone);
-      if (card.isConnected) paintCardStrip(doc, card, milestone, store);
+      if (card.isConnected) {
+        paintCardStrip(doc, card, milestone, store);
+        paintCardComments(doc, card, milestone, store);
+      }
     }
 
     function repaintStripFor(milestoneId) {
       if (!view.root || !milestoneId) return;
       if (origin && origin.__milestone && origin.__milestone.id === milestoneId) {
         paintCardStrip(doc, origin, origin.__milestone, store);
+        paintCardComments(doc, origin, origin.__milestone, store);
       }
       // Cards outside the current filter are gone from the DOM, so a selector
       // sweep is the only way to keep a strip honest if the grid ever holds more
@@ -859,7 +898,10 @@ function relativeTime(ts, nowMs) {
         if (card.dataset.milestoneId !== milestoneId) continue;
         if (origin && card === origin) continue;
         const milestone = byId.get(card.dataset.milestoneId) || card.__milestone;
-        if (milestone) paintCardStrip(doc, card, milestone, store);
+        if (milestone) {
+          paintCardStrip(doc, card, milestone, store);
+          paintCardComments(doc, card, milestone, store);
+        }
       }
     }
 
@@ -938,8 +980,31 @@ function relativeTime(ts, nowMs) {
     // Best-effort hydration. Only attempted once a write has proved the endpoint
     // exists, so the deployed static host never pays for a request it cannot
     // answer.
+    // Load shared data from the static file for all visitors to see.
     async function remoteRead(milestoneId) {
-      if (remoteState !== 'live') return;
+      // Always try the shared static backend file (works on GitHub Pages).
+      try {
+        const res = await win.fetch(SHARED_DATA_URL, {
+          headers: { Accept: 'application/json' }
+        });
+        if (res.ok) {
+          const shared = await res.json().catch(() => null);
+          if (shared && typeof shared === 'object') {
+            if (shared.milestones && typeof shared.milestones === 'object') {
+              const entry = shared.milestones[milestoneId];
+              if (entry && typeof entry === 'object') {
+                store.mergeServer(milestoneId, { counts: entry.counts || {}, comments: entry.comments || [], mine: entry.mine || {} });
+              }
+            }
+          }
+          remoteState = 'live';
+        } else {
+          remoteState = 'offline';
+        }
+      } catch (_) {
+        remoteState = 'offline';
+      }
+      // Also try live endpoint.
       const controller = typeof AbortController === 'function' ? new AbortController() : null;
       const timer = setTimeout(() => controller && controller.abort(), REMOTE_TIMEOUT_MS);
       try {
@@ -948,12 +1013,13 @@ function relativeTime(ts, nowMs) {
           { headers: { Accept: 'application/json' }, credentials: 'same-origin',
             signal: controller ? controller.signal : undefined }
         );
-        if (!res.ok) {
+        if (res.ok) {
+          remoteState = 'live';
+          const data = await res.json().catch(() => null);
+          if (data && typeof data === 'object') store.mergeServer(milestoneId, data);
+        } else {
           remoteState = 'offline';
-          return;
         }
-        const data = await res.json().catch(() => null);
-        if (data && typeof data === 'object') store.mergeServer(milestoneId, data);
       } catch (_) {
         remoteState = 'offline';
       } finally {
@@ -1266,7 +1332,10 @@ function relativeTime(ts, nowMs) {
                 : Array.from(node.querySelectorAll ? node.querySelectorAll('.catalog-card') : []);
               for (const card of cards) {
                 const milestone = card.__milestone || byId.get(card.dataset.milestoneId);
-                if (milestone) paintCardStrip(doc, card, milestone, store);
+                if (milestone) {
+          paintCardStrip(doc, card, milestone, store);
+          paintCardComments(doc, card, milestone, store);
+        }
               }
             }
           }
@@ -1278,7 +1347,10 @@ function relativeTime(ts, nowMs) {
       const indexExisting = () => {
         for (const card of grid.querySelectorAll('.catalog-card')) {
           const milestone = card.__milestone || byId.get(card.dataset.milestoneId);
-          if (milestone) paintCardStrip(doc, card, milestone, store);
+          if (milestone) {
+          paintCardStrip(doc, card, milestone, store);
+          paintCardComments(doc, card, milestone, store);
+        }
         }
       };
       if (doc.readyState === 'loading') {

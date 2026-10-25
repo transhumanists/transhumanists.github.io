@@ -16,7 +16,7 @@ description: "Tracking milestones across biotech, AGI, quantum, energy, cyber, s
            fetchpriority="high">
       <div class="hero-badges" aria-label="Categories">
         <a href="https://frenzypenguin-media.github.io" class="badge badge-fpm" target="_blank" rel="noopener" style="text-decoration: none;">FrenzyPenguin Media</a>
-        <span class="badge badge-milestone">7 categories · 50+ subcategories</span>
+        <span class="badge badge-milestone">9 categories · 50+ subcategories</span>
       </div>
 
       <h1 class="hero-title">Human Progress. Quantified.</h1>
@@ -33,6 +33,25 @@ description: "Tracking milestones across biotech, AGI, quantum, energy, cyber, s
     </div>
   </div>
 </div>
+
+<!-- RECENT MILESTONES BANNER -->
+<section class="section section-alt" id="recent-milestones">
+  <div class="container">
+    <header class="section-header">
+      <h2>Recent Milestones</h2>
+      <p class="section-subtitle">Latest breakthroughs across all categories</p>
+    </header>
+
+    <div class="recent-milestones-banner" id="recent-milestones-banner" aria-live="polite">
+      <div class="recent-milestones-nav-group">
+        <button class="recent-milestones-nav" id="recent-milestones-prev" type="button" aria-label="Previous milestone">‹</button>
+        <div class="recent-milestones-track" id="recent-milestones-track" role="region" aria-label="Recent milestones"></div>
+        <button class="recent-milestones-nav" id="recent-milestones-next" type="button" aria-label="Next milestone">›</button>
+      </div>
+      <div class="recent-milestones-indicators" id="recent-milestones-indicators" style="text-align:center; margin-top: 10px;"></div>
+    </div>
+  </div>
+</section>
 
 <!-- WORLD MAP -->
 <section class="section">
@@ -83,20 +102,6 @@ description: "Tracking milestones across biotech, AGI, quantum, energy, cyber, s
         <div class="map-timeline-year-label" id="map-timeline-year-label"></div>
       </div>
       <div class="map-tooltip" id="map-tooltip" role="tooltip"></div>
-    </div>
-  </div>
-</section>
-
-<!-- RECENT HIGHLIGHTS -->
-<section class="section section-alt" id="recent-highlights">
-  <div class="container">
-    <header class="section-header">
-      <h2>Recent Highlights</h2>
-      <p class="section-subtitle">Latest breakthroughs across all categories</p>
-    </header>
-
-    <div class="highlights-carousel" id="highlights-carousel" role="region" aria-label="Recent highlights marquee">
-      <div class="highlights-carousel-track" id="highlights-carousel-track"></div>
     </div>
   </div>
 </section>
@@ -325,21 +330,6 @@ description: "Tracking milestones across biotech, AGI, quantum, energy, cyber, s
       <p class="chart-footnote">Conflict zones, crisis zones, ground &amp; fleet deployments, alliance &amp; defence-policy changes and human-rights landmarks — counted from the same <code>world_layers.json</code> the map draws, one point when a layer starts and one when it concludes. Read it next to the chart above to see whether breakthroughs and deployments move together.</p>
     </div>
 
-    <div class="metric-timeline">
-      <div class="metric-timeline-controls">
-        <label for="metric-select">Metric timeline:</label>
-        <select id="metric-select" class="select-field" aria-label="Pick a metric to see its full timeline">
-          <option value="">— choose a metric —</option>
-        </select>
-        <label for="metric-year-filter" style="font-size: 0.85rem; color: var(--fg-muted); margin-left: 16px;">Year:</label>
-        <select id="metric-year-filter" aria-label="Select year for metric timeline" class="select-field">
-          <option value="all">All years</option>
-        </select>
-        <span class="metric-staleness" id="metric-staleness" hidden></span>
-      </div>
-      <div class="metric-sparkline" id="metric-sparkline" hidden></div>
-      <ol class="metric-timeline-list" id="metric-timeline-list" aria-live="polite"></ol>
-    </div>
   </div>
 </section>
 

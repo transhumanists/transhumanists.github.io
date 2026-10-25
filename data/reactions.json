@@ -1,0 +1,19 @@
+{
+  "v": 1,
+  "milestones": {
+    "m-001": {
+      "counts": {"\uD83D\uDE80": 12, "\uD83D\uDD25": 3},
+      "comments": [
+        {"id":"gh:alec:1","owner":"gh:alec","author":"@alec","kind":"github","text":"Breakthrough in gene editing for longevity — seeing real clinical trials now.","ts":1729000000000}
+      ],
+      "mine": {}
+    },
+    "m-002": {
+      "counts": {"\uD83D\uDCDA": 7},
+      "comments": [
+        {"id":"anon:xyz:1","owner":"anon:xyz","author":"Anonymous","kind":"anonymous","text":"The AGI milestone feels closer every quarter.","ts":1729100000000}
+      ],
+      "mine": {}
+    }
+  }
+}
