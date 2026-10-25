@@ -1489,32 +1489,41 @@ function mapScreenRect() {
     ctx.fillRect(0, 0, w, h);
 
     // ---- Night shading: region between the sunset and sunrise terminators ----
-    // The band samples from TERMINATOR_LAT_LIMIT (120) down to -TERMINATOR_LAT_LIMIT (-120),
-    // well past the poles (±90). We extend the polygon to the canvas corners so it fills
-    // the entire night hemisphere without horizontal seams at the poles.
-    const band = nightBand;
+    // Only use points within the visible latitude range (MAP_LAT_SOUTH to MAP_LAT_NORTH).
+    // Extend polygon to canvas corners so it fills the entire night hemisphere
+    // without horizontal seams at the poles.
+    const latMin = MAP_LAT_SOUTH;   // -90
+    const latMax = MAP_LAT_NORTH;   // 85
+    const sunsetVisible = sunset.filter(pt => pt.lat >= latMin && pt.lat <= latMax);
+    const sunriseVisible = sunrise.filter(pt => pt.lat >= latMin && pt.lat <= latMax);
+
     ctx.fillStyle = NIGHT_FILL;
     for (const lonShift of [-360, 0, 360]) {
       ctx.beginPath();
-      // Start at top-left canvas corner
-      ctx.moveTo(-1000, -1000);
-      // Trace sunset edge from north to south
-      band.slice(0, band.length / 2).forEach((pt) => {
+      // Start at top-left canvas corner (well outside frame)
+      ctx.moveTo(-w, -h);
+      // Trace sunset edge from north to south (visible portion only)
+      sunsetVisible.forEach((pt) => {
         const p = project(pt.lon + lonShift, pt.lat);
         ctx.lineTo(p.x, p.y);
       });
-      // Trace sunrise edge from south back to north
-      band.slice(band.length / 2).forEach((pt) => {
-        const p = project(pt.lon + lonShift, pt.lat);
+      // Go to bottom-left corner
+      ctx.lineTo(-w, h * 2);
+      // Go to bottom-right corner
+      ctx.lineTo(w * 2, h * 2);
+      // Trace sunrise edge from south back to north (visible portion only)
+      for (let i = sunriseVisible.length - 1; i >= 0; i--) {
+        const p = project(sunriseVisible[i].lon + lonShift, sunriseVisible[i].lat);
         ctx.lineTo(p.x, p.y);
-      });
-      // Close at top-right canvas corner (extends past frame)
-      ctx.lineTo(1000, -1000);
+      }
+      // Close at top-right canvas corner
+      ctx.lineTo(w * 2, -h);
       ctx.closePath();
       ctx.fill();
     }
 
     // ---- Day/night boundary lines: soft, blended and very transparent ----
+    // Only draw within visible latitude range (plus small margin)
     strokeSoftBoundary(sunset, SUNSET_BOUNDARY);
     strokeSoftBoundary(sunrise, SUNRISE_BOUNDARY);
 
