@@ -1,6 +1,6 @@
 {
   "version": "1.3.0",
-  "last_update": "2026-10-29T13:08:52+00:00",
+  "last_update": "2026-10-29T22:48:10+00:00",
   "conflict_zones": [
     {
       "id": "zone-ukraine",
@@ -1323,6 +1323,18 @@
       "note": "A police anti-riot unit in Colombo, Sri Lanka, January 30, 2024. © 2024 Thilina Kaluthotage/NurPhoto via AP Photo (New York) – The Sri Lankan government’s Prevention of Organised Crimes Bill, submitted to parliament on October 20, 2026, risks enabling arbitrary detention, torture",
       "source": "Human Rights Watch",
       "url": "https://www.hrw.org/news/2026/10/29/sri-lanka-organized-crime-bill-violates-rights-standards"
+    },
+    {
+      "id": "hr-6e773fa757",
+      "name": "UN Finds Age-Based Persecution of Palestinian Children",
+      "region": "Western Asia",
+      "lat": 32.0,
+      "lon": 35.3,
+      "status": "active",
+      "start_date": "2026-10-29",
+      "note": "Children on their way to school in the West Bank, September 16, 2026. © 2026 John Wessels/AFP via Getty Images A UN Commission of Inquiry concluded on October 14 that Israeli authorities have committed the crime against humanity of persecution against Palestinian children. Their",
+      "source": "Human Rights Watch",
+      "url": "https://www.hrw.org/news/2026/10/29/un-finds-age-based-persecution-of-palestinian-children"
     },
     {
       "id": "hr-71fa2dfc85",
