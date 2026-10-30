@@ -1,6 +1,6 @@
 {
   "version": "1.3.0",
-  "last_update": "2026-10-30T05:54:16+00:00",
+  "last_update": "2026-10-30T09:43:35+00:00",
   "conflict_zones": [
     {
       "id": "zone-ukraine",
@@ -1114,6 +1114,19 @@
       "last_news_year": 2026
     },
     {
+      "id": "crisis-central-african-republic-humanitarian-crisis",
+      "name": "Central African Republic · Humanitarian crisis",
+      "region": "Africa",
+      "lat": 5.0,
+      "lon": 20.0,
+      "radiusDeg": 2.7,
+      "status": "active",
+      "note": "Central African Republic — live humanitarian situation",
+      "source": "ReliefWeb / OCHA / WHO / UNHCR / WFP / FAO / HDX",
+      "url": "https://data.humdata.org/dataset/central-african-republic-humanitarian-needs",
+      "last_news_year": 2026
+    },
+    {
       "id": "crisis-chad-displacement-crisis",
       "name": "Chad · Displacement crisis",
       "region": "Central Africa",
@@ -1182,20 +1195,6 @@
       "source": "UN OCHA",
       "url": "https://data.humdata.org/dataset/mozambique-humanitarian-needs",
       "start_date": "2017-01-01",
-      "last_news_year": 2026
-    },
-    {
-      "id": "crisis-niger-conflict-hunger",
-      "name": "Niger · Conflict & hunger",
-      "region": "West Africa",
-      "lat": 17.61,
-      "lon": 8.08,
-      "radiusDeg": 2.7,
-      "status": "active",
-      "note": "Armed conflict, displacement and food insecurity",
-      "source": "UN OCHA",
-      "url": "https://data.humdata.org/dataset/niger-humanitarian-needs",
-      "start_date": "2015-01-01",
       "last_news_year": 2026
     },
     {
