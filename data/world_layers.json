@@ -1,6 +1,6 @@
 {
   "version": "1.3.0",
-  "last_update": "2026-11-01T22:05:49+00:00",
+  "last_update": "2026-11-02T06:14:46+00:00",
   "conflict_zones": [
     {
       "id": "zone-ukraine",
@@ -1312,6 +1312,18 @@
     }
   ],
   "human_rights_violations": [
+    {
+      "id": "hr-7ff4eef7ea",
+      "name": "Zambia: Widespread Repression in Post-Election Crackdown",
+      "region": "Eastern Africa",
+      "lat": -13.1,
+      "lon": 27.8,
+      "status": "active",
+      "start_date": "2026-11-01",
+      "note": "A police vehicle on the outskirts of Lusaka, Zambia, August 14, 2026. © 2026 Alfonso Nqunjana/AP Photo Zambian police and military forcibly disappeared, arbitrarily detained, beat, and threatened opposition members, lawyers, journalists, and government critics in the days before",
+      "source": "Human Rights Watch",
+      "url": "https://www.hrw.org/news/2026/11/01/zambia-widespread-repression-in-post-election-crackdown"
+    },
     {
       "id": "hr-be03b03c4d",
       "name": "Sri Lanka: Organized Crime Bill Violates Rights Standards",
