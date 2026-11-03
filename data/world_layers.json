@@ -1,6 +1,6 @@
 {
   "version": "1.3.0",
-  "last_update": "2026-11-03T14:22:43+00:00",
+  "last_update": "2026-11-03T23:26:37+00:00",
   "conflict_zones": [
     {
       "id": "zone-ukraine",
@@ -1312,6 +1312,18 @@
     }
   ],
   "human_rights_violations": [
+    {
+      "id": "hr-e366108be8",
+      "name": "World Court Set to Rule in Myanmar Genocide Case",
+      "region": "South-Eastern Asia",
+      "lat": 21.9,
+      "lon": 95.9,
+      "status": "active",
+      "start_date": "2026-11-03",
+      "note": "People watch the ICJ hearing at a restaurant in a Rohingya refugee camp in Cox's Bazar, Bangladesh, on January 23, 2020. © 2020 Allison Joyce/Getty Images (The Hague) – The International Court of Justice has announced that it will deliver its judgment on November 19, 2026, in the",
+      "source": "Human Rights Watch",
+      "url": "https://www.hrw.org/news/2026/11/03/world-court-set-to-rule-in-myanmar-genocide-case"
+    },
     {
       "id": "hr-7ff4eef7ea",
       "name": "Zambia: Widespread Repression in Post-Election Crackdown",
