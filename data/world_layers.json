@@ -1,6 +1,6 @@
 {
   "version": "1.3.0",
-  "last_update": "2026-11-10T07:24:10+00:00",
+  "last_update": "2026-11-10T10:51:31+00:00",
   "conflict_zones": [
     {
       "id": "zone-ukraine",
@@ -1250,7 +1250,7 @@
       "status": "active",
       "note": "Civil conflict, displacement and food insecurity",
       "source": "UN OCHA",
-      "url": "https://data.humdata.org/dataset/south-sudan-humanitarian-access-incidents",
+      "url": "https://data.humdata.org/dataset/south-sudan-humanitarian-needs",
       "start_date": "2013-01-01",
       "last_news_year": 2026
     },
