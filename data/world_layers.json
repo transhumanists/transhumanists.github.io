@@ -1,6 +1,6 @@
 {
   "version": "1.3.0",
-  "last_update": "2026-11-17T20:59:03+00:00",
+  "last_update": "2026-11-18T07:35:11+00:00",
   "conflict_zones": [
     {
       "id": "zone-ukraine",
@@ -1312,6 +1312,18 @@
     }
   ],
   "human_rights_violations": [
+    {
+      "id": "hr-bc0d948547",
+      "name": "Philippine Police Detain Hundreds Protesting Trump Visit",
+      "region": "South-Eastern Asia",
+      "lat": 12.9,
+      "lon": 121.8,
+      "status": "active",
+      "start_date": "2026-11-18",
+      "note": "Protesters attempt to march to the ASEAN Summit venue in Manila but are stopped by hundreds of police officers, November 17, 2026. © 2026 Lian Buan/Human Rights Watch Police in the Philippines arrested and detained at least 245 people protesting the visit of US President Donald T",
+      "source": "Human Rights Watch",
+      "url": "https://www.hrw.org/news/2026/11/18/philippine-police-detain-hundreds-protesting-trump-visit"
+    },
     {
       "id": "hr-c426049374",
       "name": "UAE: 5 Shia Residents Arrested Arbitrarily",
