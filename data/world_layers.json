@@ -1,6 +1,6 @@
 {
   "version": "1.3.0",
-  "last_update": "2026-11-28T07:55:12+00:00",
+  "last_update": "2026-11-28T11:27:34+00:00",
   "conflict_zones": [
     {
       "id": "zone-ukraine",
@@ -1185,20 +1185,6 @@
       "last_news_year": 2026
     },
     {
-      "id": "crisis-mozambique-cabo-delgado-insurgency",
-      "name": "Mozambique · Cabo Delgado insurgency",
-      "region": "Southern Africa",
-      "lat": -18.67,
-      "lon": 35.53,
-      "radiusDeg": 2.7,
-      "status": "active",
-      "note": "Insurgent attacks and internal displacement",
-      "source": "UN OCHA",
-      "url": "https://data.humdata.org/dataset/mozambique-humanitarian-needs",
-      "start_date": "2017-01-01",
-      "last_news_year": 2026
-    },
-    {
       "id": "crisis-niger-conflict-hunger",
       "name": "Niger · Conflict & hunger",
       "region": "West Africa",
@@ -1280,6 +1266,20 @@
       "source": "UN OCHA",
       "url": "https://data.humdata.org/dataset/sudan-humanitarian-needs",
       "start_date": "2003-01-01",
+      "last_news_year": 2026
+    },
+    {
+      "id": "crisis-syria-humanitarian-crisis",
+      "name": "Syria · Humanitarian crisis",
+      "region": "Middle East",
+      "lat": 34.8,
+      "lon": 38.9,
+      "radiusDeg": 3.3,
+      "status": "active",
+      "note": "15M+ in need of humanitarian aid",
+      "source": "UN OCHA",
+      "url": "https://data.humdata.org/dataset/syrian-arab-republic-humanitarian-needs",
+      "start_date": "2011-01-01",
       "last_news_year": 2026
     },
     {
